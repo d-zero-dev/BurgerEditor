@@ -175,3 +175,28 @@ test('List item removes', (t) => {
 	t.false(!!fp.toDOM().querySelectorAll('[data-field*="prop01"]')[1]);
 	t.is(fp.toDOM().querySelector('[data-field-list]').children.length, 1);
 });
+
+test('toJSON value', (t) => {
+	const fp = new FrozenPatty('<input data-field="field" value="value">');
+	const fp2 = new FrozenPatty('<select data-field="field"><option value="value2" checked>label</option></select>');
+	const fp3 = new FrozenPatty('<textarea data-field="field">value3</textarea>');
+	const fp4 = new FrozenPatty('<input data-field="field">');
+	t.deepEqual(fp.toJSON(), { field: 'value' });
+	t.deepEqual(fp2.toJSON(), { field: 'value2' });
+	t.deepEqual(fp3.toJSON(), { field: 'value3' });
+	t.deepEqual(fp4.toJSON(), { field: '' });
+});
+
+test('toJSON checked', (t) => {
+	const fp = new FrozenPatty('<input checked data-field="checked:checked">');
+	const fp2 = new FrozenPatty('<input data-field="checked:checked">');
+	t.deepEqual(fp.toJSON(), { checked: true });
+	t.deepEqual(fp2.toJSON(), { checked: false });
+});
+
+test('toJSON disabled', (t) => {
+	const fp = new FrozenPatty('<input disabled data-field="disabled:disabled">');
+	const fp2 = new FrozenPatty('<input data-field="disabled:disabled">');
+	t.deepEqual(fp.toJSON(), { disabled: true });
+	t.deepEqual(fp2.toJSON(), { disabled: false });
+});

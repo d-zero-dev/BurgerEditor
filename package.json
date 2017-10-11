@@ -1,6 +1,6 @@
 {
   "name": "@yusukehirao/frozen-patty",
-  "version": "1.0.0",
+  "version": "0.1.0-alpha",
   "description": "Pure HTML to JSON converter that not use template engine.",
   "main": "lib/index.js",
   "author": "Yusuke Hirao",
@@ -13,21 +13,24 @@
     "start": "node ./",
     "build": "gulp",
     "dev": "gulp watch",
-    "test": "ava"
+    "test": "nyc ava && nyc report --reporter=html",
+    "coveralls": "nyc ava && nyc report --reporter=text-lcov | coveralls"
   },
   "ava": {
     "require": [
-      "./test/helper/setup-browser-env.js"
+      "./helper/setup-browser-env.js"
     ]
   },
   "devDependencies": {
     "ava": "^0.22.0",
     "browser-env": "^3.2.1",
+    "coveralls": "^3.0.0",
     "del": "^3.0.0",
     "eslint": "^4.8.0",
     "gulp": "^3.9.1",
     "gulp-ava": "^0.18.0",
     "gulp-typescript": "^3.2.2",
+    "nyc": "^11.2.1",
     "run-sequence": "^2.2.0",
     "tslint": "^5.7.0",
     "typescript": "^2.5.3"
