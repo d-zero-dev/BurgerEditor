@@ -53,6 +53,10 @@ export function extractor (el: HTMLElement, attr: string) {
 			}
 		} else if (keyAttr) {
 			switch (keyAttr) {
+				case 'contenteditable': {
+					value = el.contentEditable === '' || el.contentEditable === 'true';
+					break;
+				}
 				case 'checked': {
 					value = (el as HTMLInputElement).checked;
 					break;
@@ -63,10 +67,6 @@ export function extractor (el: HTMLElement, attr: string) {
 				}
 				case 'download': {
 					value = (el as HTMLAnchorElement).download;
-					break;
-				}
-				case 'contenteditable': {
-					value = el.contentEditable;
 					break;
 				}
 				default: {

@@ -32,7 +32,14 @@
     "no-import-side-effect": [false],
     "no-inferrable-types": [true, "ignore-params"],
     "no-internal-module": true,
-    "no-magic-numbers": true,
+    "no-magic-numbers": [
+      true,
+      -1,
+      0,
+      1,
+      2,
+      10
+    ],
     "no-namespace": [false],
     "no-non-null-assertion": false,
     "no-reference": true,
