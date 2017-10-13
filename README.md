@@ -1,6 +1,6 @@
 # frozen-patty
 
-[![npm version](https://badge.fury.io/js/%40yusukehirao%2Ffrozen-patty.svg)](https://badge.fury.io/js/%40yusukehirao%2Ffrozen-patty) [![Build Status](https://travis-ci.org/YusukeHirao/frozen-patty.svg?branch=master)](https://travis-ci.org/YusukeHirao/frozen-patty)
+[![npm version](https://badge.fury.io/js/%40yusukehirao%2Ffrozen-patty.svg)](https://badge.fury.io/js/%40yusukehirao%2Ffrozen-patty) [![Build Status](https://travis-ci.org/YusukeHirao/frozen-patty.svg?branch=master)](https://travis-ci.org/YusukeHirao/frozen-patty) [![Coverage Status](https://coveralls.io/repos/github/YusukeHirao/frozen-patty/badge.svg?branch=master)](https://coveralls.io/github/YusukeHirao/frozen-patty?branch=master)
 
 Pure HTML to JSON converter that not use template engine.
 
