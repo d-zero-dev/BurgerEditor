@@ -7,7 +7,7 @@ Pure HTML to JSON converter that not use template engine.
 ## Install
 
 ```
-$ npm install -D @yusukehirao/frozen-patty
+$ npm install -D @burger-editor/frozen-patty
 ```
 
 ## Usage
