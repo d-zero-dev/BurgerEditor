@@ -1,8 +1,9 @@
 {
   "name": "@burger-editor/frozen-patty",
-  "version": "0.1.0-beta",
+  "version": "0.2.0-beta",
   "description": "Pure HTML to JSON converter that not use template engine.",
   "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "author": "Yusuke Hirao",
   "license": "MIT",
   "private": false,
