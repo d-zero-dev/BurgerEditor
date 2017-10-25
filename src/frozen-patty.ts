@@ -5,6 +5,7 @@ export default class FrozenPatty {
 
 	private _dom: HTMLElement;
 	private _attr = 'field';
+	private _typeConvert = false;
 
 	/**
 	 *
@@ -14,20 +15,23 @@ export default class FrozenPatty {
 	constructor (html: string, options?: FrozenPattyOptions) {
 		this._dom = document.createElement('fp-placeholer');
 		this._dom.innerHTML = html;
-		if (options && options.attr) {
-			this._attr = options.attr;
+		if (options) {
+			if (options.attr) {
+				this._attr = options.attr;
+			}
+			this._typeConvert = !!options.typeConvert;
 		}
 	}
 
 	public merge (data: FrozenPattyData) {
 		const currentData = this.toJSON();
 		const newData = Object.assign(currentData, data);
-		this._dom = imports(this._dom, newData, this._attr);
+		this._dom = imports(this._dom, newData, this._attr, this._typeConvert);
 		return this;
 	}
 
 	public toJSON () {
-		return toJSON(this._dom, this._attr);
+		return toJSON(this._dom, this._attr, this._typeConvert);
 	}
 
 	public toHTML () {
@@ -42,8 +46,24 @@ export default class FrozenPatty {
 export interface FrozenPattyOptions {
 	/**
 	 * **Data attribute** name for specifying the node that FrozenPatty treats as a _field_
+	 *
+	 * @default `"field"`
 	 */
 	attr?: string;
+
+	/**
+	 * Auto type convertion that value of data attributes
+	 *
+	 * - `"true"` => `true`
+	 * - `"false"` => `false`
+	 * - `"0"` => `0`
+	 * - `"1"` => `1`
+	 * - `"1.0"` => `1`
+	 * - `"0.1"` => `0.1`
+	 *
+	 * @default `false`
+	 */
+	typeConvert?: boolean;
 }
 
 export interface FrozenPattyData {

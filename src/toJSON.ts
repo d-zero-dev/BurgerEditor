@@ -1,11 +1,11 @@
 import { FrozenPattyData, PrimitiveDatum } from './frozen-patty';
 import './polyfill';
 
-export function toJSON (el: HTMLElement, attr: string) {
+export function toJSON (el: HTMLElement, attr: string, typeConvert: boolean) {
 	const filedElements = el.querySelectorAll(`[data-${attr}]`);
 	let values: [keyof FrozenPattyData, PrimitiveDatum, boolean][] = [];
 	for (const _el of Array.from(filedElements)) {
-		values = values.concat(extractor(_el as HTMLElement, attr));
+		values = values.concat(extractor(_el as HTMLElement, attr, typeConvert));
 
 	}
 	// console.log(values);
@@ -18,7 +18,7 @@ export function toJSON (el: HTMLElement, attr: string) {
  * @param el HTMLElement
  * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field.
  */
-export function extractor (el: HTMLElement, attr: string) {
+export function extractor (el: HTMLElement, attr: string, typeConvert: boolean) {
 	/**
 	 * [key, value, forceArray]
 	 */
@@ -52,27 +52,7 @@ export function extractor (el: HTMLElement, attr: string) {
 				value = getBackgroundImagePath(value);
 			}
 		} else if (keyAttr) {
-			switch (keyAttr) {
-				case 'contenteditable': {
-					value = el.contentEditable === '' || el.contentEditable === 'true';
-					break;
-				}
-				case 'checked': {
-					value = (el as HTMLInputElement).checked;
-					break;
-				}
-				case 'disabled': {
-					value = (el as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement).disabled;
-					break;
-				}
-				case 'download': {
-					value = (el as HTMLAnchorElement).download;
-					break;
-				}
-				default: {
-					value = el.getAttribute(keyAttr) || '';
-				}
-			}
+			value = getAttribute(el, keyAttr, typeConvert);
 		} else {
 			if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement) {
 				const val = el.value;
@@ -91,6 +71,44 @@ export function extractor (el: HTMLElement, attr: string) {
 	}
 	// console.log({result});
 	return result;
+}
+
+function getAttribute (el: HTMLElement, keyAttr: string, typeConvert: boolean) {
+	switch (keyAttr) {
+		case 'contenteditable': {
+			return el.contentEditable === '' || el.contentEditable === 'true';
+		}
+		case 'checked': {
+			return (el as HTMLInputElement).checked;
+		}
+		case 'disabled': {
+			return (el as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement).disabled;
+		}
+		case 'download': {
+			return (el as HTMLAnchorElement).download;
+		}
+		default: {
+			if (/^data-/.test(keyAttr)) {
+				const value = el.getAttribute(keyAttr) || '';
+				if (typeConvert) {
+					switch (value) {
+						case 'true': return true;
+						case 'false': return false;
+					}
+					const numeric = parseFloat(value);
+					if (isFinite(numeric)) {
+						return numeric;
+					} else {
+						return value;
+					}
+				} else {
+					return value;
+				}
+			} else {
+				return el.getAttribute(keyAttr) || '';
+			}
+		}
+	}
 }
 
 /**

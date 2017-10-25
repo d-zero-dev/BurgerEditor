@@ -1,7 +1,7 @@
 import { FrozenPattyData, PrimitiveDatum } from './frozen-patty';
 import './polyfill';
 
-export function imports (el: HTMLElement, data: FrozenPattyData, attr: string) {
+export function imports (el: HTMLElement, data: FrozenPattyData, attr: string, typeConvert = false) {
 	el = el.cloneNode(true) as HTMLElement;
 	for (const dataKeyName in data) {
 		if (data.hasOwnProperty(dataKeyName)) {

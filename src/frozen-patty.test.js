@@ -21,6 +21,80 @@ test('toJSON optional field name', (t) => {
 	t.deepEqual(fp.toJSON(), { 'field-name': 'value' });
 });
 
+test('toJSON optional attribute field', (t) => {
+	const fp = new FrozenPatty('<div data-option="value" data-field="field-name:data-option"></div>');
+	t.deepEqual(fp.toJSON(), { 'field-name': 'value' });
+});
+
+test('toJSON optional attribute field - empty string', (t) => {
+	const fp = new FrozenPatty('<div data-option="" data-field="field-name:data-option"></div>');
+	t.deepEqual(fp.toJSON(), { 'field-name': '' });
+});
+
+test('toJSON optional attribute field - no value', (t) => {
+	const fp = new FrozenPatty('<div data-option data-field="field-name:data-option"></div>');
+	t.deepEqual(fp.toJSON(), { 'field-name': '' });
+});
+
+test('toJSON optional attribute field - stringify true', (t) => {
+	const fp = new FrozenPatty('<div data-option="true" data-field="field-name:data-option"></div>');
+	t.deepEqual(fp.toJSON(), { 'field-name': 'true' });
+});
+
+test('toJSON optional attribute field - stringify false', (t) => {
+	const fp = new FrozenPatty('<div data-option="false" data-field="field-name:data-option"></div>');
+	t.deepEqual(fp.toJSON(), { 'field-name': 'false' });
+});
+
+test('toJSON optional attribute field - stringify true - type conversion', (t) => {
+	const fp = new FrozenPatty('<div data-option="true" data-field="field-name:data-option"></div>', { typeConvert: true });
+	t.deepEqual(fp.toJSON(), { 'field-name': true });
+});
+
+test('toJSON optional attribute field - stringify false - type conversion', (t) => {
+	const fp = new FrozenPatty('<div data-option="false" data-field="field-name:data-option"></div>', { typeConvert: true });
+	t.deepEqual(fp.toJSON(), { 'field-name': false });
+});
+
+test('toJSON optional attribute field - stringify number', (t) => {
+	const fp = new FrozenPatty('<div data-option="0" data-field="field-name:data-option"></div>');
+	t.deepEqual(fp.toJSON(), { 'field-name': '0' });
+});
+
+test('toJSON optional attribute field - stringify number - type conversion', (t) => {
+	const fp = new FrozenPatty('<div data-option="0" data-field="field-name:data-option"></div>', { typeConvert: true });
+	t.deepEqual(fp.toJSON(), { 'field-name': 0 });
+});
+
+test('toJSON optional attribute field - stringify number', (t) => {
+	const fp = new FrozenPatty('<div data-option="1" data-field="field-name:data-option"></div>');
+	t.deepEqual(fp.toJSON(), { 'field-name': '1' });
+});
+
+test('toJSON optional attribute field - stringify number - type conversion', (t) => {
+	const fp = new FrozenPatty('<div data-option="1" data-field="field-name:data-option"></div>', { typeConvert: true });
+	t.deepEqual(fp.toJSON(), { 'field-name': 1 });
+});
+
+test('toJSON optional attribute field - stringify number', (t) => {
+	const fp = new FrozenPatty('<div data-option="1.0" data-field="field-name:data-option"></div>');
+	t.deepEqual(fp.toJSON(), { 'field-name': '1.0' });
+});
+
+test('toJSON optional attribute field - stringify number - type conversion', (t) => {
+	const fp = new FrozenPatty('<div data-option="1.0" data-field="field-name:data-option"></div>', { typeConvert: true });
+	t.deepEqual(fp.toJSON(), { 'field-name': 1 });
+});
+
+test('toJSON optional attribute field - stringify number', (t) => {
+	const fp = new FrozenPatty('<div data-option="0.1" data-field="field-name:data-option"></div>');
+	t.deepEqual(fp.toJSON(), { 'field-name': '0.1' });
+});
+
+test('toJSON optional attribute field - stringify number - type conversion', (t) => {
+	const fp = new FrozenPatty('<div data-option="0.1" data-field="field-name:data-option"></div>', { typeConvert: true });
+	t.deepEqual(fp.toJSON(), { 'field-name': .1 });
+});
 
 test('toJSON custom attr name', (t) => {
 	const fp = new FrozenPatty('<div data-bge="text">value</div>', { attr: 'bge' });
