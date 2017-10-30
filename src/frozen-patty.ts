@@ -3,7 +3,7 @@ import { toJSON } from './toJSON';
 
 export default class FrozenPatty {
 
-	private _dom: HTMLElement;
+	private _dom: Element;
 	private _attr = 'field';
 	private _typeConvert = false;
 
@@ -70,6 +70,6 @@ export interface FrozenPattyData {
 	[filed: string]: PrimitiveData;
 }
 
-export type PrimitiveDatum = string | number | boolean;
+export type PrimitiveDatum = string | number | boolean | null | undefined;
 
 export type PrimitiveData = PrimitiveDatum | PrimitiveDatum[];

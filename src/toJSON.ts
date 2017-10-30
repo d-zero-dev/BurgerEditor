@@ -1,11 +1,11 @@
 import { FrozenPattyData, PrimitiveDatum } from './frozen-patty';
 import './polyfill';
 
-export function toJSON (el: HTMLElement, attr: string, typeConvert: boolean) {
+export function toJSON (el: Element, attr: string, typeConvert: boolean) {
 	const filedElements = el.querySelectorAll(`[data-${attr}]`);
 	let values: [keyof FrozenPattyData, PrimitiveDatum, boolean][] = [];
 	for (const _el of Array.from(filedElements)) {
-		values = values.concat(extractor(_el as HTMLElement, attr, typeConvert));
+		values = values.concat(extractor(_el as Element, attr, typeConvert));
 
 	}
 	// console.log(values);
@@ -18,7 +18,7 @@ export function toJSON (el: HTMLElement, attr: string, typeConvert: boolean) {
  * @param el HTMLElement
  * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field.
  */
-export function extractor (el: HTMLElement, attr: string, typeConvert: boolean) {
+export function extractor (el: Element, attr: string, typeConvert: boolean) {
 	/**
 	 * [key, value, forceArray]
 	 */
@@ -73,10 +73,14 @@ export function extractor (el: HTMLElement, attr: string, typeConvert: boolean) 
 	return result;
 }
 
-function getAttribute (el: HTMLElement, keyAttr: string, typeConvert: boolean) {
+function getAttribute (el: Element, keyAttr: string, typeConvert: boolean) {
 	switch (keyAttr) {
 		case 'contenteditable': {
-			return el.contentEditable === '' || el.contentEditable === 'true';
+			if (el instanceof HTMLElement) {
+				return el.contentEditable === '' || el.contentEditable === 'true';
+			} else {
+				return el.getAttribute(keyAttr) === '' || el.getAttribute(keyAttr) === 'true';
+			}
 		}
 		case 'checked': {
 			return (el as HTMLInputElement).checked;

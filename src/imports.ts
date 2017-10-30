@@ -1,13 +1,13 @@
 import { FrozenPattyData, PrimitiveDatum } from './frozen-patty';
 import './polyfill';
 
-export function imports (el: HTMLElement, data: FrozenPattyData, attr: string, typeConvert = false) {
-	el = el.cloneNode(true) as HTMLElement;
+export function imports (el: Element, data: FrozenPattyData, attr: string, typeConvert = false) {
+	el = el.cloneNode(true) as Element;
 	for (const dataKeyName in data) {
 		if (data.hasOwnProperty(dataKeyName)) {
 			const datum = data[dataKeyName];
 			const selector = `[data-${attr}*="${dataKeyName}"]`;
-			const targetList = el.querySelectorAll(selector) as NodeListOf<HTMLElement>;
+			const targetList = el.querySelectorAll(selector);
 			if (Array.isArray(datum)) {
 				const targetEl = targetList[0];
 				if (!targetEl) {
@@ -24,7 +24,7 @@ export function imports (el: HTMLElement, data: FrozenPattyData, attr: string, t
 				const newChildren = listRoot.querySelectorAll(selector);
 				Array.from(newChildren).forEach((child, i) => {
 					if (datum[i] != null) {
-						datumToElement(dataKeyName, datum[i] || '', child, attr);
+						datumToElement(dataKeyName, datum[i], child, attr);
 					} else {
 						listRoot.children[i].remove();
 					}
@@ -119,7 +119,7 @@ function datumToElement (name: keyof FrozenPattyData, datum: PrimitiveDatum, el:
 				setAttribute(el, targetAttr, datum);
 			} else {
 				// SVGElement or more
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(targetAttr, `${datum}`);
 			}
 		//
 		// 属性指定がない場合
@@ -150,6 +150,10 @@ function datumToElement (name: keyof FrozenPattyData, datum: PrimitiveDatum, el:
  */
 // tslint:disable-next-line:cyclomatic-complexity
 function setAttribute (el: HTMLElement, attr: string, datum: PrimitiveDatum) {
+	if (datum == null) {
+		el.removeAttribute(attr);
+		return;
+	}
 	switch (attr) {
 		// ⚠️ Dosen't test
 		case 'contentediable': {
@@ -686,16 +690,12 @@ function setAttribute (el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		case 'wrap':
 		// and Data-* attributes
 		default: {
-			if (datum == null) {
-				el.removeAttribute(attr);
-			} else {
-				el.setAttribute(attr, `${datum}`);
-			}
+			el.setAttribute(attr, `${datum}`);
 		}
 	}
 }
 
-function toNum (datum: PrimitiveDatum) {
+function toNum (datum: boolean | string | number) {
 	let i: number;
 	if (typeof datum === 'boolean') {
 		i = +datum;
@@ -707,6 +707,6 @@ function toNum (datum: PrimitiveDatum) {
 	return i;
 }
 
-function toInt (datum: PrimitiveDatum) {
+function toInt (datum: boolean | string | number) {
 	return Math.floor(toNum(datum));
 }

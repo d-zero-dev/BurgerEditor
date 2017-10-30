@@ -11,7 +11,7 @@ export default class FrozenPatty {
     merge(data: FrozenPattyData): this;
     toJSON(): FrozenPattyData;
     toHTML(): string;
-    toDOM(): HTMLElement;
+    toDOM(): Element;
 }
 export interface FrozenPattyOptions {
     /**
@@ -37,5 +37,5 @@ export interface FrozenPattyOptions {
 export interface FrozenPattyData {
     [filed: string]: PrimitiveData;
 }
-export declare type PrimitiveDatum = string | number | boolean;
+export declare type PrimitiveDatum = string | number | boolean | null | undefined;
 export declare type PrimitiveData = PrimitiveDatum | PrimitiveDatum[];
