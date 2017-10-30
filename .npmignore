@@ -1,10 +1,10 @@
+.nyc_output
 .vscode
-dist
-out
+coverage
+helper
 sample
 src
-test
-.editorcinfg
+.editorconfig
 .gitignore
 .travis.yml
 gulpfile.coffee
