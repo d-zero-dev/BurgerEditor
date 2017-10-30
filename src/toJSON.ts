@@ -87,6 +87,10 @@ function getAttribute (el: HTMLElement, keyAttr: string, typeConvert: boolean) {
 		case 'download': {
 			return (el as HTMLAnchorElement).download;
 		}
+		case 'href': {
+			// return (el as HTMLAnchorElement).href;
+			return el.getAttribute(keyAttr) || ''; // return plain string
+		}
 		default: {
 			if (/^data-/.test(keyAttr)) {
 				const value = el.getAttribute(keyAttr) || '';

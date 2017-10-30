@@ -191,7 +191,7 @@ test('Full data merge', (t) => {
 		],
 		prop07: [
 			'prop07-href-01-rewrite',
-			'prop07-herf-02-add',
+			'prop07-href-02-add',
 			// empty item for test
 		],
 		prop08: [
@@ -214,7 +214,7 @@ test('Full data merge', (t) => {
 	t.is(fp.toDOM().querySelectorAll('[data-field*="prop06"]').item(3).innerHTML, 'prop06-text-04-add');
 	t.is(fp.toDOM().querySelectorAll('[data-field*="prop07"]').length, 3);
 	t.is(fp.toDOM().querySelectorAll('[data-field*="prop07"]').item(0).getAttribute('href'), 'prop07-href-01-rewrite');
-	t.is(fp.toDOM().querySelectorAll('[data-field*="prop07"]').item(1).getAttribute('href'), 'prop07-herf-02-add');
+	t.is(fp.toDOM().querySelectorAll('[data-field*="prop07"]').item(1).getAttribute('href'), 'prop07-href-02-add');
 	t.is(fp.toDOM().querySelectorAll('[data-field*="prop07"]').item(2).getAttribute('href'), 'prop07-href-01-rewrite'); // empty item for test
 	t.is(fp.toDOM().querySelectorAll('[data-field*="prop08"]').length, 3);
 	t.is(fp.toDOM().querySelectorAll('[data-field*="prop08"]').item(0).innerHTML, 'prop08-text-01-rewrite');
@@ -268,7 +268,7 @@ test('value', (t) => {
 	t.is(fp5.merge({ field: 'merged5' }).toDOM().children[0].value, 'value5');
 });
 
-test('contenteditable', (t) => {
+test('attr: contenteditable', (t) => {
 	t.pass('⚰ JSDom is unsupported contenteditable.');
 	// const fp = new FrozenPatty('<div data-field="edit:contenteditable" contenteditable>text</div>');
 	// const fp2 = new FrozenPatty('<div data-field="edit:contenteditable">text</div>');
@@ -285,7 +285,7 @@ test('contenteditable', (t) => {
 	// t.is(fp.merge({ edit: null }).toDOM().children[0].isContentEditable, undefined);
 });
 
-test('checked', (t) => {
+test('attr: checked', (t) => {
 	const fp = new FrozenPatty('<input data-field="checked:checked" checked>');
 	const fp2 = new FrozenPatty('<input data-field="checked:checked">');
 	t.deepEqual(fp.toJSON(), { checked: true });
@@ -299,9 +299,26 @@ test('checked', (t) => {
 	t.is(fp.merge({ checked: null }).toDOM().children[0].checked, false);
 });
 
-// test('toJSON disabled', (t) => {
-// 	const fp = new FrozenPatty('<input disabled data-field="disabled:disabled">');
-// 	const fp2 = new FrozenPatty('<input data-field="disabled:disabled">');
-// 	t.deepEqual(fp.toJSON(), { disabled: true });
-// 	t.deepEqual(fp2.toJSON(), { disabled: false });
-// });
+test('attr: disabled', (t) => {
+	const fp = new FrozenPatty('<input disabled data-field="disabled:disabled">');
+	const fp2 = new FrozenPatty('<input data-field="disabled:disabled">');
+	t.deepEqual(fp.toJSON(), { disabled: true });
+	t.deepEqual(fp2.toJSON(), { disabled: false });
+});
+
+test('attr: href', (t) => {
+	t.deepEqual(new FrozenPatty('<a href data-field="href:href"></a>').toJSON(), { href: '' });
+	t.deepEqual(new FrozenPatty('<a href="" data-field="href:href"></a>').toJSON(), { href: '' });
+	t.deepEqual(new FrozenPatty('<a href="hoge" data-field="href:href"></a>').toJSON(), { href: 'hoge' });
+	t.deepEqual(new FrozenPatty('<a data-field="href:href"></a>').toJSON(), { href: '' });
+	t.deepEqual(new FrozenPatty('<a data-field="href:href"></a>').merge({ href: '' }).toDOM().children[0].href, '');
+	t.deepEqual(new FrozenPatty('<a data-field="href:href"></a>').merge({ href: 'abc' }).toDOM().children[0].href, 'abc');
+	t.deepEqual(new FrozenPatty('<a data-field="href:href"></a>').merge({ href: true }).toDOM().children[0].href, 'true');
+	t.deepEqual(new FrozenPatty('<a data-field="href:href"></a>').merge({ href: false }).toDOM().children[0].href, 'false');
+	t.deepEqual(new FrozenPatty('<a data-field="href:href"></a>').merge({ href: 123 }).toDOM().children[0].href, '123');
+	t.deepEqual(new FrozenPatty('<a data-field="href:href"></a>').merge({ href: 123.1 }).toDOM().children[0].href, '123.1');
+	t.deepEqual(new FrozenPatty('<a data-field="href:href"></a>').merge({ href: 0.1 }).toDOM().children[0].href, '0.1');
+	t.deepEqual(new FrozenPatty('<a data-field="href:href"></a>').merge({ href: .1 }).toDOM().children[0].href, '0.1');
+	t.deepEqual(new FrozenPatty('<a data-field="href:href"></a>').merge({ href: null }).toDOM().children[0].href, '');
+	t.deepEqual(new FrozenPatty('<a data-field="href:href"></a>').merge({ href: null }).toDOM().children[0].hasAttribute('href'), false);
+});

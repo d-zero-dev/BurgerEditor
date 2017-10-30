@@ -686,7 +686,11 @@ function setAttribute (el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		case 'wrap':
 		// and Data-* attributes
 		default: {
-			el.setAttribute(attr, `${datum}`);
+			if (datum == null) {
+				el.removeAttribute(attr);
+			} else {
+				el.setAttribute(attr, `${datum}`);
+			}
 		}
 	}
 }
