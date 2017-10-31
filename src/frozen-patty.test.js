@@ -337,3 +337,13 @@ test('attr: href', (t) => {
 	t.deepEqual(new FrozenPatty('<a href="hoge" data-field="href:href"></a>').merge({}).toDOM().children[0].href, 'hoge');
 	t.deepEqual(new FrozenPatty('<a href="hoge" data-field="href:href"></a>').merge({}).toDOM().children[0].hasAttribute('href'), true);
 });
+
+test('toHTML()', (t) => {
+	const fp = new FrozenPatty('<div data-hoge="fuga" data-field="hoge:data-hoge"></div>');
+	t.is(fp.toHTML(), '<div data-hoge="fuga" data-field="hoge:data-hoge"></div>');
+});
+
+test('toHTML()', (t) => {
+	const fp = new FrozenPatty('<div data-hoge="fuga" data-field="hoge:data-hoge"></div>');
+	t.is(fp.merge({ hoge: 'piyo' }).toHTML(), '<div data-hoge="piyo" data-field="hoge:data-hoge"></div>');
+});

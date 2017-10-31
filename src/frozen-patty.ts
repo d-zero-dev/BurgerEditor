@@ -1,5 +1,5 @@
-import { imports } from './imports';
-import { toJSON } from './toJSON';
+import get from './get';
+import set from './set';
 
 export default class FrozenPatty {
 
@@ -26,12 +26,12 @@ export default class FrozenPatty {
 	public merge (data: FrozenPattyData) {
 		const currentData = this.toJSON();
 		const newData = Object.assign(currentData, data);
-		this._dom = imports(this._dom, newData, this._attr, this._typeConvert);
+		this._dom = set(this._dom, newData, this._attr, this._typeConvert);
 		return this;
 	}
 
 	public toJSON () {
-		return toJSON(this._dom, this._attr, this._typeConvert);
+		return get(this._dom, this._attr, this._typeConvert);
 	}
 
 	public toHTML () {

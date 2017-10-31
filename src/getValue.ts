@@ -1,24 +1,13 @@
 import { FrozenPattyData, PrimitiveDatum } from './frozen-patty';
-import './polyfill';
-
-export function toJSON (el: Element, attr: string, typeConvert: boolean) {
-	const filedElements = el.querySelectorAll(`[data-${attr}]`);
-	let values: [keyof FrozenPattyData, PrimitiveDatum, boolean][] = [];
-	for (const _el of Array.from(filedElements)) {
-		values = values.concat(extractor(_el as Element, attr, typeConvert));
-
-	}
-	// console.log(values);
-	const result = arrayToHash(values);
-	return result as FrozenPattyData;
-}
 
 /**
+ * Get value from an element
  *
  * @param el HTMLElement
- * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field.
+ * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
+ * @param typeConvert Auto covert type of value
  */
-export function extractor (el: Element, attr: string, typeConvert: boolean) {
+export default function (el: Element, attr: string, typeConvert: boolean) {
 	/**
 	 * [key, value, forceArray]
 	 */
@@ -126,27 +115,4 @@ function getAttribute (el: Element, keyAttr: string, typeConvert: boolean) {
 function getBackgroundImagePath (value: string) {
 	const origin = `${location.protocol}//${location.hostname}${(location.port ? `:${location.port}` : '')}`;
 	return decodeURI(value.replace(/^url\(["']?([^"']+)["']?\)$/i, '$1').replace(origin, ''));
-}
-
-/**
- *
- */
-function arrayToHash<T, K extends string> (kvs: [K, T, boolean][]) {
-	const result = {} as {[P in K]: T | T[]};
-	kvs.forEach((kv) => {
-		const k = kv[0];
-		const v = kv[1];
-		const toArray = kv[2]; // tslint:disable-line:no-magic-numbers
-		if (toArray) {
-			const alv = result[k];
-			if (Array.isArray(alv)) {
-				alv.push(v);
-			} else {
-				result[k] = k in result ? [alv, v] : [v];
-			}
-		} else {
-			result[k] = v;
-		}
-	});
-	return result;
 }
