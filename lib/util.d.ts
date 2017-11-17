@@ -1,6 +1,7 @@
+import { FrozenPattyData, PrimitiveDatum } from './frozen-patty';
 /**
  *
  */
-export declare function arrayToHash<T, K extends string>(kvs: [K, T, boolean][]): {
-    [P in K]: T | T[];
+export declare function arrayToHash(kvs: [keyof FrozenPattyData, PrimitiveDatum, boolean][]): {
+    [index: string]: string | number | boolean | (string | number | boolean | null | undefined)[] | null | undefined;
 };

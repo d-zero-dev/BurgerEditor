@@ -8,6 +8,11 @@ export default class FrozenPatty {
 	private _typeConvert = false;
 
 	/**
+	 * Value filter
+	 */
+	private _filter?: Filter;
+
+	/**
 	 *
 	 * @param html Original HTML
 	 * @param options Options
@@ -20,6 +25,7 @@ export default class FrozenPatty {
 				this._attr = options.attr;
 			}
 			this._typeConvert = !!options.typeConvert;
+			this._filter = options.valueFilter;
 		}
 	}
 
@@ -30,15 +36,15 @@ export default class FrozenPatty {
 		return this;
 	}
 
-	public toJSON () {
-		return get(this._dom, this._attr, this._typeConvert);
+	public toJSON (): FrozenPattyData {
+		return get(this._dom, this._attr, this._typeConvert, this._filter);
 	}
 
-	public toHTML () {
+	public toHTML (): string {
 		return this._dom.innerHTML;
 	}
 
-	public toDOM () {
+	public toDOM (): Element {
 		return this._dom;
 	}
 }
@@ -64,6 +70,12 @@ export interface FrozenPattyOptions {
 	 * @default `false`
 	 */
 	typeConvert?: boolean;
+
+	/**
+	 * Value filter
+	 */
+	// tslint:disable-next-line:prefer-method-signature
+	valueFilter?: Filter;
 }
 
 export interface FrozenPattyData {
@@ -73,3 +85,5 @@ export interface FrozenPattyData {
 export type PrimitiveDatum = string | number | boolean | null | undefined;
 
 export type PrimitiveData = PrimitiveDatum | PrimitiveDatum[];
+
+export type Filter = <T>(value: T) => T;

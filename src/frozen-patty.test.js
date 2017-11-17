@@ -11,6 +11,13 @@ test('toJSON basic', (t) => {
 	t.deepEqual(fp.toJSON(), { text: 'value' });
 });
 
+test('toJSON filter', (t) => {
+	const fp = new FrozenPatty('<div data-field="text">value</div>', {
+		valueFilter: (v) => v.toUpperCase(),
+	});
+	t.deepEqual(fp.toJSON(), {text: 'VALUE' });
+});
+
 test('toJSON attribute field', (t) => {
 	const fp = new FrozenPatty('<a href="http://localhost" data-field="href:href">link</a>');
 	t.deepEqual(fp.toJSON(), { href: 'http://localhost' });

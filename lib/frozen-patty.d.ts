@@ -3,6 +3,10 @@ export default class FrozenPatty {
     private _attr;
     private _typeConvert;
     /**
+     * Value filter
+     */
+    private _filter?;
+    /**
      *
      * @param html Original HTML
      * @param options Options
@@ -33,9 +37,14 @@ export interface FrozenPattyOptions {
      * @default `false`
      */
     typeConvert?: boolean;
+    /**
+     * Value filter
+     */
+    valueFilter?: Filter;
 }
 export interface FrozenPattyData {
     [filed: string]: PrimitiveData;
 }
 export declare type PrimitiveDatum = string | number | boolean | null | undefined;
 export declare type PrimitiveData = PrimitiveDatum | PrimitiveDatum[];
+export declare type Filter = <T>(value: T) => T;
