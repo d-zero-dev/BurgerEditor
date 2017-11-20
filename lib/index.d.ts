@@ -28,6 +28,6 @@ declare namespace frozenPatty {
      * @param typeConvert Auto covert type of value
      * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
      */
-    function getValue(el: Element, name: string, typeConvert?: boolean, attr?: string, filter?: Filter): string | number | boolean | (string | number | boolean | null | undefined)[] | null | undefined;
+    function getValue(el: Element, name: string, typeConvert?: boolean, attr?: string, filter?: Filter): string | number | boolean | PrimitiveDatum[] | null | undefined;
 }
 export default frozenPatty;
