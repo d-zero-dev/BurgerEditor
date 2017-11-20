@@ -1,4 +1,4 @@
-import { FrozenPattyData, PrimitiveDatum } from './frozen-patty';
+import { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
 /**
  * Set value to an element
  *
@@ -11,4 +11,4 @@ import { FrozenPattyData, PrimitiveDatum } from './frozen-patty';
  * @param el A target element
  * @param attr Field data attribute name
  */
-export default function (name: keyof FrozenPattyData, datum: PrimitiveDatum, el: Element, attr: string): void;
+export default function (name: keyof FrozenPattyData, datum: PrimitiveDatum, el: Element, attr: string, filter?: Filter): void;

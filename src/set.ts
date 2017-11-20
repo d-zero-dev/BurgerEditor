@@ -1,9 +1,9 @@
 import './polyfill';
 
-import { FrozenPattyData, PrimitiveDatum } from './frozen-patty';
+import { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
 import setValue from './setValue';
 
-export default function (el: Element, data: FrozenPattyData, attr: string, typeConvert = false) {
+export default function (el: Element, data: FrozenPattyData, attr: string, typeConvert = false, filter?: Filter) {
 	el = el.cloneNode(true) as Element;
 	for (const dataKeyName in data) {
 		if (data.hasOwnProperty(dataKeyName)) {

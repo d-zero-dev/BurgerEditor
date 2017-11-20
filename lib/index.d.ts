@@ -1,4 +1,4 @@
-import FrozenPatty, { FrozenPattyOptions, PrimitiveDatum } from './frozen-patty';
+import FrozenPatty, { Filter, FrozenPattyOptions, PrimitiveDatum } from './frozen-patty';
 /**
  * Pure HTML to JSON converter that not use template engine.
  *
@@ -19,7 +19,7 @@ declare namespace frozenPatty {
      * @param datum A datum of value
      * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
      */
-    function setValue(el: Element, name: string, datum: PrimitiveDatum, attr?: string): void;
+    function setValue(el: Element, name: string, datum: PrimitiveDatum, attr?: string, filter?: Filter): void;
     /**
      * Get value from an element
      *
@@ -28,6 +28,6 @@ declare namespace frozenPatty {
      * @param typeConvert Auto covert type of value
      * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
      */
-    function getValue(el: Element, name: string, typeConvert?: boolean, attr?: string): string | number | boolean | (string | number | boolean | null | undefined)[] | null | undefined;
+    function getValue(el: Element, name: string, typeConvert?: boolean, attr?: string, filter?: Filter): string | number | boolean | (string | number | boolean | null | undefined)[] | null | undefined;
 }
 export default frozenPatty;

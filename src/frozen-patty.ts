@@ -32,7 +32,7 @@ export default class FrozenPatty {
 	public merge (data: FrozenPattyData) {
 		const currentData = this.toJSON();
 		const newData = Object.assign(currentData, data);
-		this._dom = set(this._dom, newData, this._attr, this._typeConvert);
+		this._dom = set(this._dom, newData, this._attr, this._typeConvert, this._filter);
 		return this;
 	}
 

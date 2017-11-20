@@ -114,6 +114,14 @@ test('Merge data', (t) => {
 	t.deepEqual(fp.toJSON(), { text: 'merged' });
 });
 
+test('Merge filtered data', (t) => {
+	const fp = new FrozenPatty('<div data-field="text">value</div>', {
+		valueFilter: (v) => v.toUpperCase(),
+	});
+	fp.merge({ text: 'merged' });
+	t.deepEqual(fp.toJSON(), { text: 'MERGED' });
+});
+
 test('Full Data', (t) => {
 	const fp = new FrozenPatty(`
 		<div>

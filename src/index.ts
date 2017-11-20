@@ -1,4 +1,5 @@
 import FrozenPatty, {
+	Filter,
 	FrozenPattyOptions,
 	PrimitiveDatum,
 } from './frozen-patty';
@@ -29,8 +30,8 @@ namespace frozenPatty {
 	 * @param datum A datum of value
 	 * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
 	 */
-	export function setValue (el: Element, name: string, datum: PrimitiveDatum, attr = 'field') {
-		return _setValue(name, datum, el, attr);
+	export function setValue (el: Element, name: string, datum: PrimitiveDatum, attr = 'field', filter?: Filter) {
+		return _setValue(name, datum, el, attr, filter);
 	}
 
 	/**
@@ -41,8 +42,8 @@ namespace frozenPatty {
 	 * @param typeConvert Auto covert type of value
 	 * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
 	 */
-	export function getValue (el: Element, name: string, typeConvert = false, attr = 'field') {
-		const data = arrayToHash(_getValue(el, attr, typeConvert));
+	export function getValue (el: Element, name: string, typeConvert = false, attr = 'field', filter?: Filter) {
+		const data = arrayToHash(_getValue(el, attr, typeConvert, filter));
 		return data[name];
 	}
 }

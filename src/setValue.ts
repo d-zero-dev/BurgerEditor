@@ -1,4 +1,4 @@
-import { FrozenPattyData, PrimitiveDatum } from './frozen-patty';
+import { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
 
 /**
  * Set value to an element
@@ -12,7 +12,7 @@ import { FrozenPattyData, PrimitiveDatum } from './frozen-patty';
  * @param el A target element
  * @param attr Field data attribute name
  */
-export default function (name: keyof FrozenPattyData, datum: PrimitiveDatum, el: Element, attr: string) {
+export default function (name: keyof FrozenPattyData, datum: PrimitiveDatum, el: Element, attr: string, filter?: Filter) {
 	const nodeName = el.nodeName.toLowerCase();
 	const bindingFormats = el.getAttribute(`data-${attr}`) || '';
 	for (let bindingFormat of bindingFormats.split(/\s*,\s*/)) {
@@ -48,6 +48,10 @@ export default function (name: keyof FrozenPattyData, datum: PrimitiveDatum, el:
 		//
 		if (name !== key) {
 			continue;
+		}
+
+		if (filter) {
+			datum = filter(datum);
 		}
 
 		//
