@@ -26,14 +26,14 @@ export default function (el: Element, data: FrozenPattyData, attr: string, typeC
 				const newChildren = listRoot.querySelectorAll(selector);
 				Array.from(newChildren).forEach((child, i) => {
 					if (datum[i] != null) {
-						setValue(dataKeyName, datum[i], child, attr);
+						setValue(dataKeyName, datum[i], child, attr, filter);
 					} else {
 						listRoot.children[i].remove();
 					}
 				});
 			} else {
 				Array.from(targetList).forEach((targetEl, i) => {
-					setValue(dataKeyName, datum, targetEl, attr);
+					setValue(dataKeyName, datum, targetEl, attr, filter);
 				});
 			}
 		}
