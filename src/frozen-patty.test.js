@@ -353,6 +353,42 @@ test('attr: href', (t) => {
 	t.deepEqual(new FrozenPatty('<a href="hoge" data-field="href:href"></a>').merge({}).toDOM().children[0].hasAttribute('href'), true);
 });
 
+test('attr: download', (t) => {
+	t.deepEqual(new FrozenPatty('<a download data-field="download:download"></a>').toJSON(), { download: '' });
+	t.deepEqual(new FrozenPatty('<a download="" data-field="download:download"></a>').toJSON(), { download: '' });
+	t.deepEqual(new FrozenPatty('<a download="/path/to" data-field="download:download"></a>').toJSON(), { download: '/path/to' });
+	t.deepEqual(new FrozenPatty('<a download="names" data-field="download:download"></a>').toJSON(), { download: 'names' });
+	t.deepEqual(new FrozenPatty('<a data-field="download:download"></a>').toJSON(), { download: null });
+
+	t.deepEqual(new FrozenPatty('<a data-field="download:download"></a>').merge({ download: '' }).toDOM().children[0].download, '');
+	t.deepEqual(new FrozenPatty('<a data-field="download:download"></a>').merge({ download: 'abc' }).toDOM().children[0].download, 'abc');
+	t.deepEqual(new FrozenPatty('<a data-field="download:download"></a>').merge({ download: true }).toDOM().children[0].download, 'true');
+	t.deepEqual(new FrozenPatty('<a data-field="download:download"></a>').merge({ download: false }).toDOM().children[0].download, '');
+	t.deepEqual(new FrozenPatty('<a data-field="download:download"></a>').merge({ download: 123 }).toDOM().children[0].download, '123');
+	t.deepEqual(new FrozenPatty('<a data-field="download:download"></a>').merge({ download: 123.1 }).toDOM().children[0].download, '123.1');
+	t.deepEqual(new FrozenPatty('<a data-field="download:download"></a>').merge({ download: 0 }).toDOM().children[0].download, '');
+	t.deepEqual(new FrozenPatty('<a data-field="download:download"></a>').merge({ download: 0.1 }).toDOM().children[0].download, '0.1');
+	t.deepEqual(new FrozenPatty('<a data-field="download:download"></a>').merge({ download: .1 }).toDOM().children[0].download, '0.1');
+	t.deepEqual(new FrozenPatty('<a data-field="download:download"></a>').merge({ download: null }).toDOM().children[0].download, '');
+	t.deepEqual(new FrozenPatty('<a data-field="download:download"></a>').merge({ download: null }).toDOM().children[0].hasAttribute('download'), false);
+	t.deepEqual(new FrozenPatty('<a data-field="download:download"></a>').merge({}).toDOM().children[0].download, '');
+	t.deepEqual(new FrozenPatty('<a data-field="download:download"></a>').merge({}).toDOM().children[0].hasAttribute('download'), false);
+	t.deepEqual(new FrozenPatty('<a download="hoge" data-field="download:download"></a>').merge({ download: '' }).toDOM().children[0].download, '');
+	t.deepEqual(new FrozenPatty('<a download="hoge" data-field="download:download"></a>').merge({ download: 'abc' }).toDOM().children[0].download, 'abc');
+	t.deepEqual(new FrozenPatty('<a download="hoge" data-field="download:download"></a>').merge({ download: true }).toDOM().children[0].download, 'true');
+	t.deepEqual(new FrozenPatty('<a download="hoge" data-field="download:download"></a>').merge({ download: false }).toDOM().children[0].download, '');
+	t.deepEqual(new FrozenPatty('<a download="hoge" data-field="download:download"></a>').merge({ download: 123 }).toDOM().children[0].download, '123');
+	t.deepEqual(new FrozenPatty('<a download="hoge" data-field="download:download"></a>').merge({ download: 123.1 }).toDOM().children[0].download, '123.1');
+	t.deepEqual(new FrozenPatty('<a download="hoge" data-field="download:download"></a>').merge({ download: 0 }).toDOM().children[0].download, '');
+	t.deepEqual(new FrozenPatty('<a download="hoge" data-field="download:download"></a>').merge({ download: 0.1 }).toDOM().children[0].download, '0.1');
+	t.deepEqual(new FrozenPatty('<a download="hoge" data-field="download:download"></a>').merge({ download: .1 }).toDOM().children[0].download, '0.1');
+	t.deepEqual(new FrozenPatty('<a download="hoge" data-field="download:download"></a>').merge({ download: null }).toDOM().children[0].download, '');
+	t.deepEqual(new FrozenPatty('<a download="hoge" data-field="download:download"></a>').merge({ download: null }).toDOM().children[0].hasAttribute('download'), false);
+	t.deepEqual(new FrozenPatty('<a download="hoge" data-field="download:download"></a>').merge({ download: null }).toDOM().children[0].outerHTML, '<a data-field="download:download"></a>');
+	t.deepEqual(new FrozenPatty('<a download="hoge" data-field="download:download"></a>').merge({}).toDOM().children[0].download, 'hoge');
+	t.deepEqual(new FrozenPatty('<a download="hoge" data-field="download:download"></a>').merge({}).toDOM().children[0].hasAttribute('download'), true);
+});
+
 test('toHTML()', (t) => {
 	const fp = new FrozenPatty('<div data-hoge="fuga" data-field="hoge:data-hoge"></div>');
 	t.is(fp.toHTML(), '<div data-hoge="fuga" data-field="hoge:data-hoge"></div>');

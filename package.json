@@ -1,6 +1,6 @@
 {
   "name": "@burger-editor/frozen-patty",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Pure HTML to JSON converter that not use template engine.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -23,17 +23,17 @@
     ]
   },
   "devDependencies": {
-    "ava": "^0.23.0",
-    "browser-env": "^3.2.2",
+    "ava": "^0.24.0",
+    "browser-env": "^3.2.4",
     "coveralls": "^3.0.0",
     "del": "^3.0.0",
-    "eslint": "^4.11.0",
+    "eslint": "^4.13.1",
     "gulp": "^3.9.1",
     "gulp-ava": "^0.18.0",
     "gulp-typescript": "^3.2.3",
-    "nyc": "^11.3.0",
+    "nyc": "^11.4.1",
     "run-sequence": "^2.2.0",
     "tslint": "^5.8.0",
-    "typescript": "^2.6.1"
+    "typescript": "^2.6.2"
   }
 }

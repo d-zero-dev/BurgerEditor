@@ -55,7 +55,6 @@ export default function (el: Element, attr: string, typeConvert: boolean, filter
 			}
 		}
 		// console.log({fieldName, value});
-		value = value != null ? value : '';
 		if (filter) {
 			value = filter(value);
 		}
@@ -81,7 +80,9 @@ function getAttribute (el: Element, keyAttr: string, typeConvert: boolean) {
 			return (el as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement).disabled;
 		}
 		case 'download': {
-			return (el as HTMLAnchorElement).download;
+			// An inactive download attribute always returns an empty string.
+			// So to get inactive it is necessary to use the "hasAttribute" method.
+			return el.hasAttribute('download') ? el.getAttribute('download') : null;
 		}
 		case 'href': {
 			// return (el as HTMLAnchorElement).href;
