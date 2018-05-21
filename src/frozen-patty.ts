@@ -30,14 +30,15 @@ export default class FrozenPatty {
 	}
 
 	public merge (data: FrozenPattyData) {
-		const currentData = this.toJSON();
+		const currentData = this.toJSON(false);
 		const newData = Object.assign(currentData, data);
 		this._dom = set(this._dom, newData, this._attr, this._typeConvert, this._filter);
 		return this;
 	}
 
-	public toJSON (): FrozenPattyData {
-		return get(this._dom, this._attr, this._typeConvert, this._filter);
+	public toJSON (filtering = true): FrozenPattyData {
+		const filter = filtering ? this._filter : undefined;
+		return get(this._dom, this._attr, this._typeConvert, filter);
 	}
 
 	public toHTML (): string {

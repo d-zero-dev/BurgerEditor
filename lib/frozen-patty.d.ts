@@ -13,7 +13,7 @@ export default class FrozenPatty {
      */
     constructor(html: string, options?: FrozenPattyOptions);
     merge(data: FrozenPattyData): this;
-    toJSON(): FrozenPattyData;
+    toJSON(filtering?: boolean): FrozenPattyData;
     toHTML(): string;
     toDOM(): Element;
 }

@@ -325,6 +325,8 @@ test('attr: href', (t) => {
 	t.deepEqual(new FrozenPatty('<a href data-field="href:href"></a>').toJSON(), { href: '' });
 	t.deepEqual(new FrozenPatty('<a href="" data-field="href:href"></a>').toJSON(), { href: '' });
 	t.deepEqual(new FrozenPatty('<a href="hoge" data-field="href:href"></a>').toJSON(), { href: 'hoge' });
+	t.deepEqual(new FrozenPatty('<a href="abc/?d=e&f=g" data-field="href:href"></a>').toJSON(), { href: 'abc/?d=e&f=g' });
+	t.deepEqual(new FrozenPatty('<a href="hij/?k=l&amp;m=n" data-field="href:href"></a>').toJSON(), { href: 'hij/?k=l&m=n' });
 	t.deepEqual(new FrozenPatty('<a data-field="href:href"></a>').toJSON(), { href: '' });
 	t.deepEqual(new FrozenPatty('<a data-field="href:href"></a>').merge({ href: '' }).toDOM().children[0].href, '');
 	t.deepEqual(new FrozenPatty('<a data-field="href:href"></a>').merge({ href: 'abc' }).toDOM().children[0].href, 'abc');
@@ -340,6 +342,7 @@ test('attr: href', (t) => {
 	t.deepEqual(new FrozenPatty('<a data-field="href:href"></a>').merge({}).toDOM().children[0].hasAttribute('href'), true);
 	t.deepEqual(new FrozenPatty('<a href="hoge" data-field="href:href"></a>').merge({ href: '' }).toDOM().children[0].href, '');
 	t.deepEqual(new FrozenPatty('<a href="hoge" data-field="href:href"></a>').merge({ href: 'abc' }).toDOM().children[0].href, 'abc');
+	t.deepEqual(new FrozenPatty('<a href="hoge" data-field="href:href"></a>').merge({ href: 'abc/?d=e&f=g' }).toDOM().children[0].href, 'abc/?d=e&f=g');
 	t.deepEqual(new FrozenPatty('<a href="hoge" data-field="href:href"></a>').merge({ href: true }).toDOM().children[0].href, 'true');
 	t.deepEqual(new FrozenPatty('<a href="hoge" data-field="href:href"></a>').merge({ href: false }).toDOM().children[0].href, 'false');
 	t.deepEqual(new FrozenPatty('<a href="hoge" data-field="href:href"></a>').merge({ href: 123 }).toDOM().children[0].href, '123');
@@ -349,6 +352,7 @@ test('attr: href', (t) => {
 	t.deepEqual(new FrozenPatty('<a href="hoge" data-field="href:href"></a>').merge({ href: null }).toDOM().children[0].href, '');
 	t.deepEqual(new FrozenPatty('<a href="hoge" data-field="href:href"></a>').merge({ href: null }).toDOM().children[0].hasAttribute('href'), false);
 	t.deepEqual(new FrozenPatty('<a href="hoge" data-field="href:href"></a>').merge({ href: null }).toDOM().children[0].outerHTML, '<a data-field="href:href"></a>');
+	t.deepEqual(new FrozenPatty('<a href="hoge" data-field="href:href"></a>').merge({ href: 'abc/?d=e&f=g' }).toDOM().children[0].outerHTML, '<a href="abc/?d=e&amp;f=g" data-field="href:href"></a>');
 	t.deepEqual(new FrozenPatty('<a href="hoge" data-field="href:href"></a>').merge({}).toDOM().children[0].href, 'hoge');
 	t.deepEqual(new FrozenPatty('<a href="hoge" data-field="href:href"></a>').merge({}).toDOM().children[0].hasAttribute('href'), true);
 });
