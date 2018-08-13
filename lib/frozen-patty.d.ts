@@ -48,3 +48,4 @@ export interface FrozenPattyData {
 export declare type PrimitiveDatum = string | number | boolean | null | undefined;
 export declare type PrimitiveData = PrimitiveDatum | PrimitiveDatum[];
 export declare type Filter = <T>(value: T) => T;
+//# sourceMappingURL=frozen-patty.d.ts.map

@@ -12,3 +12,4 @@ import { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
  * @param attr Field data attribute name
  */
 export default function (name: keyof FrozenPattyData, datum: PrimitiveDatum, el: Element, attr: string, filter?: Filter): void;
+//# sourceMappingURL=setValue.d.ts.map
