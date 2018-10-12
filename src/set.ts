@@ -3,7 +3,13 @@ import './polyfill';
 import { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
 import setValue from './setValue';
 
-export default function (el: Element, data: FrozenPattyData, attr: string, typeConvert = false, filter?: Filter) {
+export default function(
+	el: Element,
+	data: FrozenPattyData,
+	attr: string,
+	typeConvert = false,
+	filter?: Filter,
+) {
 	el = el.cloneNode(true) as Element;
 	for (const dataKeyName in data) {
 		if (data.hasOwnProperty(dataKeyName)) {
@@ -16,7 +22,7 @@ export default function (el: Element, data: FrozenPattyData, attr: string, typeC
 					continue;
 				}
 				const listRoot = targetEl.closest(`[data-${attr}-list]`);
-				if (!listRoot || listRoot && !listRoot.children.length) {
+				if (!listRoot || (listRoot && !listRoot.children.length)) {
 					continue;
 				}
 				const listItem = listRoot.children[0].cloneNode(true);

@@ -1,3 +1,5 @@
+// tslint:disable:max-file-line-count
+
 import { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
 
 /**
@@ -12,7 +14,13 @@ import { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
  * @param el A target element
  * @param attr Field data attribute name
  */
-export default function (name: keyof FrozenPattyData, datum: PrimitiveDatum, el: Element, attr: string, filter?: Filter) {
+export default function(
+	name: keyof FrozenPattyData,
+	datum: PrimitiveDatum,
+	el: Element,
+	attr: string,
+	filter?: Filter,
+) {
 	const nodeName = el.nodeName.toLowerCase();
 	const bindingFormats = el.getAttribute(`data-${attr}`) || '';
 	for (let bindingFormat of bindingFormats.split(/\s*,\s*/)) {
@@ -34,7 +42,11 @@ export default function (name: keyof FrozenPattyData, datum: PrimitiveDatum, el:
 		//
 		// 対象属性名の抽出
 		//
-		if (/^[a-z_-](?:[a-z0-9_-])*:[a-z_-](?:[a-z0-9_-])*(?:\([a-z-]+\))?/i.test(bindingFormat)) {
+		if (
+			/^[a-z_-](?:[a-z0-9_-])*:[a-z_-](?:[a-z0-9_-])*(?:\([a-z-]+\))?/i.test(
+				bindingFormat,
+			)
+		) {
 			const splitKey = bindingFormat.split(':');
 			key = splitKey[0].trim();
 			targetAttr = splitKey[1].trim();
@@ -86,24 +98,22 @@ export default function (name: keyof FrozenPattyData, datum: PrimitiveDatum, el:
 					}
 				}
 				el.setAttribute('style', `${cssPropertyName}: ${cssValue}`);
-			//
-			// 属性
-			//
+				//
+				// 属性
+				//
 			} else if (el instanceof HTMLElement) {
 				setAttribute(el, targetAttr, datum);
 			} else {
 				// SVGElement or more
 				el.setAttribute(targetAttr, `${datum}`);
 			}
-		//
-		// 属性指定がない場合
-		//
+			//
+			// 属性指定がない場合
+			//
 		} else {
 			if (
-				el instanceof HTMLInputElement
-				||
-				el instanceof HTMLSelectElement
-				||
+				el instanceof HTMLInputElement ||
+				el instanceof HTMLSelectElement ||
 				el instanceof HTMLTextAreaElement
 			) {
 				el.value = `${datum}`;
@@ -123,7 +133,7 @@ export default function (name: keyof FrozenPattyData, datum: PrimitiveDatum, el:
  *
  */
 // tslint:disable-next-line:cyclomatic-complexity
-function setAttribute (el: HTMLElement, attr: string, datum: PrimitiveDatum) {
+function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 	if (datum == null) {
 		el.removeAttribute(attr);
 		return;
@@ -216,12 +226,9 @@ function setAttribute (el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		}
 		case 'autofocus': {
 			if (
-				el instanceof HTMLButtonElement
-				||
-				el instanceof HTMLInputElement
-				||
-				el instanceof HTMLSelectElement
-				||
+				el instanceof HTMLButtonElement ||
+				el instanceof HTMLInputElement ||
+				el instanceof HTMLSelectElement ||
 				el instanceof HTMLTextAreaElement
 			) {
 				el.autofocus = datum === '' ? true : !!datum;
@@ -298,18 +305,12 @@ function setAttribute (el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		}
 		case 'disabled': {
 			if (
-				el instanceof HTMLButtonElement
-				||
-				el instanceof HTMLFieldSetElement
-				||
-				el instanceof HTMLInputElement
-				||
-				el instanceof HTMLOptGroupElement
-				||
-				el instanceof HTMLOptionElement
-				||
-				el instanceof HTMLSelectElement
-				||
+				el instanceof HTMLButtonElement ||
+				el instanceof HTMLFieldSetElement ||
+				el instanceof HTMLInputElement ||
+				el instanceof HTMLOptGroupElement ||
+				el instanceof HTMLOptionElement ||
+				el instanceof HTMLSelectElement ||
 				el instanceof HTMLTextAreaElement
 			) {
 				el.disabled = datum === '' ? true : !!datum;
@@ -374,10 +375,8 @@ function setAttribute (el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		}
 		case 'max': {
 			if (
-				el instanceof HTMLInputElement
-				||
-				el instanceof HTMLMeterElement
-				||
+				el instanceof HTMLInputElement ||
+				el instanceof HTMLMeterElement ||
 				el instanceof HTMLProgressElement
 			) {
 				const max = toInt(datum);
@@ -392,11 +391,7 @@ function setAttribute (el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 			break;
 		}
 		case 'maxlength': {
-			if (
-				el instanceof HTMLInputElement
-				||
-				el instanceof HTMLTextAreaElement
-			) {
+			if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
 				const maxLength = toInt(datum);
 				if (isNaN(maxLength)) {
 					el.removeAttribute(attr);
@@ -409,11 +404,7 @@ function setAttribute (el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 			break;
 		}
 		case 'min': {
-			if (
-				el instanceof HTMLInputElement
-				||
-				el instanceof HTMLMeterElement
-			) {
+			if (el instanceof HTMLInputElement || el instanceof HTMLMeterElement) {
 				const min = toInt(datum);
 				if (isNaN(min)) {
 					el.removeAttribute(attr);
@@ -426,11 +417,7 @@ function setAttribute (el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 			break;
 		}
 		case 'multiple': {
-			if (
-				el instanceof HTMLInputElement
-				||
-				el instanceof HTMLSelectElement
-			) {
+			if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) {
 				el.multiple = datum === '' ? true : !!datum;
 			} else {
 				el.setAttribute(attr, `${datum}`);
@@ -476,11 +463,7 @@ function setAttribute (el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 			break;
 		}
 		case 'readonly': {
-			if (
-				el instanceof HTMLInputElement
-				||
-				el instanceof HTMLTextAreaElement
-			) {
+			if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
 				el.readOnly = datum === '' ? true : !!datum;
 			} else {
 				el.setAttribute(attr, `${datum}`);
@@ -489,10 +472,8 @@ function setAttribute (el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		}
 		case 'required': {
 			if (
-				el instanceof HTMLInputElement
-				||
-				el instanceof HTMLSelectElement
-				||
+				el instanceof HTMLInputElement ||
+				el instanceof HTMLSelectElement ||
 				el instanceof HTMLTextAreaElement
 			) {
 				el.required = datum === '' ? true : !!datum;
@@ -537,11 +518,7 @@ function setAttribute (el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 			break;
 		}
 		case 'size': {
-			if (
-				el instanceof HTMLInputElement
-				||
-				el instanceof HTMLSelectElement
-			) {
+			if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) {
 				const size = toInt(datum);
 				if (isNaN(size)) {
 					el.removeAttribute(attr);
@@ -598,10 +575,8 @@ function setAttribute (el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		}
 		case 'target': {
 			if (
-				el instanceof HTMLAnchorElement
-				||
-				el instanceof HTMLAreaElement
-				||
+				el instanceof HTMLAnchorElement ||
+				el instanceof HTMLAreaElement ||
 				el instanceof HTMLFormElement
 			) {
 				if (datum) {
@@ -669,7 +644,7 @@ function setAttribute (el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 	}
 }
 
-function toNum (datum: boolean | string | number) {
+function toNum(datum: boolean | string | number) {
 	let i: number;
 	if (typeof datum === 'boolean') {
 		i = +datum;
@@ -681,6 +656,6 @@ function toNum (datum: boolean | string | number) {
 	return i;
 }
 
-function toInt (datum: boolean | string | number) {
+function toInt(datum: boolean | string | number) {
 	return Math.floor(toNum(datum));
 }

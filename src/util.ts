@@ -3,7 +3,7 @@ import { FrozenPattyData, PrimitiveDatum } from './frozen-patty';
 /**
  *
  */
-export function arrayToHash (kvs: [keyof FrozenPattyData, PrimitiveDatum, boolean][]) {
+export function arrayToHash(kvs: [keyof FrozenPattyData, PrimitiveDatum, boolean][]) {
 	const result: { [index: string]: PrimitiveDatum | PrimitiveDatum[] } = {};
 	for (const kv of kvs) {
 		const k = kv[0];

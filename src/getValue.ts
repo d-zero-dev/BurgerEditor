@@ -7,7 +7,12 @@ import { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
  * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
  * @param typeConvert Auto covert type of value
  */
-export default function (el: Element, attr: string, typeConvert: boolean, filter?: Filter) {
+export default function(
+	el: Element,
+	attr: string,
+	typeConvert: boolean,
+	filter?: Filter,
+) {
 	/**
 	 * [key, value, forceArray]
 	 */
@@ -25,7 +30,11 @@ export default function (el: Element, attr: string, typeConvert: boolean, filter
 		let keyAttr = '';
 		let value: PrimitiveDatum;
 		fieldName = fieldName.trim();
-		if (/^[a-z_-](?:[a-z0-9_-])*:[a-z_-](?:[a-z0-9_-])*(?:\([a-z-]+\))?/i.test(fieldName)) {
+		if (
+			/^[a-z_-](?:[a-z0-9_-])*:[a-z_-](?:[a-z0-9_-])*(?:\([a-z-]+\))?/i.test(
+				fieldName,
+			)
+		) {
 			splitKey = fieldName.split(':');
 			fieldName = splitKey[0].trim();
 			keyAttr = splitKey[1].trim();
@@ -43,7 +52,11 @@ export default function (el: Element, attr: string, typeConvert: boolean, filter
 		} else if (keyAttr) {
 			value = getAttribute(el, keyAttr, typeConvert);
 		} else {
-			if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement) {
+			if (
+				el instanceof HTMLInputElement ||
+				el instanceof HTMLSelectElement ||
+				el instanceof HTMLTextAreaElement
+			) {
 				const val = el.value;
 				if (Array.isArray(val)) {
 					value = val[0];
@@ -64,20 +77,26 @@ export default function (el: Element, attr: string, typeConvert: boolean, filter
 	return result;
 }
 
-function getAttribute (el: Element, keyAttr: string, typeConvert: boolean) {
+function getAttribute(el: Element, keyAttr: string, typeConvert: boolean) {
 	switch (keyAttr) {
 		case 'contenteditable': {
 			if (el instanceof HTMLElement) {
 				return el.contentEditable === '' || el.contentEditable === 'true';
 			} else {
-				return el.getAttribute(keyAttr) === '' || el.getAttribute(keyAttr) === 'true';
+				return (
+					el.getAttribute(keyAttr) === '' || el.getAttribute(keyAttr) === 'true'
+				);
 			}
 		}
 		case 'checked': {
 			return (el as HTMLInputElement).checked;
 		}
 		case 'disabled': {
-			return (el as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement).disabled;
+			return (el as
+				| HTMLInputElement
+				| HTMLSelectElement
+				| HTMLTextAreaElement
+				| HTMLButtonElement).disabled;
 		}
 		case 'download': {
 			// An inactive download attribute always returns an empty string.
@@ -93,8 +112,10 @@ function getAttribute (el: Element, keyAttr: string, typeConvert: boolean) {
 				const value = el.getAttribute(keyAttr) || '';
 				if (typeConvert) {
 					switch (value) {
-						case 'true': return true;
-						case 'false': return false;
+						case 'true':
+							return true;
+						case 'false':
+							return false;
 					}
 					const numeric = parseFloat(value);
 					if (isFinite(numeric)) {
@@ -116,7 +137,11 @@ function getAttribute (el: Element, keyAttr: string, typeConvert: boolean) {
  * Get path from value of "background-image"
  *
  */
-function getBackgroundImagePath (value: string) {
-	const origin = `${location.protocol}//${location.hostname}${(location.port ? `:${location.port}` : '')}`;
-	return decodeURI(value.replace(/^url\(["']?([^"']+)["']?\)$/i, '$1').replace(origin, ''));
+function getBackgroundImagePath(value: string) {
+	const origin = `${location.protocol}//${location.hostname}${
+		location.port ? `:${location.port}` : ''
+	}`;
+	return decodeURI(
+		value.replace(/^url\(["']?([^"']+)["']?\)$/i, '$1').replace(origin, ''),
+	);
 }

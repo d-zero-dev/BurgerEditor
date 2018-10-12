@@ -2,7 +2,6 @@ import get from './get';
 import set from './set';
 
 export default class FrozenPatty {
-
 	private _dom: Element;
 	private _attr = 'field';
 	private _typeConvert = false;
@@ -17,7 +16,7 @@ export default class FrozenPatty {
 	 * @param html Original HTML
 	 * @param options Options
 	 */
-	constructor (html: string, options?: FrozenPattyOptions) {
+	constructor(html: string, options?: FrozenPattyOptions) {
 		this._dom = document.createElement('fp-placeholer');
 		this._dom.innerHTML = html;
 		if (options) {
@@ -29,23 +28,23 @@ export default class FrozenPatty {
 		}
 	}
 
-	public merge (data: FrozenPattyData) {
+	public merge(data: FrozenPattyData) {
 		const currentData = this.toJSON(false);
 		const newData = Object.assign(currentData, data);
 		this._dom = set(this._dom, newData, this._attr, this._typeConvert, this._filter);
 		return this;
 	}
 
-	public toJSON (filtering = true): FrozenPattyData {
+	public toJSON(filtering = true): FrozenPattyData {
 		const filter = filtering ? this._filter : undefined;
 		return get(this._dom, this._attr, this._typeConvert, filter);
 	}
 
-	public toHTML (): string {
+	public toHTML(): string {
 		return this._dom.innerHTML;
 	}
 
-	public toDOM (): Element {
+	public toDOM(): Element {
 		return this._dom;
 	}
 }
