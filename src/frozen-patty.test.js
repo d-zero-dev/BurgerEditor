@@ -372,6 +372,48 @@ test('List item removes', t => {
 	t.is(fp.toDOM().querySelector('[data-field-list]').children.length, 1);
 });
 
+test('List', t => {
+	const fp = new FrozenPatty(`
+	<div data-field-list>
+		<figure>
+			<div>
+				<img src="/path/to/1" data-field="path:src">
+			</div>
+			<figcaption data-field="caption"></figcaption>
+		</figure>
+		<figure>
+			<div>
+				<img src="/path/to/2" data-field="path:src">
+			</div>
+			<figcaption data-field="caption"></figcaption>
+		</figure>
+		<figure>
+			<div>
+				<img src="/path/to/3" data-field="path:src">
+			</div>
+			<figcaption data-field="caption"></figcaption>
+		</figure>
+		<figure>
+			<div>
+				<img src="/path/to/4" data-field="path:src">
+			</div>
+			<figcaption data-field="caption"></figcaption>
+		</figure>
+		<figure>
+			<div>
+				<img src="/path/to/5" data-field="path:src">
+			</div>
+			<figcaption data-field="caption"></figcaption>
+		</figure>
+	</div>
+	`);
+	fp.merge({
+		caption: ['1', '2', '3'],
+		path: ['path/to/1', null, 'path/to/3'],
+	});
+	t.is(fp.toDOM().querySelectorAll('figure').length, 3);
+});
+
 test('value', t => {
 	const fp = new FrozenPatty('<input data-field="field" value="value">');
 	const fp2 = new FrozenPatty(

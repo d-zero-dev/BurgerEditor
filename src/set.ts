@@ -29,13 +29,18 @@ export default function(
 					listRoot.appendChild(listItem.cloneNode(true));
 				}
 				const newChildren = listRoot.querySelectorAll(selector);
+				const oldChildList = Array.from(listRoot.children);
+				let deleteNodeList: Element[] = [];
 				Array.from(newChildren).forEach((child, i) => {
 					if (datum[i] != null) {
 						setValue(dataKeyName, datum[i], child, attr, filter);
+						deleteNodeList = [];
 					} else {
-						listRoot.children[i].remove();
+						setValue(dataKeyName, '', child, attr, filter);
+						deleteNodeList.push(oldChildList[i]);
 					}
 				});
+				deleteNodeList.forEach(node => node.remove());
 			} else {
 				Array.from(targetList).forEach((targetEl, i) => {
 					setValue(dataKeyName, datum, targetEl, attr, filter);
