@@ -1,7 +1,7 @@
 import test from 'ava';
 import FrozenPatty from '../lib/';
 
-test('constructor', t => {
+test('constructor', t => {
 	const fp = FrozenPatty('<div data-field="text">value</div>');
 	t.is(fp.toHTML(), '<div data-field="text">value</div>');
 });
