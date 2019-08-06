@@ -844,6 +844,61 @@ test('attr: download', t => {
 	);
 });
 
+test('attr: style', t => {
+	t.deepEqual(
+		new FrozenPatty(
+			'<div data-field="color:style(color)" style="color: #000"></div>',
+		).toJSON(),
+		{ color: 'rgb(0, 0, 0)' },
+	);
+
+	t.deepEqual(
+		new FrozenPatty(
+			'<div data-field="bg:style(background-image)" style="background-image: url(/path/to/image.webp)"></div>',
+		).toJSON(),
+		{ bg: '/path/to/image.webp' },
+	);
+
+	t.deepEqual(
+		new FrozenPatty(
+			'<div data-field="bg:style(background-image)" style="background-image: url(/path/to/image__file--name-01234.zZzZ==.webp)"></div>',
+		).toJSON(),
+		{ bg: '/path/to/image__file--name-01234.zZzZ==.webp' },
+	);
+
+	t.deepEqual(
+		new FrozenPatty(
+			'<div data-field="bg:style(background-image), other" style="background-image: url(/path/to/image__file--name-01234.zZzZ==.webp)"></div>',
+		).toJSON(),
+		{ other: '', bg: '/path/to/image__file--name-01234.zZzZ==.webp' },
+	);
+
+	t.deepEqual(
+		new FrozenPatty(
+			`<div data-field="bg:style(background-image), other" style="background-image: url('/path/to/image__file--name-01234.zZzZ==.webp')"></div>`,
+		).toJSON(),
+		{ other: '', bg: '/path/to/image__file--name-01234.zZzZ==.webp' },
+	);
+
+	t.deepEqual(
+		new FrozenPatty(
+			`<div data-field="bg:style(background-image), other" style='background-image: url("/path/to/image__file--name-01234.zZzZ==.webp")'></div>`,
+		).toJSON(),
+		{ other: '', bg: '/path/to/image__file--name-01234.zZzZ==.webp' },
+	);
+
+	t.deepEqual(
+		new FrozenPatty(
+			`
+			<a  href="/path/to/image.webp" data-field="path:href">
+			<div class="bgt-box__image" data-field="path:style(background-image)" style="background-image: url(/path/to/image.webp)"></div>
+			</a>
+			`,
+		).toJSON(),
+		{ path: '/path/to/image.webp' },
+	);
+});
+
 test('toHTML()', t => {
 	const fp = new FrozenPatty(
 		'<div data-hoge="fuga" data-field="hoge:data-hoge"></div>',

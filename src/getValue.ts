@@ -44,7 +44,12 @@ export default function(
 			value = el.innerHTML;
 		} else if (/^style\([a-z-]+\)$/i.test(keyAttr)) {
 			const css = keyAttr.replace(/^style\(([a-z-]+)\)$/i, '$1');
-			const style = window.getComputedStyle(el);
+			let style: CSSStyleDeclaration;
+			if (el instanceof HTMLElement) {
+				style = el.style;
+			} else {
+				style = window.getComputedStyle(el);
+			}
 			value = style.getPropertyValue(css);
 			if (css === 'background-image') {
 				value = getBackgroundImagePath(value);
