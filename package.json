@@ -13,26 +13,30 @@
 	"scripts": {
 		"build": "tsc --build",
 		"dev": "tsc --watch",
-		"test": "nyc ava && nyc report --reporter=html",
-		"coveralls": "nyc ava && nyc report --reporter=text-lcov | coveralls"
+		"test": "jest --coverage",
+		"coveralls": "jest --useStderr --coverage && cat ./coverage/lcov.info | coveralls",
+		"lint": "eslint --fix ./src/**/*"
 	},
-	"ava": {
-		"require": [
-			"./helper/setup-browser-env.js"
+	"jest": {
+		"preset": "ts-jest",
+		"testEnvironment": "jsdom",
+		"testEnvironmentOptions": {
+			"url": "https://www.d-zero.co.jp"
+		},
+		"collectCoverageFrom": [
+			"src/**/*.ts"
 		]
 	},
 	"devDependencies": {
-		"ava": "^0.25.0",
-		"browser-env": "^3.2.6",
-		"coveralls": "^3.0.5",
-		"eslint": "^6.1.0",
-		"eslint-plugin-prettier": "3.1.0",
-		"nyc": "^14.1.1",
-		"prettier": "^1.18.2",
-		"prettier-eslint": "9.0.0",
-		"tslint": "^5.18.0",
-		"tslint-config-prettier": "^1.18.0",
-		"tslint-plugin-prettier": "^2.0.1",
-		"typescript": "^3.5.3"
+		"@types/jest": "^28.1.1",
+		"@typescript-eslint/eslint-plugin": "^5.27.1",
+		"@typescript-eslint/parser": "^5.27.1",
+		"coveralls": "^3.1.1",
+		"eslint": "^8.17.0",
+		"jest": "^28.1.1",
+		"jest-environment-jsdom": "^28.1.1",
+		"prettier": "^2.6.2",
+		"ts-jest": "^28.0.4",
+		"typescript": "^4.7.3"
 	}
 }
