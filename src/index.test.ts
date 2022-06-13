@@ -1,22 +1,21 @@
-import test from 'ava';
-import FrozenPatty from '../lib/';
+import FrozenPatty from './';
 
-test('constructor', t => {
+test('constructor', () => {
 	const fp = FrozenPatty('<div data-field="text">value</div>');
-	t.is(fp.toHTML(), '<div data-field="text">value</div>');
+	expect(fp.toHTML()).toBe('<div data-field="text">value</div>');
 });
 
-test('setValue', t => {
+test('setValue', () => {
 	const el = document.createElement('div');
 	el.setAttribute('data-field', 'hoge:data-hoge');
-	t.is(el.getAttribute('data-hoge'), null);
+	expect(el.getAttribute('data-hoge')).toBe(null);
 	FrozenPatty.setValue(el, 'hoge', 'fuga');
-	t.is(el.getAttribute('data-hoge'), 'fuga');
+	expect(el.getAttribute('data-hoge')).toBe('fuga');
 });
 
-test('getValue', t => {
+test('getValue', () => {
 	const el = document.createElement('div');
 	el.setAttribute('data-field', 'hoge:data-hoge');
 	el.setAttribute('data-hoge', 'fuga');
-	t.is(FrozenPatty.getValue(el, 'hoge'), 'fuga');
+	expect(FrozenPatty.getValue(el, 'hoge')).toBe('fuga');
 });
