@@ -1,6 +1,4 @@
-// tslint:disable:max-file-line-count
-
-import { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
+import type { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
 
 /**
  * Set value to an element
@@ -14,14 +12,13 @@ import { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
  * @param el A target element
  * @param attr Field data attribute name
  */
-export default function(
+export default function (
 	name: keyof FrozenPattyData,
 	datum: PrimitiveDatum,
 	el: Element,
 	attr: string,
 	filter?: Filter,
 ) {
-	const nodeName = el.nodeName.toLowerCase();
 	const bindingFormats = el.getAttribute(`data-${attr}`) || '';
 	for (let bindingFormat of bindingFormats.split(/\s*,\s*/)) {
 		bindingFormat = bindingFormat.trim();
@@ -322,7 +319,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		case 'download': {
 			if (el instanceof HTMLAnchorElement) {
 				if (datum || datum === '') {
-					(el as HTMLAnchorElement).download = `${datum}`;
+					el.download = `${datum}`;
 				} else {
 					el.removeAttribute(attr);
 				}
@@ -456,7 +453,17 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		}
 		case 'preload': {
 			if (el instanceof HTMLAudioElement || el instanceof HTMLVideoElement) {
-				el.preload = datum === '' ? 'auto' : datum ? `${datum}` : 'none';
+				switch (datum) {
+					case '':
+					case 'auto':
+					case 'metadata': {
+						el.preload = datum;
+						break;
+					}
+					default: {
+						el.preload = 'none';
+					}
+				}
 			} else {
 				el.setAttribute(attr, `${datum}`);
 			}
@@ -589,54 +596,54 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 			}
 			break;
 		}
-		case 'accesskey':
-		case 'class':
-		case 'contextmenu':
-		case 'dropzone': // breakable support
-		case 'id':
-		case 'itemid':
-		case 'itemprop':
-		case 'itemref':
-		case 'itemscope':
-		case 'itemtype':
-		case 'lang':
-		case 'slot': // breakable support
-		case 'style':
-		case 'title':
-		case 'translate': // breakable support
-		case 'accept':
-		case 'accept-charset':
-		case 'action':
-		case 'align':
-		case 'alt':
-		case 'cite':
-		case 'coords':
-		case 'datetime':
-		case 'enctype':
-		case 'for':
-		case 'headers':
-		case 'href':
-		case 'hreflang':
-		case 'kind':
-		case 'label':
-		case 'list':
-		case 'media':
-		case 'method':
-		case 'name':
-		case 'pattern':
-		case 'placeholder':
-		case 'poster':
-		case 'pubdate':
-		case 'rel':
-		case 'sandbox':
-		case 'src':
-		case 'srcdoc':
-		case 'srclang':
-		case 'summary':
-		case 'type':
-		case 'usemap':
-		case 'value':
-		case 'wrap':
+		// case 'accesskey':
+		// case 'class':
+		// case 'contextmenu':
+		// case 'dropzone': // breakable support
+		// case 'id':
+		// case 'itemid':
+		// case 'itemprop':
+		// case 'itemref':
+		// case 'itemscope':
+		// case 'itemtype':
+		// case 'lang':
+		// case 'slot': // breakable support
+		// case 'style':
+		// case 'title':
+		// case 'translate': // breakable support
+		// case 'accept':
+		// case 'accept-charset':
+		// case 'action':
+		// case 'align':
+		// case 'alt':
+		// case 'cite':
+		// case 'coords':
+		// case 'datetime':
+		// case 'enctype':
+		// case 'for':
+		// case 'headers':
+		// case 'href':
+		// case 'hreflang':
+		// case 'kind':
+		// case 'label':
+		// case 'list':
+		// case 'media':
+		// case 'method':
+		// case 'name':
+		// case 'pattern':
+		// case 'placeholder':
+		// case 'poster':
+		// case 'pubdate':
+		// case 'rel':
+		// case 'sandbox':
+		// case 'src':
+		// case 'srcdoc':
+		// case 'srclang':
+		// case 'summary':
+		// case 'type':
+		// case 'usemap':
+		// case 'value':
+		// case 'wrap':
 		// and Data-* attributes
 		default: {
 			el.setAttribute(attr, `${datum}`);

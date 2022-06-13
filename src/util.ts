@@ -1,4 +1,4 @@
-import { FrozenPattyData, PrimitiveDatum } from './frozen-patty';
+import type { FrozenPattyData, PrimitiveDatum } from './frozen-patty';
 
 /**
  *

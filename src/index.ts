@@ -1,4 +1,5 @@
-import FrozenPatty, { Filter, FrozenPattyOptions, PrimitiveDatum } from './frozen-patty';
+import type { Filter, FrozenPattyOptions, PrimitiveDatum } from './frozen-patty';
+import FrozenPatty from './frozen-patty';
 import _getValue from './getValue';
 import _setValue from './setValue';
 import { arrayToHash } from './util';
@@ -13,6 +14,7 @@ function frozenPatty(html: string, options?: FrozenPattyOptions) {
 	return new FrozenPatty(html, options);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace, no-redeclare
 namespace frozenPatty {
 	/**
 	 * Set value to an element

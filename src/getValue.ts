@@ -1,4 +1,4 @@
-import { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
+import type { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
 
 /**
  * Get value from an element
@@ -7,7 +7,7 @@ import { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
  * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
  * @param typeConvert Auto covert type of value
  */
-export default function(
+export default function (
 	el: Element,
 	attr: string,
 	typeConvert: boolean,
@@ -97,11 +97,13 @@ function getAttribute(el: Element, keyAttr: string, typeConvert: boolean) {
 			return (el as HTMLInputElement).checked;
 		}
 		case 'disabled': {
-			return (el as
-				| HTMLInputElement
-				| HTMLSelectElement
-				| HTMLTextAreaElement
-				| HTMLButtonElement).disabled;
+			return (
+				el as
+					| HTMLInputElement
+					| HTMLSelectElement
+					| HTMLTextAreaElement
+					| HTMLButtonElement
+			).disabled;
 		}
 		case 'download': {
 			// An inactive download attribute always returns an empty string.

@@ -2,10 +2,10 @@ import './polyfill';
 
 import { arrayToHash } from './util';
 
-import { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
+import type { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
 import getValue from './getValue';
 
-export default function(
+export default function (
 	el: Element,
 	attr: string,
 	typeConvert: boolean,

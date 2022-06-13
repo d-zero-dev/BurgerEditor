@@ -1,9 +1,9 @@
 import './polyfill';
 
-import { Filter, FrozenPattyData } from './frozen-patty';
+import type { Filter, FrozenPattyData } from './frozen-patty';
 import setValue from './setValue';
 
-export default function(
+export default function (
 	el: Element,
 	data: FrozenPattyData,
 	attr: string,
@@ -11,7 +11,7 @@ export default function(
 ) {
 	el = el.cloneNode(true) as Element;
 	for (const dataKeyName in data) {
-		if (data.hasOwnProperty(dataKeyName)) {
+		if (dataKeyName in data) {
 			const datum = data[dataKeyName];
 			const selector = `[data-${attr}*="${dataKeyName}"]`;
 			const targetList = el.querySelectorAll(selector);
@@ -40,7 +40,7 @@ export default function(
 						deleteNodeList.push(oldChildList[i]);
 					}
 				});
-				deleteNodeList.forEach(node => node.remove());
+				deleteNodeList.forEach((node) => node.remove());
 			} else {
 				Array.from(targetList).forEach((targetEl, i) => {
 					setValue(dataKeyName, datum, targetEl, attr, filter);
