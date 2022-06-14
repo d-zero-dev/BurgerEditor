@@ -22,6 +22,9 @@
 		"lint": "eslint --fix ./src/**/*"
 	},
 	"jest": {
+		"roots": [
+			"<rootDir>/src/"
+		],
 		"preset": "ts-jest",
 		"testEnvironment": "jsdom",
 		"testEnvironmentOptions": {
