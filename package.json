@@ -7,6 +7,10 @@
 	"author": "Yusuke Hirao",
 	"license": "MIT",
 	"private": false,
+	"files": [
+		"lib",
+		"!lib/*.test.*"
+	],
 	"repository": {
 		"url": "git@github.com:YusukeHirao/frozen-patty.git"
 	},
