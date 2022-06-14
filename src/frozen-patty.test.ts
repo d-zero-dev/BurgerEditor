@@ -397,6 +397,21 @@ test('value', () => {
 	// expect(fp5.merge({ field: 'merged5' }).toDOM().children[0].value).toBe('value5');
 });
 
+test('typeConvert', () => {
+	const fp = new FrozenPatty('<input data-field="field" value="1">', {
+		typeConvert: true,
+	});
+	expect(fp.toJSON()).toStrictEqual({ field: 1 });
+	const fp2 = new FrozenPatty('<input data-field="field" value="7.5">', {
+		typeConvert: true,
+	});
+	expect(fp2.toJSON()).toStrictEqual({ field: 7.5 });
+	const fp3 = new FrozenPatty('<input data-field="field" value="7.5px">', {
+		typeConvert: true,
+	});
+	expect(fp3.toJSON()).toStrictEqual({ field: '7.5px' });
+});
+
 test('attr: contenteditable', () => {
 	// jest.('⚰ JSDom is unsupported contenteditable.');
 	// const fp = new FrozenPatty('<div data-field="edit:contenteditable" contenteditable>text</div>');

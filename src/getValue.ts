@@ -64,9 +64,9 @@ export default function (
 			) {
 				const val = el.value;
 				if (Array.isArray(val)) {
-					value = val[0];
+					value = cast(val[0]);
 				} else {
-					value = val || '';
+					value = cast(val);
 				}
 			} else {
 				value = el.innerHTML;
@@ -118,26 +118,30 @@ function getAttribute(el: Element, keyAttr: string, typeConvert: boolean) {
 			if (/^data-/.test(keyAttr)) {
 				const value = el.getAttribute(keyAttr) || '';
 				if (typeConvert) {
-					switch (value) {
-						case 'true':
-							return true;
-						case 'false':
-							return false;
-					}
-					const numeric = parseFloat(value);
-					if (isFinite(numeric)) {
-						return numeric;
-					} else {
-						return value;
-					}
-				} else {
-					return value;
+					return cast(value);
 				}
-			} else {
-				return el.getAttribute(keyAttr) || '';
+				return value;
 			}
+			return el.getAttribute(keyAttr) || '';
 		}
 	}
+}
+
+function cast(value: string) {
+	if (value == null || value === '') {
+		return '';
+	}
+	switch (value) {
+		case 'true':
+			return true;
+		case 'false':
+			return false;
+	}
+	const numeric = Number(value);
+	if (isFinite(numeric)) {
+		return numeric;
+	}
+	return value;
 }
 
 /**
