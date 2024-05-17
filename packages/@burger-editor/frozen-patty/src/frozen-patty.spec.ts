@@ -1,6 +1,8 @@
 // @ts-nocheck
 
-import FrozenPatty from './frozen-patty';
+import { test, expect } from 'vitest';
+
+import FrozenPatty from './frozen-patty.js';
 
 test('toDOM', () => {
 	const fp = new FrozenPatty('<div data-field="text">value</div>');
@@ -272,25 +274,13 @@ test('Full data merge', () => {
 	);
 	expect(fp.toDOM().querySelectorAll('[data-field*="prop07"]').length).toBe(3);
 	expect(
-		fp
-			.toDOM()
-			.querySelectorAll('[data-field*="prop07"]')
-			.item(0)
-			.getAttribute('href'),
+		fp.toDOM().querySelectorAll('[data-field*="prop07"]').item(0).getAttribute('href'),
 	).toBe('prop07-href-01-rewrite');
 	expect(
-		fp
-			.toDOM()
-			.querySelectorAll('[data-field*="prop07"]')
-			.item(1)
-			.getAttribute('href'),
+		fp.toDOM().querySelectorAll('[data-field*="prop07"]').item(1).getAttribute('href'),
 	).toBe('prop07-href-02-add');
 	expect(
-		fp
-			.toDOM()
-			.querySelectorAll('[data-field*="prop07"]')
-			.item(2)
-			.getAttribute('href'),
+		fp.toDOM().querySelectorAll('[data-field*="prop07"]').item(2).getAttribute('href'),
 	).toBe('prop07-href-01-rewrite'); // empty item for test
 	expect(fp.toDOM().querySelectorAll('[data-field*="prop08"]').length).toBe(3);
 	expect(fp.toDOM().querySelectorAll('[data-field*="prop08"]').item(0).innerHTML).toBe(
@@ -412,30 +402,23 @@ test('typeConvert', () => {
 	expect(fp3.toJSON()).toStrictEqual({ field: '7.5px' });
 });
 
-test('attr: contenteditable', () => {
-	// jest.('⚰ JSDom is unsupported contenteditable.');
-	// const fp = new FrozenPatty('<div data-field="edit:contenteditable" contenteditable>text</div>');
-	// const fp2 = new FrozenPatty('<div data-field="edit:contenteditable">text</div>');
-	// expect(fp.toJSON(), { edit: true });
-	// expect(fp2.toJSON(), { edit: false });
-	// expect(fp.merge({ edit: '' }).toDOM().children[0].isContentEditable).toBe('true');
-	// expect(fp.merge({ edit: 'true' }).toDOM().children[0].isContentEditable).toBe('true');
-	// expect(fp.merge({ edit: true }).toDOM().children[0].isContentEditable).toBe(
-	// 	undefined,
-	// );
-	// expect(fp.merge({ edit: false }).toDOM().children[0].isContentEditable).toBe(
-	// 	undefined,
-	// );
-	// expect(fp.merge({ edit: 'abc' }).toDOM().children[0].isContentEditable).toBe(
-	// 	undefined,
-	// );
-	// expect(fp.merge({ edit: '' }).toDOM().children[0].isContentEditable).toBe(undefined);
-	// expect(fp.merge({ edit: 1 }).toDOM().children[0].isContentEditable).toBe(undefined);
-	// expect(fp.merge({ edit: 0 }).toDOM().children[0].isContentEditable).toBe(undefined);
-	// expect(fp.merge({ edit: null }).toDOM().children[0].isContentEditable).toBe(
-	// 	undefined,
-	// );
-});
+// test('attr: contenteditable', () => {
+// 	const fp = new FrozenPatty(
+// 		'<div data-field="edit:contenteditable" contenteditable>text</div>',
+// 	);
+// 	const fp2 = new FrozenPatty('<div data-field="edit:contenteditable">text</div>');
+// 	expect(fp.toJSON(), { edit: true });
+// 	expect(fp2.toJSON(), { edit: false });
+// 	expect(fp.merge({ edit: '' }).toDOM().children[0].isContentEditable).toBe('true');
+// 	expect(fp.merge({ edit: 'true' }).toDOM().children[0].isContentEditable).toBe('true');
+// 	expect(fp.merge({ edit: true }).toDOM().children[0].isContentEditable).toBe(undefined);
+// 	expect(fp.merge({ edit: false }).toDOM().children[0].isContentEditable).toBe(undefined);
+// 	expect(fp.merge({ edit: 'abc' }).toDOM().children[0].isContentEditable).toBe(undefined);
+// 	expect(fp.merge({ edit: '' }).toDOM().children[0].isContentEditable).toBe(undefined);
+// 	expect(fp.merge({ edit: 1 }).toDOM().children[0].isContentEditable).toBe(undefined);
+// 	expect(fp.merge({ edit: 0 }).toDOM().children[0].isContentEditable).toBe(undefined);
+// 	expect(fp.merge({ edit: null }).toDOM().children[0].isContentEditable).toBe(undefined);
+// });
 
 test('attr: checked', () => {
 	const fp = new FrozenPatty('<input data-field="checked:checked" checked>');
@@ -459,28 +442,24 @@ test('attr: disabled', () => {
 });
 
 test('attr: href', () => {
-	expect(new FrozenPatty('<a href data-field="href:href"></a>').toJSON()).toStrictEqual(
-		{
-			href: '',
-		},
-	);
+	expect(new FrozenPatty('<a href data-field="href:href"></a>').toJSON()).toStrictEqual({
+		href: '',
+	});
 	expect(
 		new FrozenPatty('<a href="" data-field="href:href"></a>').toJSON(),
 	).toStrictEqual({
 		href: '',
 	});
 	expect(
-		new FrozenPatty('<a href="hoge" data-field="href:href"></a>').toJSON(),
+		new FrozenPatty('<a href="foo" data-field="href:href"></a>').toJSON(),
 	).toStrictEqual({
-		href: 'hoge',
+		href: 'foo',
 	});
 	expect(
 		new FrozenPatty('<a href="abc/?d=e&f=g" data-field="href:href"></a>').toJSON(),
 	).toStrictEqual({ href: 'abc/?d=e&f=g' });
 	expect(
-		new FrozenPatty(
-			'<a href="hij/?k=l&amp;m=n" data-field="href:href"></a>',
-		).toJSON(),
+		new FrozenPatty('<a href="hij/?k=l&amp;m=n" data-field="href:href"></a>').toJSON(),
 	).toStrictEqual({ href: 'hij/?k=l&m=n' });
 	expect(new FrozenPatty('<a data-field="href:href"></a>').toJSON()).toStrictEqual({
 		href: '',
@@ -524,8 +503,7 @@ test('attr: href', () => {
 			.children[0].hasAttribute('href'),
 	).toBe(false);
 	expect(
-		new FrozenPatty('<a data-field="href:href"></a>').merge({}).toDOM().children[0]
-			.href,
+		new FrozenPatty('<a data-field="href:href"></a>').merge({}).toDOM().children[0].href,
 	).toBe('https://www.d-zero.co.jp/');
 	expect(
 		new FrozenPatty('<a data-field="href:href"></a>')
@@ -534,72 +512,72 @@ test('attr: href', () => {
 			.children[0].hasAttribute('href'),
 	).toBe(true);
 	expect(
-		new FrozenPatty('<a href="hoge" data-field="href:href"></a>')
+		new FrozenPatty('<a href="foo" data-field="href:href"></a>')
 			.merge({ href: '' })
 			.toDOM().children[0].href,
 	).toBe('https://www.d-zero.co.jp/');
 	expect(
-		new FrozenPatty('<a href="hoge" data-field="href:href"></a>')
+		new FrozenPatty('<a href="foo" data-field="href:href"></a>')
 			.merge({ href: 'abc' })
 			.toDOM().children[0].href,
 	).toBe('https://www.d-zero.co.jp/abc');
 	expect(
-		new FrozenPatty('<a href="hoge" data-field="href:href"></a>')
+		new FrozenPatty('<a href="foo" data-field="href:href"></a>')
 			.merge({ href: 'abc/?d=e&f=g' })
 			.toDOM().children[0].href,
 	).toBe('https://www.d-zero.co.jp/abc/?d=e&f=g');
 	expect(
-		new FrozenPatty('<a href="hoge" data-field="href:href"></a>')
+		new FrozenPatty('<a href="foo" data-field="href:href"></a>')
 			.merge({ href: true })
 			.toDOM().children[0].href,
 	).toBe('https://www.d-zero.co.jp/true');
 	expect(
-		new FrozenPatty('<a href="hoge" data-field="href:href"></a>')
+		new FrozenPatty('<a href="foo" data-field="href:href"></a>')
 			.merge({ href: false })
 			.toDOM().children[0].href,
 	).toBe('https://www.d-zero.co.jp/false');
 	expect(
-		new FrozenPatty('<a href="hoge" data-field="href:href"></a>')
+		new FrozenPatty('<a href="foo" data-field="href:href"></a>')
 			.merge({ href: 123 })
 			.toDOM().children[0].href,
 	).toBe('https://www.d-zero.co.jp/123');
 	expect(
-		new FrozenPatty('<a href="hoge" data-field="href:href"></a>')
+		new FrozenPatty('<a href="foo" data-field="href:href"></a>')
 			.merge({ href: 123.1 })
 			.toDOM().children[0].href,
 	).toBe('https://www.d-zero.co.jp/123.1');
 	expect(
-		new FrozenPatty('<a href="hoge" data-field="href:href"></a>')
+		new FrozenPatty('<a href="foo" data-field="href:href"></a>')
 			.merge({ href: 0.1 })
 			.toDOM().children[0].href,
 	).toBe('https://www.d-zero.co.jp/0.1');
 	expect(
-		new FrozenPatty('<a href="hoge" data-field="href:href"></a>')
+		new FrozenPatty('<a href="foo" data-field="href:href"></a>')
 			.merge({ href: null })
 			.toDOM().children[0].href,
 	).toBe('');
 	expect(
-		new FrozenPatty('<a href="hoge" data-field="href:href"></a>')
+		new FrozenPatty('<a href="foo" data-field="href:href"></a>')
 			.merge({ href: null })
 			.toDOM()
 			.children[0].hasAttribute('href'),
 	).toBe(false);
 	expect(
-		new FrozenPatty('<a href="hoge" data-field="href:href"></a>')
+		new FrozenPatty('<a href="foo" data-field="href:href"></a>')
 			.merge({ href: null })
 			.toDOM().children[0].outerHTML,
 	).toBe('<a data-field="href:href"></a>');
 	expect(
-		new FrozenPatty('<a href="hoge" data-field="href:href"></a>')
+		new FrozenPatty('<a href="foo" data-field="href:href"></a>')
 			.merge({ href: 'abc/?d=e&f=g' })
 			.toDOM().children[0].outerHTML,
 	).toBe('<a href="abc/?d=e&amp;f=g" data-field="href:href"></a>');
 	expect(
-		new FrozenPatty('<a href="hoge" data-field="href:href"></a>').merge({}).toDOM()
+		new FrozenPatty('<a href="foo" data-field="href:href"></a>').merge({}).toDOM()
 			.children[0].href,
-	).toBe('https://www.d-zero.co.jp/hoge');
+	).toBe('https://www.d-zero.co.jp/foo');
 	expect(
-		new FrozenPatty('<a href="hoge" data-field="href:href"></a>')
+		new FrozenPatty('<a href="foo" data-field="href:href"></a>')
 			.merge({})
 			.toDOM()
 			.children[0].hasAttribute('href'),
@@ -621,9 +599,7 @@ test('attr: download', () => {
 		).toJSON(),
 	).toStrictEqual({ download: '/path/to' });
 	expect(
-		new FrozenPatty(
-			'<a download="names" data-field="download:download"></a>',
-		).toJSON(),
+		new FrozenPatty('<a download="names" data-field="download:download"></a>').toJSON(),
 	).toStrictEqual({ download: 'names' });
 	expect(
 		new FrozenPatty('<a data-field="download:download"></a>').toJSON(),
@@ -698,73 +674,73 @@ test('attr: download', () => {
 			.children[0].hasAttribute('download'),
 	).toBe(false);
 	expect(
-		new FrozenPatty('<a download="hoge" data-field="download:download"></a>')
+		new FrozenPatty('<a download="foo" data-field="download:download"></a>')
 			.merge({ download: '' })
 			.toDOM().children[0].download,
 	).toBe('');
 	expect(
-		new FrozenPatty('<a download="hoge" data-field="download:download"></a>')
+		new FrozenPatty('<a download="foo" data-field="download:download"></a>')
 			.merge({ download: 'abc' })
 			.toDOM().children[0].download,
 	).toBe('abc');
 	expect(
-		new FrozenPatty('<a download="hoge" data-field="download:download"></a>')
+		new FrozenPatty('<a download="foo" data-field="download:download"></a>')
 			.merge({ download: true })
 			.toDOM().children[0].download,
 	).toBe('true');
 	expect(
-		new FrozenPatty('<a download="hoge" data-field="download:download"></a>')
+		new FrozenPatty('<a download="foo" data-field="download:download"></a>')
 			.merge({ download: false })
 			.toDOM().children[0].download,
 	).toBe('');
 	expect(
-		new FrozenPatty('<a download="hoge" data-field="download:download"></a>')
+		new FrozenPatty('<a download="foo" data-field="download:download"></a>')
 			.merge({ download: 123 })
 			.toDOM().children[0].download,
 	).toBe('123');
 	expect(
-		new FrozenPatty('<a download="hoge" data-field="download:download"></a>')
+		new FrozenPatty('<a download="foo" data-field="download:download"></a>')
 			.merge({ download: 123.1 })
 			.toDOM().children[0].download,
 	).toBe('123.1');
 	expect(
-		new FrozenPatty('<a download="hoge" data-field="download:download"></a>')
+		new FrozenPatty('<a download="foo" data-field="download:download"></a>')
 			.merge({ download: 0 })
 			.toDOM().children[0].download,
 	).toBe('');
 	expect(
-		new FrozenPatty('<a download="hoge" data-field="download:download"></a>')
+		new FrozenPatty('<a download="foo" data-field="download:download"></a>')
 			.merge({ download: 0.1 })
 			.toDOM().children[0].download,
 	).toBe('0.1');
 	expect(
-		new FrozenPatty('<a download="hoge" data-field="download:download"></a>')
+		new FrozenPatty('<a download="foo" data-field="download:download"></a>')
 			.merge({ download: 0.1 })
 			.toDOM().children[0].download,
 	).toBe('0.1');
 	expect(
-		new FrozenPatty('<a download="hoge" data-field="download:download"></a>')
+		new FrozenPatty('<a download="foo" data-field="download:download"></a>')
 			.merge({ download: null })
 			.toDOM().children[0].download,
 	).toBe('');
 	expect(
-		new FrozenPatty('<a download="hoge" data-field="download:download"></a>')
+		new FrozenPatty('<a download="foo" data-field="download:download"></a>')
 			.merge({ download: null })
 			.toDOM()
 			.children[0].hasAttribute('download'),
 	).toBe(false);
 	expect(
-		new FrozenPatty('<a download="hoge" data-field="download:download"></a>')
+		new FrozenPatty('<a download="foo" data-field="download:download"></a>')
 			.merge({ download: null })
 			.toDOM().children[0].outerHTML,
 	).toBe('<a data-field="download:download"></a>');
 	expect(
-		new FrozenPatty('<a download="hoge" data-field="download:download"></a>')
+		new FrozenPatty('<a download="foo" data-field="download:download"></a>')
 			.merge({})
 			.toDOM().children[0].download,
-	).toBe('hoge');
+	).toBe('foo');
 	expect(
-		new FrozenPatty('<a download="hoge" data-field="download:download"></a>')
+		new FrozenPatty('<a download="foo" data-field="download:download"></a>')
 			.merge({})
 			.toDOM()
 			.children[0].hasAttribute('download'),
@@ -820,17 +796,13 @@ test('attr: style', () => {
 });
 
 test('toHTML()', () => {
-	const fp = new FrozenPatty(
-		'<div data-hoge="fuga" data-field="hoge:data-hoge"></div>',
-	);
-	expect(fp.toHTML()).toBe('<div data-hoge="fuga" data-field="hoge:data-hoge"></div>');
+	const fp = new FrozenPatty('<div data-foo="bar" data-field="foo:data-foo"></div>');
+	expect(fp.toHTML()).toBe('<div data-foo="bar" data-field="foo:data-foo"></div>');
 });
 
 test('toHTML()', () => {
-	const fp = new FrozenPatty(
-		'<div data-hoge="fuga" data-field="hoge:data-hoge"></div>',
-	);
-	expect(fp.merge({ hoge: 'piyo' }).toHTML()).toBe(
-		'<div data-hoge="piyo" data-field="hoge:data-hoge"></div>',
+	const fp = new FrozenPatty('<div data-foo="bar" data-field="foo:data-foo"></div>');
+	expect(fp.merge({ foo: 'bar' }).toHTML()).toBe(
+		'<div data-foo="bar" data-field="foo:data-foo"></div>',
 	);
 });

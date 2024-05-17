@@ -1,0 +1,7 @@
+{
+	"import": ["@d-zero/cspell-config"],
+	"words": [
+		//
+		"nocheck"
+	]
+}

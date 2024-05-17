@@ -1,4 +1,4 @@
-import type { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
+import type { Filter, PrimitiveDatum } from './types.js';
 
 /**
  * Set value to an element
@@ -7,16 +7,16 @@ import type { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
  * <div [target-attribute] data-[attr]="[name]:[target-attribute]"></div>
  * ```
  *
+ * @param el A target element
  * @param name A label name
  * @param datum A datum of value
- * @param el A target element
- * @param attr Field data attribute name
+ * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
  */
-export default function (
-	name: keyof FrozenPattyData,
-	datum: PrimitiveDatum,
+export function setValue(
 	el: Element,
-	attr: string,
+	name: string,
+	datum: PrimitiveDatum,
+	attr = 'field',
 	filter?: Filter,
 ) {
 	const bindingFormats = el.getAttribute(`data-${attr}`) || '';
@@ -39,14 +39,10 @@ export default function (
 		//
 		// 対象属性名の抽出
 		//
-		if (
-			/^[a-z_-](?:[a-z0-9_-])*:[a-z_-](?:[a-z0-9_-])*(?:\([a-z-]+\))?/i.test(
-				bindingFormat,
-			)
-		) {
+		if (/^[_a-z-][\w-]*:[_a-z-][\w-]*(?:\([a-z-]+\))?/i.test(bindingFormat)) {
 			const splitKey = bindingFormat.split(':');
-			key = splitKey[0].trim();
-			targetAttr = splitKey[1].trim();
+			key = splitKey[0]?.trim() ?? '';
+			targetAttr = splitKey[1]?.trim() ?? '';
 		} else {
 			key = bindingFormat.trim();
 			targetAttr = null;
@@ -129,15 +125,13 @@ export default function (
  * @param datum Datum
  *
  */
-// tslint:disable-next-line:cyclomatic-complexity
 function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 	if (datum == null) {
 		el.removeAttribute(attr);
 		return;
 	}
 	switch (attr) {
-		// ⚠️ Dosen't test
-		case 'contentediable': {
+		case 'contenteditable': {
 			switch (datum) {
 				case 'true':
 				case '': {
@@ -157,7 +151,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 					el.dir = datum;
 					break;
 				}
-				case 'auto':
+				// case 'auto':
 				default: {
 					el.removeAttribute(attr);
 				}
@@ -178,7 +172,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 					el.draggable = false;
 					break;
 				}
-				case 'auto':
+				// case 'auto':
 				default: {
 					el.removeAttribute(attr);
 				}
@@ -198,11 +192,11 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 			if (typeof datum === 'boolean') {
 				i = datum ? 0 : -1;
 			} else if (typeof datum === 'string') {
-				i = parseInt(datum, 10);
+				i = Number.parseInt(datum, 10);
 			} else {
 				i = datum;
 			}
-			el.tabIndex = isNaN(i) ? -1 : Math.floor(i);
+			el.tabIndex = Number.isNaN(i) ? -1 : Math.floor(i);
 			break;
 		}
 		case 'async': {
@@ -215,6 +209,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		}
 		case 'autocomplete': {
 			if (el instanceof HTMLInputElement || el instanceof HTMLFormElement) {
+				// @ts-ignore
 				el.autocomplete = datum ? `${datum}` : 'off';
 			} else {
 				el.setAttribute(attr, `${datum}`);
@@ -253,7 +248,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		case 'cols': {
 			if (el instanceof HTMLTextAreaElement) {
 				const cols = toInt(datum);
-				if (isNaN(cols)) {
+				if (Number.isNaN(cols)) {
 					el.removeAttribute(attr);
 				} else {
 					el.cols = cols;
@@ -266,7 +261,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		case 'colspan': {
 			if (el instanceof HTMLTableCellElement) {
 				const colSpan = toInt(datum);
-				if (isNaN(colSpan)) {
+				if (Number.isNaN(colSpan)) {
 					el.removeAttribute(attr);
 				} else {
 					el.colSpan = colSpan;
@@ -331,7 +326,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		case 'high': {
 			if (el instanceof HTMLMeterElement) {
 				const high = toInt(datum);
-				if (isNaN(high)) {
+				if (Number.isNaN(high)) {
 					el.removeAttribute(attr);
 				} else {
 					el.high = high;
@@ -360,7 +355,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		case 'low': {
 			if (el instanceof HTMLMeterElement) {
 				const low = toInt(datum);
-				if (isNaN(low)) {
+				if (Number.isNaN(low)) {
 					el.removeAttribute(attr);
 				} else {
 					el.low = low;
@@ -377,7 +372,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 				el instanceof HTMLProgressElement
 			) {
 				const max = toInt(datum);
-				if (isNaN(max)) {
+				if (Number.isNaN(max)) {
 					el.removeAttribute(attr);
 				} else {
 					el.max = max;
@@ -390,7 +385,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		case 'maxlength': {
 			if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
 				const maxLength = toInt(datum);
-				if (isNaN(maxLength)) {
+				if (Number.isNaN(maxLength)) {
 					el.removeAttribute(attr);
 				} else {
 					el.maxLength = Math.floor(maxLength);
@@ -403,7 +398,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		case 'min': {
 			if (el instanceof HTMLInputElement || el instanceof HTMLMeterElement) {
 				const min = toInt(datum);
-				if (isNaN(min)) {
+				if (Number.isNaN(min)) {
 					el.removeAttribute(attr);
 				} else {
 					el.min = min;
@@ -430,9 +425,9 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 			break;
 		}
 		// ⚰️ Unsupported HTMLDetailsElement yet...
-		// case 'oepn': {
+		// case 'open': {
 		// 	if (el instanceof HTMLDetailsElement) {
-		// 		el.oepn = datum === '' ? true : !!datum;
+		// 		el.open = datum === '' ? true : !!datum;
 		// 	} else {
 		// 		el.setAttribute(attr, `${datum}`);
 		// 	}
@@ -441,7 +436,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		case 'optimum': {
 			if (el instanceof HTMLMeterElement) {
 				const optimum = toInt(datum);
-				if (isNaN(optimum)) {
+				if (Number.isNaN(optimum)) {
 					el.removeAttribute(attr);
 				} else {
 					el.optimum = Math.floor(optimum);
@@ -491,8 +486,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		}
 		case 'reversed': {
 			if (el instanceof HTMLOListElement) {
-				// tslint:disable-next-line:no-any
-				(el as any).reversed = datum === '' ? true : !!datum;
+				el.reversed = datum === '' ? true : !!datum;
 			} else {
 				el.setAttribute(attr, `${datum}`);
 			}
@@ -501,7 +495,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		case 'rows': {
 			if (el instanceof HTMLTextAreaElement) {
 				const rows = toInt(datum);
-				if (isNaN(rows)) {
+				if (Number.isNaN(rows)) {
 					el.removeAttribute(attr);
 				} else {
 					el.rows = Math.floor(rows);
@@ -514,7 +508,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		case 'rowspan': {
 			if (el instanceof HTMLTableCellElement) {
 				const rowSpan = toInt(datum);
-				if (isNaN(rowSpan)) {
+				if (Number.isNaN(rowSpan)) {
 					el.removeAttribute(attr);
 				} else {
 					el.rowSpan = Math.floor(rowSpan);
@@ -527,7 +521,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		case 'size': {
 			if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) {
 				const size = toInt(datum);
-				if (isNaN(size)) {
+				if (Number.isNaN(size)) {
 					el.removeAttribute(attr);
 				} else {
 					el.size = size;
@@ -540,7 +534,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		case 'span': {
 			if (el instanceof HTMLTableColElement) {
 				const span = toInt(datum);
-				if (isNaN(span)) {
+				if (Number.isNaN(span)) {
 					el.removeAttribute(attr);
 				} else {
 					el.span = span;
@@ -553,7 +547,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		case 'start': {
 			if (el instanceof HTMLOListElement) {
 				const start = toInt(datum);
-				if (isNaN(start)) {
+				if (Number.isNaN(start)) {
 					el.removeAttribute(attr);
 				} else {
 					el.start = start;
@@ -570,7 +564,7 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 					break;
 				}
 				const step = toNum(datum);
-				if (isNaN(step)) {
+				if (Number.isNaN(step)) {
 					el.removeAttribute(attr);
 				} else {
 					el.step = step.toString(10);
@@ -656,7 +650,7 @@ function toNum(datum: boolean | string | number) {
 	if (typeof datum === 'boolean') {
 		i = +datum;
 	} else if (typeof datum === 'string') {
-		i = parseFloat(datum);
+		i = Number.parseFloat(datum);
 	} else {
 		i = datum;
 	}

@@ -1,16 +1,17 @@
-import type { Filter, FrozenPattyData, PrimitiveDatum } from './frozen-patty';
+import type { Filter, FrozenPattyData, PrimitiveDatum } from './types.js';
 
 /**
  * Get value from an element
  *
- * @param el HTMLElement
- * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
+ * @param el A target element
+ * @param name A label name
  * @param typeConvert Auto covert type of value
+ * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
  */
-export default function (
+export function getValues(
 	el: Element,
-	attr: string,
-	typeConvert: boolean,
+	typeConvert = false,
+	attr = 'field',
 	filter?: Filter,
 ) {
 	/**
@@ -30,14 +31,10 @@ export default function (
 		let keyAttr = '';
 		let value: PrimitiveDatum;
 		fieldName = fieldName.trim();
-		if (
-			/^[a-z_-](?:[a-z0-9_-])*:[a-z_-](?:[a-z0-9_-])*(?:\([a-z-]+\))?/i.test(
-				fieldName,
-			)
-		) {
+		if (/^[_a-z-][\w-]*:[_a-z-][\w-]*(?:\([a-z-]+\))?/i.test(fieldName)) {
 			splitKey = fieldName.split(':');
-			fieldName = splitKey[0].trim();
-			keyAttr = splitKey[1].trim();
+			fieldName = splitKey[0]?.trim() ?? '';
+			keyAttr = splitKey[1]?.trim() ?? '';
 		}
 		// console.log({fieldName, keyAttr, el: el.innerHTML});
 		if (keyAttr === 'text') {
@@ -78,6 +75,7 @@ export default function (
 		}
 		result.push([fieldName, value, forceArray]);
 	}
+
 	// console.log({result});
 	return result;
 }
@@ -88,9 +86,7 @@ function getAttribute(el: Element, keyAttr: string, typeConvert: boolean) {
 			if (el instanceof HTMLElement) {
 				return el.contentEditable === '' || el.contentEditable === 'true';
 			} else {
-				return (
-					el.getAttribute(keyAttr) === '' || el.getAttribute(keyAttr) === 'true'
-				);
+				return el.getAttribute(keyAttr) === '' || el.getAttribute(keyAttr) === 'true';
 			}
 		}
 		case 'checked': {
@@ -115,7 +111,7 @@ function getAttribute(el: Element, keyAttr: string, typeConvert: boolean) {
 			return el.getAttribute(keyAttr) || ''; // return plain string
 		}
 		default: {
-			if (/^data-/.test(keyAttr)) {
+			if (keyAttr.startsWith('data-')) {
 				const value = el.getAttribute(keyAttr) || '';
 				if (typeConvert) {
 					return cast(value);
@@ -132,13 +128,15 @@ function cast(value: string) {
 		return '';
 	}
 	switch (value) {
-		case 'true':
+		case 'true': {
 			return true;
-		case 'false':
+		}
+		case 'false': {
 			return false;
+		}
 	}
 	const numeric = Number(value);
-	if (isFinite(numeric)) {
+	if (Number.isFinite(numeric)) {
 		return numeric;
 	}
 	return value;

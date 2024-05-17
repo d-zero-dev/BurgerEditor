@@ -1,0 +1,43 @@
+{
+	"name": "@burger-editor/frozen-patty",
+	"version": "0.10.0",
+	"description": "Pure HTML to JSON converter that not use template engine.",
+	"author": "D-ZERO",
+	"license": "MIT",
+	"repository": {
+		"url": "https://github.com/d-zero-dev/burger-editor.git"
+	},
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		},
+		"./get-value": {
+			"import": "./dist/get-value.js",
+			"types": "./dist/get-value.d.ts"
+		},
+		"./set-value": {
+			"import": "./dist/set-value.js",
+			"types": "./dist/set-value.d.ts"
+		},
+		"./utils": {
+			"import": "./dist/utils.js",
+			"types": "./dist/utils.d.ts"
+		},
+		"./types": {
+			"types": "./dist/types.d.ts"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc",
+		"clean": "tsc --build --clean"
+	}
+}
