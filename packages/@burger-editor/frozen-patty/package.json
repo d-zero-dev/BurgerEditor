@@ -5,7 +5,7 @@
 	"author": "D-ZERO",
 	"license": "MIT",
 	"repository": {
-		"url": "https://github.com/d-zero-dev/burger-editor.git"
+		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
 	},
 	"private": false,
 	"publishConfig": {

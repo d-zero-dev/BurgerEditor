@@ -2,7 +2,7 @@
 	"private": true,
 	"type": "module",
 	"repository": {
-		"url": "https://github.com/d-zero-dev/burger-editor.git"
+		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
 	},
 	"scripts": {
 		"build": "lerna run build",
