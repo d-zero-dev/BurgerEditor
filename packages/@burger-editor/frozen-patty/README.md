@@ -15,52 +15,52 @@ $ npm install -D @burger-editor/frozen-patty
 ### Extraction
 
 ```js
-import FrozenPatty from 'frozen-patty';
+import frozenPatty from '@burger-editor/frozen-patty';
 
-FrozenPatty('<div data-field="text">value</div>').toJSON(); // => { text: 'value' }
-FrozenPatty('<div data-field="field-name">value</div>').toJSON(); // => { 'field-name': 'value' }
-FrozenPatty('<a href="http://localhost" data-field="href:href">link</a>').toJSON(); // => { 'href': 'http://localhost' }
+frozenPatty('<div data-field="text">value</div>').toJSON(); // => { text: 'value' }
+frozenPatty('<div data-field="field-name">value</div>').toJSON(); // => { 'field-name': 'value' }
+frozenPatty('<a href="http://localhost" data-field="href:href">link</a>').toJSON(); // => { 'href': 'http://localhost' }
 
-FrozenPatty('<div data-bge="text">value</div>', { attr: 'bge' }).toJSON(); // => { text: 'value' }
+frozenPatty('<div data-bge="text">value</div>', { attr: 'bge' }).toJSON(); // => { text: 'value' }
 ```
 
 ### Data merge
 
 ```js
-FrozenPatty('<div data-field="text">value</div>').merge({ text: 'merged' }).toHTML(); // => "<div data-field="text">merged</div>";
+frozenPatty('<div data-field="text">value</div>').merge({ text: 'merged' }).toHTML(); // => "<div data-field="text">merged</div>";
 ```
 
 ## API
 
-### FrozenPatty (html[, options])
+### `frozenPatty(html[, options])`
 
 Extraction data from HTML.
 
-#### arguments
+#### Parameters
 
-| args    | type     | required | descriptions  |
-| ------- | -------- | -------- | ------------- |
-| html    | `string` | required | Original HTML |
-| options | `Object` | optional | †             |
+| parameter | type     | required | descriptions  |
+| --------- | -------- | -------- | ------------- |
+| html      | `string` | required | Original HTML |
+| options   | `Object` | optional | †             |
 
-#### options†
+#### Options†
 
 | options | type   | default   | descriptions                                                                         |
 | ------- | ------ | --------- | ------------------------------------------------------------------------------------ |
 | attr    | string | `"field"` | **Data attribute** name for specifying the node that FrozenPatty treats as a _field_ |
 
-### merge (data)
+### `merge(data)`
 
-Data merge
+Merge data.
 
 | args | type     | required | descriptions |
 | ---- | -------- | -------- | ------------ |
 | data | `Object` | required | New data     |
 
-### toJSON
+### `toJSON`
 
-Data to plain Object.
+Convert to JSON.
 
-### toHTML
+### `toHTML`
 
-Render to HTML as string.
+Convert to HTML string.
