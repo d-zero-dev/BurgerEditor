@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.3](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.2...v4.0.0-alpha.3) (2025-04-03)
+
+### Bug Fixes
+
+- **local:** set public files ([0da42fe](https://github.com/d-zero-dev/BurgerEditor/commit/0da42fe8fed2135dec43bb363150aa04f0dc04ef))
+
 # [4.0.0-alpha.2](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.1...v4.0.0-alpha.2) (2025-04-03)
 
 ### Bug Fixes

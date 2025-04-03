@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/local",
-	"version": "4.0.0-alpha.2",
+	"version": "4.0.0-alpha.3",
 	"type": "module",
 	"publishConfig": {
 		"access": "public"
@@ -23,8 +23,8 @@
 		"dev:server": "DEV_MODE=true DEBUG=@bge:* tsx watch src/index.ts"
 	},
 	"dependencies": {
-		"@burger-editor/blocks": "4.0.0-alpha.2",
-		"@burger-editor/client": "4.0.0-alpha.2",
+		"@burger-editor/blocks": "4.0.0-alpha.3",
+		"@burger-editor/client": "4.0.0-alpha.3",
 		"@hono/node-server": "1.14.0",
 		"@hono/zod-validator": "0.4.3",
 		"ansi-colors": "4.1.3",
@@ -36,7 +36,7 @@
 		"zod": "3.24.2"
 	},
 	"devDependencies": {
-		"@burger-editor/core": "4.0.0-alpha.2",
+		"@burger-editor/core": "4.0.0-alpha.3",
 		"@types/debug": "4.1.12",
 		"@types/jsdom": "21.1.7",
 		"@types/node": "22.14.0",
