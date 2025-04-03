@@ -78,7 +78,7 @@
     - `test`
     - `chore`
   - You must use the following scopes:
-    - Each package name
+    - Each package name (without namespace)
     - `repo`
     - `deps`
     - `github`
