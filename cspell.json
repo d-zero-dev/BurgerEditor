@@ -4,6 +4,7 @@
 	"words": [
 		// Lowercased
 		"nocheck",
+		"vbscript",
 
 		// Dependencies
 		"hono",
