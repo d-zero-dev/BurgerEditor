@@ -10,7 +10,8 @@
 	},
 	"files": [
 		"dist",
-		"server"
+		"server",
+		"style"
 	],
 	"scripts": {
 		"build": "run-p build:client build:server",
