@@ -1,0 +1,70 @@
+# AI Agent Rules
+
+## Research Rules
+
+### External Libraries
+
+- Do not use external libraries based on assumptions
+- Always refer to the GitHub MCP server to understand the API before using it
+
+## Implementation Rules
+
+### Design Rules
+
+- Implementation must not contain any test-specific logic
+- You must not write any implementation logic solely to pass tests
+- Implementation logic must be independent of test cases and should not be altered solely for passing tests
+- Swallowing errors is strictly prohibited. Always handle errors explicitly
+  - Do not write `catch (error) {}` without handling the error properly
+  - Logging an error with `console.error()` is not sufficient. Implement proper error handling
+  - When an exception occurs, implement appropriate measures such as retries, error reporting, or user notifications
+  - Propagate errors to higher-level handlers when necessary
+- You must follow functional programming principles and avoid using classes
+- All properties in defined interfaces or types must be declared as `readonly` by default
+- When a function takes an array argument, an object with array properties, or returns an array, you must use `readonly T[]` syntax
+- All top-level definitions must use function declarations instead of function expressions
+
+## TypeScript Rules
+
+### Module System
+
+- Always include `.js` or `.jsx` in import statements, even if the actual files are `.ts` or `.tsx`
+- Do not import TypeScript files (`.ts` or `.tsx`) directly without an extension
+
+## Test Rules
+
+### Execution Requirements
+
+- You must use vitest as the testing framework
+- `npx vitest run <`
+
+### Test Code Requirements
+
+- You must write all tests in TypeScript
+- You must name test files with the pattern `*.spec.ts`
+- You must use `test` function, not `it`
+- You must use `expect` for all assertions
+- You must include both success and failure test cases
+- You must not write conditional logic or exception handling in test code
+- You must not use `console.log` and stdout in test code
+- You must use `toThrow` for testing exceptions
+
+## Git Rules
+
+- You must write in English
+- You must use the imperative mood
+- You must use conventional commits
+  - You must use the following types:
+    - `feat`
+    - `fix`
+    - `ui`
+    - `style`
+    - `docs`
+    - `refactor`
+    - `test`
+    - `chore`
+  - You must use the following scopes:
+    - Each package name
+    - `repo`
+    - `deps`
+    - `github`

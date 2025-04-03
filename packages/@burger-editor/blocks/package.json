@@ -1,0 +1,40 @@
+{
+	"name": "@burger-editor/blocks",
+	"version": "4.0.0-alpha.0",
+	"description": "BurgerEditor Blocks",
+	"author": "D-ZERO",
+	"license": "MIT",
+	"repository": {
+		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
+	},
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./types.d.ts"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "rollup -c",
+		"prebuild": "tsc",
+		"dev": "rollup -c -w"
+	},
+	"dependencies": {
+		"@burger-editor/core": "4.0.0-alpha.0",
+		"@burger-editor/utils": "4.0.0-alpha.0",
+		"trix": "2.1.13"
+	},
+	"devDependencies": {
+		"@types/google.maps": "3.58.1",
+		"rollup": "4.39.0",
+		"rollup-plugin-esbuild": "6.2.1",
+		"rollup-plugin-string": "3.0.0"
+	}
+}

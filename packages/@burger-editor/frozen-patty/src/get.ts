@@ -3,6 +3,13 @@ import type { Filter, FrozenPattyData, PrimitiveDatum } from './types.js';
 import { getValues } from './get-values.js';
 import { arrayToHash } from './utils.js';
 
+/**
+ *
+ * @param el
+ * @param attr
+ * @param typeConvert
+ * @param filter
+ */
 export default function (
 	el: Element,
 	attr: string,

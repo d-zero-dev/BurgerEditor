@@ -30,42 +30,42 @@ test('toJSON attribute field', () => {
 
 test('toJSON optional field name', () => {
 	const fp = new FrozenPatty('<div data-field="field-name">value</div>');
-	expect(fp.toJSON()).toStrictEqual({ 'field-name': 'value' });
+	expect(fp.toJSON()).toStrictEqual({ fieldName: 'value' });
 });
 
 test('toJSON optional attribute field', () => {
 	const fp = new FrozenPatty(
 		'<div data-option="value" data-field="field-name:data-option"></div>',
 	);
-	expect(fp.toJSON()).toStrictEqual({ 'field-name': 'value' });
+	expect(fp.toJSON()).toStrictEqual({ fieldName: 'value' });
 });
 
 test('toJSON optional attribute field - empty string', () => {
 	const fp = new FrozenPatty(
 		'<div data-option="" data-field="field-name:data-option"></div>',
 	);
-	expect(fp.toJSON()).toStrictEqual({ 'field-name': '' });
+	expect(fp.toJSON()).toStrictEqual({ fieldName: '' });
 });
 
 test('toJSON optional attribute field - no value', () => {
 	const fp = new FrozenPatty(
 		'<div data-option data-field="field-name:data-option"></div>',
 	);
-	expect(fp.toJSON()).toStrictEqual({ 'field-name': '' });
+	expect(fp.toJSON()).toStrictEqual({ fieldName: '' });
 });
 
 test('toJSON optional attribute field - stringify true', () => {
 	const fp = new FrozenPatty(
 		'<div data-option="true" data-field="field-name:data-option"></div>',
 	);
-	expect(fp.toJSON()).toStrictEqual({ 'field-name': 'true' });
+	expect(fp.toJSON()).toStrictEqual({ fieldName: 'true' });
 });
 
 test('toJSON optional attribute field - stringify false', () => {
 	const fp = new FrozenPatty(
 		'<div data-option="false" data-field="field-name:data-option"></div>',
 	);
-	expect(fp.toJSON()).toStrictEqual({ 'field-name': 'false' });
+	expect(fp.toJSON()).toStrictEqual({ fieldName: 'false' });
 });
 
 test('toJSON optional attribute field - stringify true - type conversion', () => {
@@ -73,7 +73,7 @@ test('toJSON optional attribute field - stringify true - type conversion', () =>
 		'<div data-option="true" data-field="field-name:data-option"></div>',
 		{ typeConvert: true },
 	);
-	expect(fp.toJSON()).toStrictEqual({ 'field-name': true });
+	expect(fp.toJSON()).toStrictEqual({ fieldName: true });
 });
 
 test('toJSON optional attribute field - stringify false - type conversion', () => {
@@ -81,14 +81,14 @@ test('toJSON optional attribute field - stringify false - type conversion', () =
 		'<div data-option="false" data-field="field-name:data-option"></div>',
 		{ typeConvert: true },
 	);
-	expect(fp.toJSON()).toStrictEqual({ 'field-name': false });
+	expect(fp.toJSON()).toStrictEqual({ fieldName: false });
 });
 
 test('toJSON optional attribute field - stringify number', () => {
 	const fp = new FrozenPatty(
 		'<div data-option="0" data-field="field-name:data-option"></div>',
 	);
-	expect(fp.toJSON()).toStrictEqual({ 'field-name': '0' });
+	expect(fp.toJSON()).toStrictEqual({ fieldName: '0' });
 });
 
 test('toJSON optional attribute field - stringify number - type conversion', () => {
@@ -96,14 +96,14 @@ test('toJSON optional attribute field - stringify number - type conversion', () 
 		'<div data-option="0" data-field="field-name:data-option"></div>',
 		{ typeConvert: true },
 	);
-	expect(fp.toJSON()).toStrictEqual({ 'field-name': 0 });
+	expect(fp.toJSON()).toStrictEqual({ fieldName: 0 });
 });
 
 test('toJSON optional attribute field - stringify number', () => {
 	const fp = new FrozenPatty(
 		'<div data-option="1" data-field="field-name:data-option"></div>',
 	);
-	expect(fp.toJSON()).toStrictEqual({ 'field-name': '1' });
+	expect(fp.toJSON()).toStrictEqual({ fieldName: '1' });
 });
 
 test('toJSON optional attribute field - stringify number - type conversion', () => {
@@ -111,14 +111,14 @@ test('toJSON optional attribute field - stringify number - type conversion', () 
 		'<div data-option="1" data-field="field-name:data-option"></div>',
 		{ typeConvert: true },
 	);
-	expect(fp.toJSON()).toStrictEqual({ 'field-name': 1 });
+	expect(fp.toJSON()).toStrictEqual({ fieldName: 1 });
 });
 
 test('toJSON optional attribute field - stringify number', () => {
 	const fp = new FrozenPatty(
 		'<div data-option="1.0" data-field="field-name:data-option"></div>',
 	);
-	expect(fp.toJSON()).toStrictEqual({ 'field-name': '1.0' });
+	expect(fp.toJSON()).toStrictEqual({ fieldName: '1.0' });
 });
 
 test('toJSON optional attribute field - stringify number - type conversion', () => {
@@ -126,14 +126,14 @@ test('toJSON optional attribute field - stringify number - type conversion', () 
 		'<div data-option="1.0" data-field="field-name:data-option"></div>',
 		{ typeConvert: true },
 	);
-	expect(fp.toJSON()).toStrictEqual({ 'field-name': 1 });
+	expect(fp.toJSON()).toStrictEqual({ fieldName: 1 });
 });
 
 test('toJSON optional attribute field - stringify number', () => {
 	const fp = new FrozenPatty(
 		'<div data-option="0.1" data-field="field-name:data-option"></div>',
 	);
-	expect(fp.toJSON()).toStrictEqual({ 'field-name': '0.1' });
+	expect(fp.toJSON()).toStrictEqual({ fieldName: '0.1' });
 });
 
 test('toJSON optional attribute field - stringify number - type conversion', () => {
@@ -141,7 +141,7 @@ test('toJSON optional attribute field - stringify number - type conversion', () 
 		'<div data-option="0.1" data-field="field-name:data-option"></div>',
 		{ typeConvert: true },
 	);
-	expect(fp.toJSON()).toStrictEqual({ 'field-name': 0.1 });
+	expect(fp.toJSON()).toStrictEqual({ fieldName: 0.1 });
 });
 
 test('toJSON custom attr name', () => {
@@ -788,7 +788,7 @@ test('attr: style', () => {
 		new FrozenPatty(
 			`
 			<a  href="/path/to/image.webp" data-field="path:href">
-			<div class="bgt-box__image" data-field="path:style(background-image)" style="background-image: url(/path/to/image.webp)"></div>
+			<div class="bgi-box__image" data-field="path:style(background-image)" style="background-image: url(/path/to/image.webp)"></div>
 			</a>
 			`,
 		).toJSON(),

@@ -1,0 +1,98 @@
+.bgi-link__size {
+	&::before {
+		content: '(';
+	}
+
+	&::after {
+		content: ')';
+	}
+}
+
+.bgi-link__icon {
+	&.bgi-link__icon--after {
+		display: none;
+	}
+
+	&::after {
+		font-size: 1.3em;
+		vertical-align: bottom;
+		content: '\e623';
+	}
+}
+
+.bgi-download-file__link {
+	&[href$='pdf'] {
+		.bgi-link__icon::after {
+			content: '\f1c1';
+		}
+	}
+
+	&[href$='doc'],
+	&[href$='docx'] {
+		.bgi-link__icon::after {
+			content: '\f1c2';
+		}
+	}
+
+	&[href$='xls'],
+	&[href$='xlsx'] {
+		.bgi-link__icon::after {
+			content: '\f1c3';
+		}
+	}
+
+	&[href$='ppt'],
+	&[href$='pptx'] {
+		.bgi-link__icon::after {
+			content: '\f1c4';
+		}
+	}
+
+	&[href$='zip'] {
+		.bgi-link__icon::after {
+			content: '\f1c6';
+		}
+	}
+
+	&[href$='xml'],
+	&[href$='htm'],
+	&[href$='html'],
+	&[href$='css'],
+	&[href$='sass'],
+	&[href$='scss'],
+	&[href$='less'],
+	&[href$='styl'], /* cspell:disable-line */
+	&[href$='json'] {
+		.bgi-link__icon::after {
+			content: '\f1c9';
+		}
+	}
+
+	&[href$='jpeg'],
+	&[href$='jpg'],
+	&[href$='png'],
+	&[href$='gif'],
+	&[href$='tif'],
+	&[href$='tiff'],
+	&[href$='webp'],
+	&[href$='bmp'] {
+		.bgi-link__icon::after {
+			content: '\f1c5';
+		}
+	}
+
+	&[href$='mov'],
+	&[href$='mp4'],
+	&[href$='m4v'],
+	&[href$='flv'],
+	&[href$='swf'],
+	&[href$='mpg'],
+	&[href$='mpeg'],
+	&[href$='wmv'],
+	&[href$='webm'],
+	&[href$='ogg'] {
+		.bgi-link__icon::after {
+			content: '\f1c8';
+		}
+	}
+}

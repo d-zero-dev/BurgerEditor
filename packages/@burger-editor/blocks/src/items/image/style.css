@@ -1,0 +1,39 @@
+[data-bgi='image'] {
+	inline-size: 100%;
+
+	figure {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		inline-size: 100%;
+		padding: 0;
+		margin: 0;
+
+		> :is(div, a, button) {
+			display: block;
+			padding: 0;
+			background: transparent;
+			border: none;
+		}
+	}
+
+	img {
+		display: block;
+		inline-size: var(--css-width, auto);
+		max-inline-size: 100%;
+		block-size: auto;
+		aspect-ratio: var(--aspect-ratio, unset);
+		object-fit: var(--object-fit, unset);
+	}
+
+	figcaption {
+		display: flex;
+		justify-content: center;
+		inline-size: 100%;
+
+		&:empty {
+			display: none;
+		}
+	}
+}

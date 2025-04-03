@@ -1,58 +1,73 @@
 import type { Filter, FrozenPattyData, PrimitiveDatum } from './types.js';
 
+import { fieldNameParser } from './field-name-parser.js';
+import { kebabCase } from './utils.js';
+
 /**
  * Get value from an element
- *
  * @param el A target element
- * @param name A label name
- * @param typeConvert Auto covert type of value
+ * @param convertType Auto covert type of value
  * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
+ * @param filter
  */
 export function getValues(
 	el: Element,
-	typeConvert = false,
+	convertType = false,
 	attr = 'field',
 	filter?: Filter,
 ) {
-	/**
-	 * [key, value, forceArray]
-	 */
-	const result: [keyof FrozenPattyData, PrimitiveDatum, boolean][] = [];
+	const result: [
+		key: keyof FrozenPattyData,
+		value: PrimitiveDatum,
+		forceArray: boolean,
+	][] = [];
+
 	const rawValue = el.getAttribute(`data-${attr}`);
 	const listRoot = el.closest(`[data-${attr}-list]`);
 	const forceArray = !!listRoot;
 	if (rawValue == null) {
 		throw new Error(`data-${attr} attriblute is empty.`);
 	}
-	const fieldList = `${rawValue}`.split(/\s*,\s*/);
-	// console.log({fieldList, el: el.innerHTML});
-	for (let fieldName of fieldList) {
-		let splitKey: string[];
-		let keyAttr = '';
+	const fieldList = rawValue.split(/\s*,\s*/);
+
+	for (const field of fieldList) {
 		let value: PrimitiveDatum;
-		fieldName = fieldName.trim();
-		if (/^[_a-z-][\w-]*:[_a-z-][\w-]*(?:\([a-z-]+\))?/i.test(fieldName)) {
-			splitKey = fieldName.split(':');
-			fieldName = splitKey[0]?.trim() ?? '';
-			keyAttr = splitKey[1]?.trim() ?? '';
-		}
-		// console.log({fieldName, keyAttr, el: el.innerHTML});
-		if (keyAttr === 'text') {
-			value = el.innerHTML;
-		} else if (/^style\([a-z-]+\)$/i.test(keyAttr)) {
-			const css = keyAttr.replace(/^style\(([a-z-]+)\)$/i, '$1');
-			let style: CSSStyleDeclaration;
-			if (el instanceof HTMLElement) {
-				style = el.style;
-			} else {
-				style = window.getComputedStyle(el);
+
+		const { fieldName, propName } = fieldNameParser(field);
+
+		if (propName) {
+			switch (propName) {
+				case 'node': {
+					value = el.localName ?? el.nodeName.toLowerCase();
+					break;
+				}
+				case 'text': {
+					value = el.textContent?.trim() ?? '';
+					break;
+				}
+				case 'html': {
+					value = el.innerHTML.trim();
+					break;
+				}
+				default: {
+					if (/^style\([a-z-]+\)$/i.test(propName)) {
+						const css = propName.replace(/^style\(([a-z-]+)\)$/i, '$1');
+						let style: CSSStyleDeclaration;
+						if (el instanceof HTMLElement) {
+							style = el.style;
+						} else {
+							style = window.getComputedStyle(el);
+						}
+						value = style.getPropertyValue(css);
+						if (css === 'background-image') {
+							value = getBackgroundImagePath(value);
+						}
+						break;
+					}
+
+					value = getAttribute(el, attr, propName, convertType);
+				}
 			}
-			value = style.getPropertyValue(css);
-			if (css === 'background-image') {
-				value = getBackgroundImagePath(value);
-			}
-		} else if (keyAttr) {
-			value = getAttribute(el, keyAttr, typeConvert);
 		} else {
 			if (
 				el instanceof HTMLInputElement ||
@@ -60,27 +75,33 @@ export function getValues(
 				el instanceof HTMLTextAreaElement
 			) {
 				const val = el.value;
-				if (Array.isArray(val)) {
-					value = cast(val[0]);
-				} else {
-					value = cast(val);
-				}
+				value = convertType ? convert(val) : val;
 			} else {
-				value = el.innerHTML;
+				value = el.innerHTML.trim();
 			}
 		}
-		// console.log({fieldName, value});
+
 		if (filter) {
 			value = filter(value);
 		}
+
+		if (value === undefined) {
+			continue;
+		}
+
 		result.push([fieldName, value, forceArray]);
 	}
-
-	// console.log({result});
 	return result;
 }
 
-function getAttribute(el: Element, keyAttr: string, typeConvert: boolean) {
+/**
+ *
+ * @param el
+ * @param attr
+ * @param keyAttr
+ * @param typeConvert
+ */
+function getAttribute(el: Element, attr: string, keyAttr: string, typeConvert: boolean) {
 	switch (keyAttr) {
 		case 'contenteditable': {
 			if (el instanceof HTMLElement) {
@@ -108,43 +129,59 @@ function getAttribute(el: Element, keyAttr: string, typeConvert: boolean) {
 		}
 		case 'href': {
 			// return (el as HTMLAnchorElement).href;
-			return el.getAttribute(keyAttr) || ''; // return plain string
+			return el.getAttribute(keyAttr) ?? ''; // return plain string
 		}
 		default: {
-			if (keyAttr.startsWith('data-')) {
-				const value = el.getAttribute(keyAttr) || '';
-				if (typeConvert) {
-					return cast(value);
-				}
-				return value;
+			let value: string;
+			const dataAttr = ['data', attr, kebabCase(keyAttr)].join('-');
+
+			if (el.hasAttribute(dataAttr)) {
+				value = el.getAttribute(dataAttr) || '';
+			} else {
+				value = el.getAttribute(keyAttr) || '';
 			}
-			return el.getAttribute(keyAttr) || '';
+
+			if (typeConvert) {
+				value = convert(value);
+			}
+
+			return value;
 		}
 	}
 }
 
-function cast(value: string) {
-	if (value == null || value === '') {
-		return '';
-	}
-	switch (value) {
-		case 'true': {
-			return true;
+/**
+ *
+ * @param value
+ */
+function convert(value: string) {
+	value = parse(value);
+
+	if (URL.canParse(value)) {
+		const url = new URL(value, location.href);
+		if (url.origin === location.origin) {
+			return url.pathname;
 		}
-		case 'false': {
-			return false;
-		}
 	}
-	const numeric = Number(value);
-	if (Number.isFinite(numeric)) {
-		return numeric;
-	}
+
 	return value;
 }
 
 /**
- * Get path from value of "background-image"
  *
+ * @param value
+ */
+function parse(value: string) {
+	try {
+		return JSON.parse(value);
+	} catch {
+		return value;
+	}
+}
+
+/**
+ * Get path from value of "background-image"
+ * @param value
  */
 function getBackgroundImagePath(value: string) {
 	const origin = `${location.protocol}//${location.hostname}${
