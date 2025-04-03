@@ -1,7 +1,12 @@
 import type { Filter, PrimitiveDatum } from './types.js';
 
 import { fieldNameParser } from './field-name-parser.js';
-import { kebabCase } from './utils.js';
+import {
+	DANGEROUS_ELEMENTS,
+	kebabCase,
+	sanitizeAttributeValue,
+	sanitizeHtml,
+} from './utils.js';
 
 /**
  * Set value to an element
@@ -14,6 +19,7 @@ import { kebabCase } from './utils.js';
  * @param datum A datum of value
  * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
  * @param filter
+ * @param xssSanitize Enable XSS protection
  */
 export function setValue(
 	el: Element,
@@ -21,6 +27,7 @@ export function setValue(
 	datum: PrimitiveDatum,
 	attr = 'field',
 	filter?: Filter,
+	xssSanitize = true,
 ) {
 	const rawValue = el.getAttribute(`data-${attr}`);
 	const fieldList = rawValue?.split(/\s*,\s*/) ?? [];
@@ -44,19 +51,16 @@ export function setValue(
 				switch (cssPropertyName) {
 					case 'background-image': {
 						//
-						// NGパターン
-						// $changeDom.css(cssPropertyName, 'url("' + value + '")');
-						//
-						// cssメソッドを経由すると styleAPIを使用するので URLがホストを含めた絶対パスになる
-						// デモサーバーから本番サーバーへの移行ができなくなってしまうので避ける
-						// 単純な文字列を流し込む（setAttributeを利用）
-						// urlはマルチバイト文字や空白記号を含まないはずであるがエスケープする
+						// Using CSS method would create absolute URLs with host
+						// This would prevent migration from demo to production server
+						// Using simple string insertion (setAttribute) instead
+						// URL may not contain multibyte or whitespace characters, but escape anyway
 						const url = encodeURI(`${datum}`);
 						cssValue = `url(${url})`;
 						break;
 					}
 					//
-					// TODO: 他にもvalueに単位が必要なケースなどに対応したい
+					// TODO: Handle other cases where values need units
 					//
 					default: {
 						cssValue = `${datum}`;
@@ -65,15 +69,23 @@ export function setValue(
 				el.setAttribute('style', `${cssPropertyName}: ${cssValue}`);
 			} else if (el instanceof HTMLElement) {
 				// HTMLElement
-				set(el, attr, propName, datum);
+				set(el, attr, propName, datum, xssSanitize);
 			} else {
 				// SVGElement or more
-				el.setAttribute(propName, `${datum}`);
+				// Check attribute value if XSS protection is enabled
+				if (xssSanitize) {
+					const safeValue = sanitizeAttributeValue(propName, `${datum}`);
+					if (safeValue !== null) {
+						el.setAttribute(propName, safeValue);
+					}
+				} else {
+					el.setAttribute(propName, `${datum}`);
+				}
 			}
 			return;
 		}
 
-		setContent(el, datum);
+		setContent(el, datum, undefined, xssSanitize);
 	}
 }
 
@@ -83,8 +95,15 @@ export function setValue(
  * @param prefix
  * @param name
  * @param datum
+ * @param xssSanitize
  */
-function set(el: HTMLElement, prefix: string, name: string, datum: PrimitiveDatum) {
+function set(
+	el: HTMLElement,
+	prefix: string,
+	name: string,
+	datum: PrimitiveDatum,
+	xssSanitize = true,
+) {
 	if (datum == null) {
 		el.removeAttribute(name);
 		return;
@@ -92,15 +111,28 @@ function set(el: HTMLElement, prefix: string, name: string, datum: PrimitiveDatu
 
 	switch (name) {
 		case 'text': {
-			setContent(el, datum, false);
+			setContent(el, datum, false, xssSanitize);
 			return;
 		}
 		case 'html': {
-			setContent(el, datum, true);
+			// Sanitize HTML if XSS protection is enabled
+			if (xssSanitize && typeof datum === 'string') {
+				setContent(el, sanitizeHtml(datum), true, xssSanitize);
+			} else {
+				setContent(el, datum, true, xssSanitize);
+			}
 			return;
 		}
 		case 'node': {
 			if (typeof datum !== 'string') {
+				return;
+			}
+
+			// Check element name if XSS protection is enabled
+			if (
+				xssSanitize && // Disallow dangerous elements
+				DANGEROUS_ELEMENTS.includes(datum.toLowerCase())
+			) {
 				return;
 			}
 
@@ -113,18 +145,73 @@ function set(el: HTMLElement, prefix: string, name: string, datum: PrimitiveDatu
 			for (const child of el.childNodes) {
 				node.append(child.cloneNode(true));
 			}
+
 			for (const { name, value } of el.attributes) {
-				node.setAttribute(name, value);
+				// Check attribute value if XSS protection is enabled
+				if (xssSanitize) {
+					const sanitizedValue = sanitizeAttributeValue(name, value);
+					if (sanitizedValue !== null) {
+						node.setAttribute(name, sanitizedValue);
+					}
+				} else {
+					node.setAttribute(name, value);
+				}
 			}
+
 			el.replaceWith(node);
 			return;
 		}
 	}
 
+	// If XSS protection is enabled
+	if (xssSanitize) {
+		// Don't set event handler attributes (starting with 'on')
+		if (name.toLowerCase().startsWith('on')) {
+			return;
+		}
+
+		// Check if attribute value is safe
+		const strValue = `${datum}`;
+		const sanitizedValue = sanitizeAttributeValue(name, strValue);
+		if (sanitizedValue === null) {
+			return;
+		}
+
+		if (!name.startsWith('data-') && !(name in el)) {
+			const dataAttr = `data-${prefix}-${kebabCase(name)}`;
+			if (el.hasAttribute(dataAttr)) {
+				el.setAttribute(dataAttr, sanitizedValue);
+			}
+			return;
+		}
+	} else {
+		// Set attribute directly if XSS protection is disabled
+		if (!name.startsWith('data-') && !(name in el)) {
+			const dataAttr = `data-${prefix}-${kebabCase(name)}`;
+			if (el.hasAttribute(dataAttr)) {
+				el.setAttribute(dataAttr, `${datum}`);
+			}
+			return;
+		}
+	}
+
+	// Security check for attributes
+	// Don't set event handler attributes (starting with 'on')
+	if (name.toLowerCase().startsWith('on')) {
+		return;
+	}
+
+	// Check if attribute value is safe
+	const strValue = `${datum}`;
+	const sanitizedValue = sanitizeAttributeValue(name, strValue);
+	if (sanitizedValue === null) {
+		return;
+	}
+
 	if (!name.startsWith('data-') && !(name in el)) {
 		const dataAttr = `data-${prefix}-${kebabCase(name)}`;
 		if (el.hasAttribute(dataAttr)) {
-			el.setAttribute(dataAttr, `${datum}`);
+			el.setAttribute(dataAttr, sanitizedValue);
 		}
 		return;
 	}
@@ -653,8 +740,14 @@ function set(el: HTMLElement, prefix: string, name: string, datum: PrimitiveDatu
  * @param el
  * @param datum
  * @param asHtml
+ * @param xssSanitize
  */
-export function setContent(el: Element, datum: PrimitiveDatum, asHtml = true) {
+export function setContent(
+	el: Element,
+	datum: PrimitiveDatum,
+	asHtml = true,
+	xssSanitize = true,
+) {
 	if (
 		el instanceof HTMLInputElement ||
 		el instanceof HTMLSelectElement ||
@@ -676,9 +769,17 @@ export function setContent(el: Element, datum: PrimitiveDatum, asHtml = true) {
 		return;
 	}
 	if (asHtml) {
-		el.innerHTML = datum == null ? '' : `${datum}`;
+		// Sanitize HTML if XSS protection is enabled
+		const htmlStr = datum == null ? '' : `${datum}`;
+
+		if (xssSanitize && typeof htmlStr === 'string') {
+			el.innerHTML = sanitizeHtml(htmlStr);
+		} else {
+			el.innerHTML = htmlStr;
+		}
 		return;
 	}
+	// No need to sanitize textContent (automatically escaped)
 	el.textContent = datum == null ? '' : `${datum}`;
 }
 

@@ -9,12 +9,14 @@ import { kebabCase } from './utils.js';
  * @param data
  * @param attr
  * @param filter
+ * @param xssSanitize Enable XSS protection
  */
 export default function (
 	el: Element,
 	data: FrozenPattyData,
 	attr: string,
 	filter?: Filter,
+	xssSanitize = true,
 ) {
 	el = el.cloneNode(true) as Element;
 	for (const dataKeyName in data) {
@@ -43,20 +45,20 @@ export default function (
 				let deleteNodeList: Element[] = [];
 				for (const [i, child] of [...newChildren].entries()) {
 					if (datum[i] == null) {
-						setValue(child, dataKeyName, '', attr, filter);
+						setValue(child, dataKeyName, '', attr, filter, xssSanitize);
 						const oldChild = oldChildList[i];
 						if (oldChild) {
 							deleteNodeList.push(oldChild);
 						}
 					} else {
-						setValue(child, dataKeyName, datum[i], attr, filter);
+						setValue(child, dataKeyName, datum[i], attr, filter, xssSanitize);
 						deleteNodeList = [];
 					}
 				}
 				for (const node of deleteNodeList) node.remove();
 			} else {
 				for (const [, targetEl] of [...targetList].entries()) {
-					setValue(targetEl, dataKeyName, datum, attr, filter);
+					setValue(targetEl, dataKeyName, datum, attr, filter, xssSanitize);
 				}
 			}
 		}
