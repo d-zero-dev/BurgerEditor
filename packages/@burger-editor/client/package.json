@@ -41,7 +41,7 @@
 		"@sveltejs/vite-plugin-svelte": "5.0.3",
 		"@types/jquery": "3.5.32",
 		"sass": "1.86.2",
-		"vite": "6.2.4",
+		"vite": "6.2.5",
 		"vite-plugin-dts": "4.5.3"
 	}
 }
