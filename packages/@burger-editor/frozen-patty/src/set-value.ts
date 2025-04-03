@@ -773,6 +773,7 @@ export function setContent(
 		const htmlStr = datum == null ? '' : `${datum}`;
 
 		if (xssSanitize && typeof htmlStr === 'string') {
+			// sanitizeHtml will now replace dangerous elements instead of removing them
 			el.innerHTML = sanitizeHtml(htmlStr);
 		} else {
 			el.innerHTML = htmlStr;

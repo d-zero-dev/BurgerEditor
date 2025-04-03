@@ -69,17 +69,20 @@ export function sanitizeHtml(html: string): string {
 		return '';
 	}
 
-	// Parse HTML safely using DOM parser
-	const doc = new DOMParser().parseFromString(html, 'text/html');
-	const body = doc.body;
+	// Simple approach to handle script tags content
+	// First remove script tags but keep their content
+	let sanitized = html;
 
-	// Remove all dangerous elements
+	// For each dangerous element, replace tag but keep content using regex
+	// Example: <script>alert("XSS")</script> -> alert("XSS")
 	for (const tagName of DANGEROUS_ELEMENTS) {
-		const elements = body.querySelectorAll(tagName);
-		for (const element of elements) {
-			element.remove();
-		}
+		const regex = new RegExp(`<${tagName}[^>]*>(.*?)<\\/${tagName}>`, 'gis');
+		sanitized = sanitized.replace(regex, '$1');
 	}
+
+	// Parse HTML safely using DOM parser for remaining sanitization
+	const doc = new DOMParser().parseFromString(sanitized, 'text/html');
+	const body = doc.body;
 
 	// Remove event handler attributes from all elements
 	sanitizeElementAndChildren(body);
