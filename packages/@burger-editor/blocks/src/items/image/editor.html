@@ -1,0 +1,62 @@
+<div data-bge-dialog="2col">
+	<div data-bge-dialog-ui="sticky">
+		<input type="hidden" name="bge-width" />
+		<input type="hidden" name="bge-height" />
+		<input type="hidden" name="bge-srcset" />
+		<input type="hidden" name="bge-style" />
+
+		<div data-bge-editor-ui="preview"></div>
+		<input type="hidden" name="bge-path" />
+		<input type="hidden" name="bge-empty" />
+		<input type="hidden" name="bge-file-size" />
+
+		<div>
+			<label>
+				<span>画像の代替テキスト(alt)</span>
+				<input type="text" name="bge-alt" />
+			</label>
+			<label>
+				<span>キャプション</span>
+				<input type="text" name="bge-caption" />
+			</label>
+			<fieldset>
+				<legend>画像のサイズ</legend>
+				<div role="radiogroup" aria-labelledby="bgi-image__radio-group1">
+					<div id="bgi-image__radio-group1">基準</div>
+					<label><input type="radio" name="bge-scale-type" value="container" /><span>基準</span></label>
+					<label><input type="radio" name="bge-scale-type" value="original" checked />画像基準</label>
+				</div>
+				<div>
+					<span>
+						<label for="bgi-image__range">幅</label>
+						<output name="bge-css-width"></output>
+					</span>
+					<input id="bgi-image__range" type="range" name="bge-scale" min="1" max="100" step="1" value="100" />
+				</div>
+				<hr />
+				<div role="radiogroup" aria-labelledby="bgi-image__radio-group2">
+					<div id="bgi-image__radio-group2">縦横比</div>
+					<label><input type="radio" name="bge-aspect-ratio" value="unset" checked />オリジナル</label>
+					<label><input type="radio" name="bge-aspect-ratio" value="1/1" />1 : 1</label>
+					<label><input type="radio" name="bge-aspect-ratio" value="4/3" />4 : 3</label>
+					<label><input type="radio" name="bge-aspect-ratio" value="16/9" />16 : 9</label>
+				</div>
+			</fieldset>
+			<fieldset>
+				<legend>リンク</legend>
+				<label><input type="checkbox" name="bge-popup" />ポップアップで画像を開く</label>
+				<label>
+					<span>リンク先URL</span>
+					<input type="url" name="bge-href" />
+				</label>
+				<label><input type="checkbox" name="bge-target-blank" />別タブで開く</label>
+			</fieldset>
+			<label><input type="checkbox" name="bge-lazy" checked aria-describedby="bge-lazy-desc" />遅延読み込み</label>
+			<small id="bge-lazy-desc">画像がブラウザの表示エリアに現れるまでファイルを読み込みません。</small>
+		</div>
+	</div>
+	<div>
+		<div data-bge-editor-ui="imageUploader"></div>
+		<div data-bge-editor-ui="imageList"></div>
+	</div>
+</div>

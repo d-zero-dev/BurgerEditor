@@ -1,0 +1,47 @@
+{
+	"name": "@burger-editor/client",
+	"version": "4.0.0-alpha.0",
+	"description": "BurgerEditor client package",
+	"author": "D-ZERO",
+	"license": "MIT",
+	"repository": {
+		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
+	},
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module",
+	"exports": {
+		".": {
+			"import": "./dist/client.js",
+			"types": "./dist/index.d.ts"
+		},
+		"./style": {
+			"import": "./dist/client.css"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "vite build",
+		"prebuild": "tsc",
+		"dev": "vite build --watch"
+	},
+	"dependencies": {
+		"@burger-editor/core": "4.0.0-alpha.0",
+		"@burger-editor/migrator": "4.0.0-alpha.0",
+		"@burger-editor/utils": "4.0.0-alpha.0",
+		"@tabler/icons-svelte": "3.31.0",
+		"jquery": "3.7.1",
+		"svelte": "5.25.6"
+	},
+	"devDependencies": {
+		"@sveltejs/vite-plugin-svelte": "5.0.3",
+		"@types/jquery": "3.5.32",
+		"sass": "1.86.2",
+		"vite": "6.2.4",
+		"vite-plugin-dts": "4.5.3"
+	}
+}

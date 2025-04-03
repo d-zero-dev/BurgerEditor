@@ -51,6 +51,9 @@ typings/
 # Optional eslint cache
 .eslintcache
 
+# Rollup cache
+.rollup.cache
+
 # Optional REPL history
 .node_repl_history
 
@@ -68,3 +71,6 @@ typings/
 
 # TypeScript
 *.tsbuildinfo
+
+# Playwright
+test-results

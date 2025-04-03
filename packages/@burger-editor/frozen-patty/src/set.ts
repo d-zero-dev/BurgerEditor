@@ -1,7 +1,15 @@
 import type { Filter, FrozenPattyData } from './types.js';
 
 import { setValue } from './set-value.js';
+import { kebabCase } from './utils.js';
 
+/**
+ *
+ * @param el
+ * @param data
+ * @param attr
+ * @param filter
+ */
 export default function (
 	el: Element,
 	data: FrozenPattyData,
@@ -12,7 +20,7 @@ export default function (
 	for (const dataKeyName in data) {
 		if (dataKeyName in data) {
 			const datum = data[dataKeyName];
-			const selector = `[data-${attr}*="${dataKeyName}"]`;
+			const selector = `[data-${attr}*="${kebabCase(dataKeyName)}"]`;
 			// eslint-disable-next-line unicorn/prefer-spread
 			const targetList = Array.from(el.querySelectorAll(selector));
 			if (Array.isArray(datum)) {

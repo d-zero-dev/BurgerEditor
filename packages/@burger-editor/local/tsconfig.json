@@ -1,0 +1,25 @@
+{
+	"extends": ["../../../tsconfig.json"],
+	"compilerOptions": {
+		"noEmit": true,
+		"target": "ESNext",
+		"module": "NodeNext",
+		"strict": true,
+		"verbatimModuleSyntax": true,
+		"skipLibCheck": true,
+		"types": ["node"],
+		"jsx": "react-jsx",
+		"jsxImportSource": "hono/jsx"
+	},
+	"references": [
+		{
+			"path": "../migrator"
+		},
+		{
+			"path": "../core"
+		},
+		{
+			"path": "../utils"
+		}
+	]
+}

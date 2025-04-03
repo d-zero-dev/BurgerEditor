@@ -1,16 +1,19 @@
 import type { Filter, PrimitiveDatum } from './types.js';
 
+import { fieldNameParser } from './field-name-parser.js';
+import { kebabCase } from './utils.js';
+
 /**
  * Set value to an element
  *
  * ```html
  * <div [target-attribute] data-[attr]="[name]:[target-attribute]"></div>
  * ```
- *
  * @param el A target element
  * @param name A label name
  * @param datum A datum of value
  * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
+ * @param filter
  */
 export function setValue(
 	el: Element,
@@ -19,39 +22,12 @@ export function setValue(
 	attr = 'field',
 	filter?: Filter,
 ) {
-	const bindingFormats = el.getAttribute(`data-${attr}`) || '';
-	for (let bindingFormat of bindingFormats.split(/\s*,\s*/)) {
-		bindingFormat = bindingFormat.trim();
+	const rawValue = el.getAttribute(`data-${attr}`);
+	const fieldList = rawValue?.split(/\s*,\s*/) ?? [];
+	for (const field of fieldList) {
+		const { fieldName, propName } = fieldNameParser(field);
 
-		/**
-		 * 抽出した対象キー
-		 */
-		let key: string;
-
-		/**
-		 * 対象属性
-		 *
-		 * `null`の場合は`innerHTML`が対象となる
-		 * ただし要素がinput要素の場合は`value`に設定
-		 */
-		let targetAttr: string | null;
-
-		//
-		// 対象属性名の抽出
-		//
-		if (/^[_a-z-][\w-]*:[_a-z-][\w-]*(?:\([a-z-]+\))?/i.test(bindingFormat)) {
-			const splitKey = bindingFormat.split(':');
-			key = splitKey[0]?.trim() ?? '';
-			targetAttr = splitKey[1]?.trim() ?? '';
-		} else {
-			key = bindingFormat.trim();
-			targetAttr = null;
-		}
-
-		//
-		// 対象キーが一致しなければスキップする
-		//
-		if (name !== key) {
+		if (name !== fieldName) {
 			continue;
 		}
 
@@ -59,15 +35,11 @@ export function setValue(
 			datum = filter(datum);
 		}
 
-		//
-		// 属性による対応
-		//
-		if (targetAttr) {
-			//
-			// style属性
-			//
-			if (/^style\([a-z-]+\)$/i.test(targetAttr)) {
-				const cssPropertyName = targetAttr.replace(/^style\(([a-z-]+)\)$/i, '$1');
+		// console.log({ name, field, fieldName, propName, datum, el: el.innerHTML });
+
+		if (propName) {
+			if (/^style\([a-z-]+\)$/i.test(propName)) {
+				const cssPropertyName = propName.replace(/^style\(([a-z-]+)\)$/i, '$1');
 				let cssValue: string;
 				switch (cssPropertyName) {
 					case 'background-image': {
@@ -91,58 +63,86 @@ export function setValue(
 					}
 				}
 				el.setAttribute('style', `${cssPropertyName}: ${cssValue}`);
-				//
-				// 属性
-				//
 			} else if (el instanceof HTMLElement) {
-				setAttribute(el, targetAttr, datum);
+				// HTMLElement
+				set(el, attr, propName, datum);
 			} else {
 				// SVGElement or more
-				el.setAttribute(targetAttr, `${datum}`);
+				el.setAttribute(propName, `${datum}`);
 			}
-			//
-			// 属性指定がない場合
-			//
-		} else {
-			if (
-				el instanceof HTMLInputElement ||
-				el instanceof HTMLSelectElement ||
-				el instanceof HTMLTextAreaElement
-			) {
-				el.value = `${datum}`;
-			} else {
-				el.innerHTML = `${datum}`;
-			}
+			return;
 		}
+
+		setContent(el, datum);
 	}
 }
 
 /**
- * Set attribute
  *
- * @param el Target HTML element
- * @param attr Attribute name
- * @param datum Datum
- *
+ * @param el
+ * @param prefix
+ * @param name
+ * @param datum
  */
-function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
+function set(el: HTMLElement, prefix: string, name: string, datum: PrimitiveDatum) {
 	if (datum == null) {
-		el.removeAttribute(attr);
+		el.removeAttribute(name);
 		return;
 	}
-	switch (attr) {
+
+	switch (name) {
+		case 'text': {
+			setContent(el, datum, false);
+			return;
+		}
+		case 'html': {
+			setContent(el, datum, true);
+			return;
+		}
+		case 'node': {
+			if (typeof datum !== 'string') {
+				return;
+			}
+
+			const nodeName = el.localName ?? el.nodeName.toLowerCase();
+			if (nodeName === datum.toLowerCase()) {
+				return;
+			}
+
+			const node = (el.ownerDocument ?? document).createElement(`${datum}`);
+			for (const child of el.childNodes) {
+				node.append(child.cloneNode(true));
+			}
+			for (const { name, value } of el.attributes) {
+				node.setAttribute(name, value);
+			}
+			el.replaceWith(node);
+			return;
+		}
+	}
+
+	if (!name.startsWith('data-') && !(name in el)) {
+		const dataAttr = `data-${prefix}-${kebabCase(name)}`;
+		if (el.hasAttribute(dataAttr)) {
+			el.setAttribute(dataAttr, `${datum}`);
+		}
+		return;
+	}
+
+	switch (name) {
 		case 'contenteditable': {
 			switch (datum) {
+				case true:
 				case 'true':
 				case '': {
 					el.contentEditable = 'true';
 					break;
 				}
 				default: {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				}
 			}
-			break;
+			return;
 		}
 		case 'dir': {
 			switch (datum) {
@@ -153,10 +153,10 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 				}
 				// case 'auto':
 				default: {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				}
 			}
-			break;
+			return;
 		}
 		case 'draggable': {
 			if (typeof datum === 'boolean') {
@@ -174,18 +174,22 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 				}
 				// case 'auto':
 				default: {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				}
 			}
-			break;
+			return;
 		}
 		case 'hidden': {
+			if (datum === 'until-found') {
+				el.setAttribute(name, datum);
+				return;
+			}
 			el.hidden = !!datum;
-			break;
+			return;
 		}
 		case 'spellcheck': {
 			el.spellcheck = !!datum;
-			break;
+			return;
 		}
 		case 'tabindex': {
 			let i: number;
@@ -197,24 +201,24 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 				i = datum;
 			}
 			el.tabIndex = Number.isNaN(i) ? -1 : Math.floor(i);
-			break;
+			return;
 		}
 		case 'async': {
 			if (el instanceof HTMLScriptElement) {
 				el.async = !!datum;
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'autocomplete': {
 			if (el instanceof HTMLInputElement || el instanceof HTMLFormElement) {
 				// @ts-ignore
 				el.autocomplete = datum ? `${datum}` : 'off';
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'autofocus': {
 			if (
@@ -225,75 +229,75 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 			) {
 				el.autofocus = datum === '' ? true : !!datum;
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'autoplay': {
 			if (el instanceof HTMLAudioElement || el instanceof HTMLVideoElement) {
 				el.autoplay = datum === '' ? true : !!datum;
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'checked': {
 			if (el instanceof HTMLInputElement) {
 				el.checked = datum === '' ? true : !!datum;
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'cols': {
 			if (el instanceof HTMLTextAreaElement) {
 				const cols = toInt(datum);
 				if (Number.isNaN(cols)) {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				} else {
 					el.cols = cols;
 				}
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'colspan': {
 			if (el instanceof HTMLTableCellElement) {
 				const colSpan = toInt(datum);
 				if (Number.isNaN(colSpan)) {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				} else {
 					el.colSpan = colSpan;
 				}
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'controls': {
 			if (el instanceof HTMLAudioElement || el instanceof HTMLVideoElement) {
 				el.controls = datum === '' ? true : !!datum;
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'default': {
 			if (el instanceof HTMLTrackElement) {
 				el.default = datum === '' ? true : !!datum;
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'defer': {
 			if (el instanceof HTMLScriptElement) {
 				el.defer = !!datum;
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'disabled': {
 			if (
@@ -307,63 +311,63 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 			) {
 				el.disabled = datum === '' ? true : !!datum;
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'download': {
 			if (el instanceof HTMLAnchorElement) {
 				if (datum || datum === '') {
 					el.download = `${datum}`;
 				} else {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				}
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'high': {
 			if (el instanceof HTMLMeterElement) {
 				const high = toInt(datum);
 				if (Number.isNaN(high)) {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				} else {
 					el.high = high;
 				}
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'ismap': {
 			if (el instanceof HTMLImageElement) {
 				el.isMap = datum === '' ? true : !!datum;
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'loop': {
 			if (el instanceof HTMLAudioElement || el instanceof HTMLVideoElement) {
 				el.loop = datum === '' ? true : !!datum;
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'low': {
 			if (el instanceof HTMLMeterElement) {
 				const low = toInt(datum);
 				if (Number.isNaN(low)) {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				} else {
 					el.low = low;
 				}
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'max': {
 			if (
@@ -373,78 +377,77 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 			) {
 				const max = toInt(datum);
 				if (Number.isNaN(max)) {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				} else {
 					el.max = max;
 				}
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'maxlength': {
 			if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
 				const maxLength = toInt(datum);
 				if (Number.isNaN(maxLength)) {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				} else {
 					el.maxLength = Math.floor(maxLength);
 				}
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'min': {
 			if (el instanceof HTMLInputElement || el instanceof HTMLMeterElement) {
 				const min = toInt(datum);
 				if (Number.isNaN(min)) {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				} else {
 					el.min = min;
 				}
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'multiple': {
 			if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) {
 				el.multiple = datum === '' ? true : !!datum;
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'novalidate': {
 			if (el instanceof HTMLFormElement) {
 				el.noValidate = datum === '' ? true : !!datum;
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
+			}
+			return;
+		}
+		case 'open': {
+			if (el instanceof HTMLDetailsElement) {
+				el.open = datum === '' ? true : !!datum;
+			} else {
+				el.setAttribute(name, `${datum}`);
 			}
 			break;
 		}
-		// ⚰️ Unsupported HTMLDetailsElement yet...
-		// case 'open': {
-		// 	if (el instanceof HTMLDetailsElement) {
-		// 		el.open = datum === '' ? true : !!datum;
-		// 	} else {
-		// 		el.setAttribute(attr, `${datum}`);
-		// 	}
-		// 	break;
-		// }
 		case 'optimum': {
 			if (el instanceof HTMLMeterElement) {
 				const optimum = toInt(datum);
 				if (Number.isNaN(optimum)) {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				} else {
 					el.optimum = Math.floor(optimum);
 				}
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'preload': {
 			if (el instanceof HTMLAudioElement || el instanceof HTMLVideoElement) {
@@ -460,17 +463,17 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 					}
 				}
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'readonly': {
 			if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
 				el.readOnly = datum === '' ? true : !!datum;
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'required': {
 			if (
@@ -480,82 +483,82 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 			) {
 				el.required = datum === '' ? true : !!datum;
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'reversed': {
 			if (el instanceof HTMLOListElement) {
 				el.reversed = datum === '' ? true : !!datum;
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'rows': {
 			if (el instanceof HTMLTextAreaElement) {
 				const rows = toInt(datum);
 				if (Number.isNaN(rows)) {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				} else {
 					el.rows = Math.floor(rows);
 				}
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'rowspan': {
 			if (el instanceof HTMLTableCellElement) {
 				const rowSpan = toInt(datum);
 				if (Number.isNaN(rowSpan)) {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				} else {
 					el.rowSpan = Math.floor(rowSpan);
 				}
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'size': {
 			if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) {
 				const size = toInt(datum);
 				if (Number.isNaN(size)) {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				} else {
 					el.size = size;
 				}
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'span': {
 			if (el instanceof HTMLTableColElement) {
 				const span = toInt(datum);
 				if (Number.isNaN(span)) {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				} else {
 					el.span = span;
 				}
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'start': {
 			if (el instanceof HTMLOListElement) {
 				const start = toInt(datum);
 				if (Number.isNaN(start)) {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				} else {
 					el.start = start;
 				}
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'step': {
 			if (el instanceof HTMLInputElement) {
@@ -565,14 +568,14 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 				}
 				const step = toNum(datum);
 				if (Number.isNaN(step)) {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				} else {
 					el.step = step.toString(10);
 				}
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		case 'target': {
 			if (
@@ -583,12 +586,12 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 				if (datum) {
 					el.target = `${datum}`;
 				} else {
-					el.removeAttribute(attr);
+					el.removeAttribute(name);
 				}
 			} else {
-				el.setAttribute(attr, `${datum}`);
+				el.setAttribute(name, `${datum}`);
 			}
-			break;
+			return;
 		}
 		// case 'accesskey':
 		// case 'class':
@@ -640,11 +643,49 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 		// case 'wrap':
 		// and Data-* attributes
 		default: {
-			el.setAttribute(attr, `${datum}`);
+			el.setAttribute(name, `${datum}`);
 		}
 	}
 }
 
+/**
+ *
+ * @param el
+ * @param datum
+ * @param asHtml
+ */
+export function setContent(el: Element, datum: PrimitiveDatum, asHtml = true) {
+	if (
+		el instanceof HTMLInputElement ||
+		el instanceof HTMLSelectElement ||
+		el instanceof HTMLTextAreaElement ||
+		el instanceof HTMLOutputElement
+	) {
+		if (
+			el instanceof HTMLInputElement &&
+			(el.type === 'radio' || el.type === 'checkbox')
+		) {
+			if (typeof datum === 'boolean') {
+				el.checked = datum;
+				return;
+			}
+			el.checked = el.value === `${datum}`;
+			return;
+		}
+		el.value = `${datum}`;
+		return;
+	}
+	if (asHtml) {
+		el.innerHTML = datum == null ? '' : `${datum}`;
+		return;
+	}
+	el.textContent = datum == null ? '' : `${datum}`;
+}
+
+/**
+ *
+ * @param datum
+ */
 function toNum(datum: boolean | string | number) {
 	let i: number;
 	if (typeof datum === 'boolean') {
@@ -657,6 +698,10 @@ function toNum(datum: boolean | string | number) {
 	return i;
 }
 
+/**
+ *
+ * @param datum
+ */
 function toInt(datum: boolean | string | number) {
 	return Math.floor(toNum(datum));
 }

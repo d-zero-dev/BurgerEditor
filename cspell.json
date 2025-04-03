@@ -1,7 +1,14 @@
 {
 	"import": ["@d-zero/cspell-config"],
+	"ignorePaths": [".vscode"],
 	"words": [
-		//
-		"nocheck"
+		// Lowercased
+		"nocheck",
+
+		// Dependencies
+		"hono",
+		"jaco",
+		"tabler",
+		"trix"
 	]
 }

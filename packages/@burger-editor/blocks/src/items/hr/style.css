@@ -1,0 +1,7 @@
+[data-bgi='hr'] {
+	--border-color: #000;
+	--border-width: 1px;
+	inline-size: 100%;
+	block-size: var(--border-width);
+	border: none;
+}

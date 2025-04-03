@@ -1,0 +1,37 @@
+{
+	"name": "@burger-editor/utils",
+	"version": "4.0.0-alpha.0",
+	"description": "BurgerEditor Editor Utility Functions",
+	"author": "D-ZERO",
+	"license": "MIT",
+	"repository": {
+		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
+	},
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc --project tsconfig.build.json",
+		"dev": "tsc --watch --project tsconfig.build.json",
+		"clean": "tsc --build --clean"
+	},
+	"dependencies": {
+		"dayjs": "1.11.13",
+		"marked": "15.0.7",
+		"turndown": "7.2.0"
+	},
+	"devDependencies": {
+		"@types/turndown": "5.0.5"
+	}
+}

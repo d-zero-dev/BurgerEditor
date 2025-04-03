@@ -1,0 +1,64 @@
+html,
+body {
+	padding: 0;
+	margin: 0;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+.app {
+	display: grid;
+	grid-template-columns: 15em minmax(0, 1fr);
+	min-block-size: 100vh;
+
+	.nav {
+		padding-inline: 1em;
+		background-color: var(--bge-dialog-background-color);
+
+		> div {
+			position: sticky;
+			inset-block-start: 0;
+			padding-block: 1em;
+		}
+
+		ul {
+			padding: 0;
+			padding-inline-start: 1em;
+			margin: 0;
+			list-style-type: none;
+
+			li {
+				word-break: break-all;
+
+				.file {
+					color: inherit;
+					text-decoration: none;
+
+					&::before {
+						margin-inline-end: 0.5em;
+						content: '📄';
+					}
+
+					span {
+						text-decoration: underline;
+					}
+				}
+
+				.dir::before {
+					margin-inline-end: 0.5em;
+					content: '📁';
+				}
+			}
+		}
+
+		> div > ul {
+			padding: 0;
+		}
+	}
+
+	.content {
+		padding: 1em;
+	}
+}

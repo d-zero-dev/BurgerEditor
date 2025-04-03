@@ -1,0 +1,38 @@
+{
+	"name": "@burger-editor/core",
+	"version": "4.0.0-alpha.0",
+	"description": "BurgerEditor Editor Core",
+	"author": "D-ZERO",
+	"license": "MIT",
+	"repository": {
+		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
+	},
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc --project tsconfig.build.json",
+		"dev": "tsc --watch --project tsconfig.build.json",
+		"clean": "tsc --build --clean"
+	},
+	"dependencies": {
+		"@burger-editor/frozen-patty": "0.11.0",
+		"@burger-editor/utils": "4.0.0-alpha.0",
+		"jaco": "4.0.0",
+		"semver": "7.7.1"
+	},
+	"devDependencies": {
+		"@types/semver": "7.7.0"
+	}
+}
