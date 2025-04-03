@@ -8,6 +8,10 @@
 	"bin": {
 		"bge": "./server/index.js"
 	},
+	"files": [
+		"dist",
+		"server"
+	],
 	"scripts": {
 		"build": "run-p build:client build:server",
 		"build:client": "vite build",
