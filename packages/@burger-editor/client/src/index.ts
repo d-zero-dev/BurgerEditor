@@ -11,6 +11,7 @@ import FileUploader from './file-uploader.svelte';
 import Preview from './preview.svelte';
 import { svelteMount } from './svelte-mount.js';
 import TableEditor from './table-editor.svelte';
+import Tabs from './tabs.svelte';
 
 import './style/ui.scss';
 
@@ -111,6 +112,20 @@ export async function createBurgerEditorClient(
 					target: el,
 					props: {
 						engine,
+					},
+				});
+			},
+			tabs: (el, engine) => {
+				const contentId = el.dataset.bgeEditorUiFor;
+				if (!contentId) {
+					throw new Error('Tab UI component requires contentId attribute');
+				}
+
+				return svelteMount(Tabs, {
+					target: el,
+					props: {
+						engine,
+						contentId,
 					},
 				});
 			},

@@ -187,7 +187,7 @@
 		border-radius: 0.5em;
 	}
 
-	:where(button)[aria-pressed='true'] {
+	:where(button:is([aria-pressed='true'], [aria-selected='true'])) {
 		color: #fff;
 		background-color: var(--bge-ui-primary-color);
 
@@ -208,10 +208,6 @@
 	}
 
 	:where(label:not([for], :has(+ button))) {
-		// padding-block-end: 1em;
-		// margin-block-end: 1em;
-		// border-block-end: 1px solid var(--bge-border-color);
-
 		&:last-of-type {
 			padding-block-end: 0;
 			border-block-end: none;
@@ -399,5 +395,14 @@ label:has(input[type='radio'][name='bge-scale-type'][value='container']) {
 				content: 'グリッド';
 			}
 		}
+	}
+}
+
+[data-bge-editor-ui='tabs'] {
+	& + * {
+		padding: 1em;
+		margin-block: -1px 1em;
+		border: 1px solid var(--bge-border-color);
+		border-radius: 0.5em;
 	}
 }

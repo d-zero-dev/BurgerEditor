@@ -4,5 +4,18 @@
 		"@d-zero/stylelint-config/base",
 		"@d-zero/stylelint-config/order",
 		"stylelint-config-html"
+	],
+	"overrides": [
+		{
+			"files": ["**/*.svelte"],
+			"rules": {
+				"selector-pseudo-class-no-unknown": [
+					true,
+					{
+						"ignorePseudoClasses": ["global"]
+					}
+				]
+			}
+		}
 	]
 }
