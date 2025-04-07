@@ -2,6 +2,7 @@ import type { Submitter } from './dom-helpers/types.js';
 import type { BurgerEditorEngine } from './engine/engine.js';
 import type { ItemEditorService } from './item/item-editor-service.js';
 import type { ItemData, ItemPrimitiveData } from './item/types.js';
+import type { PrimitiveDatum } from '@burger-editor/frozen-patty/types';
 
 import { setContent } from '@burger-editor/frozen-patty/set-value';
 import { camelCase, kebabCase } from '@burger-editor/frozen-patty/utils';
@@ -48,6 +49,15 @@ export class ItemEditorDialog<
 					return $ctrl.checked as D;
 				}
 			}
+		}
+		if ($ctrl.name.endsWith('[]')) {
+			return $ctrl.value.split(',').map((value) => {
+				try {
+					return JSON.parse(value);
+				} catch {
+					return value;
+				}
+			}) as D;
 		}
 		try {
 			return JSON.parse($ctrl.value) as D;
@@ -132,10 +142,15 @@ export class ItemEditorDialog<
 			HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
 		>(`[name^="${prefix}"]`);
 
-		const map = new Map<keyof T & string, ItemPrimitiveData | ItemPrimitiveData[]>();
+		const map = new Map<string, ItemPrimitiveData | ItemPrimitiveData[]>();
 
 		for (const $datum of $data) {
-			const name: keyof T & string = camelCase($datum.name.slice(prefix.length));
+			let name = camelCase($datum.name.slice(prefix.length));
+
+			if (name.endsWith('[]')) {
+				name = name.slice(0, -2);
+				map.delete(name);
+			}
 
 			if (map.has(name)) {
 				continue;
@@ -189,7 +204,7 @@ export class ItemEditorDialog<
 		let el: NodeListOf<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>;
 		for (const n of [kebabCase(propName), propName]) {
 			el = this.findAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
-				`[name="bge-${n}"]`,
+				`[name="bge-${n}"], [name="bge-${n}[]"]`,
 			);
 			if (el.length > 0) {
 				return [...el];
@@ -201,30 +216,10 @@ export class ItemEditorDialog<
 	#setValues(data: T) {
 		for (const [_name, datum] of Object.entries(data)) {
 			const name = kebabCase(_name);
-			const inputSelector = `[name="bge-${name}"]`;
-			if (Array.isArray(datum)) {
-				const $targetEl = this.find(inputSelector);
-				if (!$targetEl) {
-					continue;
-				}
-				const $listRoot = $targetEl.closest('[data-bge-list]');
-				if (!$listRoot || $listRoot.children.length === 0) {
-					continue;
-				}
-				const $listItem = $listRoot.firstElementChild?.cloneNode(true);
-				if (!$listItem) {
-					continue;
-				}
-				while (datum.length > $listRoot.children.length) {
-					$listRoot.append($listItem.cloneNode(true));
-				}
-				for (const [i, targetEl] of $listRoot.querySelectorAll(inputSelector).entries()) {
-					setContent(targetEl, datum[i] || '');
-				}
-				continue;
-			}
+			const inputSelector = `[name="bge-${name}"], [name="bge-${name}[]"]`;
+			const value: PrimitiveDatum = Array.isArray(datum) ? datum.join(',') : datum;
 			for (const targetEl of this.findAll(inputSelector)) {
-				setContent(targetEl, datum);
+				setContent(targetEl, value);
 			}
 		}
 		this.update(data);
