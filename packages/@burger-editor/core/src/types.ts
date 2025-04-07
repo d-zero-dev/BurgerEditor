@@ -36,6 +36,7 @@ export interface UIOptions {
 	readonly imageUploader?: UICreator;
 	readonly fileUploader?: UICreator;
 	readonly preview?: UICreator;
+	readonly tabs?: UICreator;
 	readonly tableEditor?: UICreator;
 }
 
@@ -98,6 +99,9 @@ export interface Actions {
 		readonly x: number;
 		readonly y: number;
 		readonly marginBlockEnd: number;
+	};
+	'select-tab-in-item-editor': {
+		readonly index: number;
 	};
 }
 
