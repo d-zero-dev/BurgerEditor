@@ -15,7 +15,9 @@ export function importItems(template: string) {
 			try {
 				const data = attr ? JSON.parse(`${attr}`) : {};
 				html = itemImport(typedItem.template, data);
-			} catch {
+			} catch (error) {
+				// eslint-disable-next-line no-console
+				console.error(error);
 				throw new Error(`${typedItem.name}のテンプレートをインポートできませんでした。`);
 			}
 			return `<div data-bgi="${typedItem.name}" data-bgi-ver="${typedItem.version}">${html}</div>`;
