@@ -128,12 +128,7 @@ function set(
 			return;
 		}
 		case 'html': {
-			// Sanitize HTML if XSS protection is enabled
-			if (xssSanitize && typeof datum === 'string') {
-				setContent(el, sanitizeHtml(datum), true, xssSanitize);
-			} else {
-				setContent(el, datum, true, xssSanitize);
-			}
+			setContent(el, datum, true, xssSanitize);
 			return;
 		}
 		case 'node': {
