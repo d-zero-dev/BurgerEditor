@@ -795,6 +795,74 @@ test('attr: style', () => {
 	).toStrictEqual({ path: '/path/to/image.webp' });
 });
 
+test('picture (Specific case)', () => {
+	const fp = new FrozenPatty(
+		[
+			'<picture data-field-list>',
+			'<img src="/path/to/4" alt="" width="100" height="100" data-field="path:src, :alt, :width, :height, :media">',
+			'</picture>',
+		].join(''),
+		{
+			typeConvert: true,
+		},
+	);
+	fp.merge({
+		path: ['/path/to/1', '/path/to/2', '/path/to/3', '/path/to/4'],
+		width: [100, 200, 300, 400],
+		height: [10, 20, 30, 40],
+		media: [
+			'(min-width: 1000px)',
+			'(min-width: 2000px)',
+			'(min-width: 3000px)',
+			'(min-width: 4000px)',
+		],
+		alt: ['alternative text'],
+	});
+
+	const elements = [...fp.toDOM().firstChild.children];
+
+	// 各要素が期待される属性を持っているか確認
+	expect(elements.length).toBe(4);
+
+	// source要素の確認
+	expect(elements[0].localName).toBe('source');
+	expect(elements[0].getAttribute('srcset')).toBe('/path/to/4');
+	expect(elements[0].getAttribute('width')).toBe('400');
+	expect(elements[0].getAttribute('height')).toBe('40');
+	expect(elements[0].getAttribute('media')).toBe('(min-width: 4000px)');
+	expect(elements[0].dataset.field).toBe('path:srcset, :width, :height, :media');
+
+	expect(elements[1].localName).toBe('source');
+	expect(elements[1].getAttribute('srcset')).toBe('/path/to/3');
+	expect(elements[1].getAttribute('width')).toBe('300');
+	expect(elements[1].getAttribute('height')).toBe('30');
+	expect(elements[1].getAttribute('media')).toBe('(min-width: 3000px)');
+	expect(elements[1].dataset.field).toBe('path:srcset, :width, :height, :media');
+
+	expect(elements[2].localName).toBe('source');
+	expect(elements[2].getAttribute('srcset')).toBe('/path/to/2');
+	expect(elements[2].getAttribute('width')).toBe('200');
+	expect(elements[2].getAttribute('height')).toBe('20');
+	expect(elements[2].getAttribute('media')).toBe('(min-width: 2000px)');
+	expect(elements[2].dataset.field).toBe('path:srcset, :width, :height, :media');
+
+	// img要素の確認
+	expect(elements[3].localName).toBe('img');
+	expect(elements[3].getAttribute('src')).toBe('/path/to/1');
+	expect(elements[3].getAttribute('alt')).toBe('alternative text');
+	expect(elements[3].getAttribute('width')).toBe('100');
+	expect(elements[3].getAttribute('height')).toBe('10');
+	expect(elements[3].dataset.field).toBe('path:src, :alt, :width, :height, :media');
+
+	expect(fp.toJSON()).toStrictEqual({
+		alt: ['alternative text'],
+		path: ['/path/to/1', '/path/to/2', '/path/to/3', '/path/to/4'],
+		width: [100, 200, 300, 400],
+		height: [10, 20, 30, 40],
+		media: [null, '(min-width: 2000px)', '(min-width: 3000px)', '(min-width: 4000px)'],
+	});
+});
+
 test('toHTML()', () => {
 	const fp = new FrozenPatty('<div data-foo="bar" data-field="foo:data-foo"></div>');
 	expect(fp.toHTML()).toBe('<div data-foo="bar" data-field="foo:data-foo"></div>');

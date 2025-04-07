@@ -1,9 +1,10 @@
 import type { Filter, PrimitiveDatum } from './types.js';
 
-import { fieldNameParser } from './field-name-parser.js';
+import { parseFields } from './parse-fields.js';
 import {
-	DANGEROUS_ELEMENTS,
 	kebabCase,
+	propInElement,
+	replaceNode,
 	sanitizeAttributeValue,
 	sanitizeHtml,
 } from './utils.js';
@@ -30,63 +31,75 @@ export function setValue(
 	xssSanitize = true,
 ) {
 	const rawValue = el.getAttribute(`data-${attr}`);
-	const fieldList = rawValue?.split(/\s*,\s*/) ?? [];
-	for (const field of fieldList) {
-		const { fieldName, propName } = fieldNameParser(field);
+	const fields = parseFields(rawValue ?? '');
 
-		if (name !== fieldName) {
-			continue;
-		}
+	const field = fields.find((field) => field.fieldName === name);
 
-		if (filter) {
-			datum = filter(datum);
-		}
-
-		// console.log({ name, field, fieldName, propName, datum, el: el.innerHTML });
-
-		if (propName) {
-			if (/^style\([a-z-]+\)$/i.test(propName)) {
-				const cssPropertyName = propName.replace(/^style\(([a-z-]+)\)$/i, '$1');
-				let cssValue: string;
-				switch (cssPropertyName) {
-					case 'background-image': {
-						//
-						// Using CSS method would create absolute URLs with host
-						// This would prevent migration from demo to production server
-						// Using simple string insertion (setAttribute) instead
-						// URL may not contain multibyte or whitespace characters, but escape anyway
-						const url = encodeURI(`${datum}`);
-						cssValue = `url(${url})`;
-						break;
-					}
-					//
-					// TODO: Handle other cases where values need units
-					//
-					default: {
-						cssValue = `${datum}`;
-					}
-				}
-				el.setAttribute('style', `${cssPropertyName}: ${cssValue}`);
-			} else if (el instanceof HTMLElement) {
-				// HTMLElement
-				set(el, attr, propName, datum, xssSanitize);
-			} else {
-				// SVGElement or more
-				// Check attribute value if XSS protection is enabled
-				if (xssSanitize) {
-					const safeValue = sanitizeAttributeValue(propName, `${datum}`);
-					if (safeValue !== null) {
-						el.setAttribute(propName, safeValue);
-					}
-				} else {
-					el.setAttribute(propName, `${datum}`);
-				}
-			}
-			return;
-		}
-
-		setContent(el, datum, undefined, xssSanitize);
+	if (!field) {
+		return;
 	}
+
+	const { propName } = field;
+
+	if (filter) {
+		datum = filter(datum);
+	}
+
+	// console.log({ name, field, fieldName, propName, datum, el: el.innerHTML });
+
+	if (!propName) {
+		setContent(el, datum, undefined, xssSanitize);
+		return;
+	}
+
+	if (propName === 'style' && el instanceof HTMLElement) {
+		el.style.cssText = `${datum}`;
+		return;
+	}
+
+	if (/^style\([a-z-]+\)$/i.test(propName)) {
+		const cssPropertyName = propName.replace(/^style\(([a-z-]+)\)$/i, '$1');
+		let cssValue: string;
+		switch (cssPropertyName) {
+			case 'background-image': {
+				// Using CSS method would create absolute URLs with host
+				// This would prevent migration from demo to production server
+				// Using simple string insertion (setAttribute) instead
+				// URL may not contain multibyte or whitespace characters, but escape anyway
+				const url = encodeURI(`${datum}`);
+				cssValue = `url(${url})`;
+				break;
+			}
+			//
+			// TODO: Handle other cases where values need units
+			//
+			default: {
+				cssValue = `${datum}`;
+			}
+		}
+		el.setAttribute('style', `${cssPropertyName}: ${cssValue}`);
+		return;
+	}
+
+	if (el instanceof HTMLElement) {
+		// HTMLElement
+		set(el, attr, propName, datum, xssSanitize);
+		return;
+	}
+
+	// SVGElement or more
+	// ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+
+	// Check attribute value if XSS protection is enabled
+	if (xssSanitize) {
+		const safeValue = sanitizeAttributeValue(propName, `${datum}`);
+		if (safeValue !== null) {
+			el.setAttribute(propName, safeValue);
+		}
+		return;
+	}
+
+	el.setAttribute(propName, `${datum}`);
 }
 
 /**
@@ -128,37 +141,7 @@ function set(
 				return;
 			}
 
-			// Check element name if XSS protection is enabled
-			if (
-				xssSanitize && // Disallow dangerous elements
-				DANGEROUS_ELEMENTS.includes(datum.toLowerCase())
-			) {
-				return;
-			}
-
-			const nodeName = el.localName ?? el.nodeName.toLowerCase();
-			if (nodeName === datum.toLowerCase()) {
-				return;
-			}
-
-			const node = (el.ownerDocument ?? document).createElement(`${datum}`);
-			for (const child of el.childNodes) {
-				node.append(child.cloneNode(true));
-			}
-
-			for (const { name, value } of el.attributes) {
-				// Check attribute value if XSS protection is enabled
-				if (xssSanitize) {
-					const sanitizedValue = sanitizeAttributeValue(name, value);
-					if (sanitizedValue !== null) {
-						node.setAttribute(name, sanitizedValue);
-					}
-				} else {
-					node.setAttribute(name, value);
-				}
-			}
-
-			el.replaceWith(node);
+			replaceNode(el, datum, prefix, xssSanitize);
 			return;
 		}
 	}
@@ -170,48 +153,24 @@ function set(
 			return;
 		}
 
-		// Check if attribute value is safe
-		const strValue = `${datum}`;
-		const sanitizedValue = sanitizeAttributeValue(name, strValue);
-		if (sanitizedValue === null) {
-			return;
-		}
+		const beforeSanitize = datum;
+		datum = sanitizeAttributeValue(name, datum);
 
-		if (!name.startsWith('data-') && !(name in el)) {
-			const dataAttr = `data-${prefix}-${kebabCase(name)}`;
-			if (el.hasAttribute(dataAttr)) {
-				el.setAttribute(dataAttr, sanitizedValue);
-			}
-			return;
-		}
-	} else {
-		// Set attribute directly if XSS protection is disabled
-		if (!name.startsWith('data-') && !(name in el)) {
-			const dataAttr = `data-${prefix}-${kebabCase(name)}`;
-			if (el.hasAttribute(dataAttr)) {
-				el.setAttribute(dataAttr, `${datum}`);
-			}
+		// If sanitization results in null value (except when original value was null), don't change the value
+		if (datum === null && beforeSanitize !== null) {
 			return;
 		}
 	}
 
-	// Security check for attributes
-	// Don't set event handler attributes (starting with 'on')
-	if (name.toLowerCase().startsWith('on')) {
+	if (datum == null) {
+		el.removeAttribute(name);
 		return;
 	}
 
-	// Check if attribute value is safe
-	const strValue = `${datum}`;
-	const sanitizedValue = sanitizeAttributeValue(name, strValue);
-	if (sanitizedValue === null) {
-		return;
-	}
-
-	if (!name.startsWith('data-') && !(name in el)) {
+	if (!name.startsWith('data-') && !propInElement(el, name)) {
 		const dataAttr = `data-${prefix}-${kebabCase(name)}`;
 		if (el.hasAttribute(dataAttr)) {
-			el.setAttribute(dataAttr, sanitizedValue);
+			el.setAttribute(dataAttr, `${datum}`);
 		}
 		return;
 	}

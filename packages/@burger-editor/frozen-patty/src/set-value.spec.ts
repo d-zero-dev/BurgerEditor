@@ -20,6 +20,15 @@ describe('setValue', () => {
 		expect(el.href).toBe(url);
 	});
 
+	test('style attr', () => {
+		const el = document.createElement('div');
+		el.dataset.field = 'foo:style';
+		expect(el.style.cssText).toBe('');
+		const style = '--foo: var(--bar);';
+		setValue(el, 'foo', style);
+		expect(el.style.cssText).toBe(style);
+	});
+
 	test('shorthand', () => {
 		const el = document.createElement('a');
 		el.dataset.field = ':href';

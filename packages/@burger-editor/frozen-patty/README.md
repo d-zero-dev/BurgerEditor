@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/@burger-editor%2Ffrozen-patty.svg)](https://badge.fury.io/js/@burger-editor%2Ffrozen-patty)
 
-Pure HTML to JSON converter that not use template engine.
+Pure HTML to JSON converter that does not use a template engine.
 
 `frozen-patty`は、HTMLとJSONデータの間でシームレスな変換を行う軽量ライブラリです。テンプレートエンジンを必要とせず、HTMLからデータを抽出したり、データをHTMLに適用したりすることができます。BurgerEditorのコンテンツデータとHTML構造を担保するためのコア機能として開発されました。
 
@@ -50,11 +50,11 @@ frozenPatty('<div data-field="text">value</div>').merge({ text: 'merged' }).toHT
 
 // 複数のフィールドを持つHTMLにデータをマージする
 const html = `
-  <div>
-    <h1 data-field="title">Old Title</h1>
-    <p data-field="description">Old description</p>
-    <a data-field="link:href" href="#">Click here</a>
-  </div>
+	<div>
+		<h1 data-field="title">Old Title</h1>
+		<p data-field="description">Old description</p>
+		<a data-field="link:href" href="#">Click here</a>
+	</div>
 `;
 
 const data = {
@@ -64,13 +64,18 @@ const data = {
 };
 
 frozenPatty(html).merge(data).toHTML();
-// 各フィールドが更新されたHTMLが返されます
-// 結果のHTML:
-// <div>
-//   <h1 data-field="title">New Title</h1>
-//   <p data-field="description">Updated description</p>
-//   <a data-field="link:href" href="https://example.com">Click here</a>
-// </div>
+```
+
+各フィールドが更新されたHTMLが返されます
+
+結果のHTML:
+
+```html
+<div>
+	<h1 data-field="title">New Title</h1>
+	<p data-field="description">Updated description</p>
+	<a data-field="link:href" href="https://example.com">Click here</a>
+</div>
 ```
 
 ## data-field属性のシンタックス
@@ -92,6 +97,7 @@ data-field="フィールド名"
 
 - input、select、textareaなどのフォーム要素の場合は`value`プロパティに反映
 - その他の要素の場合は`innerHTML`に反映（HTMLタグも解釈される）
+- `innerHTML`に反映されるHTMLは`xssSanitize`オプションに依存し適切にサニタイズされます
 
 ### 属性値の指定
 
@@ -109,7 +115,7 @@ data-field="フィールド名:属性名"
 
 - `text` - 要素のテキストコンテンツを取得/設定（HTMLタグを除いたコンテンツ）
 - `html` - 要素のHTML内容を取得/設定（`innerHTML`と同じ）
-- `node` - 要素名（タグ名）を取得/設定（**注意**: 設定時は要素そのものを置き換える強力な操作）
+- `node` - 要素名（タグ名）を取得/設定（**注意**: 設定時は要素そのものを置き換える強力な操作のため、イベントハンドラや参照は失われます）
 
 ### 属性名の省略
 
@@ -122,6 +128,25 @@ data-field=":属性名"
 
 **適用時**：属性名と同じキーを持つJSONの値が、対応する属性に反映されます。
 例: `data-field=":href"`でJSONに`{ href: "https://example.com" }`がある場合、要素の`href`属性が更新されます。
+
+#### data-field-\* ショートハンド
+
+```
+data-field=":foo"
+```
+
+`:foo`のような指定の場合、要素に`foo`属性があるか探しにいきますが、要素に属性（正確にはIDL属性として）が存在しない場合、且つ要素に`data-field-foo`属性があれば、`data-field-foo`と見做されます。
+
+**抽出時**：`:foo`のように指定すると、元の`data-field-foo`属性から値を抽出します。
+例: `data-field=":foo"`は`data-field-foo`属性の値をJSONの`foo`キーに抽出します。
+
+```html
+<div data-field=":foo" data-field-foo="bar"></div>
+```
+
+これは `{ foo: "bar" }` というJSONに変換されます。
+
+**適用時**：フィールド名と同じ名前の`data-field-*`属性に値が反映されます。
 
 ### 複数のフィールド指定
 
@@ -160,6 +185,150 @@ data-field="フィールド名1:属性名1, フィールド名2:属性名2"
 
 例: `{ items: ["新アイテム1", "新アイテム2", "新アイテム3"] }` というデータを適用すると、リストが3つの項目を持つように更新されます。
 
+### picture要素の特別処理
+
+`picture`要素は、レスポンシブ画像を実現するためのHTML要素で、`frozen-patty`では特別な処理を行っています：
+
+**抽出時**：HTMLから次のようなpicture要素がある場合を考えます。
+
+```html
+<!-- 元のHTML構造（HTML仕様に従い、source要素が先、img要素が後） -->
+<picture data-field-list>
+	<source
+		data-field="path:srcset, :width, :height, :media"
+		srcset="/path/to/large.jpg"
+		width="1200"
+		height="900"
+		media="(min-width: 1000px)" />
+	<source
+		data-field="path:srcset, :width, :height, :media"
+		srcset="/path/to/medium.jpg"
+		width="800"
+		height="600"
+		media="(min-width: 600px)" />
+	<img
+		data-field="path:src, :alt, :width, :height"
+		src="/path/to/default.jpg"
+		alt="代替テキスト"
+		width="400"
+		height="300" />
+</picture>
+```
+
+このHTMLから抽出する際に、以下の特別な考慮がされます：
+
+1. 配列データの順序：
+
+   - HTML内の`picture`要素では一般的に`source`要素が先に配置され、`img`要素が最後に配置されます
+   - 抽出されるデータの配列では逆順になり、img要素のデータが先、source要素のデータが後
+
+つまり、DOM内の配置順序（source要素が先、img要素が後）と、配列データ内の順序（img要素のデータが先、source要素のデータが後）は逆になります。
+
+上記のHTMLを変換すると、以下のようなJSONが生成されます：
+
+```js
+// HTMLからJSONへの変換
+const htmlString = document.querySelector('picture').outerHTML;
+const extractedData = frozenPatty(htmlString).toJSON();
+```
+
+抽出結果:
+
+```json
+{
+	"path": [
+		"/path/to/default.jpg", // インデックス0: img要素のsrc
+		"/path/to/medium.jpg", // インデックス1: 1つ目のsource要素のsrcset
+		"/path/to/large.jpg" // インデックス2: 2つ目のsource要素のsrcset
+	],
+	"alt": ["代替テキスト"], // 変換機構との一貫性のため配列
+	"width": [400, 800, 1200],
+	"height": [300, 600, 900],
+	"media": [
+		null, // 変換機構との一貫性のため配列となり、img要素にはmedia属性を持たないためnull固定
+		"(min-width: 600px)",
+		"(min-width: 1000px)"
+	]
+}
+```
+
+`picture`要素内の各要素（`source`や`img`）は内部的にリストとして扱われ、それぞれの属性（`srcset`, `width`, `media`など）も対応するインデックスを持つ配列としてデータが格納されます。そのため、`img`要素にしか通常存在しない`alt`属性や、`source`要素にしか存在しない`media`属性も、このデータ構造に合わせて**配列形式で表現されます**（対応する要素がない場合はnullが入ります）。
+
+**適用時**：JSONデータをHTMLに適用する際も特別な処理が行われます。例えば以下のJSONデータを適用すると：
+
+```js
+// 適用するJSONデータ
+const data = {
+	path: [
+		'/path/to/default.jpg', // インデックス0：img要素のsrc属性に設定（DOM内では最後）
+		'/path/to/medium.jpg', // インデックス1：source要素のsrcset属性に設定
+		'/path/to/large.jpg', // インデックス2：source要素のsrcset属性に設定
+		'/path/to/x-large.jpg', // インデックス3：source要素のsrcset属性に設定（DOM内では最初）
+	],
+	alt: ['レスポンシブ画像の説明'], // 抽出機構との互換性のためにimg要素でしか扱わないが配列として指定
+	width: [400, 800, 1200, 1600],
+	height: [300, 600, 900, 1200],
+	media: [
+		null, // img要素に対応するインデックスなのでnullを指定
+		'(min-width: 600px)', // source要素のmedia属性
+		'(min-width: 1000px)', // source要素のmedia属性
+		'(min-width: 1400px)', // source要素のmedia属性
+	],
+};
+```
+
+データを適用した結果、以下のようなHTMLが生成されます
+
+```html
+<picture data-field-list>
+	<source
+		data-field="path:srcset, :width, :height, :media"
+		srcset="/path/to/x-large.jpg"
+		width="1600"
+		height="1200"
+		media="(min-width: 1400px)" />
+	<source
+		data-field="path:srcset, :width, :height, :media"
+		srcset="/path/to/large.jpg"
+		width="1200"
+		height="900"
+		media="(min-width: 1000px)" />
+	<source
+		data-field="path:srcset, :width, :height, :media"
+		srcset="/path/to/medium.jpg"
+		width="800"
+		height="600"
+		media="(min-width: 600px)" />
+	<img
+		data-field="path:src, :alt, :width, :height"
+		src="/path/to/default.jpg"
+		alt="レスポンシブ画像の説明"
+		width="400"
+		height="300" />
+</picture>
+```
+
+適用時には以下の特別処理が行われます：
+
+1. 要素の配置と変換：
+
+   - 配列の最初の要素（インデックス0）は`img`要素に変換され、DOMでは最後に配置されます
+   - 配列の2番目以降の要素は`source`要素に変換され、配列の逆順にDOMに挿入されます（配列の末尾から先頭方向に）
+
+2. 属性の自動変換：
+
+   - `img`要素：`srcset`属性は`src`属性に変換され、`sizes`属性は削除されます
+   - `source`要素：`src`属性は`srcset`属性に変換され、`alt`属性と`loading`属性は削除されます
+   - `data-field`属性のシンタックスは、それぞれの要素に対応する属性名に再設定されます
+     - `img`要素: `data-field="path:src, :alt, :width, :height"`
+     - `source`要素: `data-field="path:srcset, :width, :height, :media"`
+
+3. 順序の反転：
+   - 配列データ内の順序：[0, 1, 2, 3]
+   - 生成されるHTML内の順序：[3, 2, 1, 0]（0がimg要素）
+
+この特別処理により、HTML標準に準拠した`picture`要素が正しく生成され、ブラウザのレスポンシブ画像機能が適切に動作します。
+
 ## 高度な使い方
 
 ### データ型の自動変換
@@ -168,9 +337,9 @@ data-field="フィールド名1:属性名1, フィールド名2:属性名2"
 
 ```js
 const html = `
-  <div data-field="isActive">true</div>
-  <div data-field="count">5</div>
-  <div data-field="price">10.5</div>
+	<div data-field="isActive">true</div>
+	<div data-field="count">5</div>
+	<div data-field="price">10.5</div>
 `;
 
 const data = frozenPatty(html, {
@@ -199,6 +368,8 @@ const data = frozenPatty(html, {
 // => { text: 'HELLO WORLD' }
 ```
 
+これは`merge()`と`toJSON()`どちらの場合でも適用されますが、`toJSON`だけは`toJSON(false)`とすると無効化できます。
+
 ### 複数の属性と値を同時に扱う
 
 同じ要素から複数の属性や値を抽出することができます：
@@ -216,11 +387,11 @@ frozenPatty(html).toJSON();
 
 ```js
 const html = `
-  <ul data-field-list>
-    <li data-field="items">Item 1</li>
-    <li data-field="items">Item 2</li>
-    <li data-field="items">Item 3</li>
-  </ul>
+	<ul data-field-list>
+		<li data-field="items">Item 1</li>
+		<li data-field="items">Item 2</li>
+		<li data-field="items">Item 3</li>
+	</ul>
 `;
 
 frozenPatty(html).toJSON();
@@ -233,19 +404,19 @@ frozenPatty(html).toJSON();
 
 ```js
 const html = `
-  <div>
-    <div data-field="title">商品タイトル</div>
-    <div data-field="content"><span>HTML内容</span></div>
-    <div data-field="meta:data-custom" data-custom="メタデータ"></div>
-    <ul data-field-list>
-      <li data-field="tags">タグ1</li>
-      <li data-field="tags">タグ2</li>
-    </ul>
-    <ul data-field-list>
-      <li><a data-field="links:href, linkTexts" href="/page1">リンク1</a></li>
-      <li><a data-field="links:href, linkTexts" href="/page2">リンク2</a></li>
-    </ul>
-  </div>
+	<div>
+		<div data-field="title">商品タイトル</div>
+		<div data-field="content"><span>HTML内容</span></div>
+		<div data-field="meta:data-custom" data-custom="メタデータ"></div>
+		<ul data-field-list>
+			<li data-field="tags">タグ1</li>
+			<li data-field="tags">タグ2</li>
+		</ul>
+		<ul data-field-list>
+			<li><a data-field="links:href, linkTexts" href="/page1">リンク1</a></li>
+			<li><a data-field="links:href, linkTexts" href="/page2">リンク2</a></li>
+		</ul>
+	</div>
 `;
 
 const data = frozenPatty(html).toJSON();
@@ -281,7 +452,7 @@ const element = frozenPatty(html).merge(data).toDOM();
 
 ### XSS対策機能
 
-frozen-pattyはデフォルトでDOM-based XSS攻撃を防止するセキュリティ機能を備えています。
+`frozen-patty`はデフォルトでDOM-based XSS攻撃を防止するセキュリティ機能を備えています。
 
 ```js
 // デフォルトでXSS対策が有効
@@ -313,14 +484,14 @@ fpUnsafe.merge(data).toHTML();
    - `script`, `style`, `template`, `object`, `embed`, `iframe`, `frame`, `frameset`, `applet`
 
 2. 危険な属性の削除：
-   - onloadやonclickなどのイベントハンドラ属性
-   - javascript:, data:, vbscript: で始まるURL属性
+   - on\*で始まるイベントハンドラ属性
+   - javascript:, data:, vbscript: で始まるURLを受け取る`href`、`src`、`action`などの属性
 
 信頼できない外部データを扱う場合は、必ずデフォルト設定（XSS対策有効）を使用してください。
 
 ### 要素の再生成と参照の扱いに関する注意事項
 
-frozen-pattyはデータ適用時に新しい要素を生成します。これにより以下の点に注意が必要です：
+`frozen-patty`はデータ適用時に新しい要素を生成します。これにより以下の点に注意が必要です：
 
 ```js
 // 元のHTML要素
@@ -355,6 +526,8 @@ myElement.remove();
 // こちらの方法でも同様にイベントハンドラは失われます
 ```
 
+この要素の再生成は`toHTML`だけでなく`toDOM`を使用したときにも同様です。
+
 特に以下の点に注意してください：
 
 1. **イベントハンドラの喪失**: JavaScript で動的に追加したイベントハンドラは、HTML操作（`outerHTML`/`innerHTML`）では保持されません
@@ -384,12 +557,12 @@ HTMLからデータを抽出するメインの関数です。
 
 #### Options
 
-| options     | type     | default   | descriptions                                                                    |
-| ----------- | -------- | --------- | ------------------------------------------------------------------------------- |
-| attr        | string   | `"field"` | フィールドとして扱うノードを指定するための**データ属性**名                      |
-| typeConvert | boolean  | `false`   | データ属性の値の自動型変換を有効にします（"true"→true, "5"→5, "10.5"→10.5など） |
-| valueFilter | Function | -         | 値を処理するカスタムフィルタ関数                                                |
-| xssSanitize | boolean  | `true`    | XSS対策機能を有効にします。危険なHTMLコードを自動的に除去します                 |
+| options     | type                            | default   | descriptions                                                                    |
+| ----------- | ------------------------------- | --------- | ------------------------------------------------------------------------------- |
+| attr        | string                          | `"field"` | フィールドとして扱うノードを指定するための**データ属性**名                      |
+| typeConvert | boolean                         | `false`   | データ属性の値の自動型変換を有効にします（"true"→true, "5"→5, "10.5"→10.5など） |
+| valueFilter | Function (`<T>(value: T) => T`) | -         | 値を処理するカスタムフィルタ関数                                                |
+| xssSanitize | boolean                         | `true`    | XSS対策機能を有効にします。危険なHTMLコードを自動的に除去します                 |
 
 ### `merge(data)`
 
@@ -403,9 +576,9 @@ JSONデータをHTMLにマージします。
 
 HTMLからJSONデータに変換します。
 
-| args      | type      | default | descriptions                               |
-| --------- | --------- | ------- | ------------------------------------------ |
-| filtering | `boolean` | `true`  | `true`の場合、設定されたfilterを適用します |
+| args      | type      | default | descriptions                                                              |
+| --------- | --------- | ------- | ------------------------------------------------------------------------- |
+| filtering | `boolean` | `true`  | `true`の場合、コンストラクタで指定した`valueFilter`オプションを適用します |
 
 ### `toHTML()`
 

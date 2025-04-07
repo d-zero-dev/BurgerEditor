@@ -1,7 +1,7 @@
 import type { Filter, FrozenPattyData } from './types.js';
 
-import get from './get.js';
-import set from './set.js';
+import { getComponent } from './get-component.js';
+import { setComponent } from './set-component.js';
 import { sanitizeHtml } from './utils.js';
 
 export default class FrozenPatty {
@@ -47,7 +47,13 @@ export default class FrozenPatty {
 		const newData = Object.assign(currentData, data);
 
 		// Pass XSS protection flag to set (default is true if not set)
-		this.#dom = set(this.#dom, newData, this.#attr, this.#filter, this.#xssSanitize);
+		this.#dom = setComponent(
+			this.#dom,
+			newData,
+			this.#attr,
+			this.#filter,
+			this.#xssSanitize,
+		);
 		return this;
 	}
 
@@ -61,7 +67,7 @@ export default class FrozenPatty {
 
 	toJSON(filtering = true): FrozenPattyData {
 		const filter = filtering ? this.#filter : undefined;
-		return get(this.#dom, this.#attr, this.#typeConvert, filter);
+		return getComponent(this.#dom, this.#attr, this.#typeConvert, filter);
 	}
 }
 

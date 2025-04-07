@@ -1,6 +1,6 @@
 import type { Filter, FrozenPattyData, PrimitiveDatum } from './types.js';
 
-import { fieldNameParser } from './field-name-parser.js';
+import { parseFields } from './parse-fields.js';
 import { kebabCase } from './utils.js';
 
 /**
@@ -22,18 +22,19 @@ export function getValues(
 		forceArray: boolean,
 	][] = [];
 
-	const rawValue = el.getAttribute(`data-${attr}`);
-	const listRoot = el.closest(`[data-${attr}-list]`);
-	const forceArray = !!listRoot;
-	if (rawValue == null) {
+	const query = el.getAttribute(`data-${attr}`);
+	if (query == null) {
 		throw new Error(`data-${attr} attriblute is empty.`);
 	}
-	const fieldList = rawValue.split(/\s*,\s*/);
 
-	for (const field of fieldList) {
+	const listRoot = el.closest(`[data-${attr}-list]`);
+	const forceArray = !!listRoot;
+
+	const fields = parseFields(query);
+	for (const field of fields) {
 		let value: PrimitiveDatum;
 
-		const { fieldName, propName } = fieldNameParser(field);
+		const { fieldName, propName } = field;
 
 		if (propName) {
 			switch (propName) {
@@ -47,6 +48,12 @@ export function getValues(
 				}
 				case 'html': {
 					value = el.innerHTML.trim();
+					break;
+				}
+				case 'style': {
+					if (el instanceof HTMLElement) {
+						value = el.style.cssText;
+					}
 					break;
 				}
 				default: {
@@ -65,7 +72,7 @@ export function getValues(
 						break;
 					}
 
-					value = getAttribute(el, attr, propName, convertType);
+					value = getAttribute(el, propName, attr, convertType);
 				}
 			}
 		} else {
@@ -97,11 +104,11 @@ export function getValues(
 /**
  *
  * @param el
- * @param attr
  * @param keyAttr
+ * @param attr
  * @param typeConvert
  */
-function getAttribute(el: Element, attr: string, keyAttr: string, typeConvert: boolean) {
+function getAttribute(el: Element, keyAttr: string, attr: string, typeConvert: boolean) {
 	switch (keyAttr) {
 		case 'contenteditable': {
 			if (el instanceof HTMLElement) {
@@ -128,37 +135,56 @@ function getAttribute(el: Element, attr: string, keyAttr: string, typeConvert: b
 			return el.hasAttribute('download') ? el.getAttribute('download') : null;
 		}
 		case 'href': {
-			// return (el as HTMLAnchorElement).href;
-			return el.getAttribute(keyAttr) ?? ''; // return plain string
-		}
-		default: {
-			let value: string;
-			const dataAttr = ['data', attr, kebabCase(keyAttr)].join('-');
-
-			if (el.hasAttribute(dataAttr)) {
-				value = el.getAttribute(dataAttr) || '';
-			} else {
-				value = el.getAttribute(keyAttr) || '';
-			}
-
-			if (typeConvert) {
-				value = convert(value);
-			}
-
-			return value;
+			// Example: (el as HTMLAnchorElement).href;
+			// Expected: return defined value of plain string
+			return el.getAttribute(keyAttr) ?? '';
 		}
 	}
+
+	let value: PrimitiveDatum =
+		// @ts-ignore
+		el[keyAttr];
+
+	if (value !== undefined) {
+		if (typeConvert) {
+			value = convert(value);
+		}
+		return value;
+	}
+
+	// For shorthand notation, get value from data-field-* attribute
+	const dataAttr = ['data', attr, kebabCase(keyAttr)].join('-');
+	if (el.hasAttribute(dataAttr)) {
+		return el.getAttribute(dataAttr) ?? '';
+	}
+
+	value = el.getAttribute(keyAttr) ?? null;
+
+	if (
+		(value === '' || value == null) &&
+		typeof keyAttr === 'string' &&
+		keyAttr.startsWith('data-')
+	) {
+		return '';
+	}
+
+	if (typeConvert) {
+		value = convert(value);
+	}
+
+	return value;
 }
 
 /**
  *
  * @param value
  */
-function convert(value: string) {
+function convert(value: PrimitiveDatum): PrimitiveDatum {
 	value = parse(value);
+	const str = `${value}`;
 
-	if (URL.canParse(value)) {
-		const url = new URL(value, location.href);
+	if (URL.canParse(str)) {
+		const url = new URL(str, location.href);
 		if (url.origin === location.origin) {
 			return url.pathname;
 		}
@@ -171,9 +197,9 @@ function convert(value: string) {
  *
  * @param value
  */
-function parse(value: string) {
+function parse(value: PrimitiveDatum): PrimitiveDatum {
 	try {
-		return JSON.parse(value);
+		return JSON.parse(`${value}`);
 	} catch {
 		return value;
 	}
