@@ -1,24 +1,27 @@
 <div data-bge-dialog="2col">
 	<div data-bge-dialog-ui="sticky">
-		<input type="hidden" name="bge-width" />
-		<input type="hidden" name="bge-height" />
-		<input type="hidden" name="bge-srcset" />
-		<input type="hidden" name="bge-style" />
+		<div>
+			<div data-bge-editor-ui="tabs" data-bge-editor-ui-for="bgi-image__tabs-content"></div>
 
-		<div data-bge-editor-ui="preview"></div>
-		<input type="hidden" name="bge-path" />
-		<input type="hidden" name="bge-empty" />
-		<input type="hidden" name="bge-file-size" />
+			<div id="bgi-image__tabs-content" role="tabpanel" aria-label="画像">
+				<div data-bge-editor-ui="preview"></div>
+				<input type="hidden" name="bge-path[]" />
+				<input type="hidden" name="bge-alt[]" />
+				<input type="hidden" name="bge-width[]" />
+				<input type="hidden" name="bge-height[]" />
+				<input type="hidden" name="bge-media[]" />
+
+				<input type="hidden" name="bge-file-size" />
+				<div>
+					<label>
+						<span>メディアクエリー</span>
+						<input type="text" name="bge-media-input" />
+					</label>
+				</div>
+			</div>
+		</div>
 
 		<div>
-			<label>
-				<span>画像の代替テキスト(alt)</span>
-				<input type="text" name="bge-alt" />
-			</label>
-			<label>
-				<span>キャプション</span>
-				<input type="text" name="bge-caption" />
-			</label>
 			<fieldset>
 				<legend>画像のサイズ</legend>
 				<div role="radiogroup" aria-labelledby="bgi-image__radio-group1">
@@ -42,6 +45,14 @@
 					<label><input type="radio" name="bge-aspect-ratio" value="16/9" />16 : 9</label>
 				</div>
 			</fieldset>
+			<label>
+				<span>画像の代替テキスト(alt)</span>
+				<input type="text" name="bge-alt" />
+			</label>
+			<label>
+				<span>キャプション</span>
+				<input type="text" name="bge-caption" />
+			</label>
 			<fieldset>
 				<legend>リンク</legend>
 				<label><input type="checkbox" name="bge-popup" />ポップアップで画像を開く</label>
