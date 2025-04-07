@@ -43,7 +43,8 @@
 	border: var(--bge-container-border);
 
 	&:where(:last-child) {
-		--bge-container-margin-block-end: 0;
+		--bge-last-container-margin-block-end: 0;
+		--bge-container-margin-block-end: var(--bge-last-container-margin-block-end);
 	}
 }
 
