@@ -2,13 +2,14 @@ import type { Submitter } from './dom-helpers/types.js';
 import type { BurgerEditorEngine } from './engine/engine.js';
 import type { ItemEditorService } from './item/item-editor-service.js';
 import type { ItemData, ItemPrimitiveData } from './item/types.js';
-import type { PrimitiveDatum } from '@burger-editor/frozen-patty/types';
 
 import { setContent } from '@burger-editor/frozen-patty/set-value';
 import { camelCase, kebabCase } from '@burger-editor/frozen-patty/utils';
 
 import { EditorDialog } from './editor-dialog.js';
 import { getItemEditorTemplate } from './item/get-item-editor-template.js';
+import { decodeItemPrimitiveData } from './utils/decode-item-primitive-data.js';
+import { encodeItemPrimitiveData } from './utils/encode-item-primitive-data.js';
 
 export class ItemEditorDialog<
 	T extends ItemData,
@@ -50,20 +51,7 @@ export class ItemEditorDialog<
 				}
 			}
 		}
-		if ($ctrl.name.endsWith('[]')) {
-			return $ctrl.value.split(',').map((value) => {
-				try {
-					return JSON.parse(value);
-				} catch {
-					return value;
-				}
-			}) as D;
-		}
-		try {
-			return JSON.parse($ctrl.value) as D;
-		} catch {
-			return $ctrl.value as D;
-		}
+		return decodeItemPrimitiveData($ctrl.value, $ctrl.name.endsWith('[]')) as D;
 	}
 
 	getCustomData<D extends keyof C = keyof C>(customProperty: D) {
@@ -115,7 +103,7 @@ export class ItemEditorDialog<
 			for (const $ctrl of $ctrlList) {
 				const newValue =
 					typeof value === 'function' ? value(this.get(name), $ctrl) : value;
-				setContent($ctrl, Array.isArray(newValue) ? newValue.join(',') : newValue);
+				setContent($ctrl, encodeItemPrimitiveData(newValue));
 				return;
 			}
 			return;
@@ -217,7 +205,7 @@ export class ItemEditorDialog<
 		for (const [_name, datum] of Object.entries(data)) {
 			const name = kebabCase(_name);
 			const inputSelector = `[name="bge-${name}"], [name="bge-${name}[]"]`;
-			const value: PrimitiveDatum = Array.isArray(datum) ? datum.join(',') : datum;
+			const value = encodeItemPrimitiveData(datum);
 			for (const targetEl of this.findAll(inputSelector)) {
 				setContent(targetEl, value);
 			}
