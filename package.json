@@ -46,7 +46,7 @@
 		"eslint-plugin-svelte": "3.5.1",
 		"husky": "9.1.7",
 		"jsdom": "26.0.0",
-		"lerna": "8.2.1",
+		"lerna": "8.2.2",
 		"npm-run-all2": "7.0.2",
 		"postcss-html": "1.8.0",
 		"prettier-plugin-svelte": "3.3.3",
