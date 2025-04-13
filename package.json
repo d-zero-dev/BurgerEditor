@@ -45,7 +45,7 @@
 		"@markuplint/svelte-spec": "4.5.18",
 		"eslint-plugin-svelte": "3.5.1",
 		"husky": "9.1.7",
-		"jsdom": "26.0.0",
+		"jsdom": "26.1.0",
 		"lerna": "8.2.2",
 		"npm-run-all2": "7.0.2",
 		"postcss-html": "1.8.0",
