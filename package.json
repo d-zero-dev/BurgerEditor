@@ -41,7 +41,7 @@
 		"@d-zero/commitlint-config": "5.0.0-alpha.62",
 		"@d-zero/linters": "5.0.0-alpha.62",
 		"@d-zero/tsconfig": "0.4.1",
-		"@markuplint/svelte-parser": "4.7.8",
+		"@markuplint/svelte-parser": "4.7.9",
 		"@markuplint/svelte-spec": "4.5.18",
 		"eslint-plugin-svelte": "3.5.1",
 		"husky": "9.1.7",
