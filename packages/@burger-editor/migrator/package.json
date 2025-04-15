@@ -29,6 +29,7 @@
 	"dependencies": {
 		"@burger-editor/blocks": "4.0.0-alpha.4",
 		"@burger-editor/core": "4.0.0-alpha.4",
+		"@burger-editor/legacy": "4.0.0-alpha.4",
 		"@burger-editor/utils": "4.0.0-alpha.4",
 		"semver": "7.7.1"
 	}
