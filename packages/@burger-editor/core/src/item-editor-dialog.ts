@@ -4,7 +4,8 @@ import type { ItemEditorService } from './item/item-editor-service.js';
 import type { ItemData, ItemPrimitiveData } from './item/types.js';
 
 import { setContent } from '@burger-editor/frozen-patty/set-value';
-import { camelCase, kebabCase } from '@burger-editor/frozen-patty/utils';
+import { camelCase } from '@burger-editor/frozen-patty/utils';
+import { kebabCase } from '@burger-editor/utils';
 
 import { EditorDialog } from './editor-dialog.js';
 import { getItemEditorTemplate } from './item/get-item-editor-template.js';

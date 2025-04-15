@@ -1,8 +1,9 @@
 import type { Filter, PrimitiveDatum } from './types.js';
 
+import { kebabCase } from '@burger-editor/utils';
+
 import { parseFields } from './parse-fields.js';
 import {
-	kebabCase,
 	propInElement,
 	replaceNode,
 	sanitizeAttributeValue,

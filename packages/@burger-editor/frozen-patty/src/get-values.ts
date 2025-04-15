@@ -1,7 +1,8 @@
 import type { Filter, FrozenPattyData, PrimitiveDatum } from './types.js';
 
+import { kebabCase } from '@burger-editor/utils';
+
 import { parseFields } from './parse-fields.js';
-import { kebabCase } from './utils.js';
 
 /**
  * Get value from an element

@@ -1,5 +1,7 @@
 import type { Filter, FrozenPattyData } from './types.js';
 
+import { kebabCase } from '@burger-editor/utils';
+
 import { setValue } from './set-value.js';
 import { stringifyFields } from './stringify-fields.js';
 import {
@@ -7,7 +9,6 @@ import {
 	flattenData,
 	getFields,
 	hasField,
-	kebabCase,
 	maxLengthOf,
 	removeProp,
 	replaceNode,
