@@ -44,4 +44,15 @@ export default {
 			},
 		},
 	],
+	overrides: {
+		'packages/@burger-editor/legacy/src/v3/**/*': {
+			...extended,
+			rules: {
+				...extended.rules,
+				'heading-levels': false,
+				'invalid-attr': false,
+				'require-accessible-name': false,
+			},
+		},
+	},
 };

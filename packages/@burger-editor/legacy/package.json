@@ -1,0 +1,35 @@
+{
+	"name": "@burger-editor/legacy",
+	"version": "4.0.0-alpha.4",
+	"description": "BurgerEditor Legacy Components",
+	"author": "D-ZERO",
+	"license": "MIT",
+	"repository": {
+		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
+	},
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module",
+	"exports": {
+		"./v3": {
+			"import": "./dist/v3/index.js",
+			"types": "./dist/v3/index.d.ts"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "rollup -c",
+		"dev": "rollup -c -w"
+	},
+	"dependencies": {},
+	"devDependencies": {
+		"rollup": "4.40.0",
+		"rollup-plugin-dts": "6.2.1",
+		"rollup-plugin-esbuild": "6.2.1",
+		"rollup-plugin-string": "3.0.0"
+	}
+}
