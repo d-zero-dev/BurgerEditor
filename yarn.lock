@@ -3806,7 +3806,7 @@ commander@^13.1.0:
   resolved "https://registry.yarnpkg.com/commander/-/commander-13.1.0.tgz#776167db68c78f38dcce1f9b8d7b8b9a488abf46"
   integrity sha512-/rFeCpNJQbhSZjGVwO9RFV3xPqbnERS8MmIQzCtD/zl6gpJuV/bMLuN92oG3F7d8oDEHHRrujSXNUr8fpjntKw==
 
-commander@^2.15.1, commander@^2.9.0:
+commander@^2.9.0:
   version "2.20.3"
   resolved "https://registry.yarnpkg.com/commander/-/commander-2.20.3.tgz#fd485e84c03eb4881c20722ba48035e8531aeb33"
   integrity sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==
@@ -6772,12 +6772,10 @@ jackspeak@^4.0.1:
   dependencies:
     "@isaacs/cliui" "^8.0.2"
 
-jaco@4.0.0:
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/jaco/-/jaco-4.0.0.tgz#7522a3dd4d7295b3e33b0ae82c08b34db99738e5"
-  integrity sha512-RBtY32bY4ICqgPVTmWOLoxn3rZQ+sFPtkcmCA2HJY7ZCCKkCMoMhv/zw0G+eGCzIb7Vkpx5dqSu4cwuS6c6l1w==
-  dependencies:
-    commander "^2.15.1"
+jaco@5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/jaco/-/jaco-5.0.0.tgz#dafc72c30f3d6b8fc0ddc9cf93e7024b87a05f92"
+  integrity sha512-hrjFU7S1hdnUO1biPv6MchKrDmIIj+N+9118USB7REplSOx/76COXjHFW3DtJ7xLA25LEdsC7+7IAYNO4LWOKA==
 
 jake@^10.8.5:
   version "10.9.2"
