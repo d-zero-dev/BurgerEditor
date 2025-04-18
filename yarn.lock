@@ -10759,10 +10759,10 @@ svelte@5.26.2:
     magic-string "^0.30.11"
     zimmerframe "^1.1.2"
 
-svelte@5.27.1:
-  version "5.27.1"
-  resolved "https://registry.yarnpkg.com/svelte/-/svelte-5.27.1.tgz#28cea999f7d12004e8819d898fe7ba8939c643d0"
-  integrity sha512-DxbUsdR1MZcnEgvJEbQ9IiaqAAIXT3lv7JhkW8K5AJO08+gxnRnoNrYJUCAdR3PCt+oODGOldmYDnqoLsNlvpQ==
+svelte@5.27.3:
+  version "5.27.3"
+  resolved "https://registry.yarnpkg.com/svelte/-/svelte-5.27.3.tgz#cf71a6e3219902f6e755f440416cd72aceb601d9"
+  integrity sha512-MK16NUEFwAunCkdJpIIJ6hvKElx0zFlKMqQd7NAIugMfrL0YeOH8VEn5pg9g2Q6RLj2JrGJL6c0zaAwmXx/nHQ==
   dependencies:
     "@ampproject/remapping" "^2.3.0"
     "@jridgewell/sourcemap-codec" "^1.5.0"
