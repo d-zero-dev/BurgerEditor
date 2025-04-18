@@ -6,7 +6,7 @@ import semver from 'semver';
 
 import { BurgerEditorEngine } from '../engine/engine.js';
 
-import { dataFromHtml } from './data-form-html.js';
+import { dataFromHtml } from './data-from-html.js';
 import { dataToHtml } from './data-to-html.js';
 import { ItemEditorService } from './item-editor-service.js';
 
