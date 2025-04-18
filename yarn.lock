@@ -6772,12 +6772,10 @@ jackspeak@^4.0.1:
   dependencies:
     "@isaacs/cliui" "^8.0.2"
 
-jaco@4.0.0:
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/jaco/-/jaco-4.0.0.tgz#7522a3dd4d7295b3e33b0ae82c08b34db99738e5"
-  integrity sha512-RBtY32bY4ICqgPVTmWOLoxn3rZQ+sFPtkcmCA2HJY7ZCCKkCMoMhv/zw0G+eGCzIb7Vkpx5dqSu4cwuS6c6l1w==
-  dependencies:
-    commander "^2.15.1"
+jaco@5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/jaco/-/jaco-5.0.0.tgz#dafc72c30f3d6b8fc0ddc9cf93e7024b87a05f92"
+  integrity sha512-hrjFU7S1hdnUO1biPv6MchKrDmIIj+N+9118USB7REplSOx/76COXjHFW3DtJ7xLA25LEdsC7+7IAYNO4LWOKA==
 
 jake@^10.8.5:
   version "10.9.2"
