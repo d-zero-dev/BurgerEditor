@@ -1,6 +1,6 @@
 import type { FieldDefinition } from './types.js';
 
-import { camelCase } from './utils.js';
+import { camelCase } from '@burger-editor/utils';
 
 const cache = new Map<string, FieldDefinition[]>();
 
