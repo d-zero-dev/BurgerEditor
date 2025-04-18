@@ -1,0 +1,18 @@
+{
+	"extends": "../../../tsconfig.json",
+	"compilerOptions": {
+		"composite": true
+	},
+	"references": [
+		{
+			"path": "../core"
+		},
+		{
+			"path": "../migrator"
+		},
+		{
+			"path": "../utils"
+		}
+	],
+	"exclude": ["dist"]
+}

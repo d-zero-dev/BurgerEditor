@@ -1,0 +1,42 @@
+{
+	"name": "@burger-editor/mcp-server",
+	"version": "4.0.0-alpha.4",
+	"description": "MCP Server for BurgerEditor",
+	"author": "D-ZERO",
+	"license": "MIT",
+	"repository": {
+		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
+	},
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module",
+	"bin": {
+		"bge-mcp-server": "./bin/mcp-server.js"
+	},
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"files": [
+		"bin",
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc --project tsconfig.build.json",
+		"dev": "tsc --watch --project tsconfig.build.json",
+		"clean": "tsc --build --clean"
+	},
+	"dependencies": {
+		"@burger-editor/core": "4.0.0-alpha.4",
+		"@burger-editor/legacy": "4.0.0-alpha.4",
+		"@burger-editor/migrator": "4.0.0-alpha.4",
+		"@burger-editor/utils": "4.0.0-alpha.4",
+		"@modelcontextprotocol/sdk": "1.9.0",
+		"vitest": "3.1.1",
+		"zod": "3.24.2"
+	}
+}
