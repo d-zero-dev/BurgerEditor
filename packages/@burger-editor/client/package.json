@@ -40,7 +40,7 @@
 	"devDependencies": {
 		"@sveltejs/vite-plugin-svelte": "5.0.3",
 		"@types/jquery": "3.5.32",
-		"sass": "1.86.3",
+		"sass": "1.87.0",
 		"vite": "6.3.2",
 		"vite-plugin-dts": "4.5.3"
 	}
