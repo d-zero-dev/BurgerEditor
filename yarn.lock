@@ -1046,10 +1046,10 @@
   resolved "https://registry.yarnpkg.com/@hono/node-server/-/node-server-1.14.1.tgz#a1e21c29b0becde0359371fadf7391746fead4c9"
   integrity sha512-vmbuM+HPinjWzPe7FFPWMMQMsbKE9gDPhaH0FFdqbGpkT5lp++tcWDTxwBl5EgS5y6JVgIaCdjeHRfQ4XRBRjQ==
 
-"@hono/zod-validator@0.4.3":
-  version "0.4.3"
-  resolved "https://registry.yarnpkg.com/@hono/zod-validator/-/zod-validator-0.4.3.tgz#f72d68be9e494ec1615cf23fbc1c2cd5dd66fd4b"
-  integrity sha512-xIgMYXDyJ4Hj6ekm9T9Y27s080Nl9NXHcJkOvkXPhubOLj8hZkOL8pDnnXfvCf5xEE8Q4oMFenQUZZREUY2gqQ==
+"@hono/zod-validator@0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@hono/zod-validator/-/zod-validator-0.5.0.tgz#2eb1c68c6746de91c58241674c26742b97fd8e7d"
+  integrity sha512-ds5bW6DCgAnNHP33E3ieSbaZFd5dkV52ZjyaXtGoR06APFrCtzAsKZxTHwOrJNBdXsi0e5wNwo5L4nVEVnJUdg==
 
 "@humanfs/core@^0.19.1":
   version "0.19.1"
