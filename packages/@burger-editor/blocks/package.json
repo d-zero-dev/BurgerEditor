@@ -29,7 +29,7 @@
 	"dependencies": {
 		"@burger-editor/core": "4.0.0-alpha.4",
 		"@burger-editor/utils": "4.0.0-alpha.4",
-		"trix": "2.1.13"
+		"trix": "2.1.14"
 	},
 	"devDependencies": {
 		"@types/google.maps": "3.58.1",
