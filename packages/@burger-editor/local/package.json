@@ -32,7 +32,7 @@
 		"debug": "4.4.0",
 		"hono": "4.7.8",
 		"jsdom": "26.1.0",
-		"open": "10.1.1",
+		"open": "10.1.2",
 		"zod": "3.24.3"
 	},
 	"devDependencies": {
