@@ -30,7 +30,7 @@
 		"@burger-editor/frozen-patty": "4.0.0-alpha.4",
 		"@burger-editor/utils": "4.0.0-alpha.4",
 		"jaco": "5.0.0",
-		"semver": "7.7.1"
+		"semver": "7.7.2"
 	},
 	"devDependencies": {
 		"@types/semver": "7.7.0"
