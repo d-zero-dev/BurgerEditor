@@ -33,7 +33,7 @@
 		"hono": "4.7.10",
 		"jsdom": "26.1.0",
 		"open": "10.1.2",
-		"zod": "3.24.3"
+		"zod": "3.24.4"
 	},
 	"devDependencies": {
 		"@burger-editor/core": "4.0.0-alpha.4",
