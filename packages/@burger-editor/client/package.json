@@ -42,6 +42,6 @@
 		"@types/jquery": "3.5.32",
 		"sass": "1.88.0",
 		"vite": "6.3.5",
-		"vite-plugin-dts": "4.5.3"
+		"vite-plugin-dts": "4.5.4"
 	}
 }
