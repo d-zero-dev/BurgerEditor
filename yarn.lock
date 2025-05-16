@@ -1511,11 +1511,12 @@
   resolved "https://registry.yarnpkg.com/@mixmark-io/domino/-/domino-2.2.0.tgz#4e8ec69bf1afeb7a14f0628b7e2c0f35bdb336c3"
   integrity sha512-Y28PR25bHXUg88kCV7nivXrP2Nj2RueZ3/l/jdx6J9f8J4nsEGcgX0Qe6lt7Pa+J79+kPiJU3LguR6O/6zrLOw==
 
-"@modelcontextprotocol/sdk@1.11.3":
-  version "1.11.3"
-  resolved "https://registry.yarnpkg.com/@modelcontextprotocol/sdk/-/sdk-1.11.3.tgz#0bcc7b2d74ac1f749d1a7632ec2d674fd7066543"
-  integrity sha512-rmOWVRUbUJD7iSvJugjUbFZshTAuJ48MXoZ80Osx1GM0K/H1w7rSEvmw8m6vdWxNASgtaHIhAgre4H/E9GJiYQ==
+"@modelcontextprotocol/sdk@1.11.4":
+  version "1.11.4"
+  resolved "https://registry.yarnpkg.com/@modelcontextprotocol/sdk/-/sdk-1.11.4.tgz#2021c76e208874e1b8551ee24609d921c3372bde"
+  integrity sha512-OTbhe5slIjiOtLxXhKalkKGhIQrwvhgCDs/C2r8kcBTy5HR/g43aDQU0l7r8O0VGbJPTNJvDc7ZdQMdQDJXmbw==
   dependencies:
+    ajv "^8.17.1"
     content-type "^1.0.5"
     cors "^2.8.5"
     cross-spawn "^7.0.5"
@@ -3021,7 +3022,7 @@ ajv@^6.12.4:
     json-schema-traverse "^0.4.1"
     uri-js "^4.2.2"
 
-ajv@^8.0.0, ajv@^8.0.1, ajv@^8.11.0:
+ajv@^8.0.0, ajv@^8.0.1, ajv@^8.11.0, ajv@^8.17.1:
   version "8.17.1"
   resolved "https://registry.yarnpkg.com/ajv/-/ajv-8.17.1.tgz#37d9a5c776af6bc92d7f4f9510eba4c0a60d11a6"
   integrity sha512-B/gBuNg5SiMTrPkC+A2+cW0RszwxYmn6VYxB/inlBStS5nx6xHIt/ehKRhIMhqusl7a8LjQoZnjCs5vhwxOQ1g==
