@@ -2322,17 +2322,17 @@
     magic-string "^0.30.15"
     vitefu "^1.0.4"
 
-"@tabler/icons-svelte@3.31.0":
-  version "3.31.0"
-  resolved "https://registry.yarnpkg.com/@tabler/icons-svelte/-/icons-svelte-3.31.0.tgz#657a600164713fa4e24a7b84559d617a32698049"
-  integrity sha512-tbsfitMdr+IQrEnEzfz//VGBqxh/H79gXzIprdI4N8KSqfaNGHKN6eO4BvgxoRp2FREeMjrD5Xf/ZwDRFlUraQ==
+"@tabler/icons-svelte@3.33.0":
+  version "3.33.0"
+  resolved "https://registry.yarnpkg.com/@tabler/icons-svelte/-/icons-svelte-3.33.0.tgz#140aff0866de96cb28ab638c35bc72338041ee5c"
+  integrity sha512-jJubcZKH4db4aw6dME1BdDMDAO0jEiSiqxLota+HrOqWQO0IFVx9ojEA6utN16JeqZkxX3QIt/0sNWkNWGq5uw==
   dependencies:
-    "@tabler/icons" "3.31.0"
+    "@tabler/icons" "3.33.0"
 
-"@tabler/icons@3.31.0":
-  version "3.31.0"
-  resolved "https://registry.yarnpkg.com/@tabler/icons/-/icons-3.31.0.tgz#92d39dc336f2e3e312170420b00ffe9ca474925e"
-  integrity sha512-dblAdeKY3+GA1U+Q9eziZ0ooVlZMHsE8dqP0RkwvRtEsAULoKOYaCUOcJ4oW1DjWegdxk++UAt2SlQVnmeHv+g==
+"@tabler/icons@3.33.0":
+  version "3.33.0"
+  resolved "https://registry.yarnpkg.com/@tabler/icons/-/icons-3.33.0.tgz#ad3157eabd0cadbfa865da787156f3e795059982"
+  integrity sha512-NZeFfzcYe7xcBHR3zKoCSrw/cFWvfj6LjenPQ48yVMTGdX854HH9nH44ZfMH8rrDzHBllfjwl4CIX6Vh2tyN0Q==
 
 "@textlint-rule/textlint-rule-no-invalid-control-character@^3.0.0":
   version "3.0.0"
