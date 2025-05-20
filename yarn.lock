@@ -5029,10 +5029,10 @@ eslint-plugin-sort-class-members@1.21.0:
   resolved "https://registry.yarnpkg.com/eslint-plugin-sort-class-members/-/eslint-plugin-sort-class-members-1.21.0.tgz#e0ee1e5eddf698d5c997a071133b0cc51bb3de34"
   integrity sha512-QKV4jvGMu/ge1l4s1TUBC6rqqV/fbABWY7q2EeNpV3FRikoX6KuLhiNvS8UuMi+EERe0hKGrNU9e6ukFDxNnZQ==
 
-eslint-plugin-svelte@3.8.1:
-  version "3.8.1"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-svelte/-/eslint-plugin-svelte-3.8.1.tgz#d30d4d3fffee6fbe6708bafd13923575bf848fac"
-  integrity sha512-w6NQifz1xBIFcs4XMLYT36xukgN1xgzoPGk1nJLC1UeZ8O4CUCCSZx1tgwq3yRNkMSXMUqbMJjslFweWsDlAoA==
+eslint-plugin-svelte@3.8.2:
+  version "3.8.2"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-svelte/-/eslint-plugin-svelte-3.8.2.tgz#d11c577e4860a4ea7fe9e83c20f8426a674a97c1"
+  integrity sha512-TtepyI7nqWOPBqDXu/1kAFTeus9VuMByFGj6WIxNiByCknmR7b4w5DBoQ2qhj2RY5dMXyUJGHRp/pm/J2BSRxg==
   dependencies:
     "@eslint-community/eslint-utils" "^4.6.1"
     "@jridgewell/sourcemap-codec" "^1.5.0"
