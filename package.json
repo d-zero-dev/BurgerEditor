@@ -43,7 +43,7 @@
 		"@d-zero/tsconfig": "0.4.1",
 		"@markuplint/svelte-parser": "4.7.9",
 		"@markuplint/svelte-spec": "4.5.19",
-		"eslint-plugin-svelte": "3.8.2",
+		"eslint-plugin-svelte": "3.9.0",
 		"husky": "9.1.7",
 		"jsdom": "26.1.0",
 		"lerna": "8.2.2",
