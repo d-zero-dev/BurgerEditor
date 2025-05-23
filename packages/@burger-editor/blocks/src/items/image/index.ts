@@ -30,6 +30,7 @@ export default createItem<{
 
 	// Additional Data
 	caption: string;
+	altEditable: string;
 
 	// Behavior
 	node: 'div' | 'button' | 'a';
@@ -56,6 +57,7 @@ export default createItem<{
 				lazy,
 				popup,
 				targetBlank,
+				altEditable: data.alt?.[0] ?? '',
 			};
 		},
 		open(_, editor) {
@@ -161,6 +163,12 @@ export default createItem<{
 			editor.onChange('$popup', (disable) => {
 				editor.disable('$href', disable);
 				editor.disable('$targetBlank', disable);
+			});
+
+			editor.onChange('$altEditable', (value) => {
+				const alt = [...editor.get('$alt')];
+				alt[currentIndex] = value;
+				editor.update('$alt', alt);
 			});
 		},
 		beforeChange(newData) {
