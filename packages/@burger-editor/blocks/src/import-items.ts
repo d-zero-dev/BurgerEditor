@@ -12,7 +12,8 @@ const templateSeed = Object.fromEntries(
  * @param template
  */
 export function importItems(template: string) {
-	return replaceCommentWithHTML(template, templateSeed, (_, html, data) =>
-		itemImport(html, data),
-	);
+	return replaceCommentWithHTML(template, templateSeed, (key, html, data) => {
+		const result = itemImport(html, data);
+		return `<div data-bgi="${key}">${result}</div>`;
+	});
 }
