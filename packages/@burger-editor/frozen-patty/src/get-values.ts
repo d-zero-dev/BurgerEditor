@@ -135,7 +135,8 @@ function getAttribute(el: Element, keyAttr: string, attr: string, typeConvert: b
 			// So to get inactive it is necessary to use the "hasAttribute" method.
 			return el.hasAttribute('download') ? el.getAttribute('download') : null;
 		}
-		case 'href': {
+		case 'href':
+		case 'src': {
 			// Example: (el as HTMLAnchorElement).href;
 			// Expected: return defined value of plain string
 			return el.getAttribute(keyAttr) ?? '';
