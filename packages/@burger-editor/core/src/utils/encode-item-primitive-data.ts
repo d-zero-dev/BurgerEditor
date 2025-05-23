@@ -6,7 +6,7 @@ import type { ItemPrimitiveData } from '../item/types.js';
  */
 export function encodeItemPrimitiveData(
 	array: ItemPrimitiveData | ItemPrimitiveData[],
-): string {
+): ItemPrimitiveData {
 	return Array.isArray(array)
 		? array
 				.map((datum) => {
@@ -15,5 +15,7 @@ export function encodeItemPrimitiveData(
 					return encodedString;
 				})
 				.join(',')
-		: `${array}`.toWellFormed().trim();
+		: typeof array === 'string'
+			? `${array}`.toWellFormed().trim()
+			: array;
 }

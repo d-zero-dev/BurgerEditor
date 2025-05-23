@@ -12,8 +12,11 @@ export function decodeItemPrimitiveData(
 	if (isArray) {
 		const array = datum.split(',');
 		return array.map((datum) => {
-			const safeString = decodeURIComponent(datum.toWellFormed());
-			return toLiteral(safeString);
+			const literal = toLiteral(datum);
+			if (typeof literal === 'string') {
+				return decodeURIComponent(literal.toWellFormed());
+			}
+			return literal;
 		});
 	}
 	return toLiteral(datum.toWellFormed());
