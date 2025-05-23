@@ -249,6 +249,7 @@ export class ItemEditorDialog<
 		this.#setValues(data);
 		super.open();
 		if (this.#service) {
+			this.#setValues(data);
 			this.#service.open(data, this);
 		}
 		this.engine.componentObserver.notify('open-editor', {
