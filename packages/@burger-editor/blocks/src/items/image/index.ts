@@ -63,18 +63,40 @@ export default createItem<{
 		open(_, editor) {
 			let currentIndex = 0;
 
-			fileSelect();
+			selectTab(currentIndex);
 
 			/**
 			 *
 			 */
 			function fileSelect() {
+				const $path = editor.get('$path');
+				const currentPath = $path[currentIndex] ?? $path[0];
+
+				if (!currentPath) {
+					throw new Error('currentPath is not found');
+				}
+
 				editor.engine.componentObserver.notify('file-select', {
-					path: editor.get('$path')[currentIndex]!,
+					path: currentPath,
 					fileSize: Number.parseFloat(editor.get('$fileSize') ?? '0'),
-					isEmpty: editor.get('$path')[currentIndex] === '',
+					isEmpty: currentPath === '',
 					isMounted: false,
 				});
+			}
+
+			/**
+			 *
+			 * @param index
+			 */
+			function selectTab(index: number) {
+				currentIndex = index;
+				fileSelect();
+				void _updateImage(editor.get('$path')[currentIndex]!);
+
+				editor.disable('$mediaInput', currentIndex === 0);
+
+				const media = editor.get('$media')[currentIndex] ?? '';
+				editor.update('$mediaInput', media);
 			}
 
 			editor.engine.componentObserver.on('file-select', ({ path, isEmpty }) => {
@@ -126,13 +148,7 @@ export default createItem<{
 			}
 
 			editor.engine.componentObserver.on('select-tab-in-item-editor', ({ index }) => {
-				currentIndex = index;
-				fileSelect();
-				void _updateImage(editor.get('$path')[currentIndex]!);
-
-				const media = editor.get('$media')[currentIndex]!;
-				editor.disable('$mediaInput', currentIndex === 0);
-				editor.update('$mediaInput', media);
+				selectTab(index);
 			});
 
 			editor.onChange('$scale', updateCSSWidth);
