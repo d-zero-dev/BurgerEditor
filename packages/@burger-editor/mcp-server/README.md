@@ -5,7 +5,7 @@
 ```json
 {
 	"mcpServers": {
-		"coding_guidelines": {
+		"burger-editor": {
 			"command": "npx",
 			"args": ["-y", "@burger-editor/mcp-server"],
 			"disabled": false,
