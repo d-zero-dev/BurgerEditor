@@ -44,5 +44,7 @@
 		"npm-run-all2": "8.0.4",
 		"tsx": "4.19.4",
 		"vite": "6.3.5"
-	}
+	},
+	"author": "D-ZERO",
+	"license": "(MIT OR Apache-2.0)"
 }

@@ -3,7 +3,7 @@
 	"version": "4.0.0-alpha.4",
 	"description": "BurgerEditor Editor Utility Functions",
 	"author": "D-ZERO",
-	"license": "MIT",
+	"license": "(MIT OR Apache-2.0)",
 	"repository": {
 		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
 	},

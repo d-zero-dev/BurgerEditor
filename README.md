@@ -15,3 +15,24 @@ Core modules for [BurgerEditor](https://burger-demo.d-zero.co.jp/).
 | [@burger-editor/utils](./packages/@burger-editor/utils/)               | [![npm version](https://badge.fury.io/js/@burger-editor%2Futils.svg)](https://badge.fury.io/js/@burger-editor%2Futils)               | BurgerEditor Utility Functions                                   |
 | [@burger-editor/local](./packages/@burger-editor/local/)               | [![npm version](https://badge.fury.io/js/@burger-editor%2Flocal.svg)](https://badge.fury.io/js/@burger-editor%2Flocal)               | Local Development Package                                        |
 | [@burger-editor/migrator](./packages/@burger-editor/migrator/)         | [![npm version](https://badge.fury.io/js/@burger-editor%2Fmigrator.svg)](https://badge.fury.io/js/@burger-editor%2Fmigrator)         | BurgerEditor Content Migration Tool                              |
+
+## License
+
+**Dual Licensed under MIT OR Apache-2.0**
+
+This software is available under your choice of the following licenses:
+
+1. **MIT License**
+   Recommended when used as part of baserCMS or the official BurgerEditor Plugin,
+   both developed and distributed by D-ZERO Co., Ltd.
+
+2. **Apache License 2.0**
+   For all other use cases, including standalone, third-party, or commercial use.
+
+**Files:**
+
+- `LICENSE-MIT` - MIT License text
+- `LICENSE-APACHE-2.0` - Apache License 2.0 text
+- `NOTICE` - Attribution notices (required for Apache 2.0)
+
+For inquiries, contact: system@d-zero.co.jp
