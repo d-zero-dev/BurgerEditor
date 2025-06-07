@@ -33,7 +33,7 @@
 		"@burger-editor/core": "4.0.0-alpha.4",
 		"@burger-editor/migrator": "4.0.0-alpha.4",
 		"@burger-editor/utils": "4.0.0-alpha.4",
-		"@tabler/icons-svelte": "3.33.0",
+		"@tabler/icons-svelte": "3.34.0",
 		"jquery": "3.7.1",
 		"svelte": "5.33.17"
 	},
