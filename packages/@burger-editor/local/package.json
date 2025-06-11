@@ -42,7 +42,7 @@
 		"@types/node": "22.15.31",
 		"dotenv": "16.5.0",
 		"npm-run-all2": "8.0.4",
-		"tsx": "4.20.0",
+		"tsx": "4.20.1",
 		"vite": "6.3.5"
 	},
 	"author": "D-ZERO",
