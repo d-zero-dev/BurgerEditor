@@ -35,7 +35,7 @@
 		"@burger-editor/utils": "4.0.0-alpha.4",
 		"@tabler/icons-svelte": "3.34.0",
 		"jquery": "3.7.1",
-		"svelte": "5.34.1"
+		"svelte": "5.34.3"
 	},
 	"devDependencies": {
 		"@sveltejs/vite-plugin-svelte": "5.1.0",
