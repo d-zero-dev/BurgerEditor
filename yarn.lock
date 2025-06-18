@@ -6215,10 +6215,10 @@ homedir-polyfill@^1.0.1:
   dependencies:
     parse-passwd "^1.0.0"
 
-hono@4.7.11:
-  version "4.7.11"
-  resolved "https://registry.yarnpkg.com/hono/-/hono-4.7.11.tgz#369819d9daca5822db7b123462c5ce20b121c640"
-  integrity sha512-rv0JMwC0KALbbmwJDEnxvQCeJh+xbS3KEWW5PC9cMJ08Ur9xgatI0HmtgYZfOdOSOeYsp5LO2cOhdI8cLEbDEQ==
+hono@4.8.0:
+  version "4.8.0"
+  resolved "https://registry.yarnpkg.com/hono/-/hono-4.8.0.tgz#0dae296efd89c48541f8e6cf3516408dcccaa209"
+  integrity sha512-NoiHrqJxoe1MYXqW+/0/Q4NCizKj2Ivm4KmX8mOSBtw9UJ7KYaOGKkO7csIwO5UlZpfvVRdcgiMb0GGyjEjtcw==
 
 hookified@^1.8.1:
   version "1.8.2"
