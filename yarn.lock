@@ -1567,10 +1567,10 @@
   resolved "https://registry.yarnpkg.com/@mixmark-io/domino/-/domino-2.2.0.tgz#4e8ec69bf1afeb7a14f0628b7e2c0f35bdb336c3"
   integrity sha512-Y28PR25bHXUg88kCV7nivXrP2Nj2RueZ3/l/jdx6J9f8J4nsEGcgX0Qe6lt7Pa+J79+kPiJU3LguR6O/6zrLOw==
 
-"@modelcontextprotocol/sdk@1.13.0":
-  version "1.13.0"
-  resolved "https://registry.yarnpkg.com/@modelcontextprotocol/sdk/-/sdk-1.13.0.tgz#4ac5f4db34b78ce2da09915821869c618909e692"
-  integrity sha512-P5FZsXU0kY881F6Hbk9GhsYx02/KgWK1DYf7/tyE/1lcFKhDYPQR9iYjhQXJn+Sg6hQleMo3DB7h7+p4wgp2Lw==
+"@modelcontextprotocol/sdk@1.13.1":
+  version "1.13.1"
+  resolved "https://registry.yarnpkg.com/@modelcontextprotocol/sdk/-/sdk-1.13.1.tgz#d0e8666eb16c54488e0e83105604b9618d8d46aa"
+  integrity sha512-8q6+9aF0yA39/qWT/uaIj6zTpC+Qu07DnN/lb9mjoquCJsAh6l3HyYqc9O3t2j7GilseOQOQimLg7W3By6jqvg==
   dependencies:
     ajv "^6.12.6"
     content-type "^1.0.5"
