@@ -20,7 +20,7 @@
 		"prebuild": "tsc",
 		"dev": "run-p dev:client dev:server",
 		"dev:client": "vite build --watch",
-		"dev:server": "DEV_MODE=true DEBUG=@bge:* tsx watch src/index.ts"
+		"dev:server": "DEV_MODE=true DEBUG=\"@bge:*\" tsx watch src/index.ts"
 	},
 	"dependencies": {
 		"@burger-editor/blocks": "4.0.0-alpha.4",

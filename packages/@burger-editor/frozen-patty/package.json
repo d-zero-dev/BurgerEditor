@@ -7,7 +7,6 @@
 	"repository": {
 		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
 	},
-	"private": false,
 	"publishConfig": {
 		"access": "public"
 	},

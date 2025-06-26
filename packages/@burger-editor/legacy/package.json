@@ -7,7 +7,6 @@
 	"repository": {
 		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
 	},
-	"private": false,
 	"publishConfig": {
 		"access": "public"
 	},
@@ -25,7 +24,6 @@
 		"build": "rollup -c",
 		"dev": "rollup -c -w"
 	},
-	"dependencies": {},
 	"devDependencies": {
 		"rollup": "4.44.0",
 		"rollup-plugin-dts": "6.2.1",
