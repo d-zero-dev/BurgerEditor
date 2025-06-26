@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.5](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.4...v4.0.0-alpha.5) (2025-06-26)
+
+### Bug Fixes
+
+- **frozen-patty:** add src attribute support in getValues ([65b6525](https://github.com/d-zero-dev/BurgerEditor/commit/65b6525a4928861fdf3964ac7a60793b5e742080))
+
 # [4.0.0-alpha.4](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.3...v4.0.0-alpha.4) (2025-04-07)
 
 ### Bug Fixes
