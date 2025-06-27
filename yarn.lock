@@ -6981,9 +6981,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-svelte@npm:3.9.3":
-  version: 3.9.3
-  resolution: "eslint-plugin-svelte@npm:3.9.3"
+"eslint-plugin-svelte@npm:3.10.1":
+  version: 3.10.1
+  resolution: "eslint-plugin-svelte@npm:3.10.1"
   dependencies:
     "@eslint-community/eslint-utils": "npm:^4.6.1"
     "@jridgewell/sourcemap-codec": "npm:^1.5.0"
@@ -7001,7 +7001,7 @@ __metadata:
   peerDependenciesMeta:
     svelte:
       optional: true
-  checksum: 10c0/90ef2d9eb9763aca4b643daf546ba70c29ec501b86a278d2b2e3a5b95b33d591ac761530564f78ac3b4d1579e2b81de1acb26ae160f5f36fb3dbada02352c8a0
+  checksum: 10c0/6a23d2f16edac9993b45a63a8f1bd60e3a0a5d94921cfddbe3d1665f6c60d9f22fca7bddcdb412d3c7b47226934b5bd0b73f34f2add2abd2477461f57ad6fb27
   languageName: node
   linkType: hard
 
@@ -13610,7 +13610,7 @@ __metadata:
     "@d-zero/tsconfig": "npm:0.4.1"
     "@markuplint/svelte-parser": "npm:4.7.9"
     "@markuplint/svelte-spec": "npm:4.5.19"
-    eslint-plugin-svelte: "npm:3.9.3"
+    eslint-plugin-svelte: "npm:3.10.1"
     husky: "npm:9.1.7"
     jsdom: "npm:26.1.0"
     lerna: "npm:8.2.2"
