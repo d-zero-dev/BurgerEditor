@@ -25,7 +25,7 @@
 	"dependencies": {
 		"@burger-editor/blocks": "4.0.0-alpha.6",
 		"@burger-editor/client": "4.0.0-alpha.6",
-		"@hono/node-server": "1.14.4",
+		"@hono/node-server": "1.15.0",
 		"@hono/zod-validator": "0.7.0",
 		"ansi-colors": "4.1.3",
 		"cosmiconfig": "9.0.0",
