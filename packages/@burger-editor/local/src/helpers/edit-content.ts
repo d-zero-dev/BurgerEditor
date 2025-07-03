@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { JSDOM } from 'jsdom';
-import { format } from 'prettier';
+import { format, resolveConfig } from 'prettier';
 
 import { log } from './debug.js';
 
@@ -62,8 +62,13 @@ export async function saveContent(
 	log('Save content to %s', selector);
 	const contentDom = document.querySelector(selector) ?? document.body;
 	contentDom.innerHTML = newContent;
+	const config = await resolveConfig(filePath);
 	let html = dom.serialize();
-	html = await format(html, { parser: 'html' });
+	html = await format(html, {
+		parser: 'html',
+		printWidth: 100_000,
+		...config,
+	});
 	await fs.writeFile(filePath, html, 'utf8');
 }
 
