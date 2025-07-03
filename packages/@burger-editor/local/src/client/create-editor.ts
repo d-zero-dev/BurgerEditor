@@ -21,7 +21,13 @@ export async function createEditor() {
 		console.log('config', config);
 	}
 
-	const mainInput = document.getElementById('main') as HTMLInputElement;
+	const mainInput = document.getElementById('main') as HTMLInputElement | null;
+
+	if (mainInput === null) {
+		// eslint-disable-next-line no-console
+		console.warn('Editable area not found');
+		return;
+	}
 
 	await createBurgerEditorClient({
 		root: '.editor',

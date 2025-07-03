@@ -3,7 +3,7 @@ import { Nav } from './nav.js';
 
 type Props = {
 	path: string;
-	content: string | null;
+	content: string | null | Error;
 	rootDir: string;
 	lang: string;
 };
@@ -24,9 +24,14 @@ export function App({ path, content, rootDir, lang }: Props) {
 				<div class="content">
 					<h1>{path}</h1>
 
-					<main class="editor"></main>
-
-					<input type="hidden" id="main" value={content ?? '新規作成'} />
+					{content instanceof Error ? (
+						<p>{content.message}</p>
+					) : (
+						<>
+							<main class="editor"></main>
+							<input type="hidden" id="main" value={content ?? '新規作成'} />
+						</>
+					)}
 				</div>
 			</div>
 		</Layout>

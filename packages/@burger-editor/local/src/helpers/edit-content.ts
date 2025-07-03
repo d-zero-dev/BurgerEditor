@@ -22,7 +22,10 @@ export async function loadContent(filePath: string, editableArea: string | null)
 		const selector = editableArea ?? 'body';
 		log('Load content from %s', selector);
 		const contentDom = document.querySelector(selector);
-		return contentDom?.innerHTML ?? null;
+		if (contentDom === null) {
+			return new NoEditableAreaError(selector);
+		}
+		return contentDom.innerHTML;
 	} catch (error) {
 		if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
 			log('ENOENT: File not found, create empty file');
@@ -58,5 +61,14 @@ export async function saveContent(
 	log('Save content to %s', selector);
 	const contentDom = document.querySelector(selector) ?? document.body;
 	contentDom.innerHTML = newContent;
-	await fs.writeFile(filePath, dom.serialize(), 'utf8');
+	const html = dom.serialize();
+	await fs.writeFile(filePath, html, 'utf8');
+}
+
+export class NoEditableAreaError extends Error {
+	readonly selector: string;
+	constructor(selector: string) {
+		super(`Editable area not found: ${selector}`);
+		this.selector = selector;
+	}
 }
