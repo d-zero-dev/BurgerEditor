@@ -33,6 +33,7 @@
 		"hono": "4.8.3",
 		"jsdom": "26.1.0",
 		"open": "10.1.2",
+		"prettier": "3.6.2",
 		"zod": "3.24.4"
 	},
 	"devDependencies": {
