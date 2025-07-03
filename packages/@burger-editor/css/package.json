@@ -1,0 +1,31 @@
+{
+	"name": "@burger-editor/css",
+	"version": "4.0.0-alpha.6",
+	"description": "Stylesheet for BurgerEditor Blocks",
+	"author": "D-ZERO",
+	"license": "(MIT OR Apache-2.0)",
+	"repository": {
+		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module",
+	"exports": {
+		".": {
+			"import": "./style.css"
+		}
+	},
+	"files": [
+		"*.css"
+	],
+	"scripts": {
+		"build": "node build.js"
+	},
+	"devDependencies": {
+		"@burger-editor/blocks": "4.0.0-alpha.6",
+		"glob": "11.0.3",
+		"postcss": "8.5.6",
+		"vitest": "3.2.4"
+	}
+}
