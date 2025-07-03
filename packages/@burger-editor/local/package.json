@@ -5,6 +5,11 @@
 	"publishConfig": {
 		"access": "public"
 	},
+	"exports": {
+		".": {
+			"types": "./server/index.d.ts"
+		}
+	},
 	"bin": {
 		"bge": "./server/index.js"
 	},
