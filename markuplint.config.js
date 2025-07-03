@@ -16,6 +16,10 @@ export default {
 	specs: {
 		'\\.svelte$': '@markuplint/svelte-spec',
 	},
+	rules: {
+		...extended.rules,
+		'heading-levels': false,
+	},
 	nodeRules: [
 		...extended.nodeRules,
 		{
@@ -49,7 +53,6 @@ export default {
 			...extended,
 			rules: {
 				...extended.rules,
-				'heading-levels': false,
 				'invalid-attr': false,
 				'require-accessible-name': false,
 			},
