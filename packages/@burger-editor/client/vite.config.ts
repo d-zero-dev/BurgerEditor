@@ -2,6 +2,7 @@ import fs from 'node:fs';
 
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig } from 'vite';
+// eslint-disable-next-line import-x/default
 import dts from 'vite-plugin-dts';
 
 const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));

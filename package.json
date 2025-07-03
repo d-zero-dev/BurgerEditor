@@ -26,7 +26,7 @@
 		"prepare": "husky",
 		"commit": "npx cz",
 		"co": "npx cz",
-		"up": "yarn upgrade-interactive --latest"
+		"up": "yarn upgrade-interactive"
 	},
 	"workspaces": [
 		"packages/@burger-editor/*"
@@ -41,7 +41,7 @@
 	},
 	"devDependencies": {
 		"@d-zero/commitlint-config": "5.0.0-alpha.67",
-		"@d-zero/linters": "5.0.0-alpha.63",
+		"@d-zero/linters": "5.0.0-alpha.67",
 		"@d-zero/tsconfig": "0.4.1",
 		"@markuplint/svelte-parser": "4.7.9",
 		"@markuplint/svelte-spec": "4.5.19",

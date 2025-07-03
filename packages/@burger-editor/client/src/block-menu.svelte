@@ -234,7 +234,6 @@
 
 	.bge-menu-margin {
 		--_line-color: rgb(from var(--bge-ui-primary-color) r g b / 10%);
-		container: margin-view / size;
 		position: absolute;
 		inset-block-end: 0;
 		inset-inline-start: 0;
@@ -244,6 +243,7 @@
 		justify-content: center;
 		inline-size: 100%;
 		block-size: var(--margin-block-end);
+		container: margin-view / size;
 		font-size: 0.8em;
 		font-weight: bold;
 		color: var(--bge-ui-primary-color);

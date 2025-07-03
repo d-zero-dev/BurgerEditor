@@ -124,9 +124,9 @@
 	display: flex;
 	flex-wrap: var(--warp);
 	gap: var(--bge-grid-gap);
-	container-type: inline-size;
 	align-items: var(--align);
 	justify-content: var(--justify);
+	container-type: inline-size;
 
 	&:where([data-bge-container$=':immutable'], [data-bge-container*=':immutable:']) {
 		& > * {
@@ -171,16 +171,16 @@
 	}
 
 	&:where(
-			[data-bge-container$=':align-stretch'],
-			[data-bge-container*=':align-stretch:']
-		) {
+		[data-bge-container$=':align-stretch'],
+		[data-bge-container*=':align-stretch:']
+	) {
 		--align: stretch;
 	}
 
 	&:where(
-			[data-bge-container$=':align-baseline'],
-			[data-bge-container*=':align-baseline:']
-		) {
+		[data-bge-container$=':align-baseline'],
+		[data-bge-container*=':align-baseline:']
+	) {
 		--align: baseline;
 	}
 
