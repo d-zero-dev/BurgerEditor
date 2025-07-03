@@ -102,21 +102,21 @@
 :where(dialog[open], [data-bge-component='block-menu']) {
 	:where(
 		input:is(
-				:not([type]),
-				[type='text'],
-				[type='number'],
-				[type='password'],
-				[type='email'],
-				[type='url'],
-				[type='tel'],
-				[type='search'],
-				[type='color'],
-				[type='date'],
-				[type='time'],
-				[type='datetime-local'],
-				[type='month'],
-				[type='week']
-			),
+			:not([type]),
+			[type='text'],
+			[type='number'],
+			[type='password'],
+			[type='email'],
+			[type='url'],
+			[type='tel'],
+			[type='search'],
+			[type='color'],
+			[type='date'],
+			[type='time'],
+			[type='datetime-local'],
+			[type='month'],
+			[type='week']
+		),
 		select,
 		textarea
 	) {
@@ -349,7 +349,10 @@
 [data-bgi] {
 	min-inline-size: 20px;
 	min-block-size: 20px;
-	outline: 1px #a6a6a6 dotted;
+
+	&:is([data-bge-container]:hover &) {
+		outline: 1px #a6a6a6 dotted;
+	}
 
 	&:hover {
 		cursor: pointer;
