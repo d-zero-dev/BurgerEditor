@@ -44,7 +44,7 @@
 		"dotenv": "17.1.0",
 		"npm-run-all2": "8.0.4",
 		"tsx": "4.20.3",
-		"vite": "7.0.2"
+		"vite": "7.0.3"
 	},
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)"
