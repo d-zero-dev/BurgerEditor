@@ -347,17 +347,20 @@
 }
 
 [data-bgi] {
+	--outline: none;
 	min-inline-size: 20px;
 	min-block-size: 20px;
+	outline: var(--outline);
 
-	&:is([data-bge-container]:hover &) {
-		outline: 1px #a6a6a6 dotted;
+	&:where([data-bge-container]:hover &) {
+		--outline: 1px #a6a6a6 dotted;
 	}
 
 	&:hover {
+		--outline: 1px solid var(--bge-ui-primary-color);
 		cursor: pointer;
-		outline: 1px solid var(--bge-ui-primary-color);
-		background-color: var(--bge-ui-background-color);
+		background-color: oklch(from currentcolor l c h / 5%);
+		background-blend-mode: darken;
 
 		img {
 			filter: brightness(90%);

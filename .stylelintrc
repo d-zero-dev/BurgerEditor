@@ -5,6 +5,9 @@
 		"@d-zero/stylelint-config/order",
 		"stylelint-config-html"
 	],
+	"rules": {
+		"declaration-property-value-no-unknown": null
+	},
 	"overrides": [
 		{
 			"files": ["**/*.svelte"],
