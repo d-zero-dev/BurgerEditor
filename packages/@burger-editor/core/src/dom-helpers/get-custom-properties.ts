@@ -12,24 +12,18 @@ type CustomProperty = {
 };
 
 /**
- *
+ * Get all custom properties from editorArea
  * @param editorArea
  */
 export function getCustomProperties(editorArea: EditableArea): CustomPropertyCategories {
 	const categories: CustomPropertyCategories = new Map();
 	const defaultValues = new Map<string, string>();
 
-	// From iframe scope
-	const CSSStyleRule =
-		editorArea.containerElement.ownerDocument.defaultView?.CSSStyleRule;
-	if (CSSStyleRule === undefined) {
-		throw new Error('CSSStyleRule is not available');
-	}
-
 	for (const styleSheet of editorArea.containerElement.ownerDocument.styleSheets) {
 		try {
-			for (const cssRule of styleSheet.cssRules) {
-				if (cssRule instanceof CSSStyleRule && cssRule.selectorText === ':root') {
+			const styleRules = getStyleRules(styleSheet.cssRules, editorArea);
+			for (const cssRule of styleRules) {
+				if (cssRule.selectorText === ':root') {
 					for (const cssProperty of cssRule.style) {
 						if (cssProperty.startsWith(PREFIX)) {
 							const [type, key] = cssProperty.slice(PREFIX.length).split('-');
@@ -75,4 +69,39 @@ export function getCustomProperties(editorArea: EditableArea): CustomPropertyCat
 	}
 
 	return categories;
+}
+
+/**
+ * Get all CSSStyleRule from CSSRule array recursively
+ * @param rules - CSSRule array
+ * @param scope - EditableArea
+ * @returns CSSStyleRule array
+ */
+function getStyleRules(rules: CSSRuleList, scope: EditableArea): readonly CSSStyleRule[] {
+	const CSSStyleRule = scope.containerElement.ownerDocument.defaultView?.CSSStyleRule;
+	if (CSSStyleRule === undefined) {
+		throw new Error('CSSStyleRule is not available');
+	}
+
+	const CSSGroupingRule =
+		scope.containerElement.ownerDocument.defaultView?.CSSGroupingRule;
+	if (CSSGroupingRule === undefined) {
+		throw new Error('CSSGroupingRule is not available');
+	}
+
+	const styleRules: CSSStyleRule[] = [];
+
+	for (const rule of rules) {
+		if (rule instanceof CSSStyleRule) {
+			styleRules.push(rule);
+			continue;
+		}
+
+		if (rule instanceof CSSGroupingRule) {
+			styleRules.push(...getStyleRules(rule.cssRules, scope));
+			continue;
+		}
+	}
+
+	return styleRules;
 }
