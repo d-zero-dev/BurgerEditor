@@ -54,6 +54,14 @@ export function getCustomProperties(editorArea: EditableArea): CustomPropertyCat
 		}
 	}
 
+	for (const propList of categories.values()) {
+		for (const [key, customProperty] of propList.entries()) {
+			if (customProperty.value.trim().toLowerCase() === 'null') {
+				propList.delete(key);
+			}
+		}
+	}
+
 	for (const [category, value] of defaultValues.entries()) {
 		const currentMap = categories.get(category);
 
