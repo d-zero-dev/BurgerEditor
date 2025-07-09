@@ -44,9 +44,9 @@ export default createItem<{
 
 			const main = await Promise.all(
 				editor.engine.css.stylesheets
-					.filter((url) => url !== '/client.css')
-					.map(async (url) => {
-						const res = await fetch(url);
+					.filter((sheet) => sheet.layer == null)
+					.map(async (sheet) => {
+						const res = await fetch(sheet.path);
 						return res.text();
 					}),
 			);

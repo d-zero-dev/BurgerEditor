@@ -1,4 +1,6 @@
+import { CSS_LAYER } from './const.js';
 import { appendStylesheetTo } from './dom-helpers/append-stylesheet-to.js';
+import { createStylesheet } from './dom-helpers/create-stylesheet.js';
 import { getElement } from './dom-helpers/get-element.js';
 
 export type EditorUIOptions = {
@@ -21,9 +23,7 @@ export abstract class EditorUI {
 		this.#el.dataset.bgeComponent = name;
 
 		if (options?.stylesheet) {
-			const css = options.stylesheet;
-			const blob = new Blob([css], { type: 'text/css' });
-			const url = URL.createObjectURL(blob);
+			const url = createStylesheet(options.stylesheet, CSS_LAYER.ui);
 			appendStylesheetTo(this.el.ownerDocument, url);
 		}
 	}

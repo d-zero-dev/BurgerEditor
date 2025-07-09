@@ -2,6 +2,7 @@ import type { AppType } from '../route.js';
 
 import { blocks, generalCSS, items } from '@burger-editor/blocks';
 import { createBurgerEditorClient } from '@burger-editor/client';
+import { CSS_LAYER } from '@burger-editor/core';
 import '@burger-editor/client/style';
 import { hc } from 'hono/client';
 
@@ -33,7 +34,15 @@ export async function createEditor() {
 		root: '.editor',
 		config: {
 			...config,
-			stylesheets: ['/client.css', ...config.stylesheets],
+			stylesheets: [
+				{
+					path: '/client.css',
+					layer: CSS_LAYER.ui,
+				},
+				...config.stylesheets.map((stylesheet) => ({
+					path: stylesheet,
+				})),
+			],
 		},
 		blocks,
 		items,

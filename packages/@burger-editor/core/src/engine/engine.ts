@@ -5,7 +5,10 @@ import { BurgerBlock } from '../block/block.js';
 import { BlockCatalogDialog } from '../block-catalog-dialog.js';
 import { BlockOptionsDialog } from '../block-options-dialog.js';
 import { ComponentObserver } from '../component-observer.js';
+import { CSS_LAYER } from '../const.js';
 import { createComponentStylesheet } from '../dom-helpers/create-component-stylesheet.js';
+import { createStylesheetFromUrl } from '../dom-helpers/create-stylesheet-from-url.js';
+import { createStylesheet } from '../dom-helpers/create-stylesheet.js';
 import { getCustomProperties } from '../dom-helpers/get-custom-properties.js';
 import { getElement } from '../dom-helpers/get-element.js';
 import { EditableArea } from '../editable-area.js';
@@ -22,7 +25,10 @@ export class BurgerEditorEngine {
 	readonly componentObserver = new ComponentObserver();
 	readonly config: Config;
 	readonly css: {
-		readonly stylesheets: readonly string[];
+		readonly stylesheets: readonly {
+			readonly path: string;
+			readonly layer?: string;
+		}[];
 		readonly classList: readonly string[];
 		readonly generalCSS: string;
 	};
@@ -271,12 +277,26 @@ export class BurgerEditorEngine {
 	static async new(options: BurgerEditorEngineOptions) {
 		const engine = new BurgerEditorEngine(options);
 
-		const componentStylesheet = createComponentStylesheet(
-			options.items,
-			options.generalCSS,
+		const layers = createStylesheet(
+			`@layer ${CSS_LAYER.base}, ${CSS_LAYER.components}, ${CSS_LAYER.ui};`,
 		);
 
-		const stylesheets = [componentStylesheet, ...(options.config.stylesheets ?? [])];
+		const baseStylesheet = createComponentStylesheet(
+			options.items,
+			options.generalCSS,
+			CSS_LAYER.base,
+		);
+
+		const componentStylesheets = await Promise.all(
+			options.config.stylesheets.map(async (stylesheet) => {
+				return createStylesheetFromUrl(
+					stylesheet.path,
+					stylesheet.layer ?? CSS_LAYER.components,
+				);
+			}),
+		);
+
+		const stylesheets = [layers, baseStylesheet, ...componentStylesheets];
 
 		const mainInitialContent =
 			typeof options.initialContents === 'string'

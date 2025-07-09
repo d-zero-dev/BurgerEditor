@@ -63,7 +63,10 @@ export interface CatalogItem {
 
 export interface Config {
 	readonly classList: readonly string[];
-	readonly stylesheets: readonly string[];
+	readonly stylesheets: readonly {
+		readonly path: string;
+		readonly layer?: string;
+	}[];
 	readonly sampleImagePath: string;
 	readonly googleMapsApiKey: string | null;
 }
