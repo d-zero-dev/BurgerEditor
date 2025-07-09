@@ -11,8 +11,8 @@
 	/* Custom background color */
 	--bge-options-bgcolor-transparent: transparent;
 	--bge-options-bgcolor-white: #fff;
-	--bge-options-bgcolor-black: #333;
-	--bge-options-bgcolor-gray: #ccc;
+	--bge-options-bgcolor-gray: #dfdfdf;
+	--bge-options-bgcolor-blue: #eaf3f8;
 	--bge-options-bgcolor-red: #fcc;
 	--bge-options-bgcolor: var(--bge-options-bgcolor-transparent);
 
