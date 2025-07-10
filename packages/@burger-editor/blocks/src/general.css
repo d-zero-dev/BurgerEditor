@@ -39,6 +39,8 @@
 	--bge-container-padding: var(--bge-options-padding);
 	padding: var(--bge-container-padding);
 	margin-block-end: var(--bge-container-margin-block-end);
+	container-name: bge-container;
+	container-type: inline-size;
 	background-color: var(--bge-container-background-color);
 	border: var(--bge-container-border);
 
@@ -113,6 +115,7 @@
 
 	:where([data-bge-item]) {
 		align-self: self-start;
+		container-name: bge-item;
 		container-type: inline-size;
 	}
 }
@@ -126,7 +129,6 @@
 	gap: var(--bge-grid-gap);
 	align-items: var(--align);
 	justify-content: var(--justify);
-	container-type: inline-size;
 
 	&:where([data-bge-container$=':immutable'], [data-bge-container*=':immutable:']) {
 		& > * {
@@ -196,7 +198,6 @@
 :where([data-bge-container='float'], [data-bge-container^='float:']) {
 	--bge-grid-float: none;
 	--margin-inline: 0;
-	container-type: inline-size;
 
 	&::after {
 		clear: both;
