@@ -7,7 +7,7 @@
 	},
 	"exports": {
 		".": {
-			"types": "./server/index.d.ts"
+			"types": "./server/types.d.ts"
 		}
 	},
 	"bin": {

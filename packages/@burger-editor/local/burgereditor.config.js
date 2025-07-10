@@ -5,7 +5,7 @@ import { config } from 'dotenv';
 config();
 
 /**
- * @type {import('@burger-editor/core').LocalServerConfig}
+ * @type {import('@burger-editor/local').LocalServerConfig}
  */
 export default {
 	documentRoot: path.join(import.meta.dirname, '.test'),
