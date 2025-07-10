@@ -1,3 +1,5 @@
+// THIS FILE IS FOR LOCAL DEVELOPMENT ONLY
+
 import path from 'node:path';
 
 import { config } from 'dotenv';
@@ -10,7 +12,7 @@ config();
 export default {
 	documentRoot: path.join(import.meta.dirname, '.test'),
 	lang: 'ja',
-	// stylesheets: ['/css/style.css'],
+	stylesheets: ['/css/style.css'],
 	classList: ['custom-class-bge-local'],
 	editableArea: '.custom-class-bge-local',
 	googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
