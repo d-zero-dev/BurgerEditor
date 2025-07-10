@@ -10,28 +10,37 @@
 
 ```html
 <div data-bge-name="{ブロック名}" data-bge-container="inline:center:wrap">
-	<div data-bge-group>
-		<div data-bge-item>{アイテムの01HTML}</div>
-		<div data-bge-item>{アイテムの02HTML}</div>
-	</div>
-	<div data-bge-group>
-		<div data-bge-item>{アイテムの01HTML}</div>
-		<div data-bge-item>{アイテムの02HTML}</div>
-	</div>
-	<div data-bge-group>
-		<div data-bge-item>{アイテムの01HTML}</div>
-		<div data-bge-item>{アイテムの02HTML}</div>
+	<div data-bge-container-frame>
+		<div data-bge-group>
+			<div data-bge-item>{アイテムの01HTML}</div>
+			<div data-bge-item>{アイテムの02HTML}</div>
+		</div>
+		<div data-bge-group>
+			<div data-bge-item>{アイテムの01HTML}</div>
+			<div data-bge-item>{アイテムの02HTML}</div>
+		</div>
+		<div data-bge-group>
+			<div data-bge-item>{アイテムの01HTML}</div>
+			<div data-bge-item>{アイテムの02HTML}</div>
+		</div>
 	</div>
 </div>
 ```
 
 ### ブロックを構成する要素
 
+- コンテナ: `data-bge-container`
+- コンテナフレーム: `data-bge-container-frame`
+- グループ: `data-bge-group`
+- アイテム: `data-bge-item`
+
 #### コンテナ
 
 `data-bge-container`属性はコンテナの性質を表します。ブロックのルート要素にあたります。属性値はコロン区切りで表現し、先頭はコンテナのタイプを表し、その後にオプションが続きます。
 
 `data-bge-name`属性はブロックの名前を表します。ブロック選択の際に利用されますが、振る舞いには影響しません（⚠️ つまり、この属性を利用したスタイル変更は推奨されません）。
+
+この要素には `container-name: bge-container` が付与されます。これは、CSSコンテナクエリのコンテナ名として利用されます。
 
 ##### コンテナタイプ
 
@@ -75,6 +84,14 @@
 ##### 共通オプション
 
 - `immutable`: コンテナのタイプやオプションを変更できない
+
+#### コンテナフレーム
+
+コンテナフレームは`data-bge-container-frame`属性をもつ要素で、コンテナの中身をラップします。
+
+`grid`や`inline`の性質が実際に適用される要素です。
+
+※CSS Containerは自信に再帰的にクエリーや`cq`系単位が使えない仕様があるため、CSS Containerを適用させる「コンテナ」と、コンテナの性質（`grid`や`inline`）を適用させる「コンテナフレーム」に分けています。
 
 #### グループ
 
