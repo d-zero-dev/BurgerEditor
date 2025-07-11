@@ -16,6 +16,8 @@
 			"import": "./style.css"
 		}
 	},
+	"main": "style.css",
+	"style": "style.css",
 	"files": [
 		"*.css"
 	],
