@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/blocks",
-	"version": "4.0.0-alpha.8",
+	"version": "4.0.0-alpha.9",
 	"description": "BurgerEditor Blocks",
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)",
@@ -27,8 +27,8 @@
 		"dev": "rollup -c -w"
 	},
 	"dependencies": {
-		"@burger-editor/core": "4.0.0-alpha.8",
-		"@burger-editor/utils": "4.0.0-alpha.8",
+		"@burger-editor/core": "4.0.0-alpha.9",
+		"@burger-editor/utils": "4.0.0-alpha.9",
 		"@lexical/dragon": "0.33.0",
 		"@lexical/history": "0.33.0",
 		"@lexical/html": "0.33.0",
