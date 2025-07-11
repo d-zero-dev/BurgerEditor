@@ -29,7 +29,16 @@
 	"dependencies": {
 		"@burger-editor/core": "4.0.0-alpha.7",
 		"@burger-editor/utils": "4.0.0-alpha.7",
-		"trix": "2.1.15"
+		"@lexical/dragon": "0.33.0",
+		"@lexical/history": "0.33.0",
+		"@lexical/html": "0.33.0",
+		"@lexical/link": "0.33.0",
+		"@lexical/list": "0.33.0",
+		"@lexical/rich-text": "0.33.0",
+		"@lexical/selection": "0.33.0",
+		"@lexical/table": "0.33.0",
+		"@lexical/utils": "0.33.0",
+		"lexical": "0.33.0"
 	},
 	"devDependencies": {
 		"@types/google.maps": "3.58.1",

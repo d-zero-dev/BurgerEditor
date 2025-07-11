@@ -1,15 +1,15 @@
-// @ts-ignore
-import Trix from 'trix';
-
 import { createItem } from '../../create-item.js';
 
+import { createWysiwygEditor } from './create-wysiwyg-editor.js';
 import editor from './editor.html';
 import style from './style.css';
 import template from './template.html';
 
-export default createItem<{
+export type WysiwygData = {
 	wysiwyg: string;
-}>({
+};
+
+export default createItem<WysiwygData>({
 	version: __VERSION__,
 	name: 'wysiwyg',
 	template,
@@ -17,32 +17,18 @@ export default createItem<{
 	editor,
 	editorOptions: {
 		async open(data, editor) {
-			const EDITOR_AREA_SELECTOR = '[data-bgi-input="wysiwyg"]';
+			const PREVIEW_AREA_SELECTOR = '[data-bge-preview]';
+			const EDITOR_AREA_SELECTOR = '[data-bgi="wysiwyg"]';
 			const $editorArea = editor.find<HTMLDivElement>(EDITOR_AREA_SELECTOR);
 			if (!$editorArea) {
 				throw new Error(`Not found: "${EDITOR_AREA_SELECTOR}"`);
 			}
 
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const $editor: HTMLDivElement & { editor: any } =
-				new Trix.elements.TrixEditorElement();
-			$editorArea.append($editor);
-
-			$editor.editor.insertHTML(data.wysiwyg);
-
-			$editor.addEventListener('trix-change', () => {
-				editor.update('$wysiwyg', $editor.innerHTML);
-			});
-
-			$editor.classList.add(...editor.engine.css.classList);
-			$editor.style.setProperty('padding', '1em', 'important');
-			$editor.style.setProperty('inline-size', '100%', 'important');
+			createWysiwygEditor($editorArea, editor, data.wysiwyg);
 
 			const style = document.createElement('style');
 
-			$editor.hidden = true;
-
-			const main = await Promise.all(
+			const css = await Promise.all(
 				editor.engine.css.stylesheets
 					.filter((sheet) => sheet.layer == null)
 					.map(async (sheet) => {
@@ -52,16 +38,43 @@ export default createItem<{
 			);
 
 			style.textContent = `
-				@scope (${EDITOR_AREA_SELECTOR}) {
-					${main.join('\n')}
+				@scope (${PREVIEW_AREA_SELECTOR}) {
+					${css.join('\n')}
+				}
 
-					[data-trix-button-group="file-tools"] {
-						display: none !important;
-					}
+				textarea[name="bge-wysiwyg"],
+				${PREVIEW_AREA_SELECTOR} ${EDITOR_AREA_SELECTOR} {
+					padding: 1em;
+					block-size: 50svh;
+					inline-size: 100%;
+					resize: vertical;
+					overflow-y: auto;
+				}
+
+				textarea[name="bge-wysiwyg"] {
+					font-family: var(--bge-font-family-monospace);
+				}
+
+				[data-bge-mode="wysiwyg"] textarea[name="bge-wysiwyg"] {
+					display: none;
+				}
+
+				[data-bge-mode="html"] [data-bge-preview] {
+					display: none;
 				}`;
-			$editorArea.before(style);
+			editor.el.before(style);
 
-			$editor.hidden = false;
+			const htmlModeButton = editor.find<HTMLButtonElement>(
+				'[data-bge-toolbar-button="html-mode"]',
+			)!;
+			htmlModeButton.addEventListener('click', () => {
+				htmlModeButton.ariaPressed =
+					htmlModeButton.ariaPressed === 'true' ? 'false' : 'true';
+				const mode = htmlModeButton.ariaPressed === 'true' ? 'html' : 'wysiwyg';
+				editor
+					.find<HTMLDivElement>(`[data-bge-mode]`)
+					?.setAttribute('data-bge-mode', mode);
+			});
 		},
 	},
 });

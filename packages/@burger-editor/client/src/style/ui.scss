@@ -14,6 +14,7 @@
 	--bge-dialog-background-color: var(--bge-ui-background-color);
 	--bge-focus-outline-width: 2px;
 	--bge-tooltip-background-color: rgb(0 0 0 / 60%);
+	--bge-font-family-monospace: 'Courier New', monospace;
 }
 
 :where(body:has(dialog[open])) {
@@ -33,6 +34,7 @@
 	padding: 0;
 	padding-block: 1em;
 	overscroll-behavior: contain;
+	font-size: 16px;
 	color: var(--bge-dialog-font-color);
 	resize: both;
 	background: var(--bge-dialog-background-color);
@@ -122,10 +124,8 @@
 	) {
 		inline-size: 100%;
 		padding: 0.5em 0.7em;
-		font-size: inherit;
+		font-size: 1em;
 		line-height: 1.1;
-		border: 1px solid var(--bge-border-color);
-		border-radius: var(--border-radius);
 	}
 
 	:where(
@@ -135,6 +135,8 @@
 		[contenteditable]
 	) {
 		background: var(--bge-lightest-color);
+		border: 1px solid var(--bge-border-color);
+		border-radius: var(--border-radius);
 
 		&:disabled {
 			background: initial;
@@ -346,7 +348,7 @@
 	}
 }
 
-[data-bgi] {
+[data-bge-component='editable-area'] [data-bgi] {
 	--outline: none;
 	min-inline-size: 20px;
 	min-block-size: 20px;
