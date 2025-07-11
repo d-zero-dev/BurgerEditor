@@ -3,6 +3,21 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.8](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.7...v4.0.0-alpha.8) (2025-07-11)
+
+### Bug Fixes
+
+- **blocks:** change text-image blocks layout from inline to grid ([401c912](https://github.com/d-zero-dev/BurgerEditor/commit/401c912bdfb98f1bd2ef84ad3dbdf8d4eab0c81e))
+- **blocks:** correct heading level in title-h3 template ([5b37941](https://github.com/d-zero-dev/BurgerEditor/commit/5b37941ad29b772da8dc418796a0ef9203a71f7b))
+- **blocks:** remove unnecessary CSS classes and styles ([eede195](https://github.com/d-zero-dev/BurgerEditor/commit/eede1955f8c301d8e75fae9255d940b7cdf4be6e))
+- **blocks:** update background color options ([f14084b](https://github.com/d-zero-dev/BurgerEditor/commit/f14084b40dac082247bc89ac4fa4c414439c9292))
+
+### Features
+
+- **blocks:** migrate wysiwyg editor from trix to lexical ([9bf448b](https://github.com/d-zero-dev/BurgerEditor/commit/9bf448bd6e341db08d257fef8315f057699e5637))
+- **blocks:** separate container and container frame structure ([ed1e70d](https://github.com/d-zero-dev/BurgerEditor/commit/ed1e70d3f421509a1a5a7c94590a372d235490ef))
+- **core:** add CSS layer support for better style management ([8965e42](https://github.com/d-zero-dev/BurgerEditor/commit/8965e42156f1bcd153ebdb04026f5f135c650f7b))
+
 # [4.0.0-alpha.7](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.6...v4.0.0-alpha.7) (2025-07-03)
 
 **Note:** Version bump only for package @burger-editor/blocks
