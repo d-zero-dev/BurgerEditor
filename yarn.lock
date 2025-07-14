@@ -189,7 +189,7 @@ __metadata:
     cosmiconfig: "npm:9.0.0"
     debug: "npm:4.4.1"
     dotenv: "npm:17.2.0"
-    hono: "npm:4.8.4"
+    hono: "npm:4.8.5"
     jsdom: "npm:26.1.0"
     npm-run-all2: "npm:8.0.4"
     open: "npm:10.1.2"
@@ -8759,10 +8759,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"hono@npm:4.8.4":
-  version: 4.8.4
-  resolution: "hono@npm:4.8.4"
-  checksum: 10c0/3712bbb4f7d24b5f4f30d75730ae30111cafdb92132728c92e83c257008cfd64e234a6c0657807cb4dd7bc001e3e1daf2e4dd5eb0a73a32ef3a70eff0415d3b7
+"hono@npm:4.8.5":
+  version: 4.8.5
+  resolution: "hono@npm:4.8.5"
+  checksum: 10c0/f3d4632c92a51c8de5f5b645fbbe510c7bdab87390c3e84ee8cc3ba8e1f8912fe52444e58681307d95e45581d38a8cb178f615f73602d0acc768bf801eea18c1
   languageName: node
   linkType: hard
 
