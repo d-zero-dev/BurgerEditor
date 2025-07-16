@@ -123,7 +123,8 @@
 		textarea
 	) {
 		inline-size: 100%;
-		padding: 0.5em 0.7em;
+		padding-block: 0.5em;
+		padding-inline: 0.7em;
 		font-size: 1em;
 		line-height: 1.1;
 	}
@@ -179,7 +180,8 @@
 	}
 
 	:where(button) {
-		padding: 0.5em 1em;
+		padding-block: 0.5em;
+		padding-inline: 1em;
 		font-size: inherit;
 		line-height: 1.1;
 		appearance: none;
@@ -304,7 +306,8 @@
 
 	:where(code) {
 		display: inline-block;
-		padding: 0.1em 0.3em;
+		padding-block: 0.1em;
+		padding-inline: 0.3em;
 		font-weight: bold;
 		vertical-align: middle;
 		color: color-mix(in srgb, currentcolor 80%, var(--bge-lightest-color) 20%);
@@ -331,7 +334,8 @@
 	&[data-bge-component-mode='visual'] {
 		iframe {
 			display: block;
-			margin: 0 auto;
+			margin-block: 0;
+			margin-inline: auto;
 			overflow: hidden;
 			border: none;
 		}

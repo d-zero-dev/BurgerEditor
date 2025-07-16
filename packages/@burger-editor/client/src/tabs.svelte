@@ -98,7 +98,8 @@
 	[role='tab'] {
 		position: relative;
 		border: 1px solid var(--bge-border-color);
-		border-radius: var(--border-radius) var(--border-radius) 0 0;
+		border-start-start-radius: var(--border-radius);
+		border-start-end-radius: var(--border-radius);
 
 		&[aria-selected='true'] {
 			border-block-end: none;
@@ -113,7 +114,7 @@
 				content: '';
 				background-color: var(--bge-ui-primary-color);
 				clip-path: polygon(0 0, 50% 100%, 100% 0);
-				transform: translateX(-50%);
+				translate: -50% 0;
 			}
 		}
 	}

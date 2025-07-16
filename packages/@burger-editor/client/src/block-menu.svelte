@@ -260,7 +260,8 @@
 	@container margin-view (height < 1em) {
 		.bge-menu-margin {
 			span {
-				padding: 0.2em 0.4em;
+				padding-block: 0.2em;
+				padding-inline: 0.4em;
 				color: var(--bge-lightest-color);
 				background: var(--bge-ui-primary-color);
 				border-radius: 0.2em;

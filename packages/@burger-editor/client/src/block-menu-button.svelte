@@ -14,7 +14,8 @@
 	button {
 		anchor-name: var(--name);
 		display: block;
-		padding: 0.2em 0.5em;
+		padding-block: 0.2em;
+		padding-inline: 0.5em;
 		font-size: 1.5em;
 		color: var(--bge-lightest-color);
 		pointer-events: all;

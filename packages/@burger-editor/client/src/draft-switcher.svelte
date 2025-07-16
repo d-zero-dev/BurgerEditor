@@ -131,7 +131,8 @@
 
 	button {
 		display: block;
-		padding: 3px 5px;
+		padding-block: 3px;
+		padding-inline: 5px;
 		color: #333;
 		text-decoration: none;
 		background-color: var(--bge-background-color01);

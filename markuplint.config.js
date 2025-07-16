@@ -21,7 +21,15 @@ export default {
 		'heading-levels': false,
 	},
 	nodeRules: [
-		...extended.nodeRules,
+		...extended.nodeRules.filter((rule) => !rule.selector.startsWith('img')),
+		{
+			...extended.nodeRules.find((rule) => rule.selector.startsWith('img')),
+			rules: {
+				...extended.nodeRules.find((rule) => rule.selector.startsWith('img')).rules,
+				// Disable https://github.com/d-zero-dev/linters/blob/dev/packages/%40d-zero/markuplint-config/base.js#L46-L57
+				'invalid-attr': false,
+			},
+		},
 		{
 			// https://github.com/markuplint/markuplint/issues/673
 			selector: '[role="radiogroup"]',

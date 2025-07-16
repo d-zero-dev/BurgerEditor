@@ -72,20 +72,22 @@
 		align-items: start;
 		inline-size: 100%;
 		block-size: 100%;
-		padding: 0.5em 0.5em;
+		padding: 0.5em;
 		margin: 0;
 		appearance: none;
 	}
 
 	figure {
-		margin: 0 auto;
+		margin-block: 0;
+		margin-inline: auto;
 	}
 
 	.img > * {
 		display: block;
 		inline-size: 71px;
 		block-size: 56px;
-		margin: 0 auto;
+		margin-block: 0;
+		margin-inline: auto;
 		background-repeat: no-repeat;
 		border-radius: 10px;
 	}
