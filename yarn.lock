@@ -125,7 +125,7 @@ __metadata:
     "@types/jquery": "npm:3.5.32"
     jquery: "npm:3.7.1"
     sass: "npm:1.89.2"
-    svelte: "npm:5.36.5"
+    svelte: "npm:5.36.7"
     vite: "npm:7.0.5"
     vite-plugin-dts: "npm:4.5.4"
   languageName: unknown
@@ -14617,9 +14617,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte@npm:5.36.5":
-  version: 5.36.5
-  resolution: "svelte@npm:5.36.5"
+"svelte@npm:5.36.7":
+  version: 5.36.7
+  resolution: "svelte@npm:5.36.7"
   dependencies:
     "@ampproject/remapping": "npm:^2.3.0"
     "@jridgewell/sourcemap-codec": "npm:^1.5.0"
@@ -14635,7 +14635,7 @@ __metadata:
     locate-character: "npm:^3.0.0"
     magic-string: "npm:^0.30.11"
     zimmerframe: "npm:^1.1.2"
-  checksum: 10c0/1d20ea7166ac8f50e9e04f8a2afbaca9d6bbdff5e61459e8381318643e4c6ea31646f4e96083d104ecb6c79b228e2593d21d782fafebb0228b18266a627dee3b
+  checksum: 10c0/8d37ef91a2158fc864b690c32bd3b9edd6588dc09dffad92b4296867d9059889b51aeb7bb5ada1085943f7f5043e5ea20c8865fb1cd57f4586d551dadc441104
   languageName: node
   linkType: hard
 
