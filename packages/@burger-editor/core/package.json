@@ -26,6 +26,7 @@
 		"clean": "tsc --build --clean"
 	},
 	"dependencies": {
+		"@burger-editor/custom-element": "4.0.0-alpha.9",
 		"@burger-editor/frozen-patty": "4.0.0-alpha.9",
 		"@burger-editor/utils": "4.0.0-alpha.9",
 		"jaco": "5.0.0",
