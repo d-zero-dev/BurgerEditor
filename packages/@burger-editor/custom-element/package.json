@@ -1,0 +1,41 @@
+{
+	"name": "@burger-editor/custom-element",
+	"version": "4.0.0-alpha.9",
+	"description": "BurgerEditor Custom Element",
+	"author": "D-ZERO",
+	"license": "MIT",
+	"repository": {
+		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "rollup -c",
+		"prebuild": "tsc",
+		"dev": "rollup -c -w"
+	},
+	"dependencies": {
+		"@tabler/icons": "3.34.1",
+		"@tiptap/core": "3.0.7",
+		"@tiptap/extension-table": "3.0.7",
+		"@tiptap/pm": "3.0.7",
+		"@tiptap/starter-kit": "3.0.7"
+	},
+	"devDependencies": {
+		"rollup": "4.46.0",
+		"rollup-plugin-dts": "6.2.1",
+		"rollup-plugin-esbuild": "6.2.1",
+		"rollup-plugin-string": "3.0.0"
+	}
+}
