@@ -16,6 +16,7 @@ export class ItemEditorDialog<
 	T extends ItemData,
 	C extends { [key: string]: unknown } = {},
 > extends EditorDialog {
+	#contentStylesheetCache: string | null = null;
 	readonly #corePrefix = 'bge';
 	#service?: ItemEditorService<T, C>;
 
@@ -206,6 +207,9 @@ export class ItemEditorDialog<
 	}
 
 	async #getContentStylesheet() {
+		if (this.#contentStylesheetCache) {
+			return this.#contentStylesheetCache;
+		}
 		const css = await Promise.all(
 			this.engine.css.stylesheets
 				.filter((sheet) => sheet.layer == null)
@@ -214,7 +218,8 @@ export class ItemEditorDialog<
 					return res.text();
 				}),
 		);
-		return css.join('\n');
+		this.#contentStylesheetCache = css.join('\n');
+		return this.#contentStylesheetCache;
 	}
 
 	#setValues(data: T) {
