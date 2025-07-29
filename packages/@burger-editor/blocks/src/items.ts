@@ -1,4 +1,5 @@
 import button from './items/button/index.js';
+import details from './items/details/index.js';
 import downloadFile from './items/download-file/index.js';
 import googleMaps from './items/google-maps/index.js';
 import hr from './items/hr/index.js';
@@ -11,6 +12,7 @@ import youtube from './items/youtube/index.js';
 
 export const items = {
 	button,
+	details,
 	'download-file': downloadFile,
 	'google-maps': googleMaps,
 	hr,

@@ -1,6 +1,7 @@
 import button from './blocks/button/index.js';
 import button2 from './blocks/button2/index.js';
 import button3 from './blocks/button3/index.js';
+import disclosure from './blocks/disclosure/index.js';
 import downloadFile from './blocks/download-file/index.js';
 import downloadFile2 from './blocks/download-file2/index.js';
 import downloadFile3 from './blocks/download-file3/index.js';
@@ -54,4 +55,5 @@ export const blocks = {
 	wysiwyg,
 	wysiwyg2,
 	youtube,
+	disclosure,
 } as const;
