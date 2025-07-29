@@ -20,7 +20,10 @@ export class ItemEditorService<
 	readonly #migrate?: (item: Item<T, C>) => T;
 	readonly #migrateElement?: (data: T, item: Item<T, C>) => Promise<void> | void;
 	readonly #onSubmit?: (e: SubmitEvent, submitter: Submitter) => boolean | void;
-	readonly #open?: (data: Readonly<T>, editor: ItemEditorDialog<T, C>) => void;
+	readonly #open?: (
+		data: Readonly<T>,
+		editor: ItemEditorDialog<T, C>,
+	) => Promise<void> | void;
 
 	get item() {
 		return this.#item;
@@ -88,8 +91,8 @@ export class ItemEditorService<
 		return this.#onSubmit?.(e, submitter);
 	}
 
-	open(data: Readonly<T>, editor: ItemEditorDialog<T, C>) {
-		this.#open?.(data, editor);
+	async open(data: Readonly<T>, editor: ItemEditorDialog<T, C>) {
+		await this.#open?.(data, editor);
 	}
 
 	setData<D extends keyof C = keyof C>(customProperty: D, value: C[D]) {

@@ -54,7 +54,7 @@ export class Item<
 		this.#el.addEventListener('click', (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			this.#openEditor();
+			void this.#openEditor();
 		});
 
 		this.#engine = engine;
@@ -135,8 +135,8 @@ export class Item<
 		this.#isOld = false;
 	}
 
-	#openEditor() {
-		this.editor.open(this.#service);
+	async #openEditor() {
+		await this.editor.open(this.#service);
 	}
 
 	static async new<T extends ItemData, C extends { [key: string]: unknown }>(

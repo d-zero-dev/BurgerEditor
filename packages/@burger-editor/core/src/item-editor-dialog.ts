@@ -230,7 +230,7 @@ export class ItemEditorDialog<
 		return this.#service?.onSubmit?.(e, submitter);
 	}
 
-	override open(service: ItemEditorService<T, C>) {
+	override async open(service: ItemEditorService<T, C>) {
 		this.#service = service;
 		const template = getItemEditorTemplate(this.engine, this.#service.item.name);
 		if (!template) {
@@ -253,7 +253,7 @@ export class ItemEditorDialog<
 		super.open();
 		if (this.#service) {
 			this.#setValues(data);
-			this.#service.open(data, this);
+			await this.#service.open(data, this);
 		}
 		this.engine.componentObserver.notify('open-editor', {
 			data,
