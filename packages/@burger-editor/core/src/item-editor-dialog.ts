@@ -187,12 +187,15 @@ export class ItemEditorDialog<
 		throw new Error(`Input element not found: ${name}`);
 	}
 
-	#findAll<N extends keyof T & string = keyof T & string>(name: `$${N}`) {
+	#findAll<N extends keyof T & string = keyof T & string>(
+		name: `$${N}`,
+	): (HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)[] {
 		const propName = name.slice(1);
-		let el: NodeListOf<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>;
+		let el: (HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)[];
 		for (const n of [kebabCase(propName), propName]) {
 			el = this.findAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
 				`[name="bge-${n}"], [name="bge-${n}[]"]`,
+				'input, textarea, select',
 			);
 			if (el.length > 0) {
 				return [...el];
@@ -206,7 +209,7 @@ export class ItemEditorDialog<
 			const name = kebabCase(_name);
 			const inputSelector = `[name="bge-${name}"], [name="bge-${name}[]"]`;
 			const value = encodeItemPrimitiveData(datum);
-			for (const targetEl of this.findAll(inputSelector)) {
+			for (const targetEl of this.findAll(inputSelector, 'input, textarea, select')) {
 				setContent(targetEl, value);
 			}
 		}

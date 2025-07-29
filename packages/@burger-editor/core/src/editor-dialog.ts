@@ -114,8 +114,11 @@ export abstract class EditorDialog extends EditorUI {
 		return this.#el.querySelector<E>(selector);
 	}
 
-	findAll<E extends Element = HTMLElement>(selector: string) {
-		return this.#el.querySelectorAll<E>(selector);
+	findAll<E extends Element = HTMLElement>(selector: string, shadowSelector?: string) {
+		const elements = [...this.#el.querySelectorAll<E>(selector)];
+		return shadowSelector
+			? elements.map((el) => el.shadowRoot?.querySelector<E>(shadowSelector) ?? el)
+			: elements;
 	}
 
 	onSubmit(
