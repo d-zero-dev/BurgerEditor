@@ -84,6 +84,7 @@ export async function createEditor() {
 				'google-maps': 'Google Maps',
 				youtube: 'YouTube',
 				hr: '区切り線',
+				disclosure: '折りたたみ',
 			},
 		},
 		initialContents: mainInput.value,
