@@ -188,7 +188,7 @@
 		cursor: pointer;
 		background: var(--bge-button-background-color);
 		border: 1px solid var(--bge-border-color);
-		border-radius: 0.5em;
+		border-radius: var(--border-radius);
 	}
 
 	:where(button:is([aria-pressed='true'], [aria-selected='true'])) {
@@ -254,7 +254,11 @@
 		padding: 1em;
 		margin-block-end: 1em;
 		border: 1px solid var(--bge-border-color);
-		border-radius: 0.5em;
+		border-radius: var(--border-radius);
+
+		&:is(* + &) {
+			margin-block-start: 1em;
+		}
 	}
 
 	:where([role='radiogroup']) {
