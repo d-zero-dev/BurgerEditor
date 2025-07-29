@@ -28,19 +28,10 @@
 	},
 	"dependencies": {
 		"@burger-editor/core": "4.0.0-alpha.9",
-		"@burger-editor/utils": "4.0.0-alpha.9",
-		"@lexical/dragon": "0.33.1",
-		"@lexical/history": "0.33.1",
-		"@lexical/html": "0.33.1",
-		"@lexical/link": "0.33.1",
-		"@lexical/list": "0.33.1",
-		"@lexical/rich-text": "0.33.1",
-		"@lexical/selection": "0.33.1",
-		"@lexical/table": "0.33.1",
-		"@lexical/utils": "0.33.1",
-		"lexical": "0.33.1"
+		"@burger-editor/utils": "4.0.0-alpha.9"
 	},
 	"devDependencies": {
+		"@burger-editor/custom-element": "4.0.0-alpha.9",
 		"@types/google.maps": "3.58.1",
 		"rollup": "4.46.1",
 		"rollup-plugin-esbuild": "6.2.1",
