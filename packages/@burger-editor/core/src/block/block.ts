@@ -122,7 +122,7 @@ export class BurgerBlock {
 
 	isMutable() {
 		return this.el.matches(
-			':not([data-bge-container*=":immutable"]):has(>[data-bge-group])',
+			':not([data-bge-container*=":immutable"]):has(>[data-bge-container-frame]>[data-bge-group])',
 		);
 	}
 
@@ -136,7 +136,7 @@ export class BurgerBlock {
 
 	async updateGridItems(addOrRemove: 1 | -1) {
 		await updateGridItems(
-			[...this.el.children],
+			[...this.el.querySelectorAll('[data-bge-group]')],
 			this.engine,
 			addOrRemove,
 			this.items,
