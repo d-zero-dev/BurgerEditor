@@ -6,7 +6,13 @@
 		"stylelint-config-html"
 	],
 	"rules": {
-		"declaration-property-value-no-unknown": null
+		"declaration-property-value-no-unknown": null,
+		"selector-type-no-unknown": [
+			true,
+			{
+				"ignoreTypes": ["/^bge-/"]
+			}
+		]
 	},
 	"overrides": [
 		{

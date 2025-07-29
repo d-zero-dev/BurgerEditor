@@ -261,6 +261,14 @@
 		}
 	}
 
+	:where(* + bge-wysiwyg-editor) {
+		margin-block-start: 1em;
+	}
+
+	:where(bge-wysiwyg-editor:has(+ *)) {
+		margin-block-end: 1em;
+	}
+
 	:where([role='radiogroup']) {
 		display: flex;
 		flex-wrap: wrap;
