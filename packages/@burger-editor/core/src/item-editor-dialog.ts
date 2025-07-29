@@ -2,6 +2,7 @@ import type { Submitter } from './dom-helpers/types.js';
 import type { BurgerEditorEngine } from './engine/engine.js';
 import type { ItemEditorService } from './item/item-editor-service.js';
 import type { ItemData, ItemPrimitiveData } from './item/types.js';
+import type { BgeWysiwygEditorElement } from '@burger-editor/custom-element';
 
 import { setContent } from '@burger-editor/frozen-patty/set-value';
 import { camelCase, kebabCase } from '@burger-editor/utils';
@@ -204,6 +205,18 @@ export class ItemEditorDialog<
 		return [];
 	}
 
+	async #getContentStylesheet() {
+		const css = await Promise.all(
+			this.engine.css.stylesheets
+				.filter((sheet) => sheet.layer == null)
+				.map(async (sheet) => {
+					const res = await fetch(sheet.path);
+					return res.text();
+				}),
+		);
+		return css.join('\n');
+	}
+
 	#setValues(data: T) {
 		for (const [_name, datum] of Object.entries(data)) {
 			const name = kebabCase(_name);
@@ -253,6 +266,13 @@ export class ItemEditorDialog<
 		super.open();
 		if (this.#service) {
 			this.#setValues(data);
+
+			const wysiwyg = this.find<BgeWysiwygEditorElement>('bge-wysiwyg-editor');
+			if (wysiwyg) {
+				const stylesheet = await this.#getContentStylesheet();
+				wysiwyg.setStyle(stylesheet);
+			}
+
 			await this.#service.open(data, this);
 		}
 		this.engine.componentObserver.notify('open-editor', {
