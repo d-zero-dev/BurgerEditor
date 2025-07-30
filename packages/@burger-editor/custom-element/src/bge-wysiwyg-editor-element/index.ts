@@ -167,7 +167,14 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 						return ['dd', HTMLAttributes, 0];
 					},
 				}),
-				StarterKit,
+				StarterKit.configure({
+					link: {
+						HTMLAttributes: {
+							target: null,
+							rel: null,
+						},
+					},
+				}),
 				TableKit,
 			],
 			autofocus: this.hasAttribute('autofocus'),
@@ -417,7 +424,8 @@ function bindToggle(button: HTMLButtonElement, editor: Editor) {
 			if (!link) {
 				break;
 			}
-			editor.chain().focus().toggleLink({ href: link }).run();
+			const classList = prompt('Enter the class name') ?? null;
+			editor.chain().focus().toggleLink({ href: link, class: classList }).run();
 			break;
 		}
 		case 'blockquote': {

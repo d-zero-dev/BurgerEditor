@@ -37,3 +37,13 @@ test('the "dl" element is enabled', () => {
 	editor.syncWysiwygToTextarea();
 	expect(editor.value).toBe('<dl><div><dt>term</dt><dd><p>detail</p></dd></div></dl>');
 });
+
+test('the "button" like "a" element is enabled', () => {
+	document.body.innerHTML =
+		'<bge-wysiwyg-editor><p><a href="https://example.com">link</a>, <a class="button-like-link" href="https://example.com">button like link</a></p></bge-wysiwyg-editor>';
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+	editor.syncWysiwygToTextarea();
+	expect(editor.value).toBe(
+		'<p><a href="https://example.com">link</a>, <a class="button-like-link" href="https://example.com">button like link</a></p>',
+	);
+});
