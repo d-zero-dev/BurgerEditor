@@ -23,3 +23,9 @@ test('the "name" attribute is set', () => {
 	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
 	expect(editor.name).toBe('test');
 });
+
+test('the "value" attribute is set', () => {
+	document.body.innerHTML = '<bge-wysiwyg-editor><p>test</p></bge-wysiwyg-editor>';
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+	expect(editor.value).toBe('<p>test</p>');
+});
