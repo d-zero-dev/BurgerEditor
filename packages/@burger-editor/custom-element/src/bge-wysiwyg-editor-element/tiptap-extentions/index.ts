@@ -1,5 +1,6 @@
 import { Extension } from '@tiptap/core';
 
+import { ButtonLikeLink } from './button-like-link.js';
 import { DescriptionListDetail } from './description-list-detail.js';
 import { DescriptionListTermGroup } from './description-list-term-group.js';
 import { DescriptionListTerm } from './description-list-term.js';
@@ -17,6 +18,7 @@ export const BgeWysiwygEditorKit = Extension.create({
 			DescriptionListTerm,
 			DescriptionListDetail,
 			Note,
+			ButtonLikeLink,
 		];
 	},
 });

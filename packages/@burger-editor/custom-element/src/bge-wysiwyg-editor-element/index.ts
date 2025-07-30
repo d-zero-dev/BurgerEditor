@@ -2,6 +2,7 @@ import type { AnyExtension } from '@tiptap/core';
 
 import IconBlockquote from '@tabler/icons/outline/blockquote.svg?raw';
 import IconBold from '@tabler/icons/outline/bold.svg?raw';
+import IconCloud from '@tabler/icons/outline/cloud.svg?raw';
 import IconCode from '@tabler/icons/outline/code.svg?raw';
 import IconH1 from '@tabler/icons/outline/h-1.svg?raw';
 import IconH2 from '@tabler/icons/outline/h-2.svg?raw';
@@ -78,6 +79,7 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 					'underline',
 					'strikethrough',
 					'link',
+					'button-like-link',
 					'blockquote',
 					'bullet-list',
 					'ordered-list',
@@ -99,6 +101,7 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 						${commands.includes('underline') ? `<button type="button" data-bge-toolbar-button="underline">${IconUnderline}</button>` : ''}
 						${commands.includes('code') ? `<button type="button" data-bge-toolbar-button="code">${IconCode}</button>` : ''}
 						${commands.includes('link') ? `<button type="button" data-bge-toolbar-button="link">${IconLink}</button>` : ''}
+						${commands.includes('button-like-link') ? `<button type="button" data-bge-toolbar-button="button-like-link">${IconCloud}</button>` : ''}
 						${commands.includes('blockquote') ? `<button type="button" data-bge-toolbar-button="blockquote">${IconBlockquote}</button>` : ''}
 						${commands.includes('bullet-list') ? `<button type="button" data-bge-toolbar-button="bullet-list">${IconBulletList}</button>` : ''}
 						${commands.includes('ordered-list') ? `<button type="button" data-bge-toolbar-button="ordered-list">${IconOrderedList}</button>` : ''}
@@ -407,8 +410,21 @@ function bindToggle(button: HTMLButtonElement, editor: Editor) {
 			if (!link) {
 				break;
 			}
-			const classList = prompt('Enter the class name') ?? null;
-			editor.chain().focus().toggleLink({ href: link, class: classList }).run();
+			editor.chain().focus().toggleLink({ href: link }).run();
+			break;
+		}
+		case 'button-like-link': {
+			if (editor.isActive('buttonLikeLink')) {
+				if (confirm('Are you sure you want to remove the button-like-link?')) {
+					editor.chain().focus().unsetButtonLikeLink().run();
+				}
+				break;
+			}
+			const link = prompt('Enter the link URL');
+			if (!link) {
+				break;
+			}
+			editor.chain().focus().toggleButtonLikeLink({ href: link }).run();
 			break;
 		}
 		case 'blockquote': {
@@ -487,6 +503,11 @@ function bindPressed(button: HTMLButtonElement, editor: Editor) {
 		case 'link': {
 			button.disabled = !editor.can().chain().focus().toggleLink().run();
 			button.ariaPressed = editor.isActive('link') ? 'true' : 'false';
+			break;
+		}
+		case 'button-like-link': {
+			button.disabled = !editor.can().chain().focus().toggleButtonLikeLink().run();
+			button.ariaPressed = editor.isActive('buttonLikeLink') ? 'true' : 'false';
 			break;
 		}
 		case 'blockquote': {
