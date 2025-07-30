@@ -47,3 +47,13 @@ test('the "button" like "a" element is enabled', () => {
 		'<p><a href="https://example.com">link</a>, <a class="button-like-link" href="https://example.com">button like link</a></p>',
 	);
 });
+
+test('the "note" block is enabled', () => {
+	document.body.innerHTML =
+		'<bge-wysiwyg-editor><div role="note"><p>note</p></div><div class="normal-div"><p>normal div</p></div></bge-wysiwyg-editor>';
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+	editor.syncWysiwygToTextarea();
+	expect(editor.value).toBe(
+		'<div role="note"><p>note</p></div><div class="normal-div"><p>normal div</p></div>',
+	);
+});

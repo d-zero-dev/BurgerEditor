@@ -11,6 +11,7 @@ import IconItalic from '@tabler/icons/outline/italic.svg?raw';
 import IconLink from '@tabler/icons/outline/link.svg?raw';
 import IconOrderedList from '@tabler/icons/outline/list-numbers.svg?raw';
 import IconBulletList from '@tabler/icons/outline/list.svg?raw';
+import IconNotes from '@tabler/icons/outline/notes.svg?raw';
 import IconStrikethrough from '@tabler/icons/outline/strikethrough.svg?raw';
 import IconUnderline from '@tabler/icons/outline/underline.svg?raw';
 import { Editor, Node } from '@tiptap/core';
@@ -25,6 +26,14 @@ export function defineBgeWysiwygEditorElement(global: Window = window) {
 	const tagName = `bge-wysiwyg-editor`;
 	if (!global.customElements.get(tagName)) {
 		global.customElements.define(tagName, BgeWysiwygEditorElement);
+	}
+}
+
+declare module '@tiptap/core' {
+	interface Commands<ReturnType> {
+		note: {
+			toggleNote: () => ReturnType;
+		};
 	}
 }
 
@@ -68,6 +77,7 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 					'blockquote',
 					'bullet-list',
 					'ordered-list',
+					'note',
 					'h3',
 					'h4',
 					'h5',
@@ -88,6 +98,7 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 						${commands.includes('blockquote') ? `<button type="button" data-bge-toolbar-button="blockquote">${IconBlockquote}</button>` : ''}
 						${commands.includes('bullet-list') ? `<button type="button" data-bge-toolbar-button="bullet-list">${IconBulletList}</button>` : ''}
 						${commands.includes('ordered-list') ? `<button type="button" data-bge-toolbar-button="ordered-list">${IconOrderedList}</button>` : ''}
+						${commands.includes('note') ? `<button type="button" data-bge-toolbar-button="note">${IconNotes}</button>` : ''}
 						${commands.includes('h1') ? `<button type="button" data-bge-toolbar-button="h1">${IconH1}</button>` : ''}
 						${commands.includes('h2') ? `<button type="button" data-bge-toolbar-button="h2">${IconH2}</button>` : ''}
 						${commands.includes('h3') ? `<button type="button" data-bge-toolbar-button="h3">${IconH3}</button>` : ''}
@@ -198,6 +209,37 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 					},
 					renderHTML({ HTMLAttributes }) {
 						return ['dd', HTMLAttributes, 0];
+					},
+				}),
+				Node.create({
+					name: 'note',
+					group: 'block',
+					content: 'paragraph block*',
+					defining: true,
+					priority: 100_000,
+					parseHTML() {
+						return [
+							{
+								tag: 'div[role="note"]',
+								getAttrs: (node) => {
+									return {
+										role: node.getAttribute('role'),
+									};
+								},
+							},
+						];
+					},
+					renderHTML() {
+						return ['div', { role: 'note' }, 0];
+					},
+					addCommands() {
+						return {
+							toggleNote:
+								() =>
+								({ commands }) => {
+									return commands.toggleWrap(this.name);
+								},
+						};
 					},
 				}),
 				StarterKit.configure({
@@ -473,6 +515,10 @@ function bindToggle(button: HTMLButtonElement, editor: Editor) {
 			editor.chain().focus().toggleOrderedList().run();
 			break;
 		}
+		case 'note': {
+			editor.chain().focus().toggleNote().run();
+			break;
+		}
 		case 'h2': {
 			editor.chain().focus().toggleHeading({ level: 2 }).run();
 			break;
@@ -548,6 +594,11 @@ function bindPressed(button: HTMLButtonElement, editor: Editor) {
 		case 'ordered-list': {
 			button.disabled = !editor.can().chain().focus().toggleOrderedList().run();
 			button.ariaPressed = editor.isActive('orderedList') ? 'true' : 'false';
+			break;
+		}
+		case 'note': {
+			button.disabled = !editor.can().chain().focus().toggleNote().run();
+			button.ariaPressed = editor.isActive('note') ? 'true' : 'false';
 			break;
 		}
 		case 'h2': {
