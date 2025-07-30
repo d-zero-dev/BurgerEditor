@@ -130,6 +130,7 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 					name: 'descriptionList',
 					group: 'block',
 					content: 'descriptionListTermGroup+',
+					defining: true,
 					parseHTML() {
 						return [{ tag: 'dl' }];
 					},
