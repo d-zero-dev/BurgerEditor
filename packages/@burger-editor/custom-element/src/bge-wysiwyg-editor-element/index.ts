@@ -127,6 +127,37 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 			element: this.#editorRoot,
 			extensions: [
 				Node.create({
+					name: 'general-block',
+					group: 'block',
+					content: 'block*',
+					defining: true,
+					priority: 0,
+					addAttributes() {
+						return {
+							class: {
+								parseHTML(node) {
+									return node.getAttribute('class');
+								},
+							},
+						};
+					},
+					parseHTML() {
+						return [
+							{
+								tag: 'div:not(dl > *)',
+								getAttrs: (node) => {
+									return {
+										class: node.getAttribute('class'),
+									};
+								},
+							},
+						];
+					},
+					renderHTML({ HTMLAttributes }) {
+						return ['div', HTMLAttributes, 0];
+					},
+				}),
+				Node.create({
 					name: 'descriptionList',
 					group: 'block',
 					content: 'descriptionListTermGroup+',
@@ -141,8 +172,9 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 				Node.create({
 					name: 'descriptionListTermGroup',
 					content: 'descriptionListTerm descriptionListDetail',
+					priority: 10,
 					parseHTML() {
-						return [{ tag: 'div' }];
+						return [{ tag: 'div:is(dl > *)' }];
 					},
 					renderHTML({ HTMLAttributes }) {
 						return ['div', HTMLAttributes, 0];
