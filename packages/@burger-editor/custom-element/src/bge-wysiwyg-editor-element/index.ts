@@ -145,7 +145,6 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 		}
 
 		const extensions: AnyExtension[] = [
-			BgeWysiwygEditorKit,
 			StarterKit.configure({
 				link: {
 					HTMLAttributes: {
@@ -155,6 +154,7 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 				},
 			}),
 			TableKit,
+			BgeWysiwygEditorKit,
 		];
 
 		if (BgeWysiwygEditorElement.extension) {
