@@ -13,7 +13,6 @@ export const Note = Node.create({
 	group: 'block',
 	content: 'paragraph block*',
 	defining: true,
-	priority: 100_000,
 	parseHTML() {
 		return [
 			{

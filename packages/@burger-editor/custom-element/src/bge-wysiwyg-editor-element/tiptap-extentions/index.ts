@@ -12,13 +12,13 @@ export const BgeWysiwygEditorKit = Extension.create({
 	name: 'bge-wysiwyg-editor-kit',
 	addExtensions() {
 		return [
-			GeneralBlock,
 			DescriptionList,
 			DescriptionListTermGroup,
 			DescriptionListTerm,
 			DescriptionListDetail,
 			Note,
 			ButtonLikeLink,
+			GeneralBlock,
 		];
 	},
 });

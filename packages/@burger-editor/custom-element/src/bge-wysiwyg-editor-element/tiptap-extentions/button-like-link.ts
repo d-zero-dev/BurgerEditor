@@ -11,7 +11,6 @@ declare module '@tiptap/core' {
 
 export const ButtonLikeLink = Node.create({
 	name: 'buttonLikeLink',
-	priority: 100_000,
 	group: 'block',
 	content: 'inline*',
 	defining: true,

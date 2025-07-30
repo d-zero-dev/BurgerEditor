@@ -5,7 +5,6 @@ export const GeneralBlock = Node.create({
 	group: 'block',
 	content: 'block*',
 	defining: true,
-	priority: 0,
 	addAttributes() {
 		return {
 			class: {
