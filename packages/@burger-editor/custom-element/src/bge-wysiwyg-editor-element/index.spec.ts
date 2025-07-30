@@ -95,6 +95,15 @@ test('the "flex-box" block is enabled', () => {
 	);
 });
 
+test('the "flex-box" block is empty', () => {
+	document.body.innerHTML = `<bge-wysiwyg-editor>
+			<div data-bgc-flex-box="center"></div>
+		</bge-wysiwyg-editor>`;
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+	editor.syncWysiwygToTextarea();
+	expect(editor.value).toBe('<div data-bgc-flex-box="center"></div>');
+});
+
 test('test extension is applied', () => {
 	document.body.innerHTML = '<bge-wysiwyg-editor><test>test</test></bge-wysiwyg-editor>';
 	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;

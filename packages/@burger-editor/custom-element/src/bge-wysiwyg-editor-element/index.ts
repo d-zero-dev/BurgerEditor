@@ -1,5 +1,6 @@
 import type { AnyExtension } from '@tiptap/core';
 
+import IconAlignBoxCenterStretch from '@tabler/icons/outline/align-box-center-stretch.svg?raw';
 import IconBlockquote from '@tabler/icons/outline/blockquote.svg?raw';
 import IconBold from '@tabler/icons/outline/bold.svg?raw';
 import IconCloud from '@tabler/icons/outline/cloud.svg?raw';
@@ -88,6 +89,7 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 					'h4',
 					'h5',
 					'h6',
+					'flex-box',
 				];
 
 		this.shadowRoot!.innerHTML = `
@@ -112,6 +114,7 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 						${commands.includes('h4') ? `<button type="button" data-bge-toolbar-button="h4">${IconH4}</button>` : ''}
 						${commands.includes('h5') ? `<button type="button" data-bge-toolbar-button="h5">${IconH5}</button>` : ''}
 						${commands.includes('h6') ? `<button type="button" data-bge-toolbar-button="h6">${IconH6}</button>` : ''}
+						${commands.includes('flex-box') ? `<button type="button" data-bge-toolbar-button="flex-box"><span data-bge-rotate>${IconAlignBoxCenterStretch}</span></button>` : ''}
 					</div>
 					<div data-bge-toolbar-group>
 						<button type="button" data-bge-toolbar-button="html-mode">HTML Mode</button>
@@ -349,11 +352,16 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 					padding-inline: calc(var(--padding) * 3);
 				}
 
-				& > svg {
+				svg {
 					inline-size: var(--size);
 					block-size: var(--size);
 					stroke-width: var(--stroke-width);
 					stroke: currentcolor;
+				}
+
+				[data-bge-rotate] {
+					rotate: -90deg;
+					display: block;
 				}
 			}`;
 	}
@@ -463,6 +471,10 @@ function bindToggle(button: HTMLButtonElement, editor: Editor) {
 			editor.chain().focus().toggleHeading({ level: 6 }).run();
 			break;
 		}
+		case 'flex-box': {
+			editor.chain().focus().toggleFlexBox().run();
+			break;
+		}
 	}
 }
 
@@ -553,6 +565,11 @@ function bindPressed(button: HTMLButtonElement, editor: Editor) {
 		case 'h6': {
 			button.disabled = !editor.can().chain().focus().toggleHeading({ level: 6 }).run();
 			button.ariaPressed = editor.isActive('heading', { level: 6 }) ? 'true' : 'false';
+			break;
+		}
+		case 'flex-box': {
+			button.disabled = !editor.can().chain().focus().toggleFlexBox().run();
+			button.ariaPressed = editor.isActive('flexBox') ? 'true' : 'false';
 			break;
 		}
 	}
