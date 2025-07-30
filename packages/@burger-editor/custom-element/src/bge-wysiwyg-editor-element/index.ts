@@ -33,6 +33,7 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 	#editorRoot: HTMLDivElement;
 	#style: HTMLStyleElement;
 	#textarea: HTMLTextAreaElement;
+	#textareaDescriptor: PropertyDescriptor;
 	#tiptapStyle: string;
 
 	get name() {
@@ -131,9 +132,8 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 					bindPressed(button, editor);
 				}
 			},
-			onUpdate: ({ editor }) => {
-				const html = editor.getHTML();
-				originalDescriptor?.set?.call(this.#textarea, html);
+			onUpdate: () => {
+				this.syncWysiwygToTextarea();
 			},
 		});
 
@@ -163,19 +163,24 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 			document.querySelector<HTMLStyleElement>('style[data-tiptap-style]')?.textContent ??
 			'';
 
-		// eslint-disable-next-line unicorn/no-this-assignment, @typescript-eslint/no-this-alias
-		const self = this;
-		const originalDescriptor = Object.getOwnPropertyDescriptor(
+		const textareaDescriptor = Object.getOwnPropertyDescriptor(
 			HTMLTextAreaElement.prototype,
 			'value',
 		);
+
+		if (!textareaDescriptor) {
+			throw new Error('textarea.value is not defined');
+		}
+
+		this.#textareaDescriptor = textareaDescriptor;
+
 		Object.defineProperty(this.#textarea, 'value', {
-			get: function () {
-				return originalDescriptor?.get?.call(this) ?? '';
+			get: () => {
+				return this.#textareaDescriptor?.get?.call(this.#textarea) ?? '';
 			},
-			set: function (val) {
-				self.#editor.commands.setContent(val);
-				originalDescriptor?.set?.call(this, val);
+			set: (val) => {
+				this.#editor.commands.setContent(val);
+				this.#setToTextarea(val);
 			},
 		});
 
@@ -316,6 +321,16 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 					stroke: currentcolor;
 				}
 			}`;
+	}
+
+	syncWysiwygToTextarea() {
+		let html = this.#editor.getHTML();
+		html = html.replaceAll('<p></p>', '');
+		this.#setToTextarea(html);
+	}
+
+	#setToTextarea(html: string) {
+		this.#textareaDescriptor?.set?.call(this.#textarea, html);
 	}
 }
 
