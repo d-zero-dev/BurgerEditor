@@ -16,9 +16,11 @@ import IconBulletList from '@tabler/icons/outline/list.svg?raw';
 import IconNotes from '@tabler/icons/outline/notes.svg?raw';
 import IconStrikethrough from '@tabler/icons/outline/strikethrough.svg?raw';
 import IconUnderline from '@tabler/icons/outline/underline.svg?raw';
-import { Editor, Node } from '@tiptap/core';
+import { Editor } from '@tiptap/core';
 import { TableKit } from '@tiptap/extension-table';
 import StarterKit from '@tiptap/starter-kit';
+
+import { BgeWysiwygEditorKit } from './tiptap-extentions/index.js';
 
 /**
  *
@@ -36,14 +38,6 @@ export function defineBgeWysiwygEditorElement(
 	const tagName = `bge-wysiwyg-editor`;
 	if (!global.customElements.get(tagName)) {
 		global.customElements.define(tagName, BgeWysiwygEditorElement);
-	}
-}
-
-declare module '@tiptap/core' {
-	interface Commands<ReturnType> {
-		note: {
-			toggleNote: () => ReturnType;
-		};
 	}
 }
 
@@ -145,111 +139,7 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 		}
 
 		const extensions: AnyExtension[] = [
-			Node.create({
-				name: 'general-block',
-				group: 'block',
-				content: 'block*',
-				defining: true,
-				priority: 0,
-				addAttributes() {
-					return {
-						class: {
-							parseHTML(node) {
-								return node.getAttribute('class');
-							},
-						},
-					};
-				},
-				parseHTML() {
-					return [
-						{
-							tag: 'div:not(dl > *)',
-							getAttrs: (node) => {
-								return {
-									class: node.getAttribute('class'),
-								};
-							},
-						},
-					];
-				},
-				renderHTML({ HTMLAttributes }) {
-					return ['div', HTMLAttributes, 0];
-				},
-			}),
-			Node.create({
-				name: 'descriptionList',
-				group: 'block',
-				content: 'descriptionListTermGroup+',
-				defining: true,
-				parseHTML() {
-					return [{ tag: 'dl' }];
-				},
-				renderHTML({ HTMLAttributes }) {
-					return ['dl', HTMLAttributes, 0];
-				},
-			}),
-			Node.create({
-				name: 'descriptionListTermGroup',
-				content: 'descriptionListTerm descriptionListDetail',
-				priority: 10,
-				parseHTML() {
-					return [{ tag: 'div:is(dl > *)' }];
-				},
-				renderHTML({ HTMLAttributes }) {
-					return ['div', HTMLAttributes, 0];
-				},
-			}),
-			Node.create({
-				name: 'descriptionListTerm',
-				content: 'inline*',
-				parseHTML() {
-					return [{ tag: 'dt' }];
-				},
-				renderHTML({ HTMLAttributes }) {
-					return ['dt', HTMLAttributes, 0];
-				},
-			}),
-			Node.create({
-				name: 'descriptionListDetail',
-				content: 'paragraph block*',
-				parseHTML() {
-					return [{ tag: 'dd' }];
-				},
-				renderHTML({ HTMLAttributes }) {
-					return ['dd', HTMLAttributes, 0];
-				},
-			}),
-			Node.create({
-				name: 'note',
-				group: 'block',
-				content: 'paragraph block*',
-				defining: true,
-				priority: 100_000,
-				parseHTML() {
-					return [
-						{
-							tag: 'div[role="note"]',
-							getAttrs: (node) => {
-								return {
-									role: node.getAttribute('role'),
-								};
-							},
-						},
-					];
-				},
-				renderHTML() {
-					return ['div', { role: 'note' }, 0];
-				},
-				addCommands() {
-					return {
-						toggleNote:
-							() =>
-							({ commands }) => {
-								return commands.toggleWrap(this.name);
-							},
-					};
-				},
-			}),
+			BgeWysiwygEditorKit,
 			StarterKit.configure({
 				link: {
 					HTMLAttributes: {
