@@ -13,7 +13,7 @@ import IconOrderedList from '@tabler/icons/outline/list-numbers.svg?raw';
 import IconBulletList from '@tabler/icons/outline/list.svg?raw';
 import IconStrikethrough from '@tabler/icons/outline/strikethrough.svg?raw';
 import IconUnderline from '@tabler/icons/outline/underline.svg?raw';
-import { Editor } from '@tiptap/core';
+import { Editor, Node } from '@tiptap/core';
 import { TableKit } from '@tiptap/extension-table';
 import StarterKit from '@tiptap/starter-kit';
 
@@ -125,7 +125,51 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 
 		const editor = new Editor({
 			element: this.#editorRoot,
-			extensions: [StarterKit, TableKit],
+			extensions: [
+				Node.create({
+					name: 'descriptionList',
+					group: 'block',
+					content: 'descriptionListTermGroup+',
+					parseHTML() {
+						return [{ tag: 'dl' }];
+					},
+					renderHTML({ HTMLAttributes }) {
+						return ['dl', HTMLAttributes, 0];
+					},
+				}),
+				Node.create({
+					name: 'descriptionListTermGroup',
+					content: 'descriptionListTerm descriptionListDetail',
+					parseHTML() {
+						return [{ tag: 'div' }];
+					},
+					renderHTML({ HTMLAttributes }) {
+						return ['div', HTMLAttributes, 0];
+					},
+				}),
+				Node.create({
+					name: 'descriptionListTerm',
+					content: 'inline*',
+					parseHTML() {
+						return [{ tag: 'dt' }];
+					},
+					renderHTML({ HTMLAttributes }) {
+						return ['dt', HTMLAttributes, 0];
+					},
+				}),
+				Node.create({
+					name: 'descriptionListDetail',
+					content: 'paragraph block*',
+					parseHTML() {
+						return [{ tag: 'dd' }];
+					},
+					renderHTML({ HTMLAttributes }) {
+						return ['dd', HTMLAttributes, 0];
+					},
+				}),
+				StarterKit,
+				TableKit,
+			],
 			autofocus: this.hasAttribute('autofocus'),
 			onTransaction: ({ editor }) => {
 				for (const button of buttons) {

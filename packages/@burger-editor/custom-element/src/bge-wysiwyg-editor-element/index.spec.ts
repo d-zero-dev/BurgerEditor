@@ -29,3 +29,11 @@ test('the "value" attribute is set', () => {
 	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
 	expect(editor.value).toBe('<p>test</p>');
 });
+
+test('the "dl" element is enabled', () => {
+	document.body.innerHTML =
+		'<bge-wysiwyg-editor><dl><div><dt>term</dt><dd>detail</dd></div></dl></bge-wysiwyg-editor>';
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+	editor.syncWysiwygToTextarea();
+	expect(editor.value).toBe('<dl><div><dt>term</dt><dd><p>detail</p></dd></div></dl>');
+});
