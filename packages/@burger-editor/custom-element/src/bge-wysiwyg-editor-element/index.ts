@@ -46,6 +46,8 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 	constructor() {
 		super();
 
+		const initialValue = this.innerHTML.trim();
+
 		this.attachShadow({ mode: 'open' });
 
 		const label = this.getAttribute('label') ?? '内容';
@@ -176,6 +178,10 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 				originalDescriptor?.set?.call(this, val);
 			},
 		});
+
+		if (initialValue) {
+			this.#textarea.value = initialValue;
+		}
 	}
 
 	setStyle(css: string) {
