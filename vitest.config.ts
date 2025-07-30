@@ -9,5 +9,10 @@ export default defineConfig({
 				url: 'https://www.d-zero.co.jp',
 			},
 		},
+		projects: [
+			'./vitest.config.ts',
+			'./packages/@burger-editor/client/vite.config.ts',
+			'./packages/@burger-editor/local/vite.config.ts',
+		],
 	},
 });
