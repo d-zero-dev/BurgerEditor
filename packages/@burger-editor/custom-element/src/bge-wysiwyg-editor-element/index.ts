@@ -1,3 +1,5 @@
+import type { AnyExtension } from '@tiptap/core';
+
 import IconBlockquote from '@tabler/icons/outline/blockquote.svg?raw';
 import IconBold from '@tabler/icons/outline/bold.svg?raw';
 import IconCode from '@tabler/icons/outline/code.svg?raw';
@@ -20,9 +22,17 @@ import StarterKit from '@tiptap/starter-kit';
 
 /**
  *
+ * @param extension
  * @param global
  */
-export function defineBgeWysiwygEditorElement(global: Window = window) {
+export function defineBgeWysiwygEditorElement(
+	extension?: AnyExtension,
+	global: Window = window,
+) {
+	if (extension) {
+		BgeWysiwygEditorElement.extension = extension;
+	}
+
 	const tagName = `bge-wysiwyg-editor`;
 	if (!global.customElements.get(tagName)) {
 		global.customElements.define(tagName, BgeWysiwygEditorElement);
@@ -134,124 +144,130 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 			button.addEventListener('click', () => bindToggle(button, editor));
 		}
 
+		const extensions: AnyExtension[] = [
+			Node.create({
+				name: 'general-block',
+				group: 'block',
+				content: 'block*',
+				defining: true,
+				priority: 0,
+				addAttributes() {
+					return {
+						class: {
+							parseHTML(node) {
+								return node.getAttribute('class');
+							},
+						},
+					};
+				},
+				parseHTML() {
+					return [
+						{
+							tag: 'div:not(dl > *)',
+							getAttrs: (node) => {
+								return {
+									class: node.getAttribute('class'),
+								};
+							},
+						},
+					];
+				},
+				renderHTML({ HTMLAttributes }) {
+					return ['div', HTMLAttributes, 0];
+				},
+			}),
+			Node.create({
+				name: 'descriptionList',
+				group: 'block',
+				content: 'descriptionListTermGroup+',
+				defining: true,
+				parseHTML() {
+					return [{ tag: 'dl' }];
+				},
+				renderHTML({ HTMLAttributes }) {
+					return ['dl', HTMLAttributes, 0];
+				},
+			}),
+			Node.create({
+				name: 'descriptionListTermGroup',
+				content: 'descriptionListTerm descriptionListDetail',
+				priority: 10,
+				parseHTML() {
+					return [{ tag: 'div:is(dl > *)' }];
+				},
+				renderHTML({ HTMLAttributes }) {
+					return ['div', HTMLAttributes, 0];
+				},
+			}),
+			Node.create({
+				name: 'descriptionListTerm',
+				content: 'inline*',
+				parseHTML() {
+					return [{ tag: 'dt' }];
+				},
+				renderHTML({ HTMLAttributes }) {
+					return ['dt', HTMLAttributes, 0];
+				},
+			}),
+			Node.create({
+				name: 'descriptionListDetail',
+				content: 'paragraph block*',
+				parseHTML() {
+					return [{ tag: 'dd' }];
+				},
+				renderHTML({ HTMLAttributes }) {
+					return ['dd', HTMLAttributes, 0];
+				},
+			}),
+			Node.create({
+				name: 'note',
+				group: 'block',
+				content: 'paragraph block*',
+				defining: true,
+				priority: 100_000,
+				parseHTML() {
+					return [
+						{
+							tag: 'div[role="note"]',
+							getAttrs: (node) => {
+								return {
+									role: node.getAttribute('role'),
+								};
+							},
+						},
+					];
+				},
+				renderHTML() {
+					return ['div', { role: 'note' }, 0];
+				},
+				addCommands() {
+					return {
+						toggleNote:
+							() =>
+							({ commands }) => {
+								return commands.toggleWrap(this.name);
+							},
+					};
+				},
+			}),
+			StarterKit.configure({
+				link: {
+					HTMLAttributes: {
+						target: null,
+						rel: null,
+					},
+				},
+			}),
+			TableKit,
+		];
+
+		if (BgeWysiwygEditorElement.extension) {
+			extensions.push(BgeWysiwygEditorElement.extension);
+		}
+
 		const editor = new Editor({
 			element: this.#editorRoot,
-			extensions: [
-				Node.create({
-					name: 'general-block',
-					group: 'block',
-					content: 'block*',
-					defining: true,
-					priority: 0,
-					addAttributes() {
-						return {
-							class: {
-								parseHTML(node) {
-									return node.getAttribute('class');
-								},
-							},
-						};
-					},
-					parseHTML() {
-						return [
-							{
-								tag: 'div:not(dl > *)',
-								getAttrs: (node) => {
-									return {
-										class: node.getAttribute('class'),
-									};
-								},
-							},
-						];
-					},
-					renderHTML({ HTMLAttributes }) {
-						return ['div', HTMLAttributes, 0];
-					},
-				}),
-				Node.create({
-					name: 'descriptionList',
-					group: 'block',
-					content: 'descriptionListTermGroup+',
-					defining: true,
-					parseHTML() {
-						return [{ tag: 'dl' }];
-					},
-					renderHTML({ HTMLAttributes }) {
-						return ['dl', HTMLAttributes, 0];
-					},
-				}),
-				Node.create({
-					name: 'descriptionListTermGroup',
-					content: 'descriptionListTerm descriptionListDetail',
-					priority: 10,
-					parseHTML() {
-						return [{ tag: 'div:is(dl > *)' }];
-					},
-					renderHTML({ HTMLAttributes }) {
-						return ['div', HTMLAttributes, 0];
-					},
-				}),
-				Node.create({
-					name: 'descriptionListTerm',
-					content: 'inline*',
-					parseHTML() {
-						return [{ tag: 'dt' }];
-					},
-					renderHTML({ HTMLAttributes }) {
-						return ['dt', HTMLAttributes, 0];
-					},
-				}),
-				Node.create({
-					name: 'descriptionListDetail',
-					content: 'paragraph block*',
-					parseHTML() {
-						return [{ tag: 'dd' }];
-					},
-					renderHTML({ HTMLAttributes }) {
-						return ['dd', HTMLAttributes, 0];
-					},
-				}),
-				Node.create({
-					name: 'note',
-					group: 'block',
-					content: 'paragraph block*',
-					defining: true,
-					priority: 100_000,
-					parseHTML() {
-						return [
-							{
-								tag: 'div[role="note"]',
-								getAttrs: (node) => {
-									return {
-										role: node.getAttribute('role'),
-									};
-								},
-							},
-						];
-					},
-					renderHTML() {
-						return ['div', { role: 'note' }, 0];
-					},
-					addCommands() {
-						return {
-							toggleNote:
-								() =>
-								({ commands }) => {
-									return commands.toggleWrap(this.name);
-								},
-						};
-					},
-				}),
-				StarterKit.configure({
-					link: {
-						HTMLAttributes: {
-							target: null,
-							rel: null,
-						},
-					},
-				}),
-				TableKit,
-			],
+			extensions,
 			autofocus: this.hasAttribute('autofocus'),
 			onTransaction: ({ editor }) => {
 				for (const button of buttons) {
@@ -458,6 +474,8 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 	#setToTextarea(html: string) {
 		this.#textareaDescriptor?.set?.call(this.#textarea, html);
 	}
+
+	static extension: AnyExtension | null = null;
 }
 
 /**

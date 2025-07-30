@@ -1,11 +1,28 @@
 import type { BgeWysiwygEditorElement } from './index.js';
 
+import { Node } from '@tiptap/core';
 import { test, expect, beforeAll } from 'vitest';
 
 import { defineBgeWysiwygEditorElement } from './index.js';
 
 beforeAll(() => {
-	defineBgeWysiwygEditorElement();
+	const testExtension = Node.create({
+		name: 'test',
+		group: 'block',
+		content: 'paragraph+',
+		parseHTML() {
+			return [
+				{
+					tag: 'test',
+				},
+			];
+		},
+		renderHTML() {
+			return ['test', {}, 0];
+		},
+	});
+
+	defineBgeWysiwygEditorElement(testExtension);
 });
 
 test('Defined', () => {
@@ -56,4 +73,11 @@ test('the "note" block is enabled', () => {
 	expect(editor.value).toBe(
 		'<div role="note"><p>note</p></div><div class="normal-div"><p>normal div</p></div>',
 	);
+});
+
+test('test extension is applied', () => {
+	document.body.innerHTML = '<bge-wysiwyg-editor><test>test</test></bge-wysiwyg-editor>';
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+	editor.syncWysiwygToTextarea();
+	expect(editor.value).toBe('<test><p>test</p></test>');
 });
