@@ -52,9 +52,11 @@
 
 ##### `grid`オプション
 
-- `[数値]`: グリッドの列数（ `grid-template-columns: repeat([数値], 1fr);` ） 1〜5の範囲で指定可能
+- `[数値]`: グリッドの列数（ `grid-template-columns: repeat([数値], 1fr);` ） 1〜5の範囲で指定可能。
+- `auto-fit`: 自動列数調整（ `grid-template-columns: repeat(auto-fit, minmax(calc(var(--bge-auto-fit-base-width) / [数値]), 1fr));` ）
+  規定幅（CSSカスタムプロパティ`--bge-auto-fit-base-width`）を基準に指定した列数で割った数値に近い幅を保ちながら、コンテナの幅に応じて自動的に列数を調整します。
 
-例: `data-bge-container="grid:3"`
+例: `data-bge-container="grid:3"`、`data-bge-container="grid:3:auto-fit"`
 
 ##### `inline`オプション
 
