@@ -144,6 +144,54 @@ test('the "flex-box" block is empty', () => {
 	expect(editor.value).toBe('<div data-bgc-flex-box="center"></div>');
 });
 
+test('the "table" block is enabled', () => {
+	document.body.innerHTML = `<bge-wysiwyg-editor>
+		<table>
+			<caption>table caption</caption>
+			<tr>
+				<td>item 1</td>
+				<td>item 2</td>
+			</tr>
+		</table>
+	</bge-wysiwyg-editor>`;
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+	editor.syncWysiwygToTextarea();
+	expect(editor.value).toBe(
+		'<table><caption>table caption</caption><tbody><tr><td><p>item 1</p></td><td><p>item 2</p></td></tr></tbody></table>',
+	);
+});
+
+test('the "table" block is enabled with head and foot', () => {
+	document.body.innerHTML = `<bge-wysiwyg-editor>
+		<table>
+			<caption>table caption</caption>
+			<thead>
+				<tr>
+					<th>header 1</th>
+					<th>header 2</th>
+				</tr>
+			</thead>
+			<tbody>
+			<tr>
+				<td>item 1</td>
+				<td>item 2</td>
+			</tr>
+			</tbody>
+			<tfoot>
+				<tr>
+					<td>footer 1</td>
+					<td>footer 2</td>
+				</tr>
+			</tfoot>
+		</table>
+	</bge-wysiwyg-editor>`;
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+	editor.syncWysiwygToTextarea();
+	expect(editor.value).toBe(
+		'<table><caption>table caption</caption><thead><tr><th><p>header 1</p></th><th><p>header 2</p></th></tr></thead><tbody><tr><td><p>item 1</p></td><td><p>item 2</p></td></tr></tbody><tfoot><tr><td><p>footer 1</p></td><td><p>footer 2</p></td></tr></tfoot></table>',
+	);
+});
+
 test('test extension is applied', () => {
 	document.body.innerHTML = '<bge-wysiwyg-editor><test>test</test></bge-wysiwyg-editor>';
 	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;

@@ -19,7 +19,6 @@ import IconNotes from '@tabler/icons/outline/notes.svg?raw';
 import IconStrikethrough from '@tabler/icons/outline/strikethrough.svg?raw';
 import IconUnderline from '@tabler/icons/outline/underline.svg?raw';
 import { Editor } from '@tiptap/core';
-import { TableKit } from '@tiptap/extension-table';
 import StarterKit from '@tiptap/starter-kit';
 
 import { BgeWysiwygEditorKit } from './tiptap-extentions/index.js';
@@ -157,7 +156,6 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 					},
 				},
 			}),
-			TableKit,
 			BgeWysiwygEditorKit,
 		];
 
