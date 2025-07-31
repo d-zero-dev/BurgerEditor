@@ -68,6 +68,36 @@ export function getCustomProperties(editorArea: EditableArea): CustomPropertyCat
 }
 
 /**
+ *
+ * @param editorArea
+ * @param property
+ */
+export function getCustomProperty(
+	editorArea: EditableArea,
+	property: string | RegExp,
+): string | null {
+	const scope = editorArea.containerElement.ownerDocument;
+
+	let result: string | null = null;
+
+	searchCustomProperty(scope, (cssProperty, value) => {
+		if (property instanceof RegExp) {
+			if (property.test(cssProperty)) {
+				result = value;
+				return;
+			}
+		} else {
+			if (cssProperty === property) {
+				result = value;
+				return;
+			}
+		}
+	});
+
+	return result;
+}
+
+/**
  * Get all CSSStyleRule from CSSRule array recursively
  * @param rules - CSSRule array
  * @param scope - Document

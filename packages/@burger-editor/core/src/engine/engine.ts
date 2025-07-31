@@ -11,7 +11,10 @@ import { CSS_LAYER } from '../const.js';
 import { createComponentStylesheet } from '../dom-helpers/create-component-stylesheet.js';
 import { createStylesheetFromUrl } from '../dom-helpers/create-stylesheet-from-url.js';
 import { createStylesheet } from '../dom-helpers/create-stylesheet.js';
-import { getCustomProperties } from '../dom-helpers/get-custom-properties.js';
+import {
+	getCustomProperties,
+	getCustomProperty,
+} from '../dom-helpers/get-custom-properties.js';
 import { getElement } from '../dom-helpers/get-element.js';
 import { EditableArea } from '../editable-area.js';
 import { createBgeEvent } from '../event/create-bge-event.js';
@@ -178,6 +181,10 @@ export class BurgerEditorEngine {
 
 	getCustomProperties() {
 		return getCustomProperties(this.#current);
+	}
+
+	getCustomProperty(property: string | RegExp) {
+		return getCustomProperty(this.#current, property);
 	}
 
 	hasDraft() {
