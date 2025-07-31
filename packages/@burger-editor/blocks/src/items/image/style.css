@@ -1,5 +1,7 @@
 [data-bgi='image'] {
-	inline-size: 100%;
+	> * {
+		inline-size: var(--css-width, 100%);
+	}
 
 	figure {
 		display: flex;
