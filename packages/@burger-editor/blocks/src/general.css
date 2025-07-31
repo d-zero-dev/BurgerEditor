@@ -1,5 +1,6 @@
 :root {
 	--bge-grid-gap: 1rem;
+	--bge-auto-fit-base-width: 40em;
 
 	/* Custom margin */
 	--bge-options-margin-normal: 3rem;
@@ -78,6 +79,13 @@
 		display: grid;
 		grid-template-columns: repeat(var(--bge-grid-col, 1), minmax(0, 1fr));
 		gap: var(--bge-grid-gap);
+
+		&:is([data-bge-container*=':auto-fit:'] *) {
+			grid-template-columns: repeat(
+				auto-fit,
+				minmax(calc(var(--bge-auto-fit-base-width) / var(--bge-grid-col, 1)), 1fr)
+			);
+		}
 	}
 
 	:where([data-bge-group]) {

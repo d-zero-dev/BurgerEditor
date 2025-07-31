@@ -33,6 +33,7 @@ export class BlockOptionsDialog extends EditorDialog {
 		}
 
 		const columns = formData.get('bge-options-columns');
+		const autoFit = formData.get('bge-options-auto-fit');
 		const justify = formData.get('bge-options-justify');
 		const align = formData.get('bge-options-align');
 		const float = formData.get('bge-options-float');
@@ -55,6 +56,7 @@ export class BlockOptionsDialog extends EditorDialog {
 			props: {
 				...currentOptions.props,
 				columns: columns ? Number(columns) : null,
+				autoFit: autoFit ? true : false,
 				justify: justify as
 					| 'center'
 					| 'start'

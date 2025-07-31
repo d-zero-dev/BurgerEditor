@@ -22,6 +22,8 @@
 
 	const options = currentBlock.exportOptions();
 
+	const autoFitBaseWidth = engine.getCustomProperty('--bge-auto-fit-base-width');
+
 	let currentColumns = $state(options.props.columns ?? 1);
 </script>
 
@@ -136,6 +138,20 @@
 						min="1"
 						max="5" />
 				</label>
+				<label>
+					<span>自動列数</span>
+					<input
+						type="checkbox"
+						name="bge-options-auto-fit"
+						defaultChecked={options.props.autoFit} />
+				</label>
+				<small>
+					規定幅（<code
+						title="CSSカスタムプロパティ: --bge-auto-fit-base-width に設定されている値"
+						>{autoFitBaseWidth}</code
+					>）を基準に「数列:
+					<code>{currentColumns}</code>」で割った数値に近い幅を保ちます。
+				</small>
 			{/if}
 			{#if options.props.type === 'float'}
 				<div role="radiogroup" aria-labelledby="float-group">

@@ -24,6 +24,7 @@ export function exportContainerProps(containerPropsQuery?: string): ContainerPro
 	return {
 		type: findValueFromArray([type ?? 'inline'], ['grid', 'inline', 'float']) ?? 'inline',
 		immutable: options.includes('immutable'),
+		autoFit: options.includes('auto-fit'),
 		justify:
 			type === 'inline'
 				? findValueFromArray(options, [

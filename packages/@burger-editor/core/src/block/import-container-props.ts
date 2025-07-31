@@ -5,10 +5,14 @@ import type { ContainerProps } from './types.js';
  * @param containerProps
  */
 export function importContainerProps(containerProps?: ContainerProps): string {
-	const { type, immutable, justify, align, wrap, columns, float } = containerProps ?? {};
+	const { type, immutable, autoFit, justify, align, wrap, columns, float } =
+		containerProps ?? {};
 	const options = new Set<string>();
 	if (immutable) {
 		options.add('immutable');
+	}
+	if (autoFit) {
+		options.add('auto-fit');
 	}
 	if (justify) {
 		options.add(justify);
