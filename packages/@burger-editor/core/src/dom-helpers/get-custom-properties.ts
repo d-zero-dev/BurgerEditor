@@ -19,40 +19,28 @@ export function getCustomProperties(editorArea: EditableArea): CustomPropertyCat
 	const categories: CustomPropertyCategories = new Map();
 	const defaultValues = new Map<string, string>();
 
-	for (const styleSheet of editorArea.containerElement.ownerDocument.styleSheets) {
-		try {
-			const styleRules = getStyleRules(styleSheet.cssRules, editorArea);
-			for (const cssRule of styleRules) {
-				if (cssRule.selectorText === ':root') {
-					for (const cssProperty of cssRule.style) {
-						if (cssProperty.startsWith(PREFIX)) {
-							const [type, key] = cssProperty.slice(PREFIX.length).split('-');
-							if (!type) {
-								continue;
-							}
+	const scope = editorArea.containerElement.ownerDocument;
 
-							const currentMap: CustomPropertyMap = categories.get(type) ?? new Map();
-
-							if (key) {
-								const value = cssRule.style.getPropertyValue(cssProperty);
-								currentMap.set(key, { value, isDefault: false });
-							} else {
-								const value = cssRule.style.getPropertyValue(cssProperty);
-								defaultValues.set(type, value);
-							}
-
-							categories.set(type, currentMap);
-						}
-					}
-				}
-			}
-		} catch (error) {
-			if (error instanceof Error && error.name === 'SecurityError') {
-				continue;
-			}
-			throw error;
+	searchCustomProperty(scope, (cssProperty, value) => {
+		if (!cssProperty.startsWith(PREFIX)) {
+			return;
 		}
-	}
+
+		const [type, key] = cssProperty.slice(PREFIX.length).split('-');
+		if (!type) {
+			return;
+		}
+
+		const currentMap: CustomPropertyMap = categories.get(type) ?? new Map();
+
+		if (key) {
+			currentMap.set(key, { value, isDefault: false });
+		} else {
+			defaultValues.set(type, value);
+		}
+
+		categories.set(type, currentMap);
+	});
 
 	for (const propList of categories.values()) {
 		for (const [key, customProperty] of propList.entries()) {
@@ -82,17 +70,16 @@ export function getCustomProperties(editorArea: EditableArea): CustomPropertyCat
 /**
  * Get all CSSStyleRule from CSSRule array recursively
  * @param rules - CSSRule array
- * @param scope - EditableArea
+ * @param scope - Document
  * @returns CSSStyleRule array
  */
-function getStyleRules(rules: CSSRuleList, scope: EditableArea): readonly CSSStyleRule[] {
-	const CSSStyleRule = scope.containerElement.ownerDocument.defaultView?.CSSStyleRule;
+function getStyleRules(rules: CSSRuleList, scope: Document): readonly CSSStyleRule[] {
+	const CSSStyleRule = scope.defaultView?.CSSStyleRule;
 	if (CSSStyleRule === undefined) {
 		throw new Error('CSSStyleRule is not available');
 	}
 
-	const CSSGroupingRule =
-		scope.containerElement.ownerDocument.defaultView?.CSSGroupingRule;
+	const CSSGroupingRule = scope.defaultView?.CSSGroupingRule;
 	if (CSSGroupingRule === undefined) {
 		throw new Error('CSSGroupingRule is not available');
 	}
@@ -112,4 +99,37 @@ function getStyleRules(rules: CSSRuleList, scope: EditableArea): readonly CSSSty
 	}
 
 	return styleRules;
+}
+
+/**
+ *
+ * @param scope
+ * @param found
+ */
+function searchCustomProperty(
+	scope: Document,
+	found: (property: string, value: string) => void,
+) {
+	for (const styleSheet of scope.styleSheets) {
+		try {
+			const styleRules = getStyleRules(styleSheet.cssRules, scope);
+			for (const cssRule of styleRules) {
+				if (cssRule.selectorText === ':root') {
+					for (const cssProperty of cssRule.style) {
+						if (!cssProperty.startsWith('--')) {
+							return;
+						}
+						const value = cssRule.style.getPropertyValue(cssProperty);
+
+						found(cssProperty, value);
+					}
+				}
+			}
+		} catch (error) {
+			if (error instanceof Error && error.name === 'SecurityError') {
+				continue;
+			}
+			throw error;
+		}
+	}
 }
