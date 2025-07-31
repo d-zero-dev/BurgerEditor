@@ -60,7 +60,7 @@ test('the "dl" element is enabled', () => {
 test('the "button-like-link" block is enabled', () => {
 	document.body.innerHTML = `<bge-wysiwyg-editor>
 		<p><a href="https://example.com">link</a>, <a class="button-like-link" href="https://example.com"><span>button like link in paragraph</span></a></p>
-		<div class="button-like-link">
+		<div data-bgc-style="button">
 			<a href="https://example.com"><span>button like link outside of paragraph</span></a>
 		</div>
 	</bge-wysiwyg-editor>`;
@@ -68,7 +68,7 @@ test('the "button-like-link" block is enabled', () => {
 	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
 	editor.syncWysiwygToTextarea();
 	expect(editor.value).toBe(
-		'<p><a href="https://example.com">link</a>, <a class="button-like-link" href="https://example.com">button like link in paragraph</a></p><div class="button-like-link"><a href="https://example.com"><span>button like link outside of paragraph</span></a></div>',
+		'<p><a href="https://example.com">link</a>, <a class="button-like-link" href="https://example.com">button like link in paragraph</a></p><div data-bgc-style="button"><a href="https://example.com"><span>button like link outside of paragraph</span></a></div>',
 	);
 });
 
@@ -87,7 +87,7 @@ test('the "button-like-link" block can wrap without "a" element', () => {
 	tiptapEditor.chain().focus().toggleButtonLikeLink({ href: 'path/to' }).run();
 	editor.syncWysiwygToTextarea();
 	expect(editor.value).toBe(
-		'<div class="button-like-link"><a href="path/to"><span>paragraph</span></a></div>',
+		'<div data-bgc-style="button"><a href="path/to"><span>paragraph</span></a></div>',
 	);
 });
 
@@ -123,15 +123,15 @@ test('the "note" block is enabled', () => {
 test('the "flex-box" block is enabled', () => {
 	document.body.innerHTML = `<bge-wysiwyg-editor>
 			<div data-bgc-flex-box="center">
-				<div class="button-like-link"><a href="https://example.com"><span>item 1</span></a></div>
-				<div class="button-like-link"><a href="https://example.com"><span>item 2</span></a></div>
-				<div class="button-like-link"><a href="https://example.com"><span>item 3</span></a></div>
+				<div data-bgc-style="button"><a href="https://example.com"><span>item 1</span></a></div>
+				<div data-bgc-style="button"><a href="https://example.com"><span>item 2</span></a></div>
+				<div data-bgc-style="button"><a href="https://example.com"><span>item 3</span></a></div>
 			</div>
 		</bge-wysiwyg-editor>`;
 	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
 	editor.syncWysiwygToTextarea();
 	expect(editor.value).toBe(
-		'<div data-bgc-flex-box="center"><div class="button-like-link"><a href="https://example.com"><span>item 1</span></a></div><div class="button-like-link"><a href="https://example.com"><span>item 2</span></a></div><div class="button-like-link"><a href="https://example.com"><span>item 3</span></a></div></div>',
+		'<div data-bgc-flex-box="center"><div data-bgc-style="button"><a href="https://example.com"><span>item 1</span></a></div><div data-bgc-style="button"><a href="https://example.com"><span>item 2</span></a></div><div data-bgc-style="button"><a href="https://example.com"><span>item 3</span></a></div></div>',
 	);
 });
 

@@ -15,14 +15,14 @@ export const ButtonLikeLink = Node.create({
 	defining: true,
 	addAttributes() {
 		return {
-			class: { default: 'button-like-link' },
+			'data-bgc-style': { default: 'button' },
 			href: { default: '' },
 		};
 	},
 	parseHTML() {
 		return [
 			{
-				tag: 'div.button-like-link:has(> a[href] > span)',
+				tag: 'div[data-bgc-style="button"]:has(> a[href] > span)',
 				getAttrs: (node) => {
 					return {
 						href: node.querySelector('a')?.getAttribute('href'),
