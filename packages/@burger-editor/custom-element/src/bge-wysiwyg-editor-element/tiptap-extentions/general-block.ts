@@ -1,7 +1,7 @@
 import { Node } from '@tiptap/core';
 
 export const GeneralBlock = Node.create({
-	name: 'general-block',
+	name: 'generalBlock',
 	group: 'block',
 	content: 'block*',
 	defining: true,
