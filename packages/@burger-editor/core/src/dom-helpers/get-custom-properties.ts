@@ -70,7 +70,7 @@ export function getCustomProperties(editorArea: EditableArea): CustomPropertyCat
 		}
 
 		for (const [key, customProperty] of currentMap.entries()) {
-			if (value === `var(--bge-options-${category}-${key})`) {
+			if (value === `var(${PREFIX}${category}-${key})`) {
 				customProperty.isDefault = true;
 			}
 		}
