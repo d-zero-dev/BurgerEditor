@@ -51,6 +51,10 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 	#textareaDescriptor: PropertyDescriptor;
 	#tiptapStyle: string;
 
+	get editor() {
+		return this.#editor;
+	}
+
 	get name() {
 		return this.getAttribute('name') ?? '';
 	}
@@ -424,7 +428,7 @@ function bindToggle(button: HTMLButtonElement, editor: Editor) {
 		case 'button-like-link': {
 			if (editor.isActive('buttonLikeLink')) {
 				if (confirm('Are you sure you want to remove the button-like-link?')) {
-					editor.chain().focus().unsetButtonLikeLink().run();
+					editor.chain().focus().toggleButtonLikeLink().run();
 				}
 				break;
 			}

@@ -4,7 +4,6 @@ declare module '@tiptap/core' {
 	interface Commands<ReturnType> {
 		buttonLikeLink: {
 			toggleButtonLikeLink: (attributes?: { href: string }) => ReturnType;
-			unsetButtonLikeLink: () => ReturnType;
 		};
 	}
 }
@@ -14,7 +13,6 @@ export const ButtonLikeLink = Node.create({
 	group: 'block',
 	content: 'inline*',
 	defining: true,
-	isolating: true,
 	addAttributes() {
 		return {
 			class: { default: 'button-like-link' },
@@ -53,13 +51,32 @@ export const ButtonLikeLink = Node.create({
 		return {
 			toggleButtonLikeLink:
 				(attributes) =>
-				({ chain }) => {
+				({ state, chain }) => {
+					const { from } = state.selection;
+					const $from = state.doc.resolve(from);
+
+					// Allow unwrap if current node is button-like-link
+					if ($from.parent.type === this.type) {
+						return chain().toggleNode(this.name, 'paragraph', attributes).run();
+					}
+
+					// Check if link elements are contained when trying to wrap paragraph with button-like-link
+					let hasLinkElement = false;
+
+					// Check all content within the current paragraph node
+					$from.parent.content.descendants((node): boolean | void => {
+						if (node.marks && node.marks.some((mark) => mark.type.name === 'link')) {
+							hasLinkElement = true;
+							return false; // Early termination
+						}
+					});
+
+					// Do not wrap if link elements are contained
+					if (hasLinkElement) {
+						return false;
+					}
+
 					return chain().toggleNode(this.name, 'paragraph', attributes).run();
-				},
-			unsetButtonLikeLink:
-				() =>
-				({ chain }) => {
-					return chain().wrapIn(this.name).run();
 				},
 		};
 	},
