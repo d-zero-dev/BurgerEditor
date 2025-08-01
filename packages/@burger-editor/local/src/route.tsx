@@ -31,6 +31,7 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 		image: new FileListManager(
 			userConfig.filesDir.image.serverPath,
 			userConfig.filesDir.image.clientPath,
+			userConfig.sampleImagePath,
 		),
 		pdf: new FileListManager(
 			userConfig.filesDir.pdf.serverPath,

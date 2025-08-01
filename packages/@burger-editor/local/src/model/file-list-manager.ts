@@ -10,16 +10,33 @@ import path from 'node:path';
 import { encode, parseName } from '../helpers/file-name.js';
 import { pagination } from '../helpers/pagination.js';
 
+const EXCLUDE_FILE_NAMES = [/^\..+/, 'Thumbs.db', 'desktop.ini', '$RECYCLE.BIN'];
+
 export class FileListManager {
 	#allFileListCache: FileListItem[] | null = null;
 	#clientDir: string;
 	#paginationNumber: number;
+	#sampleImagePath: {
+		server: string;
+		client: string;
+	} | null;
 	#serverDir: string;
 
-	constructor(serverDir: string, clientDir: string, paginationNumber = 10) {
+	constructor(
+		serverDir: string,
+		clientDir: string,
+		sampleImagePath: string | null = null,
+		paginationNumber = 10,
+	) {
 		this.#serverDir = serverDir;
 		this.#clientDir = clientDir;
 		this.#paginationNumber = paginationNumber;
+		this.#sampleImagePath = sampleImagePath
+			? {
+					server: this.#getServerPath(sampleImagePath),
+					client: sampleImagePath,
+				}
+			: null;
 	}
 
 	async add(file: File): Promise<{
@@ -95,24 +112,47 @@ export class FileListManager {
 	}
 
 	async #getAllList(): Promise<FileListItem[]> {
-		const filePaths = await fs.readdir(this.#serverDir).catch(() => []);
+		const fileNames = await fs.readdir(this.#serverDir).catch(() => []);
+		const filePaths = fileNames.map((name) => ({
+			server: path.resolve(this.#serverDir, name),
+			client: path.join(this.#clientDir, name),
+		}));
 
 		type FileData = Omit<FileListItem, 'sizes'> & { __size: string };
 
-		const allFiles = await Promise.all(
-			filePaths.map<Promise<FileData | null>>(async (file) => {
-				const { fileId, name, size } = parseName(file);
-				const stat = await fs.stat(path.join(this.#serverDir, file));
+		const excludes = EXCLUDE_FILE_NAMES.map((name) =>
+			typeof name === 'string' ? path.join(this.#serverDir, name) : name,
+		);
 
-				return {
-					fileId: fileId ?? 'N/A',
-					name,
-					url: `${this.#clientDir}/${file}`,
-					size: stat.size,
-					timestamp: stat.mtime.valueOf(),
-					__size: size,
-				};
-			}),
+		const allFiles = await Promise.all(
+			filePaths
+				.filter(
+					({ server }) =>
+						!(
+							excludes.some((exclude) => {
+								// Exclude files (Ex. .DS_Store)
+								if (exclude instanceof RegExp) {
+									return exclude.test(path.basename(server));
+								}
+								return exclude === server;
+							}) ||
+							// Exclude sample image
+							server === this.#sampleImagePath?.server
+						),
+				)
+				.map<Promise<FileData | null>>(async (file) => {
+					const { fileId, name, size } = parseName(file.server);
+					const stat = await fs.stat(file.server);
+
+					return {
+						fileId: fileId ?? 'N/A',
+						name,
+						url: file.client,
+						size: stat.size,
+						timestamp: stat.mtime.valueOf(),
+						__size: size,
+					};
+				}),
 		);
 
 		const fileMap = new Map<
@@ -164,8 +204,25 @@ export class FileListManager {
 			.toSorted((a, b) => Number.parseInt(a.fileId) - Number.parseInt(b.fileId))
 			.toReversed();
 
+		if (this.#sampleImagePath) {
+			const stat = await fs.stat(this.#sampleImagePath.server);
+
+			list.unshift({
+				fileId: 'sample',
+				name: 'sample',
+				url: this.#sampleImagePath.client,
+				size: stat.size,
+				timestamp: stat.mtime.valueOf(),
+				sizes: {},
+			});
+		}
+
 		this.#allFileListCache = list;
 
 		return list;
+	}
+
+	#getServerPath(clientPath: string): string {
+		return path.resolve(this.#serverDir, path.relative(this.#clientDir, clientPath));
 	}
 }
