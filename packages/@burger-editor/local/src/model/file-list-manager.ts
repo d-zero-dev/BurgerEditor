@@ -7,6 +7,7 @@ import type {
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import { validateClientPath } from '../helpers/client-path-validation.js';
 import { encode, parseName } from '../helpers/file-name.js';
 import { pagination } from '../helpers/pagination.js';
 
@@ -28,6 +29,12 @@ export class FileListManager {
 		sampleImagePath: string | null = null,
 		paginationNumber = 10,
 	) {
+		if (!validateClientPath(sampleImagePath)) {
+			throw new TypeError(
+				`Invalid sampleImagePath: "${sampleImagePath}". Must start with "/", "https://", or "base64:".`,
+			);
+		}
+
 		this.#serverDir = serverDir;
 		this.#clientDir = clientDir;
 		this.#paginationNumber = paginationNumber;
