@@ -81,6 +81,7 @@
 	 * @param page
 	 */
 	async function paginate(page: number) {
+		page = Number.isNaN(page) ? 0 : Math.max(0, page);
 		if (currentPage === page) {
 			return;
 		}
