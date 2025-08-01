@@ -98,8 +98,8 @@
 	[role='tab'] {
 		position: relative;
 		border: 1px solid var(--bge-border-color);
-		border-start-start-radius: var(--border-radius);
-		border-start-end-radius: var(--border-radius);
+		border-end-start-radius: 0;
+		border-end-end-radius: 0;
 
 		&[aria-selected='true'] {
 			border-block-end: none;
