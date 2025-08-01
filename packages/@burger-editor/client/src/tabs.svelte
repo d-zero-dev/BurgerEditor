@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { BurgerEditorEngine } from '@burger-editor/core';
 
-	import IconCirclePlus from '@tabler/icons-svelte/icons/circle-plus';
 	import { onMount } from 'svelte';
 
 	export let engine: BurgerEditorEngine;
@@ -78,9 +77,6 @@
 			{createLabel(index)}
 		</button>
 	{/each}
-	<button class="add-tab" type="button" onclick={() => {}} title="タブを追加">
-		<IconCirclePlus />
-	</button>
 </div>
 
 <style>
@@ -117,12 +113,5 @@
 				translate: -50% 0;
 			}
 		}
-	}
-
-	.add-tab {
-		padding: 0.5em;
-		font-size: 0.8em;
-		border: 1px solid var(--bge-border-color);
-		border-radius: var(--border-radius);
 	}
 </style>
