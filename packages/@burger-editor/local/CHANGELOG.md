@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.10](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.9...v4.0.0-alpha.10) (2025-08-01)
+
+### Features
+
+- **local:** add client path validation for sample image path ([efe8edb](https://github.com/d-zero-dev/BurgerEditor/commit/efe8edb4ae35ca20fdc709891e55baf41982cfb6))
+- **local:** add disclosure block label in client configuration ([aa80359](https://github.com/d-zero-dev/BurgerEditor/commit/aa80359cc96116e4e9dba5e1d84e58623750caf8))
+- **local:** add sample image support and file exclusion to FileListManager ([769717a](https://github.com/d-zero-dev/BurgerEditor/commit/769717a92a0387128f37a71d279ca15487611bff))
+
 # [4.0.0-alpha.9](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.8...v4.0.0-alpha.9) (2025-07-11)
 
 **Note:** Version bump only for package @burger-editor/local

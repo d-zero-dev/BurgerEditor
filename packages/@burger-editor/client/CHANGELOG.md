@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.10](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.9...v4.0.0-alpha.10) (2025-08-01)
+
+### Bug Fixes
+
+- **client:** adjust font size in UI styles ([7976056](https://github.com/d-zero-dev/BurgerEditor/commit/7976056f40ac058ba9d264bb90ddf47c2e06761f))
+- **client:** correct tab border radius properties ([7b4dab0](https://github.com/d-zero-dev/BurgerEditor/commit/7b4dab067c46317d1f1762f0c1f33c29a664995b))
+- **client:** validate page number in paginate function ([bc050dc](https://github.com/d-zero-dev/BurgerEditor/commit/bc050dcb645292c2740fc00d102bc9ea54aa48de))
+
+### Features
+
+- **client:** improve wysiwyg editor spacing and configure stylelint for custom elements ([ff47f4b](https://github.com/d-zero-dev/BurgerEditor/commit/ff47f4b08a0b36cc13559761bfbd7ecbe0e8a531))
+- **core:** add auto-fit grid layout functionality ([09afd9f](https://github.com/d-zero-dev/BurgerEditor/commit/09afd9f8cdd548f00532b79776b104e2b6ddb1ce))
+
 # [4.0.0-alpha.9](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.8...v4.0.0-alpha.9) (2025-07-11)
 
 **Note:** Version bump only for package @burger-editor/client

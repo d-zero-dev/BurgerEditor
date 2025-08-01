@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.10](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.9...v4.0.0-alpha.10) (2025-08-01)
+
+### Bug Fixes
+
+- **frozen-patty:** remove duplicate paths in picture elements ([4c0de54](https://github.com/d-zero-dev/BurgerEditor/commit/4c0de54920a9063edb4b46fb2129a42c9f9967a6))
+
 # [4.0.0-alpha.9](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.8...v4.0.0-alpha.9) (2025-07-11)
 
 **Note:** Version bump only for package @burger-editor/frozen-patty

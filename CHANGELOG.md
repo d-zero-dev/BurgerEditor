@@ -3,6 +3,46 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.10](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.9...v4.0.0-alpha.10) (2025-08-01)
+
+### Bug Fixes
+
+- **blocks:** prevent fetching image with undefined path ([dc2f50a](https://github.com/d-zero-dev/BurgerEditor/commit/dc2f50aae08dc06b8d43fc3760ceb76f293ac719))
+- **client:** adjust font size in UI styles ([7976056](https://github.com/d-zero-dev/BurgerEditor/commit/7976056f40ac058ba9d264bb90ddf47c2e06761f))
+- **client:** correct tab border radius properties ([7b4dab0](https://github.com/d-zero-dev/BurgerEditor/commit/7b4dab067c46317d1f1762f0c1f33c29a664995b))
+- **client:** validate page number in paginate function ([bc050dc](https://github.com/d-zero-dev/BurgerEditor/commit/bc050dcb645292c2740fc00d102bc9ea54aa48de))
+- **core:** resolve updateGridItems bug by correcting DOM element selection ([c6293ba](https://github.com/d-zero-dev/BurgerEditor/commit/c6293baac8512b93c356c8102391aa72b0e429b9))
+- **custom-element:** add defining property to descriptionList schema ([ac80688](https://github.com/d-zero-dev/BurgerEditor/commit/ac80688e91bb774d16023c7734255f39d77f8036))
+- **custom-element:** reorder BgeWysiwygEditorKit extension loading ([b109d7d](https://github.com/d-zero-dev/BurgerEditor/commit/b109d7df9c4fbc11b085229a9c123e3dd74360a7))
+- **frozen-patty:** remove duplicate paths in picture elements ([4c0de54](https://github.com/d-zero-dev/BurgerEditor/commit/4c0de54920a9063edb4b46fb2129a42c9f9967a6))
+
+### Features
+
+- **blocks:** add disclosure block and details item for collapsible content ([6405279](https://github.com/d-zero-dev/BurgerEditor/commit/640527936ba92403e52a91913347717e3e1bf404))
+- **blocks:** replace wysiwyg editor with custom element implementation ([c797c01](https://github.com/d-zero-dev/BurgerEditor/commit/c797c01f458357e3928a1551920179c8a761be8d))
+- **client:** improve wysiwyg editor spacing and configure stylelint for custom elements ([ff47f4b](https://github.com/d-zero-dev/BurgerEditor/commit/ff47f4b08a0b36cc13559761bfbd7ecbe0e8a531))
+- **core:** add async support to item editor open functionality ([62460a9](https://github.com/d-zero-dev/BurgerEditor/commit/62460a986685f132fd498de91847a199919b67e7))
+- **core:** add auto-fit grid layout functionality ([09afd9f](https://github.com/d-zero-dev/BurgerEditor/commit/09afd9f8cdd548f00532b79776b104e2b6ddb1ce))
+- **core:** add content stylesheet caching to ItemEditorDialog ([f2192bf](https://github.com/d-zero-dev/BurgerEditor/commit/f2192bf52efafba9068222654317cf24a4c9d777))
+- **core:** add getCustomProperty function for single property retrieval ([3ac2a37](https://github.com/d-zero-dev/BurgerEditor/commit/3ac2a370e7bb98b6304a83ffa4d737681eb304d6))
+- **core:** enhance editor dialog to support shadow DOM elements ([069d9c6](https://github.com/d-zero-dev/BurgerEditor/commit/069d9c65d39cbfa990e95c3a6f677f94a1d50801))
+- **core:** integrate custom element initialization and dependency ([1e0fd02](https://github.com/d-zero-dev/BurgerEditor/commit/1e0fd026bc162e15a9d95ea857672e0200dc52ee))
+- **custom-element:** add BgeWysiwygEditorElement custom element package ([7a2bd8a](https://github.com/d-zero-dev/BurgerEditor/commit/7a2bd8a3439d6e6efa944519ca210cd241ab481b))
+- **custom-element:** add button-like link extension to WYSIWYG editor ([ac322ab](https://github.com/d-zero-dev/BurgerEditor/commit/ac322ab0615ff029e9a7cd7692b6ab6b2fb1e64f))
+- **custom-element:** add class name configuration for links and update HTML attributes ([1d4d198](https://github.com/d-zero-dev/BurgerEditor/commit/1d4d1983f1b63a7f81ee43b0ddd87144fad55eb9))
+- **custom-element:** add custom extension support to wysiwyg editor ([d7fae4c](https://github.com/d-zero-dev/BurgerEditor/commit/d7fae4c8491892e1e995ed5774f632718b3c589f))
+- **custom-element:** add custom table extensions for wysiwyg editor ([ea1ff1f](https://github.com/d-zero-dev/BurgerEditor/commit/ea1ff1f8929dec857af5730ebf824c758ebb5a97))
+- **custom-element:** add description list support ([3fc98ae](https://github.com/d-zero-dev/BurgerEditor/commit/3fc98ae49cf027080cbaa9a7c5c6ed4829a34c69))
+- **custom-element:** add flex-box extension to wysiwyg editor ([1872892](https://github.com/d-zero-dev/BurgerEditor/commit/18728920599ed9a0f51b8acdad02c149ab4ff9c3))
+- **custom-element:** add general-block node and improve description list parsing ([d49d7fd](https://github.com/d-zero-dev/BurgerEditor/commit/d49d7fd20ac3b4332c4d840451a99b791d63b21d))
+- **custom-element:** add note block functionality ([1f1566d](https://github.com/d-zero-dev/BurgerEditor/commit/1f1566d617c8484a9304921e144887d40d8b6688))
+- **custom-element:** add syncWysiwygToTextarea method ([10b1a0a](https://github.com/d-zero-dev/BurgerEditor/commit/10b1a0a57df0124ac80d907b712946df90acdc08))
+- **custom-element:** improve button-like-link toggle behavior and add validation ([7383212](https://github.com/d-zero-dev/BurgerEditor/commit/73832122e508522865cbb2de4e32e53871d24d80))
+- **custom-element:** support initial value from innerHTML in bge-wysiwyg-editor-element ([7e269a0](https://github.com/d-zero-dev/BurgerEditor/commit/7e269a0765a9dc91672458e684ab7439e1ce6a5f))
+- **local:** add client path validation for sample image path ([efe8edb](https://github.com/d-zero-dev/BurgerEditor/commit/efe8edb4ae35ca20fdc709891e55baf41982cfb6))
+- **local:** add disclosure block label in client configuration ([aa80359](https://github.com/d-zero-dev/BurgerEditor/commit/aa80359cc96116e4e9dba5e1d84e58623750caf8))
+- **local:** add sample image support and file exclusion to FileListManager ([769717a](https://github.com/d-zero-dev/BurgerEditor/commit/769717a92a0387128f37a71d279ca15487611bff))
+
 # [4.0.0-alpha.9](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.8...v4.0.0-alpha.9) (2025-07-11)
 
 **Note:** Version bump only for package burger-editor_v4

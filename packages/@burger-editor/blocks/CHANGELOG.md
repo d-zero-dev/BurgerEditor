@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.10](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.9...v4.0.0-alpha.10) (2025-08-01)
+
+### Bug Fixes
+
+- **blocks:** prevent fetching image with undefined path ([dc2f50a](https://github.com/d-zero-dev/BurgerEditor/commit/dc2f50aae08dc06b8d43fc3760ceb76f293ac719))
+
+### Features
+
+- **blocks:** add disclosure block and details item for collapsible content ([6405279](https://github.com/d-zero-dev/BurgerEditor/commit/640527936ba92403e52a91913347717e3e1bf404))
+- **blocks:** replace wysiwyg editor with custom element implementation ([c797c01](https://github.com/d-zero-dev/BurgerEditor/commit/c797c01f458357e3928a1551920179c8a761be8d))
+- **core:** add auto-fit grid layout functionality ([09afd9f](https://github.com/d-zero-dev/BurgerEditor/commit/09afd9f8cdd548f00532b79776b104e2b6ddb1ce))
+
 # [4.0.0-alpha.9](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.8...v4.0.0-alpha.9) (2025-07-11)
 
 **Note:** Version bump only for package @burger-editor/blocks
