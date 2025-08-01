@@ -24,7 +24,9 @@ beforeAll(() => {
 		},
 	});
 
-	defineBgeWysiwygEditorElement(testExtension);
+	defineBgeWysiwygEditorElement({
+		extensions: [testExtension],
+	});
 });
 
 test('Defined', () => {

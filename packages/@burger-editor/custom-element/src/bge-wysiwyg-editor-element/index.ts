@@ -1,4 +1,4 @@
-import type { AnyExtension } from '@tiptap/core';
+import type { Extensions } from '@tiptap/core';
 
 import IconAlignBoxCenterStretch from '@tabler/icons/outline/align-box-center-stretch.svg?raw';
 import IconBlockquote from '@tabler/icons/outline/blockquote.svg?raw';
@@ -23,17 +23,21 @@ import StarterKit from '@tiptap/starter-kit';
 
 import { BgeWysiwygEditorKit } from './tiptap-extentions/index.js';
 
+export interface BgeWysiwygEditorElementOptions {
+	extensions?: Extensions;
+}
+
 /**
  *
- * @param extension
+ * @param options
  * @param global
  */
 export function defineBgeWysiwygEditorElement(
-	extension?: AnyExtension,
+	options?: BgeWysiwygEditorElementOptions,
 	global: Window = window,
 ) {
-	if (extension) {
-		BgeWysiwygEditorElement.extension = extension;
+	if (options?.extensions) {
+		BgeWysiwygEditorElement.extensions = options.extensions;
 	}
 
 	const tagName = `bge-wysiwyg-editor`;
@@ -147,7 +151,7 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 			button.addEventListener('click', () => bindToggle(button, editor));
 		}
 
-		const extensions: AnyExtension[] = [
+		const extensions: Extensions = [
 			StarterKit.configure({
 				link: {
 					HTMLAttributes: {
@@ -159,8 +163,8 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 			BgeWysiwygEditorKit,
 		];
 
-		if (BgeWysiwygEditorElement.extension) {
-			extensions.push(BgeWysiwygEditorElement.extension);
+		if (BgeWysiwygEditorElement.extensions) {
+			extensions.push(...BgeWysiwygEditorElement.extensions);
 		}
 
 		const editor = new Editor({
@@ -378,7 +382,7 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 		this.#textareaDescriptor?.set?.call(this.#textarea, html);
 	}
 
-	static extension: AnyExtension | null = null;
+	static extensions: Extensions | null = null;
 }
 
 /**
