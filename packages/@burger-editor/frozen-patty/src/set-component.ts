@@ -65,6 +65,9 @@ export function setComponent(
 		while (listRoot.firstChild) {
 			listRoot.firstChild.remove();
 		}
+		// Track used paths for picture elements to avoid duplicates
+		const usedPaths = new Set<string>();
+
 		for (let i = 0; i < maxLength; i++) {
 			let item = listItem.cloneNode(true) as Element;
 			const itemData = flattenData(data, i);
@@ -73,6 +76,15 @@ export function setComponent(
 			switch (listRoot.localName) {
 				case 'picture': {
 					reverse = true;
+					// Check for duplicate paths and skip if found
+					const pathValue = itemData.path;
+					if (pathValue != null && usedPaths.has(String(pathValue))) {
+						continue;
+					}
+					if (pathValue != null) {
+						usedPaths.add(String(pathValue));
+					}
+
 					let fields = getFields(item, attr);
 					if (i === 0) {
 						// Convert first item to img element

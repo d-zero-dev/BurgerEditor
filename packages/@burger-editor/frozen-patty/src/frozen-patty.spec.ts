@@ -863,6 +863,65 @@ test('picture (Specific case)', () => {
 	});
 });
 
+test('picture with duplicate paths - duplicates are removed', () => {
+	const fp = new FrozenPatty(
+		[
+			'<picture data-field-list>',
+			'<img src="/path/to/1" alt="" width="100" height="100" data-field="path:src, :alt, :width, :height, :media">',
+			'</picture>',
+		].join(''),
+		{
+			typeConvert: true,
+		},
+	);
+	fp.merge({
+		path: ['/path/to/1', '/path/to/2', '/path/to/1', '/path/to/3', '/path/to/2'], // Duplicates: /path/to/1 appears at index 0 and 2, /path/to/2 appears at index 1 and 4
+		width: [100, 200, 300, 400, 500],
+		height: [10, 20, 30, 40, 50],
+		media: [
+			null,
+			'(min-width: 1000px)',
+			'(min-width: 2000px)',
+			'(min-width: 3000px)',
+			'(min-width: 4000px)',
+		],
+		alt: ['alternative text'],
+	});
+
+	const elements = [...fp.toDOM().firstChild.children];
+
+	// Only 3 elements should be created (unique paths: /path/to/1, /path/to/2, /path/to/3)
+	expect(elements.length).toBe(3);
+
+	// source要素の確認 (reversed order)
+	expect(elements[0].localName).toBe('source');
+	expect(elements[0].getAttribute('srcset')).toBe('/path/to/3');
+	expect(elements[0].getAttribute('width')).toBe('400');
+	expect(elements[0].getAttribute('height')).toBe('40');
+	expect(elements[0].getAttribute('media')).toBe('(min-width: 3000px)');
+
+	expect(elements[1].localName).toBe('source');
+	expect(elements[1].getAttribute('srcset')).toBe('/path/to/2');
+	expect(elements[1].getAttribute('width')).toBe('200');
+	expect(elements[1].getAttribute('height')).toBe('20');
+	expect(elements[1].getAttribute('media')).toBe('(min-width: 1000px)');
+
+	// img要素の確認
+	expect(elements[2].localName).toBe('img');
+	expect(elements[2].getAttribute('src')).toBe('/path/to/1');
+	expect(elements[2].getAttribute('alt')).toBe('alternative text');
+	expect(elements[2].getAttribute('width')).toBe('100');
+	expect(elements[2].getAttribute('height')).toBe('10');
+
+	expect(fp.toJSON()).toStrictEqual({
+		alt: ['alternative text'],
+		path: ['/path/to/1', '/path/to/2', '/path/to/3'],
+		width: [100, 200, 400],
+		height: [10, 20, 40],
+		media: [null, '(min-width: 1000px)', '(min-width: 3000px)'],
+	});
+});
+
 test('toHTML()', () => {
 	const fp = new FrozenPatty('<div data-foo="bar" data-field="foo:data-foo"></div>');
 	expect(fp.toHTML()).toBe('<div data-foo="bar" data-field="foo:data-foo"></div>');
