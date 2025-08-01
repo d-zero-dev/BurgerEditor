@@ -227,8 +227,12 @@
 	}
 
 	:where(
-		:is(label:not([for]), small[id])
-			+ :is(label:not([for], :has([type='checkbox'], [type='radio'], [type='range'])))
+		:is(label:not([for]), small[id], [role='radiogroup'])
+			~ :is(
+				label:not([for]),
+				div:has(> label, > span > label):has(> :is(input, select, textarea)),
+				[role='radiogroup']
+			)
 	) {
 		padding-block-start: 1em;
 		margin-block-start: 1em;
@@ -273,7 +277,6 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 1em;
-		margin-block: 0.3em;
 
 		> :not(label):first-child {
 			&::after {
@@ -286,13 +289,6 @@
 			margin: 0;
 			border: none;
 		}
-	}
-
-	:where(hr) {
-		block-size: 1px;
-		margin-block: 1em;
-		background: var(--bge-border-color);
-		border: none;
 	}
 
 	:where(div:has(input):has(> button:last-child)) {
@@ -332,6 +328,16 @@
 		border: 1px solid
 			color-mix(in srgb, var(--bge-border-color) 80%, var(--bge-lightest-color) 20%);
 		border-radius: 0.3em;
+	}
+
+	:where(p) {
+		&:first-child {
+			margin-block-start: 0;
+		}
+
+		&:last-child {
+			margin-block-end: 0;
+		}
 	}
 
 	:where([data-bge-editor-ui]) {
