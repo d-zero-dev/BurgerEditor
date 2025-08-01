@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/local",
-	"version": "4.0.0-alpha.10",
+	"version": "4.0.0-alpha.11",
 	"type": "module",
 	"publishConfig": {
 		"access": "public"
@@ -40,9 +40,9 @@
 		"zod": "3.24.4"
 	},
 	"devDependencies": {
-		"@burger-editor/blocks": "4.0.0-alpha.10",
-		"@burger-editor/client": "4.0.0-alpha.10",
-		"@burger-editor/core": "4.0.0-alpha.10",
+		"@burger-editor/blocks": "4.0.0-alpha.11",
+		"@burger-editor/client": "4.0.0-alpha.11",
+		"@burger-editor/core": "4.0.0-alpha.11",
 		"@types/debug": "4.1.12",
 		"@types/jsdom": "21.1.7",
 		"@types/node": "22.17.0",
