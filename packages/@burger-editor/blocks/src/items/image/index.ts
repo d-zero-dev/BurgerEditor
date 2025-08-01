@@ -112,6 +112,10 @@ export default createItem<{
 			 * @param path
 			 */
 			async function _updateImage(path: string) {
+				if (!path) {
+					return;
+				}
+
 				const $src = await loadImage(path);
 
 				updateImage($src);
