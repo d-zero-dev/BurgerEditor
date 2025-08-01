@@ -344,7 +344,11 @@ export class BurgerEditorEngine {
 		engine.showMain();
 		engine.save();
 
-		defineBgeWysiwygEditorElement();
+		defineBgeWysiwygEditorElement({
+			wrapperElement: {
+				className: options.config.classList.join(' '),
+			},
+		});
 
 		return engine;
 	}

@@ -1,3 +1,4 @@
+import type { BgeWysiwygEditorElementWrapperElement } from './types.js';
 import type { Extensions } from '@tiptap/core';
 
 import IconAlignBoxCenterStretch from '@tabler/icons/outline/align-box-center-stretch.svg?raw';
@@ -25,6 +26,7 @@ import { BgeWysiwygEditorKit } from './tiptap-extentions/index.js';
 
 export interface BgeWysiwygEditorElementOptions {
 	extensions?: Extensions;
+	wrapperElement?: BgeWysiwygEditorElementWrapperElement;
 }
 
 /**
@@ -38,6 +40,10 @@ export function defineBgeWysiwygEditorElement(
 ) {
 	if (options?.extensions) {
 		BgeWysiwygEditorElement.extensions = options.extensions;
+	}
+
+	if (options?.wrapperElement) {
+		BgeWysiwygEditorElement.wrapperElement = options.wrapperElement;
 	}
 
 	const tagName = `bge-wysiwyg-editor`;
@@ -140,6 +146,12 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 		this.#editorRoot = this.shadowRoot!.querySelector('[data-bge-editor-root]')!;
 
 		this.#editorRoot.dataset.bgi = this.getAttribute('item-name') ?? '';
+
+		const wrapperElement = this.#createWrapperElement();
+		if (wrapperElement) {
+			this.#editorRoot.after(wrapperElement);
+			wrapperElement.append(this.#editorRoot);
+		}
 
 		this.#textarea = this.shadowRoot!.querySelector('textarea')!;
 
@@ -378,11 +390,34 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 		this.#setToTextarea(html);
 	}
 
+	#createWrapperElement() {
+		if (!BgeWysiwygEditorElement.wrapperElement) {
+			return null;
+		}
+
+		const wrapperElement = document.createElement(
+			BgeWysiwygEditorElement.wrapperElement.tag ?? 'div',
+		);
+		if (BgeWysiwygEditorElement.wrapperElement.attributes) {
+			for (const [key, value] of Object.entries(
+				BgeWysiwygEditorElement.wrapperElement.attributes,
+			)) {
+				wrapperElement.setAttribute(key, value);
+			}
+		}
+		if (BgeWysiwygEditorElement.wrapperElement.className) {
+			wrapperElement.className = BgeWysiwygEditorElement.wrapperElement.className;
+		}
+		return wrapperElement;
+	}
+
 	#setToTextarea(html: string) {
 		this.#textareaDescriptor?.set?.call(this.#textarea, html);
 	}
 
 	static extensions: Extensions | null = null;
+
+	static wrapperElement: BgeWysiwygEditorElementWrapperElement | null = null;
 }
 
 /**
