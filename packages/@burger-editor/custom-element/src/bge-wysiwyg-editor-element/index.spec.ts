@@ -6,7 +6,7 @@ import { test, expect, beforeAll, vi } from 'vitest';
 import { defineBgeWysiwygEditorElement } from './index.js';
 
 beforeAll(() => {
-	global.document.execCommand = vi.fn();
+	globalThis.document.execCommand = vi.fn();
 
 	const testExtension = Node.create({
 		name: 'test',
@@ -30,7 +30,8 @@ beforeAll(() => {
 });
 
 test('Defined', () => {
-	const editor = document.createElement('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+	document.body.innerHTML = '<bge-wysiwyg-editor name="test"></bge-wysiwyg-editor>';
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
 	expect(editor).toBeDefined();
 	expect(editor.localName).toBe('bge-wysiwyg-editor');
 	expect(editor.shadowRoot).toBeDefined();
