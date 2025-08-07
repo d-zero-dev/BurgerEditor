@@ -41,7 +41,7 @@
 	border: none;
 	border-radius: var(--border-radius);
 
-	:where(& *) {
+	:where(&, *) {
 		box-sizing: border-box;
 	}
 
@@ -59,7 +59,7 @@
 	}
 
 	> div {
-		--padding-block: 0em; // stylelint-disable-line length-zero-no-unit
+		--padding-block: 0em; /* stylelint-disable-line length-zero-no-unit */
 		--padding-inline: 1em;
 		padding-block: calc(var(--padding-block) + var(--bge-focus-outline-width));
 		padding-inline: calc(var(--padding-inline) + var(--bge-focus-outline-width));
@@ -256,21 +256,26 @@
 
 	:where(fieldset) {
 		padding: 1em;
-		margin-block-end: 1em;
+		margin-block-start: 1em;
 		border: 1px solid var(--bge-border-color);
 		border-radius: var(--border-radius);
 
-		&:is(* + &) {
-			margin-block-start: 1em;
+		&:first-child {
+			margin-block-start: 0;
 		}
 	}
 
-	:where(* + bge-wysiwyg-editor) {
+	bge-wysiwyg-editor {
+		display: block;
 		margin-block-start: 1em;
-	}
 
-	:where(bge-wysiwyg-editor:has(+ *)) {
-		margin-block-end: 1em;
+		> fieldset {
+			margin-block: 0;
+		}
+
+		&:first-child {
+			margin-block-start: 0;
+		}
 	}
 
 	:where([role='radiogroup']) {

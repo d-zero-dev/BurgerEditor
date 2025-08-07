@@ -13,7 +13,7 @@ import { svelteMount } from './svelte-mount.js';
 import TableEditor from './table-editor.svelte';
 import Tabs from './tabs.svelte';
 
-import './style/ui.scss';
+import './style/ui.css';
 
 export const version = __VERSION__;
 
