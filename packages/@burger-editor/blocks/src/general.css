@@ -1,5 +1,4 @@
 :root {
-	--bge-grid-gap: 1rem;
 	--bge-auto-fit-base-width: 40em;
 
 	/* Custom width */
@@ -47,6 +46,12 @@
 	--bge-options-padding-inline--middle: 3rem;
 	--bge-options-padding-inline--large: 5rem;
 	--bge-options-padding-inline: var(--bge-options-padding-inline--default-gutter);
+
+	/* Custom gap */
+	--bge-options-gap--normal: 1rem;
+	--bge-options-gap--small: 0.5rem;
+	--bge-options-gap--large: 2rem;
+	--bge-options-gap: var(--bge-options-gap--normal);
 }
 
 :where([data-bge-container]) {
@@ -98,7 +103,7 @@
 	:where([data-bge-container-frame]) {
 		display: grid;
 		grid-template-columns: repeat(var(--bge-grid-col, 1), minmax(0, 1fr));
-		gap: var(--bge-grid-gap);
+		gap: var(--bge-options-gap);
 
 		&:is([data-bge-container*=':auto-fit:'] *) {
 			grid-template-columns: repeat(
@@ -161,7 +166,7 @@
 	:where([data-bge-container-frame]) {
 		display: flex;
 		flex-wrap: wrap;
-		gap: var(--bge-grid-gap);
+		gap: var(--bge-options-gap);
 		align-items: stretch;
 		justify-content: center;
 
@@ -247,12 +252,12 @@
 
 	&:where([data-bge-container$=':start'], [data-bge-container*=':start:']) {
 		--bge-grid-float: inline-start;
-		--margin-inline: 0 var(--bge-grid-gap);
+		--margin-inline: 0 var(--bge-options-gap);
 	}
 
 	&:where([data-bge-container$=':end'], [data-bge-container*=':end:']) {
 		--bge-grid-float: inline-end;
-		--margin-inline: var(--bge-grid-gap) 0;
+		--margin-inline: var(--bge-options-gap) 0;
 	}
 
 	:where([data-bge-container-frame]) {
