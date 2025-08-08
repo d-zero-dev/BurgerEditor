@@ -56,6 +56,7 @@
 
 :where([data-bge-container]) {
 	--bge-container-margin-block-end: var(--bge-options-margin);
+	inline-size: 100%;
 	max-inline-size: var(--bge-options-width);
 	margin-block-end: var(--bge-container-margin-block-end);
 	margin-inline: auto;
@@ -73,6 +74,7 @@
 	--bge-container-border: var(--bge-options-border);
 	--bge-container-padding-block: var(--bge-options-padding-block);
 	--bge-container-padding-inline: var(--bge-options-padding-inline);
+	inline-size: 100%;
 	padding-block: var(--bge-container-padding-block);
 	padding-inline: var(--bge-container-padding-inline);
 	background-color: var(--bge-container-background-color);
