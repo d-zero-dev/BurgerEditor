@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.12](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.11...v4.0.0-alpha.12) (2025-08-08)
+
+### Bug Fixes
+
+- **custom-element:** update button-like-link content structure from inline to paragraph ([49a750c](https://github.com/d-zero-dev/BurgerEditor/commit/49a750cbdcaaa12c4d873d296f53cd077b3b590c))
+
 # [4.0.0-alpha.11](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.10...v4.0.0-alpha.11) (2025-08-01)
 
 ### Features

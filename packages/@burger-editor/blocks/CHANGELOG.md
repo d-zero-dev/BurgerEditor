@@ -3,6 +3,21 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.12](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.11...v4.0.0-alpha.12) (2025-08-08)
+
+### Bug Fixes
+
+- **blocks:** add inline-size 100% to container elements ([4917b5e](https://github.com/d-zero-dev/BurgerEditor/commit/4917b5e600e0eb315853a5d5ec899804d2e98480))
+- **blocks:** improve button template structure ([2acd829](https://github.com/d-zero-dev/BurgerEditor/commit/2acd829bdac8d38bc841db63d7a5dbf4a115b0c7))
+
+### Features
+
+- **blocks:** add customizable gap options system ([6257ee1](https://github.com/d-zero-dev/BurgerEditor/commit/6257ee17e0d624c61403f6484b0276c27a7eaafc))
+- **blocks:** add default-gutter option for padding-inline ([ef3d893](https://github.com/d-zero-dev/BurgerEditor/commit/ef3d8937a8d5e022fd374c64101e6cf13694d738))
+- **blocks:** add responsive width options for container elements ([601f2a4](https://github.com/d-zero-dev/BurgerEditor/commit/601f2a47ae12424316d5037f91d0b1450a6b665e))
+- **blocks:** split padding into block and inline variants ([804e331](https://github.com/d-zero-dev/BurgerEditor/commit/804e3313569e15a8dcb8ad77f53729c325e78eb2))
+- **blocks:** update CSS custom properties to use double dash separator ([0a37b40](https://github.com/d-zero-dev/BurgerEditor/commit/0a37b40623efbf27e044358c8775fb3310c1692e))
+
 # [4.0.0-alpha.11](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.10...v4.0.0-alpha.11) (2025-08-01)
 
 **Note:** Version bump only for package @burger-editor/blocks
