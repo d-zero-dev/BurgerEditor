@@ -8,7 +8,7 @@ export default defineConfig({
 				test: {
 					name: 'default',
 					include: [
-						'packages/@burger-editor/{blocks,core,frozen-patty,legacy,mcp-server,migrator,utils}/**/*.spec.ts',
+						'packages/@burger-editor/{blocks,frozen-patty,legacy,mcp-server,migrator,utils}/**/*.spec.ts',
 					],
 					environment: 'jsdom',
 					environmentOptions: {
@@ -29,6 +29,20 @@ export default defineConfig({
 				test: {
 					name: 'custom-element',
 					include: ['packages/@burger-editor/custom-element/**/*.spec.ts'],
+					browser: {
+						enabled: true,
+						provider: 'playwright',
+						instances: [{ browser: 'chromium' }],
+						headless: true,
+						viewport: { width: 1280, height: 720 },
+						screenshotFailures: true,
+					},
+				},
+			},
+			{
+				test: {
+					name: 'core',
+					include: ['packages/@burger-editor/core/**/*.spec.ts'],
 					browser: {
 						enabled: true,
 						provider: 'playwright',
