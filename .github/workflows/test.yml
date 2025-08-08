@@ -20,12 +20,18 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
-          cache: 'yarn'
 
       - name: Enable Corepack and setup Yarn v4
         run: |
           corepack enable
           yarn --version
+
+      - name: Cache dependencies
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+        with:
+          path: .yarn/cache
+          key: yarn-cache-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-cache-
 
       - name: Install dependencies
         run: yarn install --immutable
