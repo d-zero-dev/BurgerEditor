@@ -1,6 +1,6 @@
 import type { EditableArea } from '../editable-area.js';
 
-const PREFIX = '--bge-options-';
+import { BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX } from '../const.js';
 
 type CustomPropertyCategories = Map<string, Map<string, CustomProperty>>;
 
@@ -22,11 +22,13 @@ export function getCustomProperties(editorArea: EditableArea): CustomPropertyCat
 	const scope = editorArea.containerElement.ownerDocument;
 
 	searchCustomProperty(scope, (cssProperty, value) => {
-		if (!cssProperty.startsWith(PREFIX)) {
+		if (!cssProperty.startsWith(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX)) {
 			return;
 		}
 
-		const [type, key] = cssProperty.slice(PREFIX.length).split('-');
+		const [type, key] = cssProperty
+			.slice(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX.length)
+			.split('-');
 		if (!type) {
 			return;
 		}
@@ -58,7 +60,7 @@ export function getCustomProperties(editorArea: EditableArea): CustomPropertyCat
 		}
 
 		for (const [key, customProperty] of currentMap.entries()) {
-			if (value === `var(${PREFIX}${category}-${key})`) {
+			if (value === `var(${BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX}${category}-${key})`) {
 				customProperty.isDefault = true;
 			}
 		}

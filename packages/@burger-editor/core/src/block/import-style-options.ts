@@ -1,3 +1,5 @@
+import { BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX } from '../const.js';
+
 /**
  *
  * @param el
@@ -8,7 +10,7 @@ export function importStyleOptions(el: HTMLElement, style: Record<string, string
 		if (value === '@@default') {
 			continue;
 		}
-		const name = `--bge-options-${key}`;
+		const name = `${BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX}${key}`;
 		const variable = `var(${name}-${value})`;
 		el.style.setProperty(name, variable);
 	}

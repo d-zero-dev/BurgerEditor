@@ -3,3 +3,5 @@ export const CSS_LAYER = {
 	components: 'bge-components',
 	ui: 'bge-ui',
 } as const;
+
+export const BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX = '--bge-options-';

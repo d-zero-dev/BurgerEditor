@@ -1,3 +1,5 @@
+import { BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX } from '../const.js';
+
 const removeAttrNameIgnoreList = new Set([
 	'data-bge-container',
 	'data-bge-name',
@@ -30,7 +32,7 @@ function sanitizeStyle(el: HTMLElement) {
 
 	const style = el.style;
 	for (const property of style) {
-		if (property.startsWith('--bge-options-')) {
+		if (property.startsWith(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX)) {
 			customProperties.push([property, style.getPropertyValue(property)]);
 		}
 	}
