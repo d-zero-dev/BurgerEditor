@@ -11,7 +11,7 @@ export function importStyleOptions(el: HTMLElement, style: Record<string, string
 			continue;
 		}
 		const name = `${BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX}${key}`;
-		const variable = `var(${name}-${value})`;
+		const variable = `var(${name}--${value})`;
 		el.style.setProperty(name, variable);
 	}
 }

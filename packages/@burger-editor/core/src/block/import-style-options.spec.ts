@@ -12,10 +12,10 @@ test('スタイルオプションの設定', () => {
 	importStyleOptions(el, style);
 
 	expect(el.style.getPropertyValue('--bge-options-width')).toBe(
-		'var(--bge-options-width-full)',
+		'var(--bge-options-width--full)',
 	);
 	expect(el.style.getPropertyValue('--bge-options-bgcolor')).toBe(
-		'var(--bge-options-bgcolor-blue)',
+		'var(--bge-options-bgcolor--blue)',
 	);
 });
 
@@ -30,7 +30,7 @@ test('@@defaultの値はスキップされる', () => {
 
 	expect(el.style.getPropertyValue('--bge-options-width')).toBe('');
 	expect(el.style.getPropertyValue('--bge-options-bgcolor')).toBe(
-		'var(--bge-options-bgcolor-red)',
+		'var(--bge-options-bgcolor--red)',
 	);
 });
 

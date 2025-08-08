@@ -24,7 +24,7 @@ export function getCustomProperties(scope: Document): CustomPropertyCategories {
 
 		const [type, key] = cssProperty
 			.slice(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX.length)
-			.split('-');
+			.split('--');
 		if (!type) {
 			return;
 		}
@@ -56,7 +56,9 @@ export function getCustomProperties(scope: Document): CustomPropertyCategories {
 		}
 
 		for (const [key, customProperty] of currentMap.entries()) {
-			if (value === `var(${BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX}${category}-${key})`) {
+			if (
+				value === `var(${BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX}${category}--${key})`
+			) {
 				customProperty.isDefault = true;
 			}
 		}

@@ -16,7 +16,7 @@ export function exportStyleOptions(el: HTMLElement): Record<string, string> {
 			propValue
 				.replace(`var(${BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX}`, '')
 				.replace(/\)$/, '')
-				.match(/^([a-z]+)-([a-z]+(?:-[a-z]+)*)$/) ?? [];
+				.match(/^([a-z]+(?:-[a-z]+)*)--([a-z]+(?:-[a-z]+)*)$/) ?? [];
 
 		if (category !== _category || !propName) {
 			continue;

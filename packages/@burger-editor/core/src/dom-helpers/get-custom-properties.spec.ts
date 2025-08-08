@@ -7,35 +7,35 @@ test('', () => {
 	style.textContent = `
 		:root {
 			/* Custom width */
-			--bge-options-width-normal: calc(800 / 16 * 1rem);
-			--bge-options-width-small: calc(400 / 16 * 1rem);
-			--bge-options-width-medium: calc(600 / 16 * 1rem);
-			--bge-options-width-large: calc(1200 / 16 * 1rem);
-			--bge-options-width-full: 100dvi;
-			--bge-options-width: var(--bge-options-width-normal);
+			--bge-options-width--normal: calc(800 / 16 * 1rem);
+			--bge-options-width--small: calc(400 / 16 * 1rem);
+			--bge-options-width--medium: calc(600 / 16 * 1rem);
+			--bge-options-width--large: calc(1200 / 16 * 1rem);
+			--bge-options-width--full: 100dvi;
+			--bge-options-width: var(--bge-options-width--normal);
 
 			/* Custom margin */
-			--bge-options-margin-normal: 3rem;
-			--bge-options-margin-none: 0;
-			--bge-options-margin-small: 1rem;
-			--bge-options-margin-large: 8rem;
-			--bge-options-margin: var(--bge-options-margin-normal);
+			--bge-options-margin--normal: 3rem;
+			--bge-options-margin--none: 0;
+			--bge-options-margin--small: 1rem;
+			--bge-options-margin--large: 8rem;
+			--bge-options-margin: var(--bge-options-margin--normal);
 
 			/* Custom background color */
-			--bge-options-bgcolor-transparent: transparent;
-			--bge-options-bgcolor-white: #fff;
-			--bge-options-bgcolor-gray: #dfdfdf;
-			--bge-options-bgcolor-blue: #eaf3f8;
-			--bge-options-bgcolor-red: #fcc;
-			--bge-options-bgcolor: var(--bge-options-bgcolor-transparent);
+			--bge-options-bgcolor--transparent: transparent;
+			--bge-options-bgcolor--white: #fff;
+			--bge-options-bgcolor--gray: #dfdfdf;
+			--bge-options-bgcolor--blue: #eaf3f8;
+			--bge-options-bgcolor--red: #fcc;
+			--bge-options-bgcolor: var(--bge-options-bgcolor--transparent);
 
 			/* Custom border style */
-			--bge-options-border-none: none;
-			--bge-options-border-solid: solid 1px currentColor;
-			--bge-options-border-dashed: dashed 1px currentColor;
-			--bge-options-border-dotted: dotted 1px currentColor;
-			--bge-options-border-wide: solid 3px currentColor;
-			--bge-options-border: var(--bge-options-border-none);
+			--bge-options-border--none: none;
+			--bge-options-border--solid: solid 1px currentColor;
+			--bge-options-border--dashed: dashed 1px currentColor;
+			--bge-options-border--dotted: dotted 1px currentColor;
+			--bge-options-border--wide: solid 3px currentColor;
+			--bge-options-border: var(--bge-options-border--none);
 		}
 	`;
 	document.head.append(style);
