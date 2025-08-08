@@ -41,11 +41,12 @@
 	--bge-options-padding-block: var(--bge-options-padding-block--none);
 
 	/* Custom padding-inline */
+	--bge-options-padding-inline--default-gutter: 2rem;
 	--bge-options-padding-inline--none: 0;
 	--bge-options-padding-inline--small: 1rem;
 	--bge-options-padding-inline--middle: 3rem;
 	--bge-options-padding-inline--large: 5rem;
-	--bge-options-padding-inline: var(--bge-options-padding-inline--none);
+	--bge-options-padding-inline: var(--bge-options-padding-inline--default-gutter);
 }
 
 :where([data-bge-container]) {
