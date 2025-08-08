@@ -33,12 +33,19 @@
 	--bge-options-border--wide: solid 3px currentColor;
 	--bge-options-border: var(--bge-options-border--none);
 
-	/* Custom padding */
-	--bge-options-padding--none: 0;
-	--bge-options-padding--small: 1rem;
-	--bge-options-padding--middle: 3rem;
-	--bge-options-padding--large: 5rem;
-	--bge-options-padding: var(--bge-options-padding--none);
+	/* Custom padding-block */
+	--bge-options-padding-block--none: 0;
+	--bge-options-padding-block--small: 1rem;
+	--bge-options-padding-block--middle: 3rem;
+	--bge-options-padding-block--large: 5rem;
+	--bge-options-padding-block: var(--bge-options-padding-block--none);
+
+	/* Custom padding-inline */
+	--bge-options-padding-inline--none: 0;
+	--bge-options-padding-inline--small: 1rem;
+	--bge-options-padding-inline--middle: 3rem;
+	--bge-options-padding-inline--large: 5rem;
+	--bge-options-padding-inline: var(--bge-options-padding-inline--none);
 }
 
 :where([data-bge-container]) {
@@ -58,8 +65,10 @@
 :where([data-bge-container-frame]) {
 	--bge-container-background-color: var(--bge-options-bgcolor);
 	--bge-container-border: var(--bge-options-border);
-	--bge-container-padding: var(--bge-options-padding);
-	padding: var(--bge-container-padding);
+	--bge-container-padding-block: var(--bge-options-padding-block);
+	--bge-container-padding-inline: var(--bge-options-padding-inline);
+	padding-block: var(--bge-container-padding-block);
+	padding-inline: var(--bge-container-padding-inline);
 	background-color: var(--bge-container-background-color);
 	border: var(--bge-container-border);
 }
