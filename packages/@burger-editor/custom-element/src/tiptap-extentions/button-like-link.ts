@@ -11,7 +11,7 @@ declare module '@tiptap/core' {
 export const ButtonLikeLink = Node.create({
 	name: 'buttonLikeLink',
 	group: 'block',
-	content: 'inline*',
+	content: 'paragraph+',
 	defining: true,
 	addAttributes() {
 		return {
@@ -22,14 +22,14 @@ export const ButtonLikeLink = Node.create({
 	parseHTML() {
 		return [
 			{
-				tag: 'div[data-bgc-style="button"]:has(> a[href] > span)',
+				tag: 'div[data-bgc-style="button"]:has(> a[href] > div)',
 				getAttrs: (node) => {
 					return {
 						href: node.querySelector('a')?.getAttribute('href'),
 					};
 				},
 				contentElement(node) {
-					return node.querySelector('span') ?? node;
+					return node.querySelector('a[href] > div') ?? node;
 				},
 			},
 		];
@@ -43,7 +43,7 @@ export const ButtonLikeLink = Node.create({
 				{
 					href: HTMLAttributes.href,
 				},
-				['span', {}, 0],
+				['div', {}, 0],
 			],
 		];
 	},
@@ -76,7 +76,7 @@ export const ButtonLikeLink = Node.create({
 						return false;
 					}
 
-					return chain().toggleNode(this.name, 'paragraph', attributes).run();
+					return chain().toggleWrap(this.name, attributes).run();
 				},
 		};
 	},
