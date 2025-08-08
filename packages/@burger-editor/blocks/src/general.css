@@ -2,6 +2,14 @@
 	--bge-grid-gap: 1rem;
 	--bge-auto-fit-base-width: 40em;
 
+	/* Custom width */
+	--bge-options-width-normal: calc(800 / 16 * 1rem);
+	--bge-options-width-small: calc(400 / 16 * 1rem);
+	--bge-options-width-medium: calc(600 / 16 * 1rem);
+	--bge-options-width-large: calc(1200 / 16 * 1rem);
+	--bge-options-width-full: 100dvi;
+	--bge-options-width: var(--bge-options-width-normal);
+
 	/* Custom margin */
 	--bge-options-margin-normal: 3rem;
 	--bge-options-margin-none: 0;
@@ -35,7 +43,9 @@
 
 :where([data-bge-container]) {
 	--bge-container-margin-block-end: var(--bge-options-margin);
+	max-inline-size: var(--bge-options-width);
 	margin-block-end: var(--bge-container-margin-block-end);
+	margin-inline: auto;
 	container-name: bge-container;
 	container-type: inline-size;
 
