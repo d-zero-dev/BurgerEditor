@@ -1,4 +1,6 @@
-import type { BgeWysiwygEditorElementWrapperElement } from './types.js';
+import type { BgeWysiwygElement } from '../bge-wysiwyg-element/index.js';
+import type { EditorState } from '../bge-wysiwyg-element/types.js';
+import type { ElementSeed } from '../utils/types.js';
 import type { Extensions } from '@tiptap/core';
 
 import IconAlignBoxCenterStretch from '@tabler/icons/outline/align-box-center-stretch.svg?raw';
@@ -19,14 +21,12 @@ import IconBulletList from '@tabler/icons/outline/list.svg?raw';
 import IconNotes from '@tabler/icons/outline/notes.svg?raw';
 import IconStrikethrough from '@tabler/icons/outline/strikethrough.svg?raw';
 import IconUnderline from '@tabler/icons/outline/underline.svg?raw';
-import { Editor } from '@tiptap/core';
-import StarterKit from '@tiptap/starter-kit';
 
-import { BgeWysiwygEditorKit } from './tiptap-extentions/index.js';
+import { defineBgeWysiwygElement } from '../bge-wysiwyg-element/index.js';
 
 export interface BgeWysiwygEditorElementOptions {
 	extensions?: Extensions;
-	wrapperElement?: BgeWysiwygEditorElementWrapperElement;
+	wrapperElement?: ElementSeed;
 }
 
 /**
@@ -38,9 +38,7 @@ export function defineBgeWysiwygEditorElement(
 	options?: BgeWysiwygEditorElementOptions,
 	global: Window = window,
 ) {
-	if (options?.extensions) {
-		BgeWysiwygEditorElement.extensions = options.extensions;
-	}
+	defineBgeWysiwygElement(options, global);
 
 	if (options?.wrapperElement) {
 		BgeWysiwygEditorElement.wrapperElement = options.wrapperElement;
@@ -53,15 +51,13 @@ export function defineBgeWysiwygEditorElement(
 }
 
 export class BgeWysiwygEditorElement extends HTMLElement {
-	#editor: Editor;
-	#editorRoot: HTMLDivElement;
-	#style: HTMLStyleElement;
-	#textarea: HTMLTextAreaElement;
-	#textareaDescriptor: PropertyDescriptor;
-	#tiptapStyle: string;
+	#wysiwygElement: BgeWysiwygElement | null = null;
 
 	get editor() {
-		return this.#editor;
+		if (!this.#wysiwygElement) {
+			throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
+		}
+		return this.#wysiwygElement.editor;
 	}
 
 	get name() {
@@ -69,43 +65,28 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 	}
 
 	get value() {
-		return this.#textarea.value;
+		if (!this.#wysiwygElement) {
+			throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
+		}
+		return this.#wysiwygElement.value;
 	}
 
 	constructor() {
 		super();
 
 		const initialValue = this.innerHTML.trim();
-
-		this.attachShadow({ mode: 'open' });
-
 		const label = this.getAttribute('label') ?? '内容';
+		const itemName = this.getAttribute('item-name');
 
-		const commands =
+		const commands: ReadonlyArray<string> =
 			// Get commands from attribute
 			this.getAttribute('commands')
 				?.split(',')
 				.map((command) => command.trim().toLowerCase()) ??
-				// Default commands
-				[
-					'bold',
-					'italic',
-					'underline',
-					'strikethrough',
-					'link',
-					'button-like-link',
-					'blockquote',
-					'bullet-list',
-					'ordered-list',
-					'note',
-					'h3',
-					'h4',
-					'h5',
-					'h6',
-					'flex-box',
-				];
+			// Default commands
+			BgeWysiwygEditorElement.defaultCommands;
 
-		this.shadowRoot!.innerHTML = `
+		this.innerHTML = `
 			<fieldset>
 				<legend>${label}</legend>
 				<div data-bge-toolbar>
@@ -133,325 +114,138 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 						<button type="button" data-bge-toolbar-button="html-mode">HTML Mode</button>
 					</div>
 				</div>
-				<div data-bge-mode="wysiwyg">
-					<div data-bge-preview><div data-bge-editor-root></div></div>
-					<textarea aria-label="${label} HTML"></textarea>
-				</div>
+				<bge-wysiwyg ${itemName ? `item-name="${itemName}"` : ''}>
+					${initialValue}
+				</bge-wysiwyg>
 			</fieldset>
 		`;
 
-		this.#style = document.createElement('style');
-		this.shadowRoot!.append(this.#style);
-
-		this.#editorRoot = this.shadowRoot!.querySelector('[data-bge-editor-root]')!;
-
-		this.#editorRoot.dataset.bgi = this.getAttribute('item-name') ?? '';
-
-		const wrapperElement = this.#createWrapperElement();
-		if (wrapperElement) {
-			this.#editorRoot.after(wrapperElement);
-			wrapperElement.append(this.#editorRoot);
-		}
-
-		this.#textarea = this.shadowRoot!.querySelector('textarea')!;
-
-		const buttons = this.shadowRoot!.querySelectorAll<HTMLButtonElement>(
-			'[data-bge-toolbar-button]',
-		);
-
-		for (const button of buttons) {
-			button.addEventListener('click', () => bindToggle(button, editor));
-		}
-
-		const extensions: Extensions = [
-			StarterKit.configure({
-				link: {
-					HTMLAttributes: {
-						target: null,
-						rel: null,
-					},
-				},
-			}),
-			BgeWysiwygEditorKit,
-		];
-
-		if (BgeWysiwygEditorElement.extensions) {
-			extensions.push(...BgeWysiwygEditorElement.extensions);
-		}
-
-		const editor = new Editor({
-			element: this.#editorRoot,
-			extensions,
-			autofocus: this.hasAttribute('autofocus'),
-			onTransaction: ({ editor }) => {
-				for (const button of buttons) {
-					bindPressed(button, editor);
-				}
+		const innerHTMLDescriptor = Object.getOwnPropertyDescriptor(
+			Element.prototype,
+			'innerHTML',
+		)!;
+		Object.defineProperty(this, 'innerHTML', {
+			configurable: true,
+			enumerable: true,
+			get() {
+				return innerHTMLDescriptor.get!.call(this);
 			},
-			onUpdate: () => {
-				this.syncWysiwygToTextarea();
+			set: (value: string) => {
+				if (!this.#wysiwygElement) {
+					throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
+				}
+				this.#wysiwygElement.value = value;
 			},
 		});
+	}
 
-		const htmlModeButton = this.shadowRoot!.querySelector<HTMLButtonElement>(
+	connectedCallback() {
+		this.#wysiwygElement = this.querySelector<BgeWysiwygElement>('bge-wysiwyg')!;
+
+		if (!this.#wysiwygElement) {
+			throw new Error('bge-wysiwyg-editor is not connected');
+		}
+
+		const buttons = this.querySelectorAll<HTMLButtonElement>('[data-bge-toolbar-button]');
+
+		for (const button of buttons) {
+			button.addEventListener('click', () => {
+				if (!this.#wysiwygElement) {
+					throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
+				}
+				bindToggle(button, this.#wysiwygElement);
+			});
+		}
+
+		this.#wysiwygElement.addEventListener('transaction', (event) => {
+			for (const button of buttons) {
+				updateButtonState(button, event.detail.state);
+			}
+		});
+
+		const htmlModeButton = this.querySelector<HTMLButtonElement>(
 			'[data-bge-toolbar-button="html-mode"]',
 		)!;
 		htmlModeButton.addEventListener('click', () => {
 			htmlModeButton.ariaPressed =
 				htmlModeButton.ariaPressed === 'true' ? 'false' : 'true';
 			const mode = htmlModeButton.ariaPressed === 'true' ? 'html' : 'wysiwyg';
-			this.shadowRoot!.querySelector<HTMLDivElement>(`[data-bge-mode]`)?.setAttribute(
-				'data-bge-mode',
-				mode,
-			);
-			if (mode === 'wysiwyg') {
-				this.#editor.commands.setContent(this.#textarea.value);
+			if (!this.#wysiwygElement) {
+				throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
 			}
+			this.#wysiwygElement.mode = mode;
 		});
-
-		this.#editor = editor;
-
-		const contentEditable =
-			this.shadowRoot!.querySelector<HTMLElement>('[contenteditable]')!;
-		contentEditable.ariaLabel = `${label} WYSIWYG`;
-
-		this.#tiptapStyle =
-			document.querySelector<HTMLStyleElement>('style[data-tiptap-style]')?.textContent ??
-			'';
-
-		const textareaDescriptor = Object.getOwnPropertyDescriptor(
-			HTMLTextAreaElement.prototype,
-			'value',
-		);
-
-		if (!textareaDescriptor) {
-			throw new Error('textarea.value is not defined');
-		}
-
-		this.#textareaDescriptor = textareaDescriptor;
-
-		Object.defineProperty(this.#textarea, 'value', {
-			get: () => {
-				return this.#textareaDescriptor?.get?.call(this.#textarea) ?? '';
-			},
-			set: (val) => {
-				this.#editor.commands.setContent(val);
-				this.#setToTextarea(val);
-			},
-		});
-
-		if (initialValue) {
-			this.#textarea.value = initialValue;
-		}
 	}
 
 	setStyle(css: string) {
-		this.#style.textContent = `
-			:host {
-				display: block;
-				inline-size: 100%;
-			}
-
-			:where(fieldset) {
-				padding: 1em;
-				border: 1px solid var(--bge-border-color);
-				border-radius: var(--border-radius);
-			}
-
-			${this.#tiptapStyle}
-
-			@scope ([data-bge-preview]) {
-				${css}
-
-				a:any-link {
-					pointer-events: none !important;
-				}
-			}
-
-			textarea,
-			[data-bge-preview]  {
-				block-size: 50svh;
-				inline-size: 100%;
-				resize: vertical;
-				overflow-y: auto;
-				background: var(--bge-lightest-color);
-				border: 1px solid var(--bge-border-color);
-				border-radius: var(--border-radius);
-			}
-
-			[data-bge-preview] {
-				&:focus-within {
-					--bge-border-color: var(--bge-ui-primary-color);
-					--bge-outline-color: var(--bge-ui-primary-color);
-					outline: var(--bge-focus-outline-width) solid var(--bge-outline-color);
-				}
-			}
-
-			[contenteditable] {
-				padding: 1rem;
-				block-size: 100%;
-				box-sizing: border-box;
-			}
-
-			[contenteditable]:focus-visible {
-				outline: none;
-			}
-
-			textarea {
-				font-family: var(--bge-font-family-monospace);
-			}
-
-			[data-bge-mode="wysiwyg"] textarea {
-				display: none;
-			}
-
-			[data-bge-mode="html"] [data-bge-preview] {
-				display: none;
-			}
-
-			[data-bge-label] {
-				margin-block-end: 0.5em;
-			}
-
-			[data-bge-toolbar] {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 0.25em;
-				align-items: center;
-				justify-content: space-between;
-				margin-block-end: 0.5em;
-			}
-
-			[data-bge-toolbar-group] {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 0.25em;
-				align-items: center;
-			}
-
-			[data-bge-toolbar-button] {
-				--size: 1lh;
-				--stroke-width: 1.5;
-				--padding: 0.25em;
-				font-size: inherit;
-				border: none;
-				background: none;
-				cursor: pointer;
-				padding: 0.25em;
-				background: var(--bge-lightest-color);
-				border: 1px solid var(--bge-border-color);
-				border-radius: var(--border-radius);
-
-				&:hover,
-				&:focus-visible {
-					--bge-border-color: var(--bge-ui-primary-color);
-					--bge-outline-color: var(--bge-ui-primary-color);
-					outline: var(--bge-focus-outline-width) solid var(--bge-outline-color);
-				}
-
-				&:disabled {
-					color: inherit;
-					outline: none;
-					cursor: not-allowed;
-					opacity: 0.3;
-				}
-
-				&[aria-pressed='true'] {
-					--stroke-width: 2;
-					color: #fff;
-					background-color: var(--bge-ui-primary-color);
-
-					&:focus-visible {
-						box-shadow: 0 0 0 2px #fff inset;
-					}
-				}
-
-				&:not(:has(svg)) {
-					padding-inline: calc(var(--padding) * 3);
-				}
-
-				svg {
-					inline-size: var(--size);
-					block-size: var(--size);
-					stroke-width: var(--stroke-width);
-					stroke: currentcolor;
-				}
-
-				[data-bge-rotate] {
-					rotate: -90deg;
-					display: block;
-				}
-			}`;
+		if (!this.#wysiwygElement) {
+			throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
+		}
+		this.#wysiwygElement.setStyle(css);
 	}
 
 	syncWysiwygToTextarea() {
-		let html = this.#editor.getHTML();
-		html = html.replaceAll('<p></p>', '');
-		this.#setToTextarea(html);
-	}
-
-	#createWrapperElement() {
-		if (!BgeWysiwygEditorElement.wrapperElement) {
-			return null;
+		if (!this.#wysiwygElement) {
+			throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
 		}
-
-		const wrapperElement = document.createElement(
-			BgeWysiwygEditorElement.wrapperElement.tag ?? 'div',
-		);
-		if (BgeWysiwygEditorElement.wrapperElement.attributes) {
-			for (const [key, value] of Object.entries(
-				BgeWysiwygEditorElement.wrapperElement.attributes,
-			)) {
-				wrapperElement.setAttribute(key, value);
-			}
-		}
-		if (BgeWysiwygEditorElement.wrapperElement.className) {
-			wrapperElement.className = BgeWysiwygEditorElement.wrapperElement.className;
-		}
-		return wrapperElement;
-	}
-
-	#setToTextarea(html: string) {
-		this.#textareaDescriptor?.set?.call(this.#textarea, html);
+		this.#wysiwygElement.syncWysiwygToTextarea();
 	}
 
 	static extensions: Extensions | null = null;
 
-	static wrapperElement: BgeWysiwygEditorElementWrapperElement | null = null;
+	static wrapperElement: ElementSeed | null = null;
+
+	static defaultCommands = [
+		'bold',
+		'italic',
+		'underline',
+		'strikethrough',
+		'link',
+		'button-like-link',
+		'blockquote',
+		'bullet-list',
+		'ordered-list',
+		'note',
+		'h3',
+		'h4',
+		'h5',
+		'h6',
+		'flex-box',
+	] as const;
 }
 
 /**
  *
  * @param button
- * @param editor
+ * @param wysiwygElement
  */
-function bindToggle(button: HTMLButtonElement, editor: Editor) {
+function bindToggle(button: HTMLButtonElement, wysiwygElement: BgeWysiwygElement) {
 	const buttonType = button.dataset.bgeToolbarButton;
 	switch (buttonType) {
 		case 'bold': {
-			editor.chain().focus().toggleBold().run();
+			wysiwygElement.toggleBold();
 			break;
 		}
 		case 'italic': {
-			editor.chain().focus().toggleItalic().run();
+			wysiwygElement.toggleItalic();
 			break;
 		}
 		case 'underline': {
-			editor.chain().focus().toggleUnderline().run();
+			wysiwygElement.toggleUnderline();
 			break;
 		}
 		case 'strikethrough': {
-			editor.chain().focus().toggleStrike().run();
+			wysiwygElement.toggleStrike();
 			break;
 		}
 		case 'code': {
-			editor.chain().focus().toggleCode().run();
+			wysiwygElement.toggleCode();
 			break;
 		}
 		case 'link': {
-			if (editor.isActive('link')) {
+			if (wysiwygElement.isActive('link')) {
 				if (confirm('Are you sure you want to remove the link?')) {
-					editor.chain().focus().unsetLink().run();
+					wysiwygElement.toggleLink();
 				}
 				break;
 			}
@@ -459,13 +253,13 @@ function bindToggle(button: HTMLButtonElement, editor: Editor) {
 			if (!link) {
 				break;
 			}
-			editor.chain().focus().toggleLink({ href: link }).run();
+			wysiwygElement.toggleLink({ href: link });
 			break;
 		}
 		case 'button-like-link': {
-			if (editor.isActive('buttonLikeLink')) {
+			if (wysiwygElement.isActive('buttonLikeLink')) {
 				if (confirm('Are you sure you want to remove the button-like-link?')) {
-					editor.chain().focus().toggleButtonLikeLink().run();
+					wysiwygElement.toggleButtonLikeLink();
 				}
 				break;
 			}
@@ -473,47 +267,47 @@ function bindToggle(button: HTMLButtonElement, editor: Editor) {
 			if (!link) {
 				break;
 			}
-			editor.chain().focus().toggleButtonLikeLink({ href: link }).run();
+			wysiwygElement.toggleButtonLikeLink({ href: link });
 			break;
 		}
 		case 'blockquote': {
-			editor.chain().focus().toggleBlockquote().run();
+			wysiwygElement.toggleBlockquote();
 			break;
 		}
 		case 'bullet-list': {
-			editor.chain().focus().toggleBulletList().run();
+			wysiwygElement.toggleBulletList();
 			break;
 		}
 		case 'ordered-list': {
-			editor.chain().focus().toggleOrderedList().run();
+			wysiwygElement.toggleOrderedList();
 			break;
 		}
 		case 'note': {
-			editor.chain().focus().toggleNote().run();
+			wysiwygElement.toggleNote();
 			break;
 		}
 		case 'h2': {
-			editor.chain().focus().toggleHeading({ level: 2 }).run();
+			wysiwygElement.toggleHeading(2);
 			break;
 		}
 		case 'h3': {
-			editor.chain().focus().toggleHeading({ level: 3 }).run();
+			wysiwygElement.toggleHeading(3);
 			break;
 		}
 		case 'h4': {
-			editor.chain().focus().toggleHeading({ level: 4 }).run();
+			wysiwygElement.toggleHeading(4);
 			break;
 		}
 		case 'h5': {
-			editor.chain().focus().toggleHeading({ level: 5 }).run();
+			wysiwygElement.toggleHeading(5);
 			break;
 		}
 		case 'h6': {
-			editor.chain().focus().toggleHeading({ level: 6 }).run();
+			wysiwygElement.toggleHeading(6);
 			break;
 		}
 		case 'flex-box': {
-			editor.chain().focus().toggleFlexBox().run();
+			wysiwygElement.toggleFlexBox();
 			break;
 		}
 	}
@@ -522,95 +316,95 @@ function bindToggle(button: HTMLButtonElement, editor: Editor) {
 /**
  *
  * @param button
- * @param editor
+ * @param state
  */
-function bindPressed(button: HTMLButtonElement, editor: Editor) {
+function updateButtonState(button: HTMLButtonElement, state: EditorState) {
 	const buttonType = button.dataset.bgeToolbarButton;
 
 	switch (buttonType) {
 		case 'bold': {
-			button.disabled = !editor.can().chain().focus().toggleBold().run();
-			button.ariaPressed = editor.isActive('bold') ? 'true' : 'false';
+			button.disabled = state.bold.disabled;
+			button.ariaPressed = state.bold.active ? 'true' : 'false';
 			break;
 		}
 		case 'italic': {
-			button.disabled = !editor.can().chain().focus().toggleItalic().run();
-			button.ariaPressed = editor.isActive('italic') ? 'true' : 'false';
+			button.disabled = state.italic.disabled;
+			button.ariaPressed = state.italic.active ? 'true' : 'false';
 			break;
 		}
 		case 'underline': {
-			button.disabled = !editor.can().chain().focus().toggleUnderline().run();
-			button.ariaPressed = editor.isActive('underline') ? 'true' : 'false';
+			button.disabled = state.underline.disabled;
+			button.ariaPressed = state.underline.active ? 'true' : 'false';
 			break;
 		}
 		case 'strikethrough': {
-			button.disabled = !editor.can().chain().focus().toggleStrike().run();
-			button.ariaPressed = editor.isActive('strike') ? 'true' : 'false';
+			button.disabled = state.strike.disabled;
+			button.ariaPressed = state.strike.active ? 'true' : 'false';
 			break;
 		}
 		case 'code': {
-			button.disabled = !editor.can().chain().focus().toggleCode().run();
-			button.ariaPressed = editor.isActive('code') ? 'true' : 'false';
+			button.disabled = state.code.disabled;
+			button.ariaPressed = state.code.active ? 'true' : 'false';
 			break;
 		}
 		case 'link': {
-			button.disabled = !editor.can().chain().focus().toggleLink().run();
-			button.ariaPressed = editor.isActive('link') ? 'true' : 'false';
+			button.disabled = state.link.disabled;
+			button.ariaPressed = state.link.active ? 'true' : 'false';
 			break;
 		}
 		case 'button-like-link': {
-			button.disabled = !editor.can().chain().focus().toggleButtonLikeLink().run();
-			button.ariaPressed = editor.isActive('buttonLikeLink') ? 'true' : 'false';
+			button.disabled = state.buttonLikeLink.disabled;
+			button.ariaPressed = state.buttonLikeLink.active ? 'true' : 'false';
 			break;
 		}
 		case 'blockquote': {
-			button.disabled = !editor.can().chain().focus().toggleBlockquote().run();
-			button.ariaPressed = editor.isActive('blockquote') ? 'true' : 'false';
+			button.disabled = state.blockquote.disabled;
+			button.ariaPressed = state.blockquote.active ? 'true' : 'false';
 			break;
 		}
 		case 'bullet-list': {
-			button.disabled = !editor.can().chain().focus().toggleBulletList().run();
-			button.ariaPressed = editor.isActive('bulletList') ? 'true' : 'false';
+			button.disabled = state.bulletList.disabled;
+			button.ariaPressed = state.bulletList.active ? 'true' : 'false';
 			break;
 		}
 		case 'ordered-list': {
-			button.disabled = !editor.can().chain().focus().toggleOrderedList().run();
-			button.ariaPressed = editor.isActive('orderedList') ? 'true' : 'false';
+			button.disabled = state.orderedList.disabled;
+			button.ariaPressed = state.orderedList.active ? 'true' : 'false';
 			break;
 		}
 		case 'note': {
-			button.disabled = !editor.can().chain().focus().toggleNote().run();
-			button.ariaPressed = editor.isActive('note') ? 'true' : 'false';
+			button.disabled = state.note.disabled;
+			button.ariaPressed = state.note.active ? 'true' : 'false';
 			break;
 		}
 		case 'h2': {
-			button.disabled = !editor.can().chain().focus().toggleHeading({ level: 2 }).run();
-			button.ariaPressed = editor.isActive('heading', { level: 2 }) ? 'true' : 'false';
+			button.disabled = state.h2.disabled;
+			button.ariaPressed = state.h2.active ? 'true' : 'false';
 			break;
 		}
 		case 'h3': {
-			button.disabled = !editor.can().chain().focus().toggleHeading({ level: 3 }).run();
-			button.ariaPressed = editor.isActive('heading', { level: 3 }) ? 'true' : 'false';
+			button.disabled = state.h3.disabled;
+			button.ariaPressed = state.h3.active ? 'true' : 'false';
 			break;
 		}
 		case 'h4': {
-			button.disabled = !editor.can().chain().focus().toggleHeading({ level: 4 }).run();
-			button.ariaPressed = editor.isActive('heading', { level: 4 }) ? 'true' : 'false';
+			button.disabled = state.h4.disabled;
+			button.ariaPressed = state.h4.active ? 'true' : 'false';
 			break;
 		}
 		case 'h5': {
-			button.disabled = !editor.can().chain().focus().toggleHeading({ level: 5 }).run();
-			button.ariaPressed = editor.isActive('heading', { level: 5 }) ? 'true' : 'false';
+			button.disabled = state.h5.disabled;
+			button.ariaPressed = state.h5.active ? 'true' : 'false';
 			break;
 		}
 		case 'h6': {
-			button.disabled = !editor.can().chain().focus().toggleHeading({ level: 6 }).run();
-			button.ariaPressed = editor.isActive('heading', { level: 6 }) ? 'true' : 'false';
+			button.disabled = state.h6.disabled;
+			button.ariaPressed = state.h6.active ? 'true' : 'false';
 			break;
 		}
 		case 'flex-box': {
-			button.disabled = !editor.can().chain().focus().toggleFlexBox().run();
-			button.ariaPressed = editor.isActive('flexBox') ? 'true' : 'false';
+			button.disabled = state.flexBox.disabled;
+			button.ariaPressed = state.flexBox.active ? 'true' : 'false';
 			break;
 		}
 	}
