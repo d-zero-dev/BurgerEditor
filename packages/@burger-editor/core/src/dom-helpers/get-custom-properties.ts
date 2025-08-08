@@ -1,5 +1,3 @@
-import type { EditableArea } from '../editable-area.js';
-
 import { BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX } from '../const.js';
 
 type CustomPropertyCategories = Map<string, Map<string, CustomProperty>>;
@@ -12,14 +10,12 @@ type CustomProperty = {
 };
 
 /**
- * Get all custom properties from editorArea
- * @param editorArea
+ * Get all custom properties from document
+ * @param scope
  */
-export function getCustomProperties(editorArea: EditableArea): CustomPropertyCategories {
+export function getCustomProperties(scope: Document): CustomPropertyCategories {
 	const categories: CustomPropertyCategories = new Map();
 	const defaultValues = new Map<string, string>();
-
-	const scope = editorArea.containerElement.ownerDocument;
 
 	searchCustomProperty(scope, (cssProperty, value) => {
 		if (!cssProperty.startsWith(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX)) {
@@ -71,15 +67,13 @@ export function getCustomProperties(editorArea: EditableArea): CustomPropertyCat
 
 /**
  *
- * @param editorArea
+ * @param scope
  * @param property
  */
 export function getCustomProperty(
-	editorArea: EditableArea,
+	scope: Document,
 	property: string | RegExp,
 ): string | null {
-	const scope = editorArea.containerElement.ownerDocument;
-
 	let result: string | null = null;
 
 	searchCustomProperty(scope, (cssProperty, value) => {

@@ -180,11 +180,11 @@ export class BurgerEditorEngine {
 	}
 
 	getCustomProperties() {
-		return getCustomProperties(this.#current);
+		return getCustomProperties(this.#current.containerElement.ownerDocument);
 	}
 
 	getCustomProperty(property: string | RegExp) {
-		return getCustomProperty(this.#current, property);
+		return getCustomProperty(this.#current.containerElement.ownerDocument, property);
 	}
 
 	hasDraft() {
