@@ -5,6 +5,7 @@ export interface LocalServerConfig {
 	readonly port: number;
 	readonly host: 'localhost' | `${number}.${number}.${number}.${number}`;
 	readonly documentRoot: string;
+	readonly assetsRoot: string;
 	readonly lang: string;
 	readonly stylesheets: readonly string[];
 	readonly classList: readonly string[];
@@ -21,6 +22,7 @@ export type LocalServerConfigUserSettings = Omit<
 	Partial<LocalServerConfig>,
 	'filesDir'
 > & {
+	readonly assetsRoot?: string;
 	readonly filesDir?: string | FileDirSettings | LocalServerFileDirUserSettings;
 };
 

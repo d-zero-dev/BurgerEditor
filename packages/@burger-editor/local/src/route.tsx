@@ -263,7 +263,7 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 		// ------------------------------------------------------------------------------------------
 		.get('/:file{.+$}', async (c) => {
 			const file = c.req.param('file');
-			const targetFilePath = path.resolve(userConfig.documentRoot, file);
+			const targetFilePath = path.resolve(userConfig.assetsRoot, file);
 			const buf = await readFile(targetFilePath).catch(() => null);
 			log('Access(/:file): %s => ', file, buf ? targetFilePath : 'Not found');
 			if (!buf) {
