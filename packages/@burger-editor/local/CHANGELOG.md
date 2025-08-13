@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.13](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.12...v4.0.0-alpha.13) (2025-08-13)
+
+### Features
+
+- **local:** add assetsRoot option for separate asset management ([9c09486](https://github.com/d-zero-dev/BurgerEditor/commit/9c094862be7067a39b07b536e2af79e04e633a86))
+
 # [4.0.0-alpha.12](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.11...v4.0.0-alpha.12) (2025-08-08)
 
 **Note:** Version bump only for package @burger-editor/local

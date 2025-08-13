@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/mcp-server",
-	"version": "4.0.0-alpha.12",
+	"version": "4.0.0-alpha.13",
 	"description": "MCP Server for BurgerEditor",
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)",
@@ -30,10 +30,10 @@
 		"clean": "tsc --build --clean"
 	},
 	"dependencies": {
-		"@burger-editor/core": "4.0.0-alpha.12",
-		"@burger-editor/legacy": "4.0.0-alpha.12",
-		"@burger-editor/migrator": "4.0.0-alpha.12",
-		"@burger-editor/utils": "4.0.0-alpha.12",
+		"@burger-editor/core": "4.0.0-alpha.13",
+		"@burger-editor/legacy": "4.0.0-alpha.13",
+		"@burger-editor/migrator": "4.0.0-alpha.13",
+		"@burger-editor/utils": "4.0.0-alpha.13",
 		"@modelcontextprotocol/sdk": "1.17.2",
 		"vitest": "3.2.4",
 		"zod": "3.24.2"
