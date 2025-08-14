@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.14](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.13...v4.0.0-alpha.14) (2025-08-14)
+
+### Bug Fixes
+
+- **mcp-server:** resolve zod v4 compatibility issue ([a65cf4a](https://github.com/d-zero-dev/BurgerEditor/commit/a65cf4a77f616e31b1d8a6466cd040c38997c428))
+
+### Features
+
+- **local:** implement Front Matter support for HTML files ([29aa6c6](https://github.com/d-zero-dev/BurgerEditor/commit/29aa6c670689ffc894916b248f774038d76fc611))
+
 # [4.0.0-alpha.13](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.12...v4.0.0-alpha.13) (2025-08-13)
 
 ### Features
