@@ -149,6 +149,7 @@
 		background-color: var(--bge-background-color02) !important;
 		border-color: var(--bge-background-color02) !important;
 	}
+
 	/* stylelint-enable declaration-no-important */
 
 	.draft-tab-btn button:hover {
