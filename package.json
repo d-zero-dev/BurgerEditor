@@ -31,6 +31,9 @@
 	"workspaces": [
 		"packages/@burger-editor/*"
 	],
+	"resolutions": {
+		"@burger-editor/mcp-server/zod": "3.24.2"
+	},
 	"config": {
 		"commitizen": {
 			"path": "./node_modules/cz-customizable"
