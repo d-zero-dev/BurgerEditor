@@ -19,6 +19,8 @@ const clientFileDir = path.resolve(import.meta.dirname, '..', 'dist');
 const apiSchema = z.object({
 	path: z.string(),
 	content: z.string(),
+	frontMatter: z.record(z.unknown()).optional(),
+	originalFrontMatter: z.string().optional(),
 });
 
 /**
@@ -147,11 +149,20 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 		.post('/api/content', zValidator('json', apiSchema), async (c) => {
 			const data = c.req.valid('json');
 			const targetFilePath = path.join(userConfig.documentRoot, data.path);
-			await saveContent(targetFilePath, data.content, userConfig.editableArea);
-			log('Saved: %s', targetFilePath);
+
+			await saveContent(
+				targetFilePath,
+				data.content,
+				userConfig.editableArea,
+				data.frontMatter,
+				data.originalFrontMatter,
+			);
+
+			log('Saved: %s (with Front Matter: %s)', targetFilePath, !!data.frontMatter);
 			return c.json({
 				saved: true,
 				path: targetFilePath,
+				hasFrontMatter: !!data.frontMatter,
 			});
 		})
 		.post(
@@ -234,25 +245,32 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 				targetFilePath += 'index.html';
 			}
 
-			const content = await loadContent(targetFilePath, userConfig.editableArea);
+			const loadResult = await loadContent(targetFilePath, userConfig.editableArea);
 
-			if (content instanceof NoEditableAreaError) {
+			if (loadResult instanceof NoEditableAreaError) {
 				return c.html(
 					<App
 						path={page}
-						content={content}
+						content={loadResult}
 						rootDir={userConfig.documentRoot}
 						lang={userConfig.lang}
 					/>,
 				);
 			}
+			log(
+				'Loaded page with Front Matter: %s (keys: %o)',
+				loadResult.hasFrontMatter,
+				Object.keys(loadResult.frontMatter),
+			);
 
 			return c.html(
 				<App
 					path={page}
-					content={content}
+					content={loadResult.editableContent}
 					rootDir={userConfig.documentRoot}
 					lang={userConfig.lang}
+					frontMatter={loadResult.frontMatter}
+					hasFrontMatter={loadResult.hasFrontMatter}
 				/>,
 			);
 		})
