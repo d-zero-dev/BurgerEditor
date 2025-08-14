@@ -19,7 +19,7 @@ const clientFileDir = path.resolve(import.meta.dirname, '..', 'dist');
 const apiSchema = z.object({
 	path: z.string(),
 	content: z.string(),
-	frontMatter: z.record(z.unknown()).optional(),
+	frontMatter: z.record(z.string(), z.unknown()).optional(),
 	originalFrontMatter: z.string().optional(),
 });
 
