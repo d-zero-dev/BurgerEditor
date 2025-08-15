@@ -24,6 +24,9 @@ export interface BurgerEditorEngineOptions {
 	readonly storageKey?: {
 		readonly blockClipboard?: string;
 	};
+	readonly defineCustomElement?: (context: {
+		readonly className?: string;
+	}) => void | Promise<void>;
 	readonly onUpdated?: (main: string, draft?: string) => void | Promise<void>;
 	readonly fileIO?: FileAPI;
 }

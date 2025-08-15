@@ -1,6 +1,7 @@
 import type { BurgerEditorEngineOptions } from '@burger-editor/core';
 
 import { BurgerEditorEngine } from '@burger-editor/core';
+import { defineBgeWysiwygEditorElement } from '@burger-editor/custom-element';
 
 import BlockCatalog from './block-catalog.svelte';
 import BlockMenu from './block-menu.svelte';
@@ -137,6 +138,13 @@ export async function createBurgerEditorClient(
 					},
 				});
 			},
+		},
+		defineCustomElement(context) {
+			defineBgeWysiwygEditorElement({
+				wrapperElement: {
+					className: context.className ?? '',
+				},
+			});
 		},
 	});
 

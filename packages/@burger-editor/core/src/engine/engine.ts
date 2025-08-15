@@ -1,8 +1,6 @@
 import type { ItemData, ItemSeed } from '../item/types.js';
 import type { BurgerEditorEngineOptions, UIOptions, Config, FileAPI } from '../types.js';
 
-import { defineBgeWysiwygEditorElement } from '@burger-editor/custom-element';
-
 import { BurgerBlock } from '../block/block.js';
 import { BlockCatalogDialog } from '../block-catalog-dialog.js';
 import { BlockOptionsDialog } from '../block-options-dialog.js';
@@ -344,11 +342,11 @@ export class BurgerEditorEngine {
 		engine.showMain();
 		engine.save();
 
-		defineBgeWysiwygEditorElement({
-			wrapperElement: {
+		if (options.defineCustomElement) {
+			await options.defineCustomElement({
 				className: options.config.classList.join(' '),
-			},
-		});
+			});
+		}
 
 		return engine;
 	}

@@ -30,6 +30,7 @@
 	},
 	"dependencies": {
 		"@burger-editor/core": "4.0.0-alpha.14",
+		"@burger-editor/custom-element": "4.0.0-alpha.14",
 		"@burger-editor/migrator": "4.0.0-alpha.14",
 		"@burger-editor/utils": "4.0.0-alpha.14",
 		"@tabler/icons-svelte": "3.34.1",
