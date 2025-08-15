@@ -1,5 +1,5 @@
 import type { ItemEditorDialog } from '../item-editor-dialog.js';
-import type { ItemData } from './types.js';
+import type { ItemData, ItemSeed } from './types.js';
 
 import { strToDOM } from '@burger-editor/utils';
 import semver from 'semver';
@@ -22,7 +22,6 @@ export class Item<
 	readonly name: string;
 	readonly #el: HTMLElement;
 	readonly #engine: BurgerEditorEngine;
-	#isOld = false;
 	readonly #service: ItemEditorService<T, C, N>;
 	#version: string;
 
@@ -32,10 +31,6 @@ export class Item<
 
 	get version() {
 		return this.#version;
-	}
-
-	get isOld() {
-		return this.#isOld;
 	}
 
 	// eslint-disable-next-line no-restricted-syntax
@@ -72,8 +67,6 @@ export class Item<
 			el.dataset.bgiVer = version;
 		}
 		this.#version = version;
-		const originVersion = engine.items.get(this.name)?.version ?? '0.0.0';
-		this.#isOld = semver.lt(this.#version, originVersion);
 
 		const seed = BurgerEditorEngine.getItemSeed<T, C, N>(this.name);
 
@@ -102,7 +95,7 @@ export class Item<
 
 		this.el.innerHTML = dataToHtml(this.el.innerHTML, data);
 
-		if (this.#isOld) {
+		if (this.#isOld(this.#engine.items)) {
 			await this.#service.migrateElement(data, this);
 		}
 	}
@@ -112,7 +105,7 @@ export class Item<
 	}
 
 	async upgrade() {
-		if (!this.#isOld) {
+		if (!this.#isOld(this.#engine.items)) {
 			return;
 		}
 		const newTemplate = this.#engine.items.get(this.name)?.template;
@@ -132,7 +125,12 @@ export class Item<
 		this.el.dataset.bgiVer = v;
 		await this.import(data);
 		this.#version = v;
-		this.#isOld = false;
+	}
+
+	#isOld(currentItems: Map<string, ItemSeed<string, {}, {}>>) {
+		const originVersion = currentItems.get(this.name)?.version ?? '0.0.0';
+		const isOld = semver.lt(this.#version, originVersion);
+		return isOld;
 	}
 
 	async #openEditor() {
