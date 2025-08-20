@@ -178,6 +178,11 @@ export class ItemEditorDialog<
 			};
 		}
 
+		if (__DEBUG__) {
+			// eslint-disable-next-line no-console
+			console.log(data);
+		}
+
 		return data;
 	}
 
