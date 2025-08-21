@@ -16,11 +16,7 @@ beforeEach(async () => {
 
 afterAll(async () => {
 	// Delete test-temp directory after tests
-	try {
-		await fs.rm(TEST_DIR, { recursive: true, force: true });
-	} catch {
-		// Ignore errors (e.g., when directory doesn't exist)
-	}
+	await fs.rm(TEST_DIR, { recursive: true, force: true }).catch(() => {});
 });
 
 describe('edit-content with Front Matter support', () => {
