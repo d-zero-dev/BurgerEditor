@@ -54,12 +54,7 @@ export class Item<
 
 		this.#engine = engine;
 
-		let name = el.dataset.bgi;
-		if (!name) {
-			name = 'unknown';
-			el.dataset.bgi = name;
-		}
-		this.name = name;
+		const name = el.dataset.bgi ?? 'unknown';
 
 		let version = el.dataset.bgiVer;
 		if (!version) {
@@ -67,12 +62,12 @@ export class Item<
 			el.dataset.bgiVer = version;
 		}
 		this.#version = version;
+		const seed =
+			BurgerEditorEngine.getItemSeed<T, C, N>(name) ??
+			BurgerEditorEngine.getItemSeed<T, C, N>('wysiwyg')!;
 
-		const seed = BurgerEditorEngine.getItemSeed<T, C, N>(this.name);
-
-		if (!seed) {
-			throw new Error(`Seed not found: ${this.name}`);
-		}
+		this.name = seed.name;
+		el.dataset.bgi = this.name;
 
 		this.#service = new ItemEditorService<T, C, N>(this, seed);
 
