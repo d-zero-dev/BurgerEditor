@@ -5,7 +5,8 @@ import path from 'node:path';
 
 import { afterAll, beforeEach, describe, expect, test } from 'vitest';
 
-import { loadContent, saveContent, NoEditableAreaError } from './edit-content.js';
+import { loadContent, saveContent } from './edit-content.js';
+import { NoEditableAreaError } from './no-editable-area-error.js';
 
 const TEST_DIR = path.join(import.meta.dirname, '..', '..', 'test-temp');
 
@@ -36,7 +37,7 @@ date: 2024-01-01
 			await fs.writeFile(filePath, fragmentContent, 'utf8');
 
 			// Load with editable area specified
-			const result = await loadContent(filePath, '.content');
+			const result = await loadContent(filePath, '.content', '');
 
 			expect(result).toBeTypeOf('object');
 			expect(result).not.toBeInstanceOf(NoEditableAreaError);
@@ -79,7 +80,7 @@ date: 2024-01-01
 			const filePath = path.join(TEST_DIR, 'no-fm-fragment.html');
 			await fs.writeFile(filePath, fragmentContent, 'utf8');
 
-			const result = await loadContent(filePath, '.main');
+			const result = await loadContent(filePath, '.main', '');
 			const loadResult = result as LoadContentResult;
 
 			expect(loadResult.hasFrontMatter).toBe(false);
@@ -117,7 +118,7 @@ title: 'Full Document'
 			const filePath = path.join(TEST_DIR, 'full-doc.html');
 			await fs.writeFile(filePath, fullDocContent, 'utf8');
 
-			const result = await loadContent(filePath, '.content');
+			const result = await loadContent(filePath, '.content', '');
 			const loadResult = result as LoadContentResult;
 
 			expect(loadResult.hasFrontMatter).toBe(true);
@@ -156,7 +157,7 @@ title: 'Null Area Test'
 			await fs.writeFile(filePath, content, 'utf8');
 
 			// Load with editableArea as null
-			const loadResult = await loadContent(filePath, null);
+			const loadResult = await loadContent(filePath, null, '');
 
 			if (loadResult instanceof NoEditableAreaError) {
 				throw new TypeError('NoEditableAreaError should not be returned');
@@ -190,7 +191,7 @@ title: 'Null Area Test'
 			const filePath = path.join(TEST_DIR, 'no-selector.html');
 			await fs.writeFile(filePath, content, 'utf8');
 
-			const result = await loadContent(filePath, '.nonexistent');
+			const result = await loadContent(filePath, '.nonexistent', '');
 
 			expect(result).toBeInstanceOf(NoEditableAreaError);
 			expect((result as NoEditableAreaError).selector).toBe('.nonexistent');
@@ -199,7 +200,7 @@ title: 'Null Area Test'
 		test('should create file when it does not exist', async () => {
 			const nonExistentPath = path.join(TEST_DIR, 'new-file.html');
 
-			const result = await loadContent(nonExistentPath, '.content');
+			const result = await loadContent(nonExistentPath, '.content', '');
 			const loadResult = result as LoadContentResult;
 
 			expect(loadResult.editableContent).toBe('');

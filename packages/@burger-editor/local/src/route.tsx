@@ -9,7 +9,8 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 
 import { log } from './helpers/debug.js';
-import { loadContent, NoEditableAreaError, saveContent } from './helpers/edit-content.js';
+import { loadContent, saveContent } from './helpers/edit-content.js';
+import { NoEditableAreaError } from './helpers/no-editable-area-error.js';
 import { defaultConfig } from './model/default-config.js';
 import { FileListManager } from './model/file-list-manager.js';
 import { App } from './view/app.js';
@@ -245,7 +246,11 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 				targetFilePath += 'index.html';
 			}
 
-			const loadResult = await loadContent(targetFilePath, userConfig.editableArea);
+			const loadResult = await loadContent(
+				targetFilePath,
+				userConfig.editableArea,
+				userConfig.newFileContent,
+			);
 
 			if (loadResult instanceof NoEditableAreaError) {
 				return c.html(

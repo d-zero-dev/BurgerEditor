@@ -8,6 +8,7 @@ import { format, resolveConfig } from 'prettier';
 import { log } from './debug.js';
 import { parseFrontMatter, stringifyWithFrontMatter } from './front-matter.js';
 import { extractContentFromHtml, updateHtmlContent } from './html-detection.js';
+import { NoEditableAreaError } from './no-editable-area-error.js';
 
 /**
  * Load content from HTML file (Front Matter compatible version)
@@ -19,79 +20,74 @@ import { extractContentFromHtml, updateHtmlContent } from './html-detection.js';
  * 4. Extract editable area
  * @param filePath File path
  * @param editableArea CSS selector for editable area
+ * @param newFileContent
  * @returns Result containing Front Matter and content
  */
 export async function loadContent(
 	filePath: string,
 	editableArea: string | null,
+	newFileContent: string,
 ): Promise<LoadContentResult | NoEditableAreaError> {
-	try {
-		// 1. File loading
-		const fileContent = await fs.readFile(filePath, 'utf8');
-
-		// 2. Front Matter separation (executed first)
-		const parsed = parseFrontMatter(fileContent);
-		log(
-			'Front Matter parsed: hasFrontMatter=%s, dataKeys=%o',
-			parsed.hasFrontMatter,
-			Object.keys(parsed.data),
-		);
-
-		// Return HTML content without Front Matter if editableArea is null
-		if (editableArea === null) {
-			log('No editable area, returning full content');
-			return {
-				editableContent: parsed.content,
-				frontMatter: parsed.data,
-				originalFrontMatter: parsed.originalFrontMatter,
-				hasFrontMatter: parsed.hasFrontMatter,
-			};
-		}
-
-		// 3. Extract editable area from HTML (Fragment/Full Document compatible)
-		const selector = editableArea ?? 'body';
-		log('Load content from %s', selector);
-
-		try {
-			// 4. Extract editable area (fragment compatible)
-			const extraction = extractContentFromHtml(parsed.content, selector);
-
-			// Return result containing Front Matter and editable content
-			const result: LoadContentResult = {
-				editableContent: extraction.content,
-				frontMatter: parsed.data,
-				originalFrontMatter: parsed.originalFrontMatter,
-				hasFrontMatter: parsed.hasFrontMatter,
-			};
-
-			return result;
-		} catch (extractionError) {
-			if (
-				extractionError instanceof Error &&
-				extractionError.message.includes('Selector not found')
-			) {
-				return new NoEditableAreaError(selector);
-			}
-			throw extractionError;
-		}
-	} catch (error) {
+	// 1. File loading
+	const readFileContent = await fs.readFile(filePath, 'utf8').catch((error: unknown) => {
 		if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-			log('ENOENT: File not found, create empty file');
-			const dir = path.dirname(filePath);
-			await fs.mkdir(dir, { recursive: true });
-			await fs.writeFile(filePath, '', 'utf8');
-
-			// Default result for empty files
-			const result: LoadContentResult = {
-				editableContent: '',
-				frontMatter: {},
-				originalFrontMatter: undefined,
-				hasFrontMatter: false,
-			};
-			return result;
+			return new FileNotFoundError(filePath);
 		}
 		throw error;
+	});
+
+	let fileContent: string;
+
+	if (readFileContent instanceof FileNotFoundError) {
+		log('ENOENT: File not found, create empty file');
+		const dir = path.dirname(filePath);
+		await fs.mkdir(dir, { recursive: true });
+		await fs.writeFile(filePath, newFileContent, 'utf8');
+
+		fileContent = newFileContent;
+	} else {
+		fileContent = readFileContent;
 	}
+
+	// 2. Front Matter separation (executed first)
+	const parsed = parseFrontMatter(fileContent);
+	log(
+		'Front Matter parsed: hasFrontMatter=%s, dataKeys=%o',
+		parsed.hasFrontMatter,
+		Object.keys(parsed.data),
+	);
+
+	// Return HTML content without Front Matter if editableArea is null
+	if (editableArea === null) {
+		log('No editable area, returning full content');
+		return {
+			editableContent: parsed.content,
+			frontMatter: parsed.data,
+			originalFrontMatter: parsed.originalFrontMatter,
+			hasFrontMatter: parsed.hasFrontMatter,
+		};
+	}
+
+	// 3. Extract editable area from HTML (Fragment/Full Document compatible)
+	const selector = editableArea ?? 'body';
+	log('Load content from %s', selector);
+
+	// 4. Extract editable area (fragment compatible)
+	const extraction = extractContentFromHtml(parsed.content, selector);
+
+	if (extraction instanceof NoEditableAreaError) {
+		return extraction;
+	}
+
+	// Return result containing Front Matter and editable content
+	const result: LoadContentResult = {
+		editableContent: extraction.content,
+		frontMatter: parsed.data,
+		originalFrontMatter: parsed.originalFrontMatter,
+		hasFrontMatter: parsed.hasFrontMatter,
+	};
+
+	return result;
 }
 
 /**
@@ -182,10 +178,10 @@ export async function saveContent(
 	await fs.writeFile(filePath, finalContent, 'utf8');
 }
 
-export class NoEditableAreaError extends Error {
-	readonly selector: string;
-	constructor(selector: string) {
-		super(`Editable area not found: ${selector}`);
-		this.selector = selector;
+class FileNotFoundError extends Error {
+	readonly filePath: string;
+	constructor(filePath: string) {
+		super(`File not found: ${filePath}`);
+		this.filePath = filePath;
 	}
 }

@@ -14,6 +14,7 @@ export interface LocalServerConfig {
 	readonly sampleImagePath: `/${string}` | `https://${string}` | `base64:${string}`;
 	readonly googleMapsApiKey: string | null;
 	readonly open: boolean;
+	readonly newFileContent: string;
 }
 
 export type LocalServerFileDirConfig = Record<FileType, FileDirSettings>;

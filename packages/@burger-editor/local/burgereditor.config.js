@@ -16,6 +16,11 @@ export default {
 	stylesheets: ['/css/style.css'],
 	classList: ['custom-class-bge-local'],
 	editableArea: '.custom-class-bge-local',
+	newFileContent: `
+---
+title: 'New Page'
+---
+<div class="custom-class-bge-local"></div>`,
 	googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
 	sampleImagePath: '/files/images/sample.png',
 	filesDir: {

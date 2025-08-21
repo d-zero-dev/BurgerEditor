@@ -1,5 +1,7 @@
 import { JSDOM } from 'jsdom';
 
+import { NoEditableAreaError } from './no-editable-area-error.js';
+
 /**
  * Determine if HTML is a complete document or fragment
  * @param htmlContent HTML content
@@ -36,7 +38,7 @@ export function isFullHtmlDocument(htmlContent: string): boolean {
 export function extractContentFromHtml(
 	htmlContent: string,
 	selector: string,
-): { content: string; isFullDocument: boolean } {
+): { content: string; isFullDocument: boolean } | NoEditableAreaError {
 	// Return empty string for empty files
 	if (!htmlContent.trim()) {
 		return { content: '', isFullDocument: false };
@@ -44,12 +46,19 @@ export function extractContentFromHtml(
 
 	const isFullDocument = isFullHtmlDocument(htmlContent);
 
-	if (isFullDocument) {
-		// Use JSDOM as usual for complete HTML documents
-		return extractFromFullDocument(htmlContent, selector);
-	} else {
+	try {
+		if (isFullDocument) {
+			// Use JSDOM as usual for complete HTML documents
+			return extractFromFullDocument(htmlContent, selector);
+		}
+
 		// Special handling for HTML fragments
 		return extractFromFragment(htmlContent, selector);
+	} catch (error) {
+		if (error instanceof NoEditableAreaError) {
+			return error;
+		}
+		throw error;
 	}
 }
 
@@ -67,7 +76,7 @@ function extractFromFullDocument(
 	const element = document.querySelector(selector);
 
 	if (!element) {
-		throw new Error(`Selector not found: ${selector}`);
+		throw new NoEditableAreaError(selector);
 	}
 
 	return {
@@ -92,7 +101,7 @@ function extractFromFragment(
 	const element = document.querySelector(selector);
 
 	if (!element) {
-		throw new Error(`Selector not found: ${selector}`);
+		throw new NoEditableAreaError(selector);
 	}
 
 	return {
@@ -161,7 +170,7 @@ function updateFragment(
 	const element = document.querySelector(selector);
 
 	if (!element) {
-		throw new Error(`Selector not found: ${selector}`);
+		throw new NoEditableAreaError(selector);
 	}
 
 	element.innerHTML = newContent;

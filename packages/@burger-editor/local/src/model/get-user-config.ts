@@ -36,6 +36,7 @@ export async function getUserConfig(): Promise<LocalServerConfig> {
 		classList: config.classList ?? [],
 		filesDir,
 		editableArea: config.editableArea ?? null,
+		newFileContent: config.newFileContent?.trim() ?? '',
 		sampleImagePath:
 			config.sampleImagePath ??
 			((filesDir.image.clientPath + '/' + 'sample.png') as `/${string}`),
