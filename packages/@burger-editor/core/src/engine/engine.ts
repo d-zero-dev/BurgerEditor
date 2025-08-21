@@ -366,7 +366,30 @@ export class BurgerEditorEngine {
 		C extends { [key: string]: unknown },
 		N extends keyof T & string = keyof T & string,
 	>(name: string) {
-		const editor = this.#itemSeeds.get(name);
-		return (editor ?? null) as ItemSeed<N, T, C> | null;
+		let editor = this.#itemSeeds.get(name);
+
+		if (!editor) {
+			editor = this.#itemSeeds.get('wysiwyg');
+			if (__DEBUG__ && editor) {
+				// eslint-disable-next-line no-console
+				console.warn(`"${name}" is not found. fallback to "wysiwyg".`);
+			}
+		}
+
+		if (!editor) {
+			// Fallback to the first item seed
+			editor = this.#itemSeeds.values().next().value;
+
+			if (__DEBUG__ && editor) {
+				// eslint-disable-next-line no-console
+				console.warn(`"${name}" is not found. fallback to the first item seed.`);
+			}
+		}
+
+		if (!editor) {
+			throw new Error('There are no item seeds.');
+		}
+
+		return editor as unknown as ItemSeed<N, T, C>;
 	}
 }

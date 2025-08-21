@@ -56,9 +56,7 @@ export class Item<
 
 		const name = el.dataset.bgi ?? 'unknown';
 
-		const seed =
-			BurgerEditorEngine.getItemSeed<T, C, N>(name) ??
-			BurgerEditorEngine.getItemSeed<T, C, N>('wysiwyg')!;
+		const seed = BurgerEditorEngine.getItemSeed<T, C, N>(name);
 
 		this.name = seed.name;
 		el.dataset.bgi = this.name;
