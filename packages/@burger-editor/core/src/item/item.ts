@@ -56,12 +56,6 @@ export class Item<
 
 		const name = el.dataset.bgi ?? 'unknown';
 
-		let version = el.dataset.bgiVer;
-		if (!version) {
-			version = '0.0.0';
-			el.dataset.bgiVer = version;
-		}
-		this.#version = version;
 		const seed =
 			BurgerEditorEngine.getItemSeed<T, C, N>(name) ??
 			BurgerEditorEngine.getItemSeed<T, C, N>('wysiwyg')!;
@@ -69,6 +63,8 @@ export class Item<
 		this.name = seed.name;
 		el.dataset.bgi = this.name;
 
+		this.#version = el.dataset.bgiVer ?? seed.version ?? '0.0.0';
+		el.dataset.bgiVer = this.#version;
 		this.#service = new ItemEditorService<T, C, N>(this, seed);
 
 		this.editor = engine.itemEditorDialog as unknown as ItemEditorDialog<T, C>;
