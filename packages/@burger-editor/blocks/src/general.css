@@ -1,5 +1,5 @@
 :root {
-	--bge-auto-fit-base-width: 40em;
+	--bge-auto-fit-base-width: calc(800 / 16 * 1rem);
 
 	/* Custom width */
 	--bge-options-width--normal: calc(800 / 16 * 1rem);
