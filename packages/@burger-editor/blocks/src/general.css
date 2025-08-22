@@ -24,14 +24,6 @@
 	--bge-options-bgcolor--red: #fcc;
 	--bge-options-bgcolor: var(--bge-options-bgcolor--transparent);
 
-	/* Custom border style */
-	--bge-options-border--none: none;
-	--bge-options-border--solid: solid 1px currentColor;
-	--bge-options-border--dashed: dashed 1px currentColor;
-	--bge-options-border--dotted: dotted 1px currentColor;
-	--bge-options-border--wide: solid 3px currentColor;
-	--bge-options-border: var(--bge-options-border--none);
-
 	/* Custom padding-block */
 	--bge-options-padding-block--none: 0;
 	--bge-options-padding-block--small: 1rem;
