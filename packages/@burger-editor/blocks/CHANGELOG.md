@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.16](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.15...v4.0.0-alpha.16) (2025-08-22)
+
+### Features
+
+- **blocks:** add initial properties to image elements ([812ffea](https://github.com/d-zero-dev/BurgerEditor/commit/812ffea991ed10988984855f9157c3c2df1e1fb9))
+
 # [4.0.0-alpha.15](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.14...v4.0.0-alpha.15) (2025-08-22)
 
 ### Bug Fixes
