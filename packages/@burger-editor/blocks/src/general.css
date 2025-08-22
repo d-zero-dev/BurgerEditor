@@ -268,3 +268,37 @@
 		}
 	}
 }
+
+/**
+ * MARK: Wysiwyg内 横並び（フレックス）ボックス
+ */
+:where([data-bgc-flex-box]) {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--bge-options-gap);
+	align-items: center;
+
+	&[data-bgc-flex-box='start'] {
+		justify-content: start;
+	}
+
+	&[data-bgc-flex-box='end'] {
+		justify-content: end;
+	}
+
+	&[data-bgc-flex-box='center'] {
+		justify-content: center;
+	}
+
+	&[data-bgc-flex-box='between'] {
+		justify-content: space-between;
+	}
+
+	&[data-bgc-flex-box='around'] {
+		justify-content: space-around;
+	}
+
+	&[data-bgc-flex-box='evenly'] {
+		justify-content: space-evenly;
+	}
+}
