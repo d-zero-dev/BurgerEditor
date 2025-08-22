@@ -1,4 +1,4 @@
-:root {
+[data-bge-container] {
 	--bge-auto-fit-base-width: calc(800 / 16 * 1rem);
 
 	/* Custom max-width */
@@ -47,25 +47,21 @@
 }
 
 :where([data-bge-container]) {
-	--bge-container-margin-block-end: var(--bge-options-margin);
-	--bge-container-background-color: var(--bge-options-bg-color);
-	--bge-container-border: var(--bge-options-border);
-	--bge-container-padding-block: var(--bge-options-padding-block);
-	--bge-container-padding-inline: var(--bge-options-padding-inline);
+	--_margin-block-end: var(--bge-options-margin);
+	--_margin-block-end_when-last: 0;
 	inline-size: 100%;
 	max-inline-size: var(--bge-options-max-width);
-	padding-block: var(--bge-container-padding-block);
-	padding-inline: var(--bge-container-padding-inline);
-	margin-block-end: var(--bge-container-margin-block-end);
+	padding-block: var(--bge-options-padding-block);
+	padding-inline: var(--bge-options-padding-inline);
+	margin-block-end: var(--_margin-block-end);
 	margin-inline: auto;
 	container-name: bge-container;
 	container-type: inline-size;
-	background-color: var(--bge-container-background-color);
-	border: var(--bge-container-border);
+	background-color: var(--bge-options-bg-color);
+	border: var(--bge-options-border);
 
 	&:where(:last-child) {
-		--bge-last-container-margin-block-end: 0;
-		--bge-container-margin-block-end: var(--bge-last-container-margin-block-end);
+		--_margin-block-end: var(--_margin-block-end_when-last);
 	}
 }
 
