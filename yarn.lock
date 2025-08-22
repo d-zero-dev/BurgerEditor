@@ -222,7 +222,7 @@ __metadata:
     debug: "npm:4.4.1"
     dotenv: "npm:17.2.1"
     gray-matter: "npm:^4.0.3"
-    hono: "npm:4.9.2"
+    hono: "npm:4.9.4"
     jsdom: "npm:26.1.0"
     npm-run-all2: "npm:8.0.4"
     open: "npm:10.2.0"
@@ -8978,10 +8978,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"hono@npm:4.9.2":
-  version: 4.9.2
-  resolution: "hono@npm:4.9.2"
-  checksum: 10c0/0f1a25ea729e90ce9ace8f8dc4e05a180a1a41e3fdd68e5564a4348c260b784b7dccfc4e4c9e004eb0f42acbd9360bda0856639088ba11639c6851929c1d77f7
+"hono@npm:4.9.4":
+  version: 4.9.4
+  resolution: "hono@npm:4.9.4"
+  checksum: 10c0/2ecea6846d6fb2f9135e1287af849c5fbafac0394b2e38b1d00d4afe00b791c20e39b6a6d8dcd6c444b97aafcf7043509f53d00960da636ce395fe91e089ede5
   languageName: node
   linkType: hard
 
