@@ -6,6 +6,8 @@ test('', () => {
 	const style = document.createElement('style');
 	style.textContent = `
 		:root {
+			font-size: 100%;
+
 			/* Custom width */
 			--bge-options-width--normal: calc(800 / 16 * 1rem);
 			--bge-options-width--small: calc(400 / 16 * 1rem);

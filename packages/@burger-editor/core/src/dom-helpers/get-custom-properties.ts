@@ -145,7 +145,7 @@ function searchCustomProperty(
 				if (cssRule.selectorText === ':root') {
 					for (const cssProperty of cssRule.style) {
 						if (!cssProperty.startsWith('--')) {
-							return;
+							continue;
 						}
 						const value = cssRule.style.getPropertyValue(cssProperty);
 
