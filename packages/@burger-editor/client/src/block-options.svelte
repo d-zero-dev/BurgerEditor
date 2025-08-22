@@ -34,99 +34,98 @@
 			<span>コンテナタイプ</span>
 			<output>{containerTypeLabel[options.props.type]} ({options.props.type})</output>
 		</label>
-		{#if options.props.immutable}
-			<p>このブロックはコンテナタイプを変更できません。</p>
-		{:else}
-			{#if options.props.type === 'inline'}
-				<div role="radiogroup" aria-labelledby="justify-group">
-					<div id="justify-group">横方向配置</div>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-justify"
-							value="center"
-							defaultChecked={options.props.justify === 'center'} /><span>中央寄せ</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-justify"
-							value="start"
-							defaultChecked={options.props.justify === 'start'} /><span>左寄せ</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-justify"
-							value="end"
-							defaultChecked={options.props.justify === 'end'} /><span>右寄せ</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-justify"
-							value="between"
-							defaultChecked={options.props.justify === 'between'} /><span>両端寄せ</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-justify"
-							value="around"
-							defaultChecked={options.props.justify === 'around'} /><span
-							>要素間余白均等</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-justify"
-							value="evenly"
-							defaultChecked={options.props.justify === 'evenly'} /><span
-							>要素間均等</span>
-					</label>
-				</div>
-				<div role="radiogroup" aria-labelledby="align-group">
-					<div id="align-group">縦向配置</div>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-align"
-							value="align-center"
-							defaultChecked={options.props.align === 'align-center'} /><span
-							>垂直中央寄せ</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-align"
-							value="align-start"
-							defaultChecked={options.props.align === 'align-start'} /><span>上寄せ</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-align"
-							value="align-end"
-							defaultChecked={options.props.align === 'align-end'} /><span>下寄せ</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-align"
-							value="align-stretch"
-							defaultChecked={options.props.align === 'align-stretch'} /><span>伸縮</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-align"
-							value="align-baseline"
-							defaultChecked={options.props.align === 'align-baseline'} /><span
-							>ベースライン</span>
-					</label>
-				</div>
-			{/if}
-			{#if options.props.type === 'grid'}
+		{#if options.props.type === 'inline'}
+			<div role="radiogroup" aria-labelledby="justify-group">
+				<div id="justify-group">横方向配置</div>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-justify"
+						value="center"
+						defaultChecked={options.props.justify === 'center'} /><span>中央寄せ</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-justify"
+						value="start"
+						defaultChecked={options.props.justify === 'start'} /><span>左寄せ</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-justify"
+						value="end"
+						defaultChecked={options.props.justify === 'end'} /><span>右寄せ</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-justify"
+						value="between"
+						defaultChecked={options.props.justify === 'between'} /><span>両端寄せ</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-justify"
+						value="around"
+						defaultChecked={options.props.justify === 'around'} /><span
+						>要素間余白均等</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-justify"
+						value="evenly"
+						defaultChecked={options.props.justify === 'evenly'} /><span>要素間均等</span>
+				</label>
+			</div>
+			<div role="radiogroup" aria-labelledby="align-group">
+				<div id="align-group">縦向配置</div>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-align"
+						value="align-center"
+						defaultChecked={options.props.align === 'align-center'} /><span
+						>垂直中央寄せ</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-align"
+						value="align-start"
+						defaultChecked={options.props.align === 'align-start'} /><span>上寄せ</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-align"
+						value="align-end"
+						defaultChecked={options.props.align === 'align-end'} /><span>下寄せ</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-align"
+						value="align-stretch"
+						defaultChecked={options.props.align === 'align-stretch'} /><span>伸縮</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-align"
+						value="align-baseline"
+						defaultChecked={options.props.align === 'align-baseline'} /><span
+						>ベースライン</span>
+				</label>
+			</div>
+		{/if}
+		{#if options.props.type === 'grid'}
+			{#if options.props.immutable}
+				<p>このブロックはコンテナタイプを変更できません。</p>
+			{:else}
 				<label>
 					<span>列数</span>
 					<output>{currentColumns}</output>
@@ -153,25 +152,25 @@
 					<code>{currentColumns}</code>」で割った数値に近い幅を保ちます。
 				</small>
 			{/if}
-			{#if options.props.type === 'float'}
-				<div role="radiogroup" aria-labelledby="float-group">
-					<div id="float-group">回り込み</div>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-float"
-							value="start"
-							defaultChecked={options.props.float === 'start'} /><span>左寄せ</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-float"
-							value="end"
-							defaultChecked={options.props.float === 'end'} /><span>右寄せ</span>
-					</label>
-				</div>
-			{/if}
+		{/if}
+		{#if options.props.type === 'float'}
+			<div role="radiogroup" aria-labelledby="float-group">
+				<div id="float-group">回り込み</div>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-float"
+						value="start"
+						defaultChecked={options.props.float === 'start'} /><span>左寄せ</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-float"
+						value="end"
+						defaultChecked={options.props.float === 'end'} /><span>右寄せ</span>
+				</label>
+			</div>
 		{/if}
 	</fieldset>
 {/if}
