@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/core",
-	"version": "4.0.0-alpha.14",
+	"version": "4.0.0-alpha.15",
 	"description": "BurgerEditor Editor Core",
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)",
@@ -26,8 +26,8 @@
 		"clean": "tsc --build --clean"
 	},
 	"dependencies": {
-		"@burger-editor/frozen-patty": "4.0.0-alpha.14",
-		"@burger-editor/utils": "4.0.0-alpha.14",
+		"@burger-editor/frozen-patty": "4.0.0-alpha.15",
+		"@burger-editor/utils": "4.0.0-alpha.15",
 		"jaco": "5.0.0",
 		"semver": "7.7.2"
 	},

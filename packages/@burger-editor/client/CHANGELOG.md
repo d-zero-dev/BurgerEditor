@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.15](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.14...v4.0.0-alpha.15) (2025-08-22)
+
+### Features
+
+- **client:** update block options to match new specs ([097a505](https://github.com/d-zero-dev/BurgerEditor/commit/097a505bc6057f58582eca7628a3ec2850cc8a89))
+
 # [4.0.0-alpha.14](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.13...v4.0.0-alpha.14) (2025-08-14)
 
 **Note:** Version bump only for package @burger-editor/client

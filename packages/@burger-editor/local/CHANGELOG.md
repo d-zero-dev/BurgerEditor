@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.15](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.14...v4.0.0-alpha.15) (2025-08-22)
+
+### Features
+
+- **core, local:** add sampleFilePath support ([aff164b](https://github.com/d-zero-dev/BurgerEditor/commit/aff164bc2e05ea13b2195c53564f8142235a7b2a))
+- **local:** add newFileContent option for file template ([156ce0d](https://github.com/d-zero-dev/BurgerEditor/commit/156ce0d1b1185db1cb1263173157efc2f3a0433c))
+
 # [4.0.0-alpha.14](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.13...v4.0.0-alpha.14) (2025-08-14)
 
 ### Features
