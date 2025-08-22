@@ -1,4 +1,7 @@
-import { BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX } from '../const.js';
+import {
+	BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX,
+	BLOCK_OPTION_SCOPE_SELECTOR,
+} from '../const.js';
 
 type CustomPropertyCategories = Map<string, Map<string, CustomProperty>>;
 
@@ -142,7 +145,7 @@ function searchCustomProperty(
 		try {
 			const styleRules = getStyleRules(styleSheet.cssRules, scope);
 			for (const cssRule of styleRules) {
-				if (cssRule.selectorText === ':root') {
+				if (cssRule.selectorText === BLOCK_OPTION_SCOPE_SELECTOR) {
 					for (const cssProperty of cssRule.style) {
 						if (!cssProperty.startsWith('--')) {
 							continue;
