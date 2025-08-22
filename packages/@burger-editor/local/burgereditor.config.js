@@ -22,7 +22,8 @@ title: 'New Page'
 ---
 <div class="custom-class-bge-local"></div>`,
 	googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
-	sampleImagePath: '/files/images/sample.png',
+	sampleImagePath: '/img/sample.png',
+	sampleFilePath: '/pdf/sample.pdf',
 	filesDir: {
 		image: '/files/images',
 		other: '/files/others',

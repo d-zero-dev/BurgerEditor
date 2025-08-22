@@ -39,18 +39,22 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 		pdf: new FileListManager(
 			userConfig.filesDir.pdf.serverPath,
 			userConfig.filesDir.pdf.clientPath,
+			userConfig.sampleFilePath,
 		),
 		video: new FileListManager(
 			userConfig.filesDir.video.serverPath,
 			userConfig.filesDir.video.clientPath,
+			userConfig.sampleFilePath,
 		),
 		audio: new FileListManager(
 			userConfig.filesDir.audio.serverPath,
 			userConfig.filesDir.audio.clientPath,
+			userConfig.sampleFilePath,
 		),
 		other: new FileListManager(
 			userConfig.filesDir.other.serverPath,
 			userConfig.filesDir.other.clientPath,
+			userConfig.sampleFilePath,
 		),
 	} as const;
 

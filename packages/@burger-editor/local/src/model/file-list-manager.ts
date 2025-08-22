@@ -17,7 +17,7 @@ export class FileListManager {
 	#allFileListCache: FileListItem[] | null = null;
 	#clientDir: string;
 	#paginationNumber: number;
-	#sampleImagePath: {
+	#samplePath: {
 		server: string;
 		client: string;
 	} | null;
@@ -26,22 +26,22 @@ export class FileListManager {
 	constructor(
 		serverDir: string,
 		clientDir: string,
-		sampleImagePath: string | null = null,
+		samplePath: string | null = null,
 		paginationNumber = 10,
 	) {
-		if (!validateClientPath(sampleImagePath)) {
+		if (!validateClientPath(samplePath)) {
 			throw new TypeError(
-				`Invalid sampleImagePath: "${sampleImagePath}". Must start with "/", "https://", or "base64:".`,
+				`Invalid Sample Path: "${samplePath}". Must start with "/", "https://", or "base64:".`,
 			);
 		}
 
 		this.#serverDir = serverDir;
 		this.#clientDir = clientDir;
 		this.#paginationNumber = paginationNumber;
-		this.#sampleImagePath = sampleImagePath
+		this.#samplePath = samplePath
 			? {
-					server: this.#getServerPath(sampleImagePath),
-					client: sampleImagePath,
+					server: this.#getServerPath(samplePath),
+					client: samplePath,
 				}
 			: null;
 	}
@@ -144,7 +144,7 @@ export class FileListManager {
 								return exclude === server;
 							}) ||
 							// Exclude sample image
-							server === this.#sampleImagePath?.server
+							server === this.#samplePath?.server
 						),
 				)
 				.map<Promise<FileData | null>>(async (file) => {
@@ -211,13 +211,13 @@ export class FileListManager {
 			.toSorted((a, b) => Number.parseInt(a.fileId) - Number.parseInt(b.fileId))
 			.toReversed();
 
-		if (this.#sampleImagePath) {
-			const stat = await fs.stat(this.#sampleImagePath.server);
+		if (this.#samplePath) {
+			const stat = await fs.stat(this.#samplePath.server);
 
 			list.unshift({
 				fileId: 'sample',
 				name: 'sample',
-				url: this.#sampleImagePath.client,
+				url: this.#samplePath.client,
 				size: stat.size,
 				timestamp: stat.mtime.valueOf(),
 				sizes: {},

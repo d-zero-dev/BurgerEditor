@@ -71,6 +71,7 @@ export interface Config {
 		readonly layer?: string;
 	}[];
 	readonly sampleImagePath: string;
+	readonly sampleFilePath: string;
 	readonly googleMapsApiKey: string | null;
 }
 

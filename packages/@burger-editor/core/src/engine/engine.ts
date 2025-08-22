@@ -86,6 +86,7 @@ export class BurgerEditorEngine {
 			Object.entries(options.blocks).map(([name, templateBlock]) => {
 				const templateCode = templateBlock.template
 					.replaceAll('%sampleImagePath%', options.config.sampleImagePath)
+					.replaceAll('%sampleFilePath%', options.config.sampleFilePath)
 					.replaceAll('%googleMapsApiKey%', options.config.googleMapsApiKey ?? '');
 				return [name, templateCode];
 			}),

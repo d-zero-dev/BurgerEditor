@@ -11,11 +11,14 @@ export interface LocalServerConfig {
 	readonly classList: readonly string[];
 	readonly editableArea: string | null;
 	readonly filesDir: LocalServerFileDirConfig;
-	readonly sampleImagePath: `/${string}` | `https://${string}` | `base64:${string}`;
+	readonly sampleImagePath: SamplePath;
+	readonly sampleFilePath: SamplePath;
 	readonly googleMapsApiKey: string | null;
 	readonly open: boolean;
 	readonly newFileContent: string;
 }
+
+export type SamplePath = `/${string}` | `https://${string}` | `base64:${string}`;
 
 export type LocalServerFileDirConfig = Record<FileType, FileDirSettings>;
 
