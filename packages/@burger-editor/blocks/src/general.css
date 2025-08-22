@@ -1,13 +1,13 @@
 :root {
 	--bge-auto-fit-base-width: calc(800 / 16 * 1rem);
 
-	/* Custom width */
-	--bge-options-width--normal: calc(800 / 16 * 1rem);
-	--bge-options-width--small: calc(400 / 16 * 1rem);
-	--bge-options-width--medium: calc(600 / 16 * 1rem);
-	--bge-options-width--large: calc(1200 / 16 * 1rem);
-	--bge-options-width--full: 100dvi;
-	--bge-options-width: var(--bge-options-width--normal);
+	/* Custom max-width */
+	--bge-options-max-width--normal: calc(800 / 16 * 1rem);
+	--bge-options-max-width--small: calc(400 / 16 * 1rem);
+	--bge-options-max-width--medium: calc(600 / 16 * 1rem);
+	--bge-options-max-width--large: calc(1200 / 16 * 1rem);
+	--bge-options-max-width--full: 100dvi;
+	--bge-options-max-width: var(--bge-options-max-width--normal);
 
 	/* Custom margin */
 	--bge-options-margin--normal: 3rem;
@@ -49,7 +49,7 @@
 :where([data-bge-container]) {
 	--bge-container-margin-block-end: var(--bge-options-margin);
 	inline-size: 100%;
-	max-inline-size: var(--bge-options-width);
+	max-inline-size: var(--bge-options-max-width);
 	margin-block-end: var(--bge-container-margin-block-end);
 	margin-inline: auto;
 	container-name: bge-container;
