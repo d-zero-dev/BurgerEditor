@@ -1,11 +1,11 @@
-import { test, expect } from 'vitest';
+import { test, expect, describe } from 'vitest';
 
 import { getCustomProperties } from './get-custom-properties.js';
 
-test('', () => {
+test('getCustomProperties', () => {
 	const style = document.createElement('style');
 	style.textContent = `
-		:root {
+		[data-bge-container] {
 			font-size: 100%;
 
 			/* Custom width */
@@ -133,5 +133,39 @@ test('', () => {
 				value: 'solid 3px currentColor',
 			},
 		},
+	});
+});
+
+describe('Deep scope', () => {
+	test('Nested scope', () => {
+		const style = document.createElement('style');
+		style.textContent = `
+			[data-bge-container] {
+				--bge-options-width--a: 100%;
+				--bge-options-width: var(--bge-options-width--a);
+			}
+
+			.custom-class-bge-local {
+				[data-bge-container] {
+					--bge-options-width--a: 200%;
+				}
+			}
+		`;
+		document.head.append(style);
+
+		const result = getCustomProperties(document);
+
+		const resultObj = Object.fromEntries(
+			[...result.entries()].map(([key, map]) => [key, Object.fromEntries(map.entries())]),
+		);
+
+		expect(resultObj).toMatchObject({
+			width: {
+				a: {
+					isDefault: true,
+					value: '200%',
+				},
+			},
+		});
 	});
 });

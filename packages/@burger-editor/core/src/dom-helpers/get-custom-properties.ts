@@ -119,7 +119,7 @@ function getStyleRules(rules: CSSRuleList, scope: Document): readonly CSSStyleRu
 
 	for (const rule of rules) {
 		if (rule instanceof CSSStyleRule) {
-			styleRules.push(rule);
+			styleRules.push(...getStyleRules(rule.cssRules, scope), rule);
 			continue;
 		}
 
@@ -145,7 +145,8 @@ function searchCustomProperty(
 		try {
 			const styleRules = getStyleRules(styleSheet.cssRules, scope);
 			for (const cssRule of styleRules) {
-				if (cssRule.selectorText === BLOCK_OPTION_SCOPE_SELECTOR) {
+				const selector = cssRule.selectorText.trim().replace(/^&/, '').trim();
+				if (selector === BLOCK_OPTION_SCOPE_SELECTOR) {
 					for (const cssProperty of cssRule.style) {
 						if (!cssProperty.startsWith('--')) {
 							continue;
