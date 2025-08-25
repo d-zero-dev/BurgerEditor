@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.17](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.16...v4.0.0-alpha.17) (2025-08-25)
+
+### Bug Fixes
+
+- **blocks:** correct image sizing in style.css ([7d18b40](https://github.com/d-zero-dev/BurgerEditor/commit/7d18b4022e3a57c9d95d8ebacbaa6d5b284d4c29))
+
+### Features
+
+- **blocks:** add flexbox styles for wysiwyg elements ([252d69c](https://github.com/d-zero-dev/BurgerEditor/commit/252d69c6d249b1be0d77800a56359bbdb24ee03d))
+- **blocks:** update scope selector and adjust container styles ([62d4f2b](https://github.com/d-zero-dev/BurgerEditor/commit/62d4f2baa876e61e46941545ce270f999e0fb61d))
+
 # [4.0.0-alpha.16](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.15...v4.0.0-alpha.16) (2025-08-22)
 
 ### Features

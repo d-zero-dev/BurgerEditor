@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.17](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.16...v4.0.0-alpha.17) (2025-08-25)
+
+### Bug Fixes
+
+- **blocks:** correct image sizing in style.css ([7d18b40](https://github.com/d-zero-dev/BurgerEditor/commit/7d18b4022e3a57c9d95d8ebacbaa6d5b284d4c29))
+- **core:** resolve issue with initial property definitions in get-custom-properties ([3e3c3b8](https://github.com/d-zero-dev/BurgerEditor/commit/3e3c3b8e0bd632115de07ece713477b982cbf204))
+
+### Features
+
+- **blocks:** add flexbox styles for wysiwyg elements ([252d69c](https://github.com/d-zero-dev/BurgerEditor/commit/252d69c6d249b1be0d77800a56359bbdb24ee03d))
+- **blocks:** update scope selector and adjust container styles ([62d4f2b](https://github.com/d-zero-dev/BurgerEditor/commit/62d4f2baa876e61e46941545ce270f999e0fb61d))
+- **core:** change scope selector for custom properties ([d53552c](https://github.com/d-zero-dev/BurgerEditor/commit/d53552c17420ea5d0e3d1fd395654a45afc9ba43))
+- **core:** enhance custom property retrieval with nested scope support ([abcd22c](https://github.com/d-zero-dev/BurgerEditor/commit/abcd22cf1afeb0cf1d7fd6404d52ec5034613381))
+
 # [4.0.0-alpha.16](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.15...v4.0.0-alpha.16) (2025-08-22)
 
 ### Features
