@@ -71,6 +71,9 @@ export async function createEditor() {
 				'image-text4': '画像4列: テキスト付',
 				'image-text5': '画像5列: テキスト付',
 			},
+			カード: {
+				'text-image-text': 'テキスト+画像+テキスト',
+			},
 			ボタン: {
 				button: 'ボタン',
 				button2: 'ボタン x2',
