@@ -25,22 +25,22 @@ export function getCustomProperties(scope: Document): CustomPropertyCategories {
 			return;
 		}
 
-		const [type, key] = cssProperty
+		const [propName, key] = cssProperty
 			.slice(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX.length)
 			.split('--');
-		if (!type) {
+		if (!propName) {
 			return;
 		}
 
-		const currentMap: CustomPropertyMap = categories.get(type) ?? new Map();
+		const currentMap: CustomPropertyMap = categories.get(propName) ?? new Map();
 
 		if (key) {
 			currentMap.set(key, { value, isDefault: false });
 		} else {
-			defaultValues.set(type, value);
+			defaultValues.set(propName, value);
 		}
 
-		categories.set(type, currentMap);
+		categories.set(propName, currentMap);
 	});
 
 	for (const propList of categories.values()) {
