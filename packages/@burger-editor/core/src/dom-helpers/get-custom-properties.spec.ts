@@ -1,6 +1,10 @@
-import { test, expect, describe } from 'vitest';
+import { test, expect, describe, beforeEach } from 'vitest';
 
 import { getCustomProperties } from './get-custom-properties.js';
+
+beforeEach(() => {
+	document.head.innerHTML = '';
+});
 
 test('getCustomProperties', () => {
 	const style = document.createElement('style');
@@ -192,6 +196,58 @@ describe('Deep scope', () => {
 				a: {
 					isDefault: true,
 					value: '200%',
+				},
+			},
+		});
+	});
+});
+
+describe('type', () => {
+	test('type', () => {
+		const style = document.createElement('style');
+		style.textContent = `
+			[data-bge-container] {
+				--bge-options-_grid_foo--default: 1;
+				--bge-options-_grid_foo: var(--bge-options-_grid_foo--default);
+
+				--bge-options-_inline_bar--default: 2;
+				--bge-options-_inline_bar: var(--bge-options-_inline_bar--default);
+
+				--bge-options-_float_baz--default: 3;
+				--bge-options-_float_baz: var(--bge-options-_float_baz--default);
+			}
+		`;
+		document.head.append(style);
+
+		const result = getCustomProperties(document);
+
+		const resultObj = Object.fromEntries(
+			[...result.entries()].map(([key, map]) => [key, Object.fromEntries(map.entries())]),
+		);
+
+		expect(resultObj).toMatchObject({
+			_grid_foo: {
+				default: {
+					name: 'foo',
+					isDefault: true,
+					value: '1',
+					containerType: 'grid',
+				},
+			},
+			_inline_bar: {
+				default: {
+					name: 'bar',
+					isDefault: true,
+					value: '2',
+					containerType: 'inline',
+				},
+			},
+			_float_baz: {
+				default: {
+					name: 'baz',
+					isDefault: true,
+					value: '3',
+					containerType: 'float',
 				},
 			},
 		});

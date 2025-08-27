@@ -5,7 +5,13 @@ import {
 	BLOCK_OPTION_SCOPE_SELECTOR,
 } from '../const.js';
 
-type CustomPropertyCategories = Map<string, Map<string, CustomProperty>>;
+type CustomPropertyCategories = Map<string, CustomPropertyCategory>;
+
+type CustomPropertyCategory = {
+	readonly id: string;
+	readonly name: string;
+	readonly properties: CustomPropertyMap;
+};
 
 type CustomPropertyMap = Map<string, CustomProperty>;
 
@@ -42,10 +48,14 @@ export function getCustomProperties(
 			return;
 		}
 
-		const currentMap: CustomPropertyMap = categories.get(propName) ?? new Map();
+		const currentMap = categories.get(propName) ?? {
+			id: propName,
+			name: propName.replaceAll(/^_[a-z]+_/g, ''),
+			properties: new Map(),
+		};
 
 		if (key) {
-			currentMap.set(key, { value, isDefault: false });
+			currentMap.properties.set(key, { value, isDefault: false });
 		} else {
 			defaultValues.set(propName, value);
 		}
@@ -54,9 +64,9 @@ export function getCustomProperties(
 	});
 
 	for (const propList of categories.values()) {
-		for (const [key, customProperty] of propList.entries()) {
+		for (const [key, customProperty] of propList.properties.entries()) {
 			if (customProperty.value.trim().toLowerCase() === 'null') {
-				propList.delete(key);
+				propList.properties.delete(key);
 			}
 		}
 	}
@@ -68,7 +78,7 @@ export function getCustomProperties(
 			continue;
 		}
 
-		for (const [key, customProperty] of currentMap.entries()) {
+		for (const [key, customProperty] of currentMap.properties.entries()) {
 			if (
 				value === `var(${BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX}${category}--${key})`
 			) {

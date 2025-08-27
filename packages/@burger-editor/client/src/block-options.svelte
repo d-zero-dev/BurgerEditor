@@ -179,14 +179,14 @@
 	<fieldset>
 		<legend>ブロックのスタイル拡張</legend>
 
-		{#each cssProps as [category, props] (`bge-options-style-${category}`)}
+		{#each cssProps as [, category] (`bge-options-style-${category.id}`)}
 			<label>
-				<span>{category}</span>
-				<select name={`bge-options-style-${category}`}>
-					{#each props as [propName, data] (propName)}
+				<span>{category.name}</span>
+				<select name={`bge-options-style-${category.id}`}>
+					{#each category.properties as [propName, data] (propName)}
 						<option
 							value={data.isDefault ? '@@default' : propName}
-							selected={options.style[category] === propName || data.isDefault}
+							selected={options.style[category.id] === propName || data.isDefault}
 							>{`${propName} (${data.value})`}</option>
 					{/each}
 				</select>
