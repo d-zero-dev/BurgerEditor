@@ -148,6 +148,34 @@ describe('Deep scope', () => {
 			.custom-class-bge-local {
 				[data-bge-container] {
 					--bge-options-width--a: 200%;
+
+					@container bge-container (width < 600px) {
+						--bge-options-width--a: 300%;
+					}
+				}
+
+				@media (width < 600px) {
+					[data-bge-container] {
+						--bge-options-width--a: 400%;
+					}
+				}
+
+				@container bge-container (width < 600px) {
+					[data-bge-container] {
+						--bge-options-width--a: 500%;
+					}
+				}
+
+				@supports (container-name: bge-container) {
+					[data-bge-container] {
+						--bge-options-width--a: 600%;
+					}
+				}
+
+				@scope (scope root) to (scope limit) {
+					[data-bge-container] {
+						--bge-options-width--a: 700%;
+					}
 				}
 			}
 		`;

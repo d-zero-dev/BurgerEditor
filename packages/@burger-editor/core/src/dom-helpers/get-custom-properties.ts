@@ -110,23 +110,25 @@ function getStyleRules(rules: CSSRuleList, scope: Document): readonly CSSStyleRu
 		throw new Error('CSSStyleRule is not available');
 	}
 
-	const CSSGroupingRule = scope.defaultView?.CSSGroupingRule;
-	if (CSSGroupingRule === undefined) {
-		throw new Error('CSSGroupingRule is not available');
+	const CSSLayerBlockRule = scope.defaultView?.CSSLayerBlockRule;
+	if (CSSLayerBlockRule === undefined) {
+		throw new Error('CSSLayerBlockRule is not available');
 	}
 
 	const styleRules: CSSStyleRule[] = [];
 
 	for (const rule of rules) {
-		if (rule instanceof CSSStyleRule) {
+		if (rule instanceof CSSStyleRule && rule.selectorText) {
 			styleRules.push(...getStyleRules(rule.cssRules, scope), rule);
 			continue;
 		}
 
-		if (rule instanceof CSSGroupingRule) {
+		if (rule instanceof CSSLayerBlockRule) {
 			styleRules.push(...getStyleRules(rule.cssRules, scope));
 			continue;
 		}
+
+		break;
 	}
 
 	return styleRules;
