@@ -14,13 +14,13 @@
 	} as const;
 
 	const currentBlock = engine.getCurrentBlock();
-	const cssProps = engine.getCustomProperties();
 
 	if (!currentBlock) {
 		throw new Error('currentBlock is null');
 	}
 
 	const options = currentBlock.exportOptions();
+	const cssProps = engine.getCustomProperties(options.props.type);
 
 	const autoFitBaseWidth = engine.getCustomProperty('--bge-auto-fit-base-width');
 
