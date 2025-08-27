@@ -6,6 +6,23 @@ beforeEach(() => {
 	document.head.innerHTML = '';
 });
 
+/**
+ *
+ * @param result
+ */
+function toObject(result: ReturnType<typeof getCustomProperties>) {
+	return Object.fromEntries(
+		[...result.entries()].map(([key, map]) => [
+			key,
+			{
+				id: map.id,
+				name: map.name,
+				properties: Object.fromEntries(map.properties.entries()),
+			},
+		]),
+	);
+}
+
 test('getCustomProperties', () => {
 	const style = document.createElement('style');
 	style.textContent = `
@@ -48,93 +65,107 @@ test('getCustomProperties', () => {
 
 	const result = getCustomProperties(document);
 
-	const resultObj = Object.fromEntries(
-		[...result.entries()].map(([key, map]) => [key, Object.fromEntries(map.entries())]),
-	);
+	const resultObj = toObject(result);
 
 	expect(resultObj).toMatchObject({
 		width: {
-			normal: {
-				isDefault: true,
-				value: 'calc(800 / 16 * 1rem)',
-			},
-			small: {
-				isDefault: false,
-				value: 'calc(400 / 16 * 1rem)',
-			},
-			medium: {
-				isDefault: false,
-				value: 'calc(600 / 16 * 1rem)',
-			},
-			large: {
-				isDefault: false,
-				value: 'calc(1200 / 16 * 1rem)',
-			},
-			full: {
-				isDefault: false,
-				value: '100dvi',
+			id: 'width',
+			name: 'width',
+			properties: {
+				normal: {
+					isDefault: true,
+					value: 'calc(800 / 16 * 1rem)',
+				},
+				small: {
+					isDefault: false,
+					value: 'calc(400 / 16 * 1rem)',
+				},
+				medium: {
+					isDefault: false,
+					value: 'calc(600 / 16 * 1rem)',
+				},
+				large: {
+					isDefault: false,
+					value: 'calc(1200 / 16 * 1rem)',
+				},
+				full: {
+					isDefault: false,
+					value: '100dvi',
+				},
 			},
 		},
 		margin: {
-			normal: {
-				isDefault: true,
-				value: '3rem',
-			},
-			none: {
-				isDefault: false,
-				value: '0',
-			},
-			small: {
-				isDefault: false,
-				value: '1rem',
-			},
-			large: {
-				isDefault: false,
-				value: '8rem',
+			id: 'margin',
+			name: 'margin',
+			properties: {
+				normal: {
+					isDefault: true,
+					value: '3rem',
+				},
+				none: {
+					isDefault: false,
+					value: '0',
+				},
+				small: {
+					isDefault: false,
+					value: '1rem',
+				},
+				large: {
+					isDefault: false,
+					value: '8rem',
+				},
 			},
 		},
 		bgcolor: {
-			transparent: {
-				isDefault: true,
-				value: 'transparent',
-			},
-			white: {
-				isDefault: false,
-				value: '#fff',
-			},
-			gray: {
-				isDefault: false,
-				value: '#dfdfdf',
-			},
-			blue: {
-				isDefault: false,
-				value: '#eaf3f8',
-			},
-			red: {
-				isDefault: false,
-				value: '#fcc',
+			id: 'bgcolor',
+			name: 'bgcolor',
+			properties: {
+				transparent: {
+					isDefault: true,
+					value: 'transparent',
+				},
+				white: {
+					isDefault: false,
+					value: '#fff',
+				},
+				gray: {
+					isDefault: false,
+					value: '#dfdfdf',
+				},
+				blue: {
+					isDefault: false,
+					value: '#eaf3f8',
+				},
+				red: {
+					isDefault: false,
+					value: '#fcc',
+				},
 			},
 		},
 		border: {
-			none: {
-				isDefault: true,
-				value: 'none',
-			},
-			solid: {
-				isDefault: false,
-				value: 'solid 1px currentColor',
-			},
-			dashed: {
-				isDefault: false,
-				value: 'dashed 1px currentColor',
-			},
-			dotted: {
-				isDefault: false,
-				value: 'dotted 1px currentColor',
-			},
-			wide: {
-				isDefault: false,
-				value: 'solid 3px currentColor',
+			id: 'border',
+			name: 'border',
+			properties: {
+				none: {
+					isDefault: true,
+					value: 'none',
+				},
+				solid: {
+					isDefault: false,
+					value: 'solid 1px currentColor',
+				},
+				dashed: {
+					isDefault: false,
+					value: 'dashed 1px currentColor',
+				},
+				dotted: {
+					isDefault: false,
+					value: 'dotted 1px currentColor',
+				},
+				wide: {
+					isDefault: false,
+					value: 'solid 3px currentColor',
+				},
 			},
 		},
 	});
@@ -187,15 +218,17 @@ describe('Deep scope', () => {
 
 		const result = getCustomProperties(document);
 
-		const resultObj = Object.fromEntries(
-			[...result.entries()].map(([key, map]) => [key, Object.fromEntries(map.entries())]),
-		);
+		const resultObj = toObject(result);
 
 		expect(resultObj).toMatchObject({
 			width: {
-				a: {
-					isDefault: true,
-					value: '200%',
+				id: 'width',
+				name: 'width',
+				properties: {
+					a: {
+						isDefault: true,
+						value: '200%',
+					},
 				},
 			},
 		});
@@ -219,35 +252,45 @@ describe('type', () => {
 		`;
 		document.head.append(style);
 
-		const result = getCustomProperties(document);
+		const resultGrid = getCustomProperties(document, 'grid');
+		const resultInline = getCustomProperties(document, 'inline');
+		const resultFloat = getCustomProperties(document, 'float');
 
-		const resultObj = Object.fromEntries(
-			[...result.entries()].map(([key, map]) => [key, Object.fromEntries(map.entries())]),
-		);
+		const resultObj = {
+			...toObject(resultGrid),
+			...toObject(resultInline),
+			...toObject(resultFloat),
+		};
 
 		expect(resultObj).toMatchObject({
 			_grid_foo: {
-				default: {
-					name: 'foo',
-					isDefault: true,
-					value: '1',
-					containerType: 'grid',
+				id: '_grid_foo',
+				name: 'foo',
+				properties: {
+					default: {
+						isDefault: true,
+						value: '1',
+					},
 				},
 			},
 			_inline_bar: {
-				default: {
-					name: 'bar',
-					isDefault: true,
-					value: '2',
-					containerType: 'inline',
+				id: '_inline_bar',
+				name: 'bar',
+				properties: {
+					default: {
+						isDefault: true,
+						value: '2',
+					},
 				},
 			},
 			_float_baz: {
-				default: {
-					name: 'baz',
-					isDefault: true,
-					value: '3',
-					containerType: 'float',
+				id: '_float_baz',
+				name: 'baz',
+				properties: {
+					default: {
+						isDefault: true,
+						value: '3',
+					},
 				},
 			},
 		});
