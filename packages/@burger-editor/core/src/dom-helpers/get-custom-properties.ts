@@ -1,3 +1,5 @@
+import type { ContainerType } from '../block/types.js';
+
 import {
 	BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX,
 	BLOCK_OPTION_SCOPE_SELECTOR,
@@ -15,8 +17,12 @@ type CustomProperty = {
 /**
  * Get all custom properties from document
  * @param scope
+ * @param containerType
  */
-export function getCustomProperties(scope: Document): CustomPropertyCategories {
+export function getCustomProperties(
+	scope: Document,
+	containerType?: ContainerType,
+): CustomPropertyCategories {
 	const categories: CustomPropertyCategories = new Map();
 	const defaultValues = new Map<string, string>();
 
@@ -29,6 +35,10 @@ export function getCustomProperties(scope: Document): CustomPropertyCategories {
 			.slice(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX.length)
 			.split('--');
 		if (!propName) {
+			return;
+		}
+
+		if (propName.startsWith('_') && !propName.startsWith(`_${containerType}_`)) {
 			return;
 		}
 

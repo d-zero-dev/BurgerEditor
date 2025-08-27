@@ -1,3 +1,4 @@
+import type { ContainerType } from '../block/types.js';
 import type { ItemData, ItemSeed } from '../item/types.js';
 import type { BurgerEditorEngineOptions, UIOptions, Config, FileAPI } from '../types.js';
 
@@ -178,8 +179,11 @@ export class BurgerEditorEngine {
 		return this.#currentBlock;
 	}
 
-	getCustomProperties() {
-		return getCustomProperties(this.#current.containerElement.ownerDocument);
+	getCustomProperties(containerType?: ContainerType) {
+		return getCustomProperties(
+			this.#current.containerElement.ownerDocument,
+			containerType,
+		);
 	}
 
 	getCustomProperty(property: string | RegExp) {

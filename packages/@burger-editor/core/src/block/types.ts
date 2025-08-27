@@ -12,7 +12,7 @@ export interface BlockOptions {
 }
 
 export type ContainerProps = {
-	readonly type: 'grid' | 'inline' | 'float';
+	readonly type: ContainerType;
 	readonly immutable: boolean;
 	readonly autoFit: boolean;
 	readonly justify: 'center' | 'start' | 'end' | 'between' | 'around' | 'evenly' | null;
@@ -27,3 +27,5 @@ export type ContainerProps = {
 	readonly columns: number | null;
 	readonly float: 'start' | 'end' | null;
 };
+
+export type ContainerType = 'grid' | 'inline' | 'float';
