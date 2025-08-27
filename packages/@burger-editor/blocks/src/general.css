@@ -39,11 +39,26 @@
 	--bge-options-padding-inline--large: 5rem;
 	--bge-options-padding-inline: var(--bge-options-padding-inline--default-gutter);
 
-	/* Custom gap */
-	--bge-options-gap--normal: 1rem;
-	--bge-options-gap--small: 0.5rem;
-	--bge-options-gap--large: 2rem;
-	--bge-options-gap: var(--bge-options-gap--normal);
+	/* Custom column gap */
+	--bge-options-column-gap--normal: 1rem;
+	--bge-options-column-gap--none: 0;
+	--bge-options-column-gap--small: 0.5rem;
+	--bge-options-column-gap--large: 5rem;
+	--bge-options-column-gap: var(--bge-options-column-gap--normal);
+
+	/* Custom row gap */
+	--bge-options-row-gap--normal: 1rem;
+	--bge-options-row-gap--none: 0;
+	--bge-options-row-gap--small: 0.5rem;
+	--bge-options-row-gap--large: 5rem;
+	--bge-options-row-gap: var(--bge-options-row-gap--normal);
+
+	/* Custom subgrid gap factor (grid type only) */
+	--bge-options-_grid_subgrid-gap--normal: 1rem;
+	--bge-options-_grid_subgrid-gap--none: 0;
+	--bge-options-_grid_subgrid-gap--small: 0.5rem;
+	--bge-options-_grid_subgrid-gap--large: 1rem;
+	--bge-options-_grid_subgrid-gap: var(--bge-options-_grid_subgrid-gap--normal);
 }
 
 :where([data-bge-container]) {
@@ -70,6 +85,10 @@
 }
 
 :where([data-bge-container='grid'], [data-bge-container^='grid:']) {
+	--_gap-block: var(--bge-options-row-gap, var(--bge-options-gap));
+	--_gap-inline: var(--bge-options-column-gap, var(--bge-options-gap));
+	--_subgrid-gap: var(--bge-options-_grid_subgrid-gap, var(--_gap-block));
+
 	&:where([data-bge-container$=':2'], [data-bge-container*=':2:'])
 		:where([data-bge-container-frame]) {
 		--bge-grid-col: 2;
@@ -93,7 +112,7 @@
 	:where([data-bge-container-frame]) {
 		display: grid;
 		grid-template-columns: repeat(var(--bge-grid-col, 1), minmax(0, 1fr));
-		gap: var(--bge-options-gap);
+		gap: var(--_gap-block) var(--_gap-inline);
 
 		&:is([data-bge-container*=':auto-fit:'] *) {
 			grid-template-columns: repeat(
@@ -108,6 +127,7 @@
 		display: grid;
 		grid-template-rows: subgrid;
 		grid-row: span var(--item-count);
+		gap: var(--_subgrid-gap) 0;
 
 		/* Subgrid hack 2 items */
 		&[data-bge-group]:has([data-bge-item]:nth-child(2):last-child) {
@@ -153,10 +173,13 @@
 }
 
 :where([data-bge-container='inline'], [data-bge-container^='inline:']) {
+	--_gap-block: var(--bge-options-row-gap, var(--bge-options-gap));
+	--_gap-inline: var(--bge-options-column-gap, var(--bge-options-gap));
+
 	:where([data-bge-container-frame]) {
 		display: flex;
 		flex-wrap: wrap;
-		gap: var(--bge-options-gap);
+		gap: var(--_gap-block) var(--_gap-inline);
 		align-items: stretch;
 		justify-content: center;
 
@@ -237,17 +260,19 @@
 }
 
 :where([data-bge-container='float'], [data-bge-container^='float:']) {
+	--_gap-block: var(--bge-options-row-gap, var(--bge-options-gap));
+	--_gap-inline: var(--bge-options-column-gap, var(--bge-options-gap));
 	--bge-grid-float: none;
 	--margin-inline: 0;
 
 	&:where([data-bge-container$=':start'], [data-bge-container*=':start:']) {
 		--bge-grid-float: inline-start;
-		--margin-inline: 0 var(--bge-options-gap);
+		--margin-inline: 0 var(--_gap-inline);
 	}
 
 	&:where([data-bge-container$=':end'], [data-bge-container*=':end:']) {
 		--bge-grid-float: inline-end;
-		--margin-inline: var(--bge-options-gap) 0;
+		--margin-inline: var(--_gap-inline) 0;
 	}
 
 	:where([data-bge-container-frame]) {
@@ -269,9 +294,11 @@
  * MARK: Wysiwyg内 横並び（フレックス）ボックス
  */
 :where([data-bgc-flex-box]) {
+	--_gap-block: var(--bge-options-row-gap, var(--bge-options-gap));
+	--_gap-inline: var(--bge-options-column-gap, var(--bge-options-gap));
 	display: flex;
 	flex-wrap: wrap;
-	gap: var(--bge-options-gap);
+	gap: var(--_gap-block) var(--_gap-inline);
 	align-items: center;
 
 	&[data-bgc-flex-box='start'] {
