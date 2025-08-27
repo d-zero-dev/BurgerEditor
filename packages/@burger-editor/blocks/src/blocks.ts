@@ -19,6 +19,7 @@ import image5 from './blocks/image5/index.js';
 import table from './blocks/table/index.js';
 import textFloatImage1 from './blocks/text-float-image1/index.js';
 import textFloatImage2 from './blocks/text-float-image2/index.js';
+import textImageText from './blocks/text-image-text/index.js';
 import textImage1 from './blocks/text-image1/index.js';
 import textImage2 from './blocks/text-image2/index.js';
 import title from './blocks/title/index.js';
@@ -48,6 +49,7 @@ export const blocks = {
 	table,
 	'text-float-image1': textFloatImage1,
 	'text-float-image2': textFloatImage2,
+	'text-image-text': textImageText,
 	'text-image1': textImage1,
 	'text-image2': textImage2,
 	title,
