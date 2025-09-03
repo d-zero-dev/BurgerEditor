@@ -8,6 +8,7 @@ export default createItem<{
 	link: string;
 	target: '' | '_blank' | '_top' | '_self';
 	text: string;
+	subtext: string;
 	kind: 'link' | 'em' | 'external' | 'back';
 }>({
 	version: __VERSION__,
