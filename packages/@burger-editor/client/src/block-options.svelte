@@ -25,16 +25,43 @@
 	const autoFitBaseWidth = engine.getCustomProperty('--bge-auto-fit-base-width');
 
 	let currentColumns = $state(options.props.columns ?? 1);
+	let currentContainerType = $state(options.props.type);
+
+	// floatタイプは変更不可なので、元のタイプを使用
+	const effectiveContainerType = $derived(
+		options.props.type === 'float' ? options.props.type : currentContainerType,
+	);
+
+	/**
+	 * コンテナタイプ変更時の処理
+	 * @param e - change イベント
+	 */
+	function handleContainerTypeChange(e: Event) {
+		const target = e.currentTarget as HTMLSelectElement;
+		currentContainerType = target.value as 'grid' | 'inline' | 'float';
+	}
 </script>
 
 {#if options}
 	<fieldset>
 		<legend>コンテナ特性</legend>
-		<label>
-			<span>コンテナタイプ</span>
-			<output>{containerTypeLabel[options.props.type]} ({options.props.type})</output>
-		</label>
-		{#if options.props.type === 'inline'}
+		{#if options.props.immutable || options.props.type === 'float'}
+			<label>
+				<span>コンテナタイプ</span>
+				<output>{containerTypeLabel[options.props.type]} ({options.props.type})</output>
+			</label>
+		{:else}
+			<label>
+				<span>コンテナタイプ</span>
+				<select name="bge-options-container-type" onchange={handleContainerTypeChange}>
+					<option value="grid" selected={currentContainerType === 'grid'}
+						>{containerTypeLabel.grid}</option>
+					<option value="inline" selected={currentContainerType === 'inline'}
+						>{containerTypeLabel.inline}</option>
+				</select>
+			</label>
+		{/if}
+		{#if effectiveContainerType === 'inline'}
 			<div role="radiogroup" aria-labelledby="justify-group">
 				<div id="justify-group">横方向配置</div>
 				<label>
@@ -122,8 +149,8 @@
 				</label>
 			</div>
 		{/if}
-		{#if options.props.type === 'grid'}
-			{#if options.props.immutable}
+		{#if effectiveContainerType === 'grid'}
+			{#if options.props.immutable || options.props.type === 'float'}
 				<p>このブロックはコンテナタイプを変更できません。</p>
 			{:else}
 				<label>
@@ -153,7 +180,7 @@
 				</small>
 			{/if}
 		{/if}
-		{#if options.props.type === 'float'}
+		{#if effectiveContainerType === 'float'}
 			<div role="radiogroup" aria-labelledby="float-group">
 				<div id="float-group">回り込み</div>
 				<label>

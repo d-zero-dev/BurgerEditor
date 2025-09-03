@@ -32,6 +32,7 @@ export class BlockOptionsDialog extends EditorDialog {
 			return;
 		}
 
+		const containerType = formData.get('bge-options-container-type');
 		const columns = formData.get('bge-options-columns');
 		const autoFit = formData.get('bge-options-auto-fit');
 		const justify = formData.get('bge-options-justify');
@@ -55,6 +56,7 @@ export class BlockOptionsDialog extends EditorDialog {
 		const newOptions: BlockOptions = {
 			props: {
 				...currentOptions.props,
+				type: (containerType as 'grid' | 'inline' | 'float') ?? currentOptions.props.type,
 				columns: columns ? Number(columns) : null,
 				autoFit: autoFit ? true : false,
 				justify: justify as
