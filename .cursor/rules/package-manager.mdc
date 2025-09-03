@@ -1,0 +1,51 @@
+---
+alwaysApply: true
+description: Package manager and script execution rules for this monorepo project
+---
+
+# Package Manager Rules
+
+## Primary Package Manager
+
+- **Always use `yarn` as the primary package manager**
+- Use `npx` for direct command execution when needed
+
+## Package Installation
+
+- **Always use exact versions when adding packages** (e.g., `yarn add package@1.2.3` not `yarn add package`)
+- This ensures version consistency and lets Renovate handle future updates
+- Example: `yarn add @tiptap/extension-image@3.3.1`
+
+## Script Execution in Monorepo
+
+- **All yarn scripts should be executed from the project root**
+- No need to `cd` into specific packages - yarn handles monorepo workspace resolution
+- Examples:
+  - ✅ `yarn build` (from root)
+  - ✅ `yarn test` (from root)
+  - ❌ `cd packages/some-package && yarn build`
+
+## Testing and Linting
+
+- **Use `npx` for running tests/lints on specific files**
+- **Always use `yarn vitest run` instead of `yarn vitest`** to avoid interactive mode
+- Interactive mode prevents process termination in CI/automated environments
+- Examples:
+  - `npx vitest run packages/some-package/src/file.test.ts`
+  - `npx eslint packages/some-package/src/file.ts`
+
+## Command Examples
+
+```bash
+# Package installation (exact version)
+yarn add @tiptap/extension-image@3.3.1
+
+# Build from root
+yarn build
+
+# Test with proper run flag
+yarn vitest run
+
+# Direct execution
+npx eslint src/file.ts
+```
