@@ -26,6 +26,9 @@ export type ContainerProps = {
 	readonly wrap: 'wrap' | 'nowrap' | null;
 	readonly columns: number | null;
 	readonly float: 'start' | 'end' | null;
+	readonly frameSemantics: ContainerFrameSemantics;
 };
 
 export type ContainerType = 'grid' | 'inline' | 'float';
+
+export type ContainerFrameSemantics = 'div' | 'ul' | 'ol';

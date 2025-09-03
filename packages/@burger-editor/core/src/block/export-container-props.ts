@@ -52,5 +52,6 @@ export function exportContainerProps(containerPropsQuery?: string): ContainerPro
 				? (Number.parseInt(findValuePatternFromArray(options, /[1-9]\d*/) ?? '', 10) ?? 1)
 				: null,
 		float: type === 'float' ? findValueFromArray(options, ['start', 'end']) : null,
+		frameSemantics: findValueFromArray(options, ['div', 'ul', 'ol']) ?? 'div',
 	};
 }

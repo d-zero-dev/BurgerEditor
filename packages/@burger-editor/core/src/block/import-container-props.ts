@@ -5,8 +5,17 @@ import type { ContainerProps } from './types.js';
  * @param containerProps
  */
 export function importContainerProps(containerProps?: ContainerProps): string {
-	const { type, immutable, autoFit, justify, align, wrap, columns, float } =
-		containerProps ?? {};
+	const {
+		type,
+		immutable,
+		autoFit,
+		justify,
+		align,
+		wrap,
+		columns,
+		float,
+		frameSemantics,
+	} = containerProps ?? {};
 	const options = new Set<string>();
 	if (immutable) {
 		options.add('immutable');
@@ -28,6 +37,9 @@ export function importContainerProps(containerProps?: ContainerProps): string {
 	}
 	if (float) {
 		options.add(float);
+	}
+	if (frameSemantics && frameSemantics !== 'div') {
+		options.add(frameSemantics);
 	}
 
 	const query = [type, ...options].join(':');
