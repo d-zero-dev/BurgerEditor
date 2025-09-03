@@ -1,4 +1,4 @@
-import type { BlockData, BlockOptions } from './types.js';
+import type { BlockData, BlockOptions, ContainerFrameSemantics } from './types.js';
 import type { BurgerEditorEngine } from '../engine/engine.js';
 import type { ItemData } from '../item/types.js';
 
@@ -57,6 +57,65 @@ export class BurgerBlock {
 		BurgerBlock.#blocks.set(this.el, this);
 	}
 
+	/**
+	 * Change the semantic type of container frame and groups
+	 * @param frameSemantics - The semantic type to change to
+	 */
+	changeFrameSemantics(frameSemantics: ContainerFrameSemantics) {
+		const containerFrame = this.el.querySelector('[data-bge-container-frame]');
+		if (!containerFrame) {
+			throw new Error('Container frame not found');
+		}
+
+		// Backup current state for rollback
+		const backup = this.#export();
+
+		try {
+			// Determine target elements
+			const frameTagName = frameSemantics === 'div' ? 'div' : frameSemantics;
+			const groupTagName = frameSemantics === 'div' ? 'div' : 'li';
+
+			// Create new container frame element
+			const newFrame = document.createElement(frameTagName);
+			this.#copyAttributes(containerFrame, newFrame);
+
+			// Transform groups
+			const groups = containerFrame.querySelectorAll('[data-bge-group]');
+			for (const group of groups) {
+				const newGroup = document.createElement(groupTagName);
+				this.#copyAttributes(group, newGroup);
+
+				// Move all child content
+				while (group.firstChild) {
+					newGroup.append(group.firstChild);
+				}
+
+				newFrame.append(newGroup);
+			}
+
+			// Replace old frame with new frame
+			containerFrame.parentNode?.replaceChild(newFrame, containerFrame);
+
+			// Update internal references
+			BurgerBlock.#blocks.set(this.el, this);
+
+			// Update options with new frameSemantics
+			const currentOptions = this.exportOptions();
+			this.importOptions({
+				...currentOptions,
+				props: {
+					...currentOptions.props,
+					frameSemantics,
+				},
+			});
+		} catch (error) {
+			// Rollback on error
+			this.#import(backup);
+			throw new Error(
+				`Frame semantics change failed: ${error instanceof Error ? error.message : error}`,
+			);
+		}
+	}
 	clone() {
 		const originalData: BlockData = this.#export();
 		const newBlock = new BurgerBlock(this.engine, this.el.dataset.bgeName ?? 'unknown');
@@ -142,6 +201,20 @@ export class BurgerBlock {
 			this.items,
 			(items) => (this.items = items),
 		);
+	}
+
+	/**
+	 * Copy all attributes from source to target element
+	 * @param source - Source element
+	 * @param target - Target element
+	 */
+	#copyAttributes(source: Element, target: Element) {
+		for (const attr of source.attributes) {
+			target.setAttribute(attr.name, attr.value);
+		}
+
+		// Copy classes
+		target.className = source.className;
 	}
 
 	#export() {
