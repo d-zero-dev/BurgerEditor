@@ -12,6 +12,7 @@ test('グリッドタイプのコンテナを正しく解析する', () => {
 		wrap: null,
 		columns: 2,
 		float: null,
+		frameSemantics: 'div',
 	});
 
 	expect(exportContainerProps('grid:3:immutable')).toEqual({
@@ -23,6 +24,7 @@ test('グリッドタイプのコンテナを正しく解析する', () => {
 		wrap: null,
 		columns: 3,
 		float: null,
+		frameSemantics: 'div',
 	});
 
 	expect(exportContainerProps('grid:3:auto-fit')).toEqual({
@@ -34,6 +36,7 @@ test('グリッドタイプのコンテナを正しく解析する', () => {
 		wrap: null,
 		columns: 3,
 		float: null,
+		frameSemantics: 'div',
 	});
 });
 
@@ -47,6 +50,7 @@ test('インラインタイプのコンテナを正しく解析する', () => {
 		wrap: 'wrap',
 		columns: null,
 		float: null,
+		frameSemantics: 'div',
 	});
 
 	expect(exportContainerProps('inline:between:align-center:nowrap')).toEqual({
@@ -58,6 +62,7 @@ test('インラインタイプのコンテナを正しく解析する', () => {
 		wrap: 'nowrap',
 		columns: null,
 		float: null,
+		frameSemantics: 'div',
 	});
 });
 
@@ -71,6 +76,7 @@ test('フロートタイプのコンテナを正しく解析する', () => {
 		wrap: null,
 		columns: null,
 		float: 'start',
+		frameSemantics: 'div',
 	});
 
 	expect(exportContainerProps('float:end:immutable')).toEqual({
@@ -82,6 +88,7 @@ test('フロートタイプのコンテナを正しく解析する', () => {
 		wrap: null,
 		columns: null,
 		float: 'end',
+		frameSemantics: 'div',
 	});
 });
 
@@ -95,6 +102,7 @@ test('コンテナタイプが未定義の場合、デフォルト値を返す',
 		wrap: null,
 		columns: null,
 		float: null,
+		frameSemantics: 'div',
 	});
 });
 
@@ -108,5 +116,6 @@ test('無効なオプションは無視される', () => {
 		wrap: null,
 		columns: 2,
 		float: null,
+		frameSemantics: 'div',
 	});
 });
