@@ -166,7 +166,7 @@ __metadata:
   dependencies:
     "@tabler/icons": "npm:3.34.1"
     "@tiptap/core": "npm:3.4.1"
-    "@tiptap/extension-image": "npm:^3.4.1"
+    "@tiptap/extension-image": "npm:3.4.1"
     "@tiptap/extension-table": "npm:3.4.1"
     "@tiptap/pm": "npm:3.4.1"
     "@tiptap/starter-kit": "npm:3.4.1"
@@ -3811,7 +3811,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tiptap/extension-image@npm:^3.4.1":
+"@tiptap/extension-image@npm:3.4.1":
   version: 3.4.1
   resolution: "@tiptap/extension-image@npm:3.4.1"
   peerDependencies:
