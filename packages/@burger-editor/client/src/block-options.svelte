@@ -83,7 +83,7 @@
 				</select>
 			</label>
 		{/if}
-		{#if !options.props.immutable}
+		{#if !options.props.immutable && options.props.type !== 'float'}
 			<label>
 				<span>セマンティック要素</span>
 				<select name="bge-options-frame-semantics" onchange={handleFrameSemanticsChange}>
