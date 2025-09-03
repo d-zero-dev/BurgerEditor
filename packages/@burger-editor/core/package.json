@@ -32,6 +32,6 @@
 		"semver": "7.7.2"
 	},
 	"devDependencies": {
-		"@types/semver": "7.7.0"
+		"@types/semver": "7.7.1"
 	}
 }
