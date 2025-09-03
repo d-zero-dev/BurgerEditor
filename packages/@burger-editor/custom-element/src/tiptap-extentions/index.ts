@@ -7,6 +7,7 @@ import { DescriptionListTerm } from './description-list-term.js';
 import { DescriptionList } from './description-list.js';
 import { FlexBox } from './flex-box.js';
 import { GeneralBlock } from './general-block.js';
+import { Image } from './image.js';
 import { Note } from './note.js';
 import { TableBody } from './table-body.js';
 import { TableCaption } from './table-caption.js';
@@ -21,6 +22,7 @@ export const BgeWysiwygEditorKit = Extension.create({
 	name: 'bge-wysiwyg-editor-kit',
 	addExtensions() {
 		return [
+			Image,
 			FlexBox,
 			DescriptionList,
 			DescriptionListTermGroup,

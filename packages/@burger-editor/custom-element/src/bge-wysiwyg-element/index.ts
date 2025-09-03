@@ -231,6 +231,10 @@ export class BgeWysiwygElement extends HTMLElement {
 		return this.editor.isActive(name) ?? false;
 	}
 
+	setImage(options: { src: string; alt?: string; title?: string }) {
+		this.editor.chain().focus().setImage(options).run();
+	}
+
 	setStyle(css: string) {
 		if (!this.#previewStyle) {
 			throw new ReferenceError('<bge-wysiwyg> is not connected');
@@ -405,6 +409,10 @@ export class BgeWysiwygElement extends HTMLElement {
 				flexBox: {
 					disabled: !editor.can().chain().focus().toggleFlexBox().run(),
 					active: editor.isActive('flexBox'),
+				},
+				image: {
+					disabled: !editor.can().chain().focus().setImage({ src: '' }).run(),
+					active: editor.isActive('image'),
 				},
 			},
 		};

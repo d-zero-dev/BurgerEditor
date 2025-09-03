@@ -30,7 +30,8 @@ type EditorNode =
 	| 'h4'
 	| 'h5'
 	| 'h6'
-	| 'flexBox';
+	| 'flexBox'
+	| 'image';
 
 export type NodeState = {
 	disabled: boolean;

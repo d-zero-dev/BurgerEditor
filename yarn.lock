@@ -166,6 +166,7 @@ __metadata:
   dependencies:
     "@tabler/icons": "npm:3.34.1"
     "@tiptap/core": "npm:3.4.1"
+    "@tiptap/extension-image": "npm:^3.4.1"
     "@tiptap/extension-table": "npm:3.4.1"
     "@tiptap/pm": "npm:3.4.1"
     "@tiptap/starter-kit": "npm:3.4.1"
@@ -3807,6 +3808,15 @@ __metadata:
     "@tiptap/core": ^3.4.1
     "@tiptap/pm": ^3.4.1
   checksum: 10c0/abcd87d98cf29b76049733d664c3a7391d501080d82dfa9f535fd3d2c28a5a96c53ecf4c6b86c138636240a4fef2e96b859f3cb105427b1e309a63afe5911cbd
+  languageName: node
+  linkType: hard
+
+"@tiptap/extension-image@npm:^3.4.1":
+  version: 3.4.1
+  resolution: "@tiptap/extension-image@npm:3.4.1"
+  peerDependencies:
+    "@tiptap/core": ^3.4.1
+  checksum: 10c0/63995a8f73dd95e07610fa60b12829cc277c2d1cb450cb300bd92c7075d928da05a352dac825574143d5f6cfc6f3bec1139ef8cc0856528978b7de895d2da881
   languageName: node
   linkType: hard
 

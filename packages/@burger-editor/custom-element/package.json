@@ -28,6 +28,7 @@
 	"dependencies": {
 		"@tabler/icons": "3.34.1",
 		"@tiptap/core": "3.4.1",
+		"@tiptap/extension-image": "^3.4.1",
 		"@tiptap/extension-table": "3.4.1",
 		"@tiptap/pm": "3.4.1",
 		"@tiptap/starter-kit": "3.4.1"
