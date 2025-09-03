@@ -26,6 +26,7 @@
 
 	let currentColumns = $state(options.props.columns ?? 1);
 	let currentContainerType = $state(options.props.type);
+	let currentFrameSemantics = $state(options.props.frameSemantics);
 
 	// floatタイプは変更不可なので、元のタイプを使用
 	const effectiveContainerType = $derived(
@@ -39,6 +40,27 @@
 	function handleContainerTypeChange(e: Event) {
 		const target = e.currentTarget as HTMLSelectElement;
 		currentContainerType = target.value as 'grid' | 'inline' | 'float';
+	}
+
+	/**
+	 * フレームセマンティクス変更時の処理
+	 * @param e - change イベント
+	 */
+	function handleFrameSemanticsChange(e: Event) {
+		const target = e.currentTarget as HTMLSelectElement;
+		const newSemantics = target.value as 'div' | 'ul' | 'ol';
+
+		if (!currentBlock) {
+			return;
+		}
+
+		try {
+			currentBlock.changeFrameSemantics(newSemantics);
+			currentFrameSemantics = newSemantics;
+		} catch {
+			// Reset to previous value on error
+			target.value = currentFrameSemantics;
+		}
 	}
 </script>
 
@@ -58,6 +80,19 @@
 						>{containerTypeLabel.grid}</option>
 					<option value="inline" selected={currentContainerType === 'inline'}
 						>{containerTypeLabel.inline}</option>
+				</select>
+			</label>
+		{/if}
+		{#if !options.props.immutable}
+			<label>
+				<span>セマンティック要素</span>
+				<select name="bge-options-frame-semantics" onchange={handleFrameSemanticsChange}>
+					<option value="div" selected={currentFrameSemantics === 'div'}
+						>div（汎用）</option>
+					<option value="ul" selected={currentFrameSemantics === 'ul'}
+						>ul（順序なしリスト）</option>
+					<option value="ol" selected={currentFrameSemantics === 'ol'}
+						>ol（順序ありリスト）</option>
 				</select>
 			</label>
 		{/if}
