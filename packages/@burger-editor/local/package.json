@@ -34,7 +34,7 @@
 		"cosmiconfig": "9.0.0",
 		"debug": "4.4.1",
 		"gray-matter": "^4.0.3",
-		"hono": "4.9.5",
+		"hono": "4.9.6",
 		"jsdom": "26.1.0",
 		"open": "10.2.0",
 		"prettier": "3.6.2",
