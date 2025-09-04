@@ -45,6 +45,7 @@ export async function getUserConfig(): Promise<LocalServerConfig> {
 			((filesDir.other.clientPath + '/' + 'sample.pdf') as `/${string}`),
 		googleMapsApiKey: config.googleMapsApiKey ?? null,
 		open: config.open ?? true,
+		experimental: config.experimental,
 	};
 }
 

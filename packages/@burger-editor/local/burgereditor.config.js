@@ -29,4 +29,22 @@ title: 'New Page'
 		other: '/files/others',
 	},
 	open: true,
+	// 実験的機能: アイテムオプションのカスタマイズ
+	experimental: {
+		itemOptions: {
+			button: {
+				kinds: [
+					// 既存のラベルを変更
+					{ value: 'link', label: 'リンクボタン' },
+					// 既存の選択肢を削除
+					{ value: 'em', delete: true },
+					// 新しい選択肢を追加
+					{ value: 'primary', label: 'プライマリボタン' },
+					{ value: 'secondary', label: 'セカンダリボタン' },
+					{ value: 'outline', label: 'アウトラインボタン' },
+					{ value: 'danger', label: '危険ボタン' },
+				],
+			},
+		},
+	},
 };

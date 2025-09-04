@@ -1,4 +1,5 @@
-import type { FileType } from '@burger-editor/core';
+import type { FileType, SelectableValue } from '@burger-editor/core';
+import type { Mergeable } from '@burger-editor/utils';
 
 export interface LocalServerConfig {
 	readonly version: string;
@@ -16,6 +17,13 @@ export interface LocalServerConfig {
 	readonly googleMapsApiKey: string | null;
 	readonly open: boolean;
 	readonly newFileContent: string;
+	readonly experimental?: {
+		readonly itemOptions?: {
+			readonly button?: {
+				readonly kinds?: readonly Mergeable<SelectableValue>[];
+			};
+		};
+	};
 }
 
 export type SamplePath = `/${string}` | `https://${string}` | `base64:${string}`;
