@@ -4,6 +4,7 @@ import type { ItemEditorService } from './item/item-editor-service.js';
 import type { Item } from './item/item.js';
 import type { ItemData, ItemSeed } from './item/types.js';
 import type { ItemEditorDialog } from './item-editor-dialog.js';
+import type { Mergeable } from '@burger-editor/utils';
 
 export interface BurgerEditorEngineOptions {
 	readonly root: string;
@@ -73,6 +74,13 @@ export interface Config {
 	readonly sampleImagePath: string;
 	readonly sampleFilePath: string;
 	readonly googleMapsApiKey: string | null;
+	readonly experimental?: {
+		readonly itemOptions?: {
+			readonly button?: {
+				readonly kinds?: readonly Mergeable<SelectableValue>[];
+			};
+		};
+	};
 }
 
 export interface Actions {
@@ -182,6 +190,14 @@ export interface BlockTemplate {
 	readonly name: string;
 	readonly template: string;
 	readonly icon: string;
+}
+
+/**
+ * 選択可能な値のベース型
+ */
+export interface SelectableValue extends Record<string, unknown> {
+	readonly value: string;
+	readonly label: string;
 }
 
 export interface BurgerEditorEventMap {
