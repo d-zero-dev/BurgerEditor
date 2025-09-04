@@ -1,6 +1,7 @@
 import button from './blocks/button/index.js';
 import button2 from './blocks/button2/index.js';
 import button3 from './blocks/button3/index.js';
+import contentNavigation from './blocks/content-navigation/index.js';
 import disclosure from './blocks/disclosure/index.js';
 import downloadFile from './blocks/download-file/index.js';
 import downloadFile2 from './blocks/download-file2/index.js';
@@ -32,6 +33,7 @@ export const blocks = {
 	button,
 	button2,
 	button3,
+	'content-navigation': contentNavigation,
 	'download-file': downloadFile,
 	'download-file2': downloadFile2,
 	'download-file3': downloadFile3,
