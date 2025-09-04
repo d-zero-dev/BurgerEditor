@@ -27,6 +27,7 @@ export default createItem<{
 				{ value: 'link', label: 'リンク' },
 				{ value: 'em', label: '強調リンク' },
 				{ value: 'external', label: '外部リンク' },
+				{ value: 'in-page', label: 'ページ内リンク' },
 				{ value: 'back', label: '戻る' },
 			];
 
