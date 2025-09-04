@@ -1,0 +1,43 @@
+---
+alwaysApply: true
+description: Implementation process basics
+---
+
+# Implementation Process
+
+## Request Response Flow
+
+When receiving user proposals, questions, commands, or confirmations:
+
+1. **Check Cursor rules**
+2. **Check `@ARCHITECTURE.md`**
+3. **Understand what the user is saying**
+4. **Provide immediate answers for answerable items**
+5. **Execute `read`, `search`, and CLI commands for items requiring investigation**
+6. **Create plans when code modifications are anticipated**
+7. **Convert to TODOs**
+8. **Confirm TODO contents with user**
+9. **For excessively large tasks, propose limited modifications for commit granularity and ask user approval**
+10. **Code modification permission granted only after TODO approval**
+
+## Implementation Basic Rules
+
+- **Do not** add features outside requirements (forbidden, not just avoided)
+- During implementation issues, `yarn build` or `npx vitest run` execution is acceptable
+- Execute `yarn build` and `yarn lint` upon implementation completion
+- Confirm changes with `git diff` before reporting upon implementation completion
+
+## Implementation Order
+
+### Basic Implementation Order
+
+1. **Type definitions**
+2. **Testable function implementation + test code creation**
+3. **High-layer implementation**
+
+Ideally complete within each package.
+
+### Cross-Package Implementation
+
+For large implementations, iterating between concrete and abstract is the path to improvement.
+Proceed step by step while consulting with users.

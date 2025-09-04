@@ -1,0 +1,136 @@
+---
+globs: *.ts,*.tsx
+description: TypeScript code quality and design standards
+---
+
+# Code Quality Standards
+
+## Interface Design Principles
+
+**Rule**: Complete type definitions at the definition location, not at usage locations.
+
+**Bad**:
+
+```typescript
+// Caller side type supplementation
+function createMonitor(options: Partial<Options>) {
+	const fullOptions = { ...defaults, ...options };
+}
+```
+
+**Good**:
+
+```typescript
+// Complete at type definition
+interface Options {
+	enabled: boolean;
+	interval: number;
+}
+
+class Monitor {
+	readonly config: Options; // Complete type prevents implementation gaps
+
+	constructor(options: Partial<Options> = {}) {
+		// Manage defaults internally
+		this.config = {
+			enabled: options.enabled ?? true,
+			interval: options.interval ?? 10_000,
+		};
+	}
+}
+```
+
+**Rule**: Define option type properties as required, then use Partial for optional usage.
+
+**Rule**: Define internally held configuration with complete types to prevent implementation gaps.
+
+**Pattern**:
+
+```typescript
+// Bad: Optional in type definition
+interface Config {
+	enabled?: boolean;
+	interval?: number;
+	retryCount?: number;
+}
+
+// Good: Complete type definition, Partial when used
+interface Config {
+	enabled: boolean;
+	interval: number;
+	retryCount: number;
+}
+
+class Service {
+	readonly config: Config; // Complete type prevents implementation gaps
+
+	constructor(userConfig?: Partial<Config>) {
+		// Prevent definition gaps while accepting optional arguments
+		this.config = {
+			enabled: userConfig?.enabled ?? true,
+			interval: userConfig?.interval ?? 10_000,
+			retryCount: userConfig?.retryCount ?? 3,
+		};
+	}
+}
+```
+
+## Event System Design
+
+**Rule**: Event names should express state, not actions, and ensure type safety.
+
+**Pattern**:
+
+```typescript
+// Event type definition
+interface EventMap {
+	'server-online': { timestamp: number };
+	'server-offline': { timestamp: number };
+}
+
+// Type-safe event creation
+function createEvent<T extends keyof EventMap>(
+	type: T,
+	data: EventMap[T],
+): CustomEvent<EventMap[T]> {
+	return new CustomEvent(type, { detail: data });
+}
+```
+
+## Configuration Management
+
+**Rule**: Define configuration values at the layer closest to where they are used.
+
+**Hierarchy**:
+
+1. **Class defaults**: Default values within classes
+2. **Package defaults**: Package-level configuration
+3. **User config**: User configuration files
+
+**Example**:
+
+```typescript
+// Wrong: Configuration management on caller side
+const config = userConfig ??
+	packageConfig ?? {
+		interval: 10_000,
+		retryCount: 3,
+	};
+
+// Right: Gradual configuration resolution within class
+interface ServiceConfig {
+	interval: number;
+	retryCount: number;
+}
+
+class Service {
+	readonly config: ServiceConfig; // Complete type prevents implementation gaps
+
+	constructor(userConfig?: Partial<ServiceConfig>) {
+		this.config = {
+			interval: userConfig?.interval ?? 10_000,
+			retryCount: userConfig?.retryCount ?? 3,
+		};
+	}
+}
+```

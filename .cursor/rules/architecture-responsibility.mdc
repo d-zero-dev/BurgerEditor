@@ -1,0 +1,34 @@
+---
+alwaysApply: true
+description: Architecture and responsibility separation principles
+---
+
+# Architecture and Responsibility Separation
+
+## Layer-Based Feature Placement
+
+**Principle**: Place features in appropriate architectural layers with clear responsibility separation.
+
+**Reference**: See `ARCHITECTURE.md` for detailed layer composition and feature placement criteria.
+
+**Problem Pattern**: Implementing generic features in environment-specific layers causes duplicate implementations when reusing across platforms.
+
+**Solution Pattern**: Place generic features in Core Layer, Platform Layer handles configuration only.
+
+## Centralized Configuration Management
+
+**Principle**: Configuration values and defaults are owned and managed by the component that uses them.
+
+**Problem Pattern**: Supplementing configuration values on the caller side creates duplicate configuration management across all usage points, expanding the impact range when changes occur.
+
+**Solution Pattern**: Centrally manage configuration within components, callers specify only necessary values.
+
+## Object State Over Null Checks
+
+**Principle**: Control behavior through object internal state rather than object existence checks.
+
+**Problem Pattern**: Null checks for complex objects like `SubEngine | null` duplicate across all usage points, creating risk of missed checks.
+
+**Solution Pattern**: Always maintain objects and express inactivity through internal state like `SubEngine.isIdle`.
+
+**Note**: Simple data types like `string | null` are excluded from this pattern.
