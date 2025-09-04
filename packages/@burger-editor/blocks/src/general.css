@@ -178,9 +178,16 @@
 	}
 
 	:where([data-bge-item]) {
-		align-self: self-start;
+		display: flex;
+		align-items: stretch;
+		align-self: stretch;
+		justify-content: start;
 		container-name: bge-item;
 		container-type: inline-size;
+
+		> * {
+			flex: 0 0 100%;
+		}
 	}
 }
 
