@@ -17,6 +17,7 @@ import {
 import { getElement } from '../dom-helpers/get-element.js';
 import { EditableArea } from '../editable-area.js';
 import { createBgeEvent } from '../event/create-bge-event.js';
+import { HealthMonitor } from '../health-monitor.js';
 import { ItemEditorDialog } from '../item-editor-dialog.js';
 
 import { getBlockTemplate } from './get-block-template.js';
@@ -49,6 +50,7 @@ export class BurgerEditorEngine {
 	#current!: EditableArea;
 	#currentBlock: BurgerBlock | null = null;
 	readonly #draft!: EditableArea<'draft'> | null;
+	readonly #healthMonitor: HealthMonitor;
 	#isProcessed: boolean = false;
 	readonly #main!: EditableArea<'main'>;
 	#migrationCheck: ((dom: HTMLElement) => void) | null = null;
@@ -76,6 +78,9 @@ export class BurgerEditorEngine {
 			blockClipboard: 'bge-copied-block',
 			...options.storageKey,
 		};
+
+		// Health monitor setup
+		this.#healthMonitor = new HealthMonitor(this, options.healthCheck);
 
 		this.css = {
 			stylesheets: options.config.stylesheets ?? [],
@@ -144,6 +149,13 @@ export class BurgerEditorEngine {
 		}
 		await this.content.insertionPoint.insert(block);
 		this.save();
+	}
+
+	/**
+	 * Clean up resources and stop monitoring
+	 */
+	cleanUp() {
+		this.#healthMonitor.stop();
 	}
 
 	clearCurrentBlock() {
@@ -253,6 +265,21 @@ export class BurgerEditorEngine {
 		return isChanged;
 	}
 
+	/**
+	 * Set editor read-only state
+	 * @param readOnly
+	 */
+	setReadOnly(readOnly: boolean) {
+		if (readOnly) {
+			this.el.inert = true;
+			this.el.dataset.readonly = 'true';
+			return;
+		}
+
+		this.el.inert = false;
+		delete this.el.dataset.readonly;
+	}
+
 	showDraft() {
 		if (!this.#draft) {
 			return;
@@ -262,6 +289,19 @@ export class BurgerEditorEngine {
 
 	showMain() {
 		this.#show(this.#main);
+	}
+
+	/**
+	 * Setup health event listeners for automatic read-only mode
+	 */
+	#setupHealthEventListeners() {
+		this.el.addEventListener('bge:server-offline', () => {
+			this.setReadOnly(true);
+		});
+
+		this.el.addEventListener('bge:server-online', () => {
+			this.setReadOnly(false);
+		});
 	}
 
 	#show(to: EditableArea) {
@@ -352,6 +392,10 @@ export class BurgerEditorEngine {
 				className: options.config.classList.join(' '),
 			});
 		}
+
+		// Start health monitoring
+		engine.#healthMonitor.start();
+		engine.#setupHealthEventListeners();
 
 		return engine;
 	}
