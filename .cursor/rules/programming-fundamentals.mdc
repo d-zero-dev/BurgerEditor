@@ -394,6 +394,35 @@ function parseNumber(input: string): number | undefined {
 }
 ```
 
+## Code Quality Enforcement
+
+**Principle**: Never suppress linting errors or TypeScript errors without explicit user permission.
+
+**Forbidden Actions**:
+
+- ❌ Adding `// eslint-disable` comments
+- ❌ Adding `// @ts-ignore` comments
+- ❌ Adding `// @ts-expect-error` comments
+- ❌ Modifying ESLint configuration to suppress errors
+
+**Solution Pattern**: Always fix the root cause of linting and TypeScript errors.
+
+```typescript
+// ❌ Anti-pattern: Suppressing errors
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function badExample(_unused: string) {
+	// @ts-ignore
+	return undefinedVariable;
+}
+
+// ✅ Pattern: Fix the actual issue
+function goodExample(input: string): string {
+	return input.toUpperCase();
+}
+```
+
+**Exception**: Only suppress errors when explicitly requested by the user with clear justification.
+
 ## Error Handling Pattern
 
 **Principle**: Avoid deep nesting with try/catch, use `Promise.catch` and early returns for proper error handling.
