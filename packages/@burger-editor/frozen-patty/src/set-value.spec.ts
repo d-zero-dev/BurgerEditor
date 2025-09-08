@@ -1,6 +1,6 @@
 import { test, expect, describe } from 'vitest';
 
-import { setValue } from './set-value.js';
+import { setValue, setContent } from './set-value.js';
 
 describe('setValue', () => {
 	test('basic', () => {
@@ -102,5 +102,70 @@ describe('setValue', () => {
 		setValue(el, 'foo', dangerousHtml);
 		expect(el.innerHTML).toBe('<span>XSS</span>');
 		expect(el.firstElementChild?.localName).toBe('span');
+	});
+});
+
+describe('setContent', () => {
+	test('checkbox without value attribute (switch-like behavior)', () => {
+		const checkbox = document.createElement('input');
+		checkbox.type = 'checkbox';
+		// No value attribute
+
+		// Boolean values
+		setContent(checkbox, true);
+		expect(checkbox.checked).toBe(true);
+
+		setContent(checkbox, false);
+		expect(checkbox.checked).toBe(false);
+
+		// String "true"/"false"
+		setContent(checkbox, 'true');
+		expect(checkbox.checked).toBe(true);
+
+		setContent(checkbox, 'false');
+		expect(checkbox.checked).toBe(false);
+
+		// Case variations - should NOT be treated as boolean
+		setContent(checkbox, 'TRUE');
+		expect(checkbox.checked).toBe(false); // Uppercase should be false
+
+		setContent(checkbox, 'True');
+		expect(checkbox.checked).toBe(false); // CamelCase should be false
+
+		setContent(checkbox, 'FALSE');
+		expect(checkbox.checked).toBe(false); // Uppercase should be false
+
+		// Other values - should be false
+		setContent(checkbox, '');
+		expect(checkbox.checked).toBe(false); // Empty string should be false
+
+		setContent(checkbox, '1');
+		expect(checkbox.checked).toBe(false); // Numeric string should be false
+
+		setContent(checkbox, '0');
+		expect(checkbox.checked).toBe(false); // Numeric string should be false
+
+		setContent(checkbox, 'random');
+		expect(checkbox.checked).toBe(false);
+	});
+
+	test('checkbox with value attribute (traditional behavior)', () => {
+		const checkbox = document.createElement('input');
+		checkbox.type = 'checkbox';
+		checkbox.value = 'test-value';
+
+		// Matching value
+		setContent(checkbox, 'test-value');
+		expect(checkbox.checked).toBe(true);
+
+		// Non-matching values
+		setContent(checkbox, 'other-value');
+		expect(checkbox.checked).toBe(false);
+
+		setContent(checkbox, 'true');
+		expect(checkbox.checked).toBe(false); // "true" !== "test-value"
+
+		setContent(checkbox, true);
+		expect(checkbox.checked).toBe(true); // Boolean values are set directly regardless of value attribute
 	});
 });

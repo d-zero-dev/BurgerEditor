@@ -713,11 +713,31 @@ export function setContent(
 			el instanceof HTMLInputElement &&
 			(el.type === 'radio' || el.type === 'checkbox')
 		) {
+			// Boolean values are always set directly regardless of value attribute
 			if (typeof datum === 'boolean') {
 				el.checked = datum;
 				return;
 			}
-			el.checked = el.value === `${datum}`;
+
+			// Checkbox/radio with value attribute: traditional value comparison
+			if (el.hasAttribute('value')) {
+				el.checked = el.value === `${datum}`;
+				return;
+			}
+
+			// Checkbox without value attribute: switch-like behavior (string boolean processing)
+			if (datum === 'true') {
+				el.checked = true;
+				return;
+			}
+
+			if (datum === 'false') {
+				el.checked = false;
+				return;
+			}
+
+			// Other values default to false
+			el.checked = false;
 			return;
 		}
 		el.value = `${datum}`;
