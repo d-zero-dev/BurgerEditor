@@ -151,6 +151,12 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 		// API
 		//
 		// ------------------------------------------------------------------------------------------
+		.get('/api/health', (c) => {
+			return c.json({
+				status: 'ok',
+				timestamp: Date.now(),
+			});
+		})
 		.post('/api/content', zValidator('json', apiSchema), async (c) => {
 			const data = c.req.valid('json');
 			const targetFilePath = path.join(userConfig.documentRoot, data.path);

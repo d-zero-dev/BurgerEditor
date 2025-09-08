@@ -49,6 +49,18 @@ export async function createEditor() {
 		generalCSS,
 		catalog: defaultCatalog,
 		initialContents: mainInput.value,
+		healthCheck: config.healthCheck
+			? {
+					...config.healthCheck,
+					async checkHealth() {
+						const response = await client.api.health.$get().catch((error) => error);
+						if (response instanceof Error) {
+							return false;
+						}
+						return response.ok;
+					},
+				}
+			: undefined,
 		async onUpdated(content) {
 			if (mainInput.value === content) {
 				return;

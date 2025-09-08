@@ -62,3 +62,27 @@ body {
 		padding: 1em;
 	}
 }
+
+/* Server offline state styling */
+.editor[data-readonly='true'] {
+	position: relative;
+
+	> * {
+		opacity: 0.5;
+	}
+
+	&::before {
+		position: absolute;
+		inset-block-start: 0;
+		inset-inline: 0;
+		z-index: 1000;
+		padding-block: 0.5rem;
+		padding-inline: 1rem;
+		font-weight: bold;
+		color: #856404;
+		text-align: center;
+		content: 'Server is offline - Read only mode';
+		background-color: rgba(255, 193, 7, 0.9);
+		border-block-end: 1px solid #ffeaa7;
+	}
+}
