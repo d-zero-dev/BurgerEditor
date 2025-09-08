@@ -1,5 +1,6 @@
 import type { BurgerBlock } from './block/block.js';
 import type { BurgerEditorEngine } from './engine/engine.js';
+import type { HealthCheckFunction } from './health-monitor.js';
 import type { ItemEditorService } from './item/item-editor-service.js';
 import type { Item } from './item/item.js';
 import type { ItemData, ItemSeed } from './item/types.js';
@@ -30,6 +31,12 @@ export interface BurgerEditorEngineOptions {
 	}) => void | Promise<void>;
 	readonly onUpdated?: (main: string, draft?: string) => void | Promise<void>;
 	readonly fileIO?: FileAPI;
+	readonly healthCheck?: {
+		readonly enabled?: boolean;
+		readonly interval?: number;
+		readonly retryCount?: number;
+		readonly checkHealth?: HealthCheckFunction;
+	};
 }
 
 export interface UIOptions {
@@ -204,6 +211,8 @@ export interface BurgerEditorEventMap {
 	'bge:saved': { main: string; draft?: string };
 	'bge:switch-content': { content: 'main' | 'draft' };
 	'bge:block-change': { readonly block: BurgerBlock };
+	'bge:server-online': { timestamp: number };
+	'bge:server-offline': { timestamp: number };
 }
 
 declare global {
@@ -211,5 +220,7 @@ declare global {
 		'bge:saved': CustomEvent<BurgerEditorEventMap['bge:saved']>;
 		'bge:switch-content': CustomEvent<BurgerEditorEventMap['bge:switch-content']>;
 		'bge:block-change': CustomEvent<BurgerEditorEventMap['bge:block-change']>;
+		'bge:server-online': CustomEvent<BurgerEditorEventMap['bge:server-online']>;
+		'bge:server-offline': CustomEvent<BurgerEditorEventMap['bge:server-offline']>;
 	}
 }
