@@ -17,6 +17,11 @@ export interface LocalServerConfig {
 	readonly googleMapsApiKey: string | null;
 	readonly open: boolean;
 	readonly newFileContent: string;
+	readonly healthCheck: {
+		readonly enabled: boolean;
+		readonly interval: number;
+		readonly retryCount: number;
+	};
 	readonly experimental?: {
 		readonly itemOptions?: {
 			readonly button?: {
@@ -32,10 +37,11 @@ export type LocalServerFileDirConfig = Record<FileType, FileDirSettings>;
 
 export type LocalServerConfigUserSettings = Omit<
 	Partial<LocalServerConfig>,
-	'filesDir'
+	'filesDir' | 'healthCheck'
 > & {
 	readonly assetsRoot?: string;
 	readonly filesDir?: string | FileDirSettings | LocalServerFileDirUserSettings;
+	readonly healthCheck?: Partial<LocalServerConfig['healthCheck']>;
 };
 
 export type LocalServerFileDirUserSettings = {
