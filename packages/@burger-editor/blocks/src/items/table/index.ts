@@ -10,6 +10,7 @@ export default createItem<{
 	caption: string;
 	th: string[];
 	td: string[];
+	scrollable: boolean;
 }>({
 	version: __VERSION__,
 	name: 'table',
