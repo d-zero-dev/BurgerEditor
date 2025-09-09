@@ -53,10 +53,12 @@
 ##### `grid`オプション
 
 - `[数値]`: グリッドの列数（ `grid-template-columns: repeat([数値], 1fr);` ） 1〜5の範囲で指定可能。
-- `auto-fit`: 自動列数調整（ `grid-template-columns: repeat(auto-fit, minmax(calc(var(--bge-auto-fit-base-width) / [数値]), 1fr));` ）
-  規定幅（CSSカスタムプロパティ`--bge-auto-fit-base-width`）を基準に指定した列数で割った数値に近い幅を保ちながら、コンテナの幅に応じて自動的に列数を調整します。
+- `auto-fit`: 自動列数調整（空白最小）（ `grid-template-columns: repeat(auto-fit, minmax(calc(var(--bge-auto-fit-base-width) / [数値]), 1fr));` ）
+  規定幅（CSSカスタムプロパティ`--bge-auto-fit-base-width`）を基準に指定した列数で割った数値に近い幅を保ちながら、コンテナの幅に応じて自動的に列数を調整します。空のトラックは折りたたまれ、既存のアイテムが利用可能なスペースを埋めるように拡張されます。
+- `auto-fill`: 自動列数調整（空白保持）（ `grid-template-columns: repeat(auto-fill, minmax(calc(var(--bge-auto-fit-base-width) / [数値]), 1fr));` ）
+  規定幅を基準に自動的に列数を調整しますが、アイテムが不足している場合でも空のトラックが保持され、レイアウト内に空白が生じます。
 
-例: `data-bge-container="grid:3"`、`data-bge-container="grid:3:auto-fit"`
+例: `data-bge-container="grid:3"`、`data-bge-container="grid:3:auto-fit"`、`data-bge-container="grid:3:auto-fill"`
 
 ##### `inline`オプション
 
