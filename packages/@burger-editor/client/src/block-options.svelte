@@ -28,6 +28,9 @@
 	let currentContainerType = $state(options.props.type);
 	let currentFrameSemantics = $state(options.props.frameSemantics);
 
+	// アイテム数をリアクティブに管理
+	const itemCount = $derived(currentBlock.items.length);
+
 	// floatタイプは変更不可なので、元のタイプを使用
 	const effectiveContainerType = $derived(
 		options.props.type === 'float' ? options.props.type : currentContainerType,
@@ -96,7 +99,7 @@
 				</select>
 			</label>
 		{/if}
-		{#if effectiveContainerType === 'inline'}
+		{#if effectiveContainerType === 'inline' && !(options.props.immutable && itemCount === 1)}
 			<div role="radiogroup" aria-labelledby="justify-group">
 				<div id="justify-group">横方向配置</div>
 				<label>
