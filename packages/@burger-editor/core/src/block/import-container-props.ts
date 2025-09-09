@@ -8,7 +8,7 @@ export function importContainerProps(containerProps?: ContainerProps): string {
 	const {
 		type,
 		immutable,
-		autoFit,
+		autoRepeat,
 		justify,
 		align,
 		wrap,
@@ -20,9 +20,13 @@ export function importContainerProps(containerProps?: ContainerProps): string {
 	if (immutable) {
 		options.add('immutable');
 	}
-	if (autoFit) {
+
+	if (autoRepeat === 'auto-fit') {
 		options.add('auto-fit');
+	} else if (autoRepeat === 'auto-fill') {
+		options.add('auto-fill');
 	}
+
 	if (justify) {
 		options.add(justify);
 	}
