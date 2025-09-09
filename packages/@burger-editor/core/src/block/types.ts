@@ -14,7 +14,7 @@ export interface BlockOptions {
 export type ContainerProps = {
 	readonly type: ContainerType;
 	readonly immutable: boolean;
-	readonly autoFit: boolean;
+	readonly autoRepeat: 'fixed' | 'auto-fill' | 'auto-fit';
 	readonly justify: 'center' | 'start' | 'end' | 'between' | 'around' | 'evenly' | null;
 	readonly align:
 		| 'align-center'
