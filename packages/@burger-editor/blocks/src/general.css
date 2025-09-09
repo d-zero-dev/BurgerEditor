@@ -1,5 +1,5 @@
 [data-bge-container] {
-	--bge-auto-fit-base-width: calc(800 / 16 * 1rem);
+	--bge-auto-repeat-base-width: calc(800 / 16 * 1rem);
 
 	/* Custom max-width */
 	--bge-options-max-width--normal: calc(800 / 16 * 1rem);
@@ -117,14 +117,23 @@
 	}
 
 	:where([data-bge-container-frame]) {
+		--_grid-col: var(--bge-grid-col, 1);
+		--_repeat-base-width: calc(var(--bge-auto-repeat-base-width) / var(--_grid-col));
 		display: grid;
-		grid-template-columns: repeat(var(--bge-grid-col, 1), minmax(0, 1fr));
+		grid-template-columns: repeat(var(--_grid-col), minmax(0, 1fr));
 		gap: var(--_gap-block) var(--_gap-inline);
 
 		&:is([data-bge-container*=':auto-fit:'] *) {
 			grid-template-columns: repeat(
 				auto-fit,
-				minmax(calc(var(--bge-auto-fit-base-width) / var(--bge-grid-col, 1)), 1fr)
+				minmax(min(100%, var(--_repeat-base-width)), 1fr)
+			);
+		}
+
+		&:is([data-bge-container*=':auto-fill:'] *) {
+			grid-template-columns: repeat(
+				auto-fill,
+				minmax(min(100%, var(--_repeat-base-width)), 1fr)
 			);
 		}
 	}
