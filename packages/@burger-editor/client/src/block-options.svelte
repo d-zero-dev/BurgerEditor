@@ -22,7 +22,7 @@
 	const options = currentBlock.exportOptions();
 	const cssProps = engine.getCustomProperties(options.props.type);
 
-	const autoFitBaseWidth = engine.getCustomProperty('--bge-auto-fit-base-width');
+	const autoRepeatBaseWidth = engine.getCustomProperty('--bge-auto-repeat-base-width');
 
 	let currentColumns = $state(options.props.columns ?? 1);
 	let currentContainerType = $state(options.props.type);
@@ -189,7 +189,7 @@
 				<p>このブロックはコンテナタイプを変更できません。</p>
 			{:else}
 				<label>
-					<span>列数</span>
+					<span>基準列数</span>
 					<output>{currentColumns}</output>
 					<input
 						name="bge-options-columns"
@@ -200,18 +200,28 @@
 						max="5" />
 				</label>
 				<label>
-					<span>自動列数</span>
-					<input
-						type="checkbox"
-						name="bge-options-auto-fit"
-						defaultChecked={options.props.autoFit} />
+					<span>列の自動調整</span>
+					<select name="bge-options-auto-repeat">
+						<option
+							value="fixed"
+							selected={(options.props.autoRepeat ?? 'fixed') === 'fixed'}>
+							固定列数
+						</option>
+						<option value="auto-fill" selected={options.props.autoRepeat === 'auto-fill'}>
+							auto-fill（空白保持）
+						</option>
+						<option value="auto-fit" selected={options.props.autoRepeat === 'auto-fit'}>
+							auto-fit（空白最小）
+						</option>
+					</select>
 				</label>
 				<small>
 					規定幅（<code
-						title="CSSカスタムプロパティ: --bge-auto-fit-base-width に設定されている値"
-						>{autoFitBaseWidth}</code
-					>）を基準に「数列:
-					<code>{currentColumns}</code>」で割った数値に近い幅を保ちます。
+						title="CSSカスタムプロパティ: --bge-auto-repeat-base-width に設定されている値"
+						>{autoRepeatBaseWidth}</code
+					>）を基準に「基準列数:
+					<code>{currentColumns}</code
+					>」で割った数値に近い幅を保ちます。「空白保持」は空のスペースを残し、「空白最小」はアイテムの幅を広げます。
 				</small>
 			{/if}
 		{/if}
