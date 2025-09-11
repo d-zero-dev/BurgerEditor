@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.20](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.19...v4.0.0-alpha.20) (2025-09-11)
+
+### Bug Fixes
+
+- **blocks:** improve immutable container flex layout structure ([8f732b7](https://github.com/d-zero-dev/BurgerEditor/commit/8f732b7e10b685918ebd9c92f111769e2ef12f52))
+- **repo:** add npmClient yarn to lerna.json to include yarn.lock in publish commits ([f2d8ce0](https://github.com/d-zero-dev/BurgerEditor/commit/f2d8ce098da93ce8f7fc4ea8bba60e7f98785455))
+
 # [4.0.0-alpha.19](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.18...v4.0.0-alpha.19) (2025-09-11)
 
 ### Bug Fixes

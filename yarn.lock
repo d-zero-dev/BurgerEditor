@@ -105,13 +105,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@burger-editor/blocks@npm:4.0.0-alpha.19, @burger-editor/blocks@workspace:packages/@burger-editor/blocks":
+"@burger-editor/blocks@npm:4.0.0-alpha.20, @burger-editor/blocks@workspace:packages/@burger-editor/blocks":
   version: 0.0.0-use.local
   resolution: "@burger-editor/blocks@workspace:packages/@burger-editor/blocks"
   dependencies:
-    "@burger-editor/core": "npm:4.0.0-alpha.19"
-    "@burger-editor/custom-element": "npm:4.0.0-alpha.19"
-    "@burger-editor/utils": "npm:4.0.0-alpha.19"
+    "@burger-editor/core": "npm:4.0.0-alpha.20"
+    "@burger-editor/custom-element": "npm:4.0.0-alpha.20"
+    "@burger-editor/utils": "npm:4.0.0-alpha.20"
     "@types/google.maps": "npm:3.58.1"
     rollup: "npm:4.50.1"
     rollup-plugin-esbuild: "npm:6.2.1"
@@ -119,14 +119,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/client@npm:4.0.0-alpha.19, @burger-editor/client@workspace:packages/@burger-editor/client":
+"@burger-editor/client@npm:4.0.0-alpha.20, @burger-editor/client@workspace:packages/@burger-editor/client":
   version: 0.0.0-use.local
   resolution: "@burger-editor/client@workspace:packages/@burger-editor/client"
   dependencies:
-    "@burger-editor/core": "npm:4.0.0-alpha.19"
-    "@burger-editor/custom-element": "npm:4.0.0-alpha.19"
-    "@burger-editor/migrator": "npm:4.0.0-alpha.19"
-    "@burger-editor/utils": "npm:4.0.0-alpha.19"
+    "@burger-editor/core": "npm:4.0.0-alpha.20"
+    "@burger-editor/custom-element": "npm:4.0.0-alpha.20"
+    "@burger-editor/migrator": "npm:4.0.0-alpha.20"
+    "@burger-editor/utils": "npm:4.0.0-alpha.20"
     "@sveltejs/vite-plugin-svelte": "npm:6.2.0"
     "@tabler/icons-svelte": "npm:3.34.1"
     "@types/jquery": "npm:3.5.33"
@@ -137,12 +137,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/core@npm:4.0.0-alpha.19, @burger-editor/core@workspace:packages/@burger-editor/core":
+"@burger-editor/core@npm:4.0.0-alpha.20, @burger-editor/core@workspace:packages/@burger-editor/core":
   version: 0.0.0-use.local
   resolution: "@burger-editor/core@workspace:packages/@burger-editor/core"
   dependencies:
-    "@burger-editor/frozen-patty": "npm:4.0.0-alpha.19"
-    "@burger-editor/utils": "npm:4.0.0-alpha.19"
+    "@burger-editor/frozen-patty": "npm:4.0.0-alpha.20"
+    "@burger-editor/utils": "npm:4.0.0-alpha.20"
     "@types/semver": "npm:7.7.1"
     jaco: "npm:5.0.0"
     semver: "npm:7.7.2"
@@ -153,14 +153,14 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@burger-editor/css@workspace:packages/@burger-editor/css"
   dependencies:
-    "@burger-editor/blocks": "npm:4.0.0-alpha.19"
+    "@burger-editor/blocks": "npm:4.0.0-alpha.20"
     glob: "npm:11.0.3"
     postcss: "npm:8.5.6"
     vitest: "npm:3.2.4"
   languageName: unknown
   linkType: soft
 
-"@burger-editor/custom-element@npm:4.0.0-alpha.19, @burger-editor/custom-element@workspace:packages/@burger-editor/custom-element":
+"@burger-editor/custom-element@npm:4.0.0-alpha.20, @burger-editor/custom-element@workspace:packages/@burger-editor/custom-element":
   version: 0.0.0-use.local
   resolution: "@burger-editor/custom-element@workspace:packages/@burger-editor/custom-element"
   dependencies:
@@ -177,15 +177,15 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/frozen-patty@npm:4.0.0-alpha.19, @burger-editor/frozen-patty@workspace:packages/@burger-editor/frozen-patty":
+"@burger-editor/frozen-patty@npm:4.0.0-alpha.20, @burger-editor/frozen-patty@workspace:packages/@burger-editor/frozen-patty":
   version: 0.0.0-use.local
   resolution: "@burger-editor/frozen-patty@workspace:packages/@burger-editor/frozen-patty"
   dependencies:
-    "@burger-editor/utils": "npm:4.0.0-alpha.19"
+    "@burger-editor/utils": "npm:4.0.0-alpha.20"
   languageName: unknown
   linkType: soft
 
-"@burger-editor/legacy@npm:4.0.0-alpha.19, @burger-editor/legacy@workspace:packages/@burger-editor/legacy":
+"@burger-editor/legacy@npm:4.0.0-alpha.20, @burger-editor/legacy@workspace:packages/@burger-editor/legacy":
   version: 0.0.0-use.local
   resolution: "@burger-editor/legacy@workspace:packages/@burger-editor/legacy"
   dependencies:
@@ -200,9 +200,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@burger-editor/local@workspace:packages/@burger-editor/local"
   dependencies:
-    "@burger-editor/blocks": "npm:4.0.0-alpha.19"
-    "@burger-editor/client": "npm:4.0.0-alpha.19"
-    "@burger-editor/core": "npm:4.0.0-alpha.19"
+    "@burger-editor/blocks": "npm:4.0.0-alpha.20"
+    "@burger-editor/client": "npm:4.0.0-alpha.20"
+    "@burger-editor/core": "npm:4.0.0-alpha.20"
     "@hono/node-server": "npm:1.19.2"
     "@hono/zod-validator": "npm:0.7.2"
     "@types/debug": "npm:4.1.12"
@@ -230,10 +230,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@burger-editor/mcp-server@workspace:packages/@burger-editor/mcp-server"
   dependencies:
-    "@burger-editor/core": "npm:4.0.0-alpha.19"
-    "@burger-editor/legacy": "npm:4.0.0-alpha.19"
-    "@burger-editor/migrator": "npm:4.0.0-alpha.19"
-    "@burger-editor/utils": "npm:4.0.0-alpha.19"
+    "@burger-editor/core": "npm:4.0.0-alpha.20"
+    "@burger-editor/legacy": "npm:4.0.0-alpha.20"
+    "@burger-editor/migrator": "npm:4.0.0-alpha.20"
+    "@burger-editor/utils": "npm:4.0.0-alpha.20"
     "@modelcontextprotocol/sdk": "npm:1.17.5"
     vitest: "npm:3.2.4"
     zod: "npm:3.24.2"
@@ -242,19 +242,19 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/migrator@npm:4.0.0-alpha.19, @burger-editor/migrator@workspace:packages/@burger-editor/migrator":
+"@burger-editor/migrator@npm:4.0.0-alpha.20, @burger-editor/migrator@workspace:packages/@burger-editor/migrator":
   version: 0.0.0-use.local
   resolution: "@burger-editor/migrator@workspace:packages/@burger-editor/migrator"
   dependencies:
-    "@burger-editor/blocks": "npm:4.0.0-alpha.19"
-    "@burger-editor/core": "npm:4.0.0-alpha.19"
-    "@burger-editor/legacy": "npm:4.0.0-alpha.19"
-    "@burger-editor/utils": "npm:4.0.0-alpha.19"
+    "@burger-editor/blocks": "npm:4.0.0-alpha.20"
+    "@burger-editor/core": "npm:4.0.0-alpha.20"
+    "@burger-editor/legacy": "npm:4.0.0-alpha.20"
+    "@burger-editor/utils": "npm:4.0.0-alpha.20"
     semver: "npm:7.7.2"
   languageName: unknown
   linkType: soft
 
-"@burger-editor/utils@npm:4.0.0-alpha.19, @burger-editor/utils@workspace:packages/@burger-editor/utils":
+"@burger-editor/utils@npm:4.0.0-alpha.20, @burger-editor/utils@workspace:packages/@burger-editor/utils":
   version: 0.0.0-use.local
   resolution: "@burger-editor/utils@workspace:packages/@burger-editor/utils"
   dependencies:
