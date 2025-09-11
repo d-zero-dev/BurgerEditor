@@ -10,8 +10,8 @@ config();
  * @type {import('@burger-editor/local').LocalServerConfig}
  */
 export default {
-	documentRoot: path.join(import.meta.dirname, '.test'),
-	assetsRoot: path.join(import.meta.dirname, '.public'),
+	documentRoot: path.join(import.meta.dirname, '.test/src'),
+	assetsRoot: path.join(import.meta.dirname, '.test/public'),
 	lang: 'ja',
 	stylesheets: ['/css/style.css'],
 	classList: ['custom-class-bge-local'],
