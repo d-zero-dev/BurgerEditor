@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.18](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.17...v4.0.0-alpha.18) (2025-09-11)
+
+
+### Bug Fixes
+
+* **custom-element:** use exact versions for TipTap packages ([ee95203](https://github.com/d-zero-dev/BurgerEditor/commit/ee952030a10823ede36eb84ca4da01032283c788))
+
+
+### Features
+
+* **custom-element:** add image support to WYSIWYG editor ([88e1f6b](https://github.com/d-zero-dev/BurgerEditor/commit/88e1f6b5331d7521e5811ff1cf9b40888f4b3908))
+
+
+
+
+
 # [4.0.0-alpha.17](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.16...v4.0.0-alpha.17) (2025-08-25)
 
 **Note:** Version bump only for package @burger-editor/custom-element

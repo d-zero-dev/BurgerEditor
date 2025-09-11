@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.18](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.17...v4.0.0-alpha.18) (2025-09-11)
+
+
+### Features
+
+* **utils:** add generic merge utility with Mergeable type ([5d432a6](https://github.com/d-zero-dev/BurgerEditor/commit/5d432a6dce0c7505e0a05bb7d92421e59b5d96ac))
+
+
+
+
+
 # [4.0.0-alpha.17](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.16...v4.0.0-alpha.17) (2025-08-25)
 
 **Note:** Version bump only for package @burger-editor/utils

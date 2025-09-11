@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.18](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.17...v4.0.0-alpha.18) (2025-09-11)
+
+
+### Bug Fixes
+
+* **blocks:** improve item layout with flexbox alignment and stretching ([64185c9](https://github.com/d-zero-dev/BurgerEditor/commit/64185c9296983ec916ffc185aa8b3d34f9b43176))
+
+
+### Features
+
+* **blocks:** add content-navigation block with grid:4 layout and 8 in-page buttons ([3435d76](https://github.com/d-zero-dev/BurgerEditor/commit/3435d76888ca2d99850e1c575a98ed8acb4c2d36))
+* **blocks:** add CSS support for auto-fill grid layout ([daa51a2](https://github.com/d-zero-dev/BurgerEditor/commit/daa51a27ac2db945a8a61daeb94be99e20504d36))
+* **blocks:** add default catalog for centralized block management ([e1c23d1](https://github.com/d-zero-dev/BurgerEditor/commit/e1c23d1efa0e2df7a5bb9ea549722c3bbfc08716))
+* **blocks:** add horizontal scroll option to table item ([cd758b9](https://github.com/d-zero-dev/BurgerEditor/commit/cd758b91eb0c6f7ff915cdf37f00124bb53a5771))
+* **blocks:** add in-page link kind option to button item ([da66803](https://github.com/d-zero-dev/BurgerEditor/commit/da66803c02d0394a3e4e6aff0abb1efea167e795))
+* **blocks:** add subtext property to button item ([d517356](https://github.com/d-zero-dev/BurgerEditor/commit/d5173565116082624bf9e9f98bb1b2ca4f4c30d9))
+* **blocks:** add text link type option to button item ([ea1f1fb](https://github.com/d-zero-dev/BurgerEditor/commit/ea1f1fbfc9cc487ee963ee8fc4ab2b2277a1d83a))
+* **blocks:** add text-image-text block ([b2e3466](https://github.com/d-zero-dev/BurgerEditor/commit/b2e34660d82c27e93e5c3cbd8c34bfd0c2c3826a))
+* **blocks:** improve gap control with separate row and column gaps ([26de58b](https://github.com/d-zero-dev/BurgerEditor/commit/26de58b64d5666ee12b8a9e293d9a9b67feae5dd))
+* **blocks:** make button kind options configurable via bgeconfig ([cda6b71](https://github.com/d-zero-dev/BurgerEditor/commit/cda6b714ee04b977d71acd5df23e7983ae2f524f))
+* **client,blocks:** add semantic container frame UI and styles ([f8a10d4](https://github.com/d-zero-dev/BurgerEditor/commit/f8a10d4902c5895cd07de5d2461039e20bb0f34f))
+
+
+
+
+
 # [4.0.0-alpha.17](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.16...v4.0.0-alpha.17) (2025-08-25)
 
 ### Bug Fixes
