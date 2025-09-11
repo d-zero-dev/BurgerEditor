@@ -5,26 +5,20 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 # [4.0.0-alpha.18](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.17...v4.0.0-alpha.18) (2025-09-11)
 
-
 ### Bug Fixes
 
-* **core:** improve custom property extraction from CSS rules ([17c3658](https://github.com/d-zero-dev/BurgerEditor/commit/17c36584ae954a0b463fff45fd92364a4890b753))
-
+- **core:** improve custom property extraction from CSS rules ([17c3658](https://github.com/d-zero-dev/BurgerEditor/commit/17c36584ae954a0b463fff45fd92364a4890b753))
 
 ### Features
 
-* **client,core:** add container type selection to block options ([2f766f6](https://github.com/d-zero-dev/BurgerEditor/commit/2f766f6038dfd431edc8aafc9fc6df95ed6bd302))
-* **core:** add autoRepeat property to ContainerProps ([9d489df](https://github.com/d-zero-dev/BurgerEditor/commit/9d489dfef100779690f7c1f2533feb596e01bd8d))
-* **core:** add changeFrameSemantics method to BurgerBlock ([3a8f4e4](https://github.com/d-zero-dev/BurgerEditor/commit/3a8f4e4d63c7b5416935b75328c2cbd16333eb02))
-* **core:** add frameSemantics support to container properties ([50071d0](https://github.com/d-zero-dev/BurgerEditor/commit/50071d036f0de7bdeb4053312cb7cc71a3b42bfa))
-* **core:** add SelectableValue type and experimental config support ([d017626](https://github.com/d-zero-dev/BurgerEditor/commit/d0176269050f23fb144d44cf9c740a862a85389b))
-* **core:** implement autoRepeat parsing and serialization ([17c509d](https://github.com/d-zero-dev/BurgerEditor/commit/17c509d8d0e4d70bd0751c7607f54e4b7c50cd16))
-* **core:** implement health monitoring system with offline detection ([feec3fc](https://github.com/d-zero-dev/BurgerEditor/commit/feec3fca1c7b6e4200ba8072ddbd1923e14abfcc))
-* **core:** update BlockOptionsDialog for autoRepeat ([d807942](https://github.com/d-zero-dev/BurgerEditor/commit/d8079429ca7d9b6f1571563ec3cbbcceca248b9d))
-
-
-
-
+- **client,core:** add container type selection to block options ([2f766f6](https://github.com/d-zero-dev/BurgerEditor/commit/2f766f6038dfd431edc8aafc9fc6df95ed6bd302))
+- **core:** add autoRepeat property to ContainerProps ([9d489df](https://github.com/d-zero-dev/BurgerEditor/commit/9d489dfef100779690f7c1f2533feb596e01bd8d))
+- **core:** add changeFrameSemantics method to BurgerBlock ([3a8f4e4](https://github.com/d-zero-dev/BurgerEditor/commit/3a8f4e4d63c7b5416935b75328c2cbd16333eb02))
+- **core:** add frameSemantics support to container properties ([50071d0](https://github.com/d-zero-dev/BurgerEditor/commit/50071d036f0de7bdeb4053312cb7cc71a3b42bfa))
+- **core:** add SelectableValue type and experimental config support ([d017626](https://github.com/d-zero-dev/BurgerEditor/commit/d0176269050f23fb144d44cf9c740a862a85389b))
+- **core:** implement autoRepeat parsing and serialization ([17c509d](https://github.com/d-zero-dev/BurgerEditor/commit/17c509d8d0e4d70bd0751c7607f54e4b7c50cd16))
+- **core:** implement health monitoring system with offline detection ([feec3fc](https://github.com/d-zero-dev/BurgerEditor/commit/feec3fca1c7b6e4200ba8072ddbd1923e14abfcc))
+- **core:** update BlockOptionsDialog for autoRepeat ([d807942](https://github.com/d-zero-dev/BurgerEditor/commit/d8079429ca7d9b6f1571563ec3cbbcceca248b9d))
 
 # [4.0.0-alpha.17](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.16...v4.0.0-alpha.17) (2025-08-25)
 

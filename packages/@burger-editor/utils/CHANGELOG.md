@@ -5,14 +5,9 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 # [4.0.0-alpha.18](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.17...v4.0.0-alpha.18) (2025-09-11)
 
-
 ### Features
 
-* **utils:** add generic merge utility with Mergeable type ([5d432a6](https://github.com/d-zero-dev/BurgerEditor/commit/5d432a6dce0c7505e0a05bb7d92421e59b5d96ac))
-
-
-
-
+- **utils:** add generic merge utility with Mergeable type ([5d432a6](https://github.com/d-zero-dev/BurgerEditor/commit/5d432a6dce0c7505e0a05bb7d92421e59b5d96ac))
 
 # [4.0.0-alpha.17](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.16...v4.0.0-alpha.17) (2025-08-25)
 

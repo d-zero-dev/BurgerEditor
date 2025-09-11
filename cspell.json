@@ -10,6 +10,9 @@
 		"hono",
 		"jaco",
 		"tabler",
-		"trix"
+		"trix",
+
+		// Project specific
+		"bgeconfig"
 	]
 }

@@ -5,22 +5,16 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 # [4.0.0-alpha.18](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.17...v4.0.0-alpha.18) (2025-09-11)
 
-
 ### Bug Fixes
 
-* **client:** exclude float container type from semantic frame selection ([11f3eee](https://github.com/d-zero-dev/BurgerEditor/commit/11f3eee5ebeda27d02f376b377e8111428368c2b))
-
+- **client:** exclude float container type from semantic frame selection ([11f3eee](https://github.com/d-zero-dev/BurgerEditor/commit/11f3eee5ebeda27d02f376b377e8111428368c2b))
 
 ### Features
 
-* **client,blocks:** add semantic container frame UI and styles ([f8a10d4](https://github.com/d-zero-dev/BurgerEditor/commit/f8a10d4902c5895cd07de5d2461039e20bb0f34f))
-* **client,core:** add container type selection to block options ([2f766f6](https://github.com/d-zero-dev/BurgerEditor/commit/2f766f6038dfd431edc8aafc9fc6df95ed6bd302))
-* **client:** hide inline layout options for immutable single-item blocks ([de71f00](https://github.com/d-zero-dev/BurgerEditor/commit/de71f00937da23834c039c8f8111d3ffda9c5307))
-* **client:** update UI to select box for autoRepeat options ([768de75](https://github.com/d-zero-dev/BurgerEditor/commit/768de758dce03339c618da5fa2bad6c5b2944b26))
-
-
-
-
+- **client,blocks:** add semantic container frame UI and styles ([f8a10d4](https://github.com/d-zero-dev/BurgerEditor/commit/f8a10d4902c5895cd07de5d2461039e20bb0f34f))
+- **client,core:** add container type selection to block options ([2f766f6](https://github.com/d-zero-dev/BurgerEditor/commit/2f766f6038dfd431edc8aafc9fc6df95ed6bd302))
+- **client:** hide inline layout options for immutable single-item blocks ([de71f00](https://github.com/d-zero-dev/BurgerEditor/commit/de71f00937da23834c039c8f8111d3ffda9c5307))
+- **client:** update UI to select box for autoRepeat options ([768de75](https://github.com/d-zero-dev/BurgerEditor/commit/768de758dce03339c618da5fa2bad6c5b2944b26))
 
 # [4.0.0-alpha.17](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.16...v4.0.0-alpha.17) (2025-08-25)
 

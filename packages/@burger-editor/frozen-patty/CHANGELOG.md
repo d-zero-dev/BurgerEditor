@@ -5,14 +5,9 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 # [4.0.0-alpha.18](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.17...v4.0.0-alpha.18) (2025-09-11)
 
-
 ### Bug Fixes
 
-* **frozen-patty:** handle string boolean values in checkbox setContent ([2e8f532](https://github.com/d-zero-dev/BurgerEditor/commit/2e8f532c8e67923e55f333a9c65b4505df0ed149))
-
-
-
-
+- **frozen-patty:** handle string boolean values in checkbox setContent ([2e8f532](https://github.com/d-zero-dev/BurgerEditor/commit/2e8f532c8e67923e55f333a9c65b4505df0ed149))
 
 # [4.0.0-alpha.17](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.16...v4.0.0-alpha.17) (2025-08-25)
 

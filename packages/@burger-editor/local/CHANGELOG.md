@@ -5,17 +5,12 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 # [4.0.0-alpha.18](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.17...v4.0.0-alpha.18) (2025-09-11)
 
-
 ### Features
 
-* **local:** add experimental button kind config support ([bd7e7fc](https://github.com/d-zero-dev/BurgerEditor/commit/bd7e7fccda3008f097952293bb22202b8bfecbda))
-* **local:** add health check API and client integration ([cec6a40](https://github.com/d-zero-dev/BurgerEditor/commit/cec6a40857baf35556bf02363a12822faece7025))
-* **local:** add text-image-text block to card category ([e12d211](https://github.com/d-zero-dev/BurgerEditor/commit/e12d21177d0139081197bb01599040a6300f2b58))
-* **local:** use default catalog from blocks package instead of inline definition ([ff14891](https://github.com/d-zero-dev/BurgerEditor/commit/ff148913c53eabb58a5607316a951a747d98804b))
-
-
-
-
+- **local:** add experimental button kind config support ([bd7e7fc](https://github.com/d-zero-dev/BurgerEditor/commit/bd7e7fccda3008f097952293bb22202b8bfecbda))
+- **local:** add health check API and client integration ([cec6a40](https://github.com/d-zero-dev/BurgerEditor/commit/cec6a40857baf35556bf02363a12822faece7025))
+- **local:** add text-image-text block to card category ([e12d211](https://github.com/d-zero-dev/BurgerEditor/commit/e12d21177d0139081197bb01599040a6300f2b58))
+- **local:** use default catalog from blocks package instead of inline definition ([ff14891](https://github.com/d-zero-dev/BurgerEditor/commit/ff148913c53eabb58a5607316a951a747d98804b))
 
 # [4.0.0-alpha.17](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.16...v4.0.0-alpha.17) (2025-08-25)
 
