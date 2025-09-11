@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.19](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.18...v4.0.0-alpha.19) (2025-09-11)
+
+### Bug Fixes
+
+- **blocks:** resolve inline 2 columns sizing issues ([737155e](https://github.com/d-zero-dev/BurgerEditor/commit/737155ee9ffa5b88635c83cd331276a994dca372))
+- **blocks:** wrap content-navigation items with data-bge-group ([9389172](https://github.com/d-zero-dev/BurgerEditor/commit/9389172f24d1b21747ca0f2725b488ecf7f8c425))
+
 # [4.0.0-alpha.18](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.17...v4.0.0-alpha.18) (2025-09-11)
 
 ### Bug Fixes
