@@ -279,10 +279,20 @@
 		}
 	}
 
-	&:where([data-bge-container$=':immutable'], [data-bge-container*=':immutable:'])
-		:where([data-bge-container-frame]) {
-		& > * {
-			flex: 1 1 auto;
+	/* Left-right split box with resizable item (has `[data-bge-scale]`) on one side */
+	&:where([data-bge-container$=':immutable'], [data-bge-container*=':immutable:']):has(
+			[data-bge-group]:nth-child(2):last-child
+		) {
+		:where([data-bge-group]) {
+			&:has([data-bge-scale]) {
+				flex-grow: 0;
+				flex-shrink: 0;
+			}
+
+			&:not(:has([data-bge-scale])) {
+				flex-grow: 1;
+				flex-shrink: 1;
+			}
 		}
 	}
 }
