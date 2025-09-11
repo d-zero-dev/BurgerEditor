@@ -279,20 +279,25 @@
 		}
 	}
 
-	/* Left-right split box with resizable item (has `[data-bge-scale]`) on one side */
-	&:where([data-bge-container$=':immutable'], [data-bge-container*=':immutable:']):has(
-			[data-bge-group]:nth-child(2):last-child
-		) {
-		:where([data-bge-group]) {
-			&:has([data-bge-scale]) {
-				flex-grow: 0;
-				flex-shrink: 0;
-			}
+	&:where([data-bge-container$=':immutable'], [data-bge-container*=':immutable:']) {
+		/* Left-right split box with resizable item (has `[data-bge-scale]`) on one side */
+		&:has([data-bge-group]:nth-child(2):last-child) {
+			:where([data-bge-group]) {
+				&:has([data-bge-scale]) {
+					flex-grow: 0;
+					flex-shrink: 0;
+				}
 
-			&:not(:has([data-bge-scale])) {
-				flex-grow: 1;
-				flex-shrink: 1;
+				&:not(:has([data-bge-scale])) {
+					flex-grow: 1;
+					flex-shrink: 1;
+				}
 			}
+		}
+
+		/* Standard with immutable container */
+		:where([data-bge-group]) {
+			flex: 1 1 auto;
 		}
 	}
 }
