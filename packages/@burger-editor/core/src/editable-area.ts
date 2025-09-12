@@ -1,7 +1,6 @@
 import type { BurgerEditorEngine } from './engine/engine.js';
 import type { UICreator } from './types.js';
 
-import { BurgerBlock } from './block/block.js';
 import { BlockMenu } from './block-menu.js';
 import { appendStylesheetTo } from './dom-helpers/append-stylesheet-to.js';
 import { sanitizeAttrs } from './dom-helpers/sanitize-attrs.js';
@@ -199,24 +198,20 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 				'[data-bge-name], [data-bgb], .bgb-container, .bg-editor-block-container, .cb-editor-block-container',
 			).length === 0
 		) {
-			const block = await BurgerBlock.createUnknownBlock(
-				this.getContentsAsString(),
-				this.#engine,
-			);
+			const block = await this.#engine.restoreBlockFromElement(this.containerElement);
 			this.setContentsAsDOM(block.el);
 		} else {
 			for (const el of this.containerElement.children) {
 				if (el.matches('[data-bge-name]')) {
 					continue;
 				}
-				await BurgerBlock.createUnknownBlock(el.outerHTML, this.#engine);
-				el.remove();
+				await this.#engine.restoreBlockFromElement(el as HTMLElement);
 			}
 
 			for (const el of this.containerElement.querySelectorAll<HTMLElement>(
 				'[data-bge-name]',
 			)) {
-				await BurgerBlock.new(this.#engine, el);
+				await this.#engine.restoreBlockFromElement(el);
 			}
 		}
 		this.#engine.migrationCheck(this.#containerElement);
