@@ -1,6 +1,6 @@
 import type { BurgerBlock } from './block/block.js';
-import type { BlockOptions } from './block/types.js';
 import type { BurgerEditorEngine } from './engine/engine.js';
+import type { BlockData } from './types.js';
 
 import { EditorDialog } from './editor-dialog.js';
 
@@ -53,10 +53,12 @@ export class BlockOptionsDialog extends EditorDialog {
 
 		const currentOptions = this.#currentBlock.exportOptions();
 
-		const newOptions: BlockOptions = {
-			props: {
-				...currentOptions.props,
-				type: (containerType as 'grid' | 'inline' | 'float') ?? currentOptions.props.type,
+		const newOptions: Partial<BlockData> = {
+			containerProps: {
+				...currentOptions.containerProps,
+				type:
+					(containerType as 'grid' | 'inline' | 'float') ??
+					currentOptions.containerProps.type,
 				columns: columns ? Number(columns) : null,
 				autoRepeat: (autoRepeat as 'fixed' | 'auto-fill' | 'auto-fit') ?? 'fixed',
 				justify: justify as

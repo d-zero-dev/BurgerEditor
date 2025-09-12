@@ -4,19 +4,20 @@ import type { ContainerProps } from './types.js';
  *
  * @param containerProps
  */
-export function importContainerProps(containerProps?: ContainerProps): string {
+export function importContainerProps(containerProps?: Partial<ContainerProps>): string {
 	const {
-		type,
-		immutable,
-		autoRepeat,
-		justify,
-		align,
-		wrap,
-		columns,
-		float,
-		frameSemantics,
-	} = containerProps ?? {};
+		type = 'inline',
+		immutable = false,
+		autoRepeat = 'fixed',
+		justify = null,
+		align = null,
+		wrap = null,
+		columns = null,
+		float = null,
+		frameSemantics = 'div',
+	}: Partial<ContainerProps> = containerProps ?? {};
 	const options = new Set<string>();
+
 	if (immutable) {
 		options.add('immutable');
 	}
