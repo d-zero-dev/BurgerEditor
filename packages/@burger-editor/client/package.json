@@ -24,8 +24,9 @@
 		"dist"
 	],
 	"scripts": {
-		"build": "vite build",
-		"prebuild": "tsc",
+		"build": "npx run-p build:check build:build",
+		"build:build": "vite build",
+		"build:check": "svelte-check",
 		"dev": "vite build --watch"
 	},
 	"dependencies": {
@@ -40,6 +41,7 @@
 	"devDependencies": {
 		"@sveltejs/vite-plugin-svelte": "6.2.0",
 		"@types/jquery": "3.5.33",
+		"svelte-check": "4.3.1",
 		"vite": "7.1.5",
 		"vite-plugin-dts": "4.5.4"
 	}
