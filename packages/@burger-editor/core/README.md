@@ -106,3 +106,90 @@
 #### アイテム
 
 アイテムは`data-bge-item`属性をもつ要素で、コンテンツ編集可能な要素をラップします。
+
+## カスタムブロックカタログの作成
+
+独自のブロックカタログを定義することで、プロジェクトに適した自由なブロック構成を作成できます。
+
+### データ構造
+
+カスタムブロックカタログは `BlockCatalog`、`CatalogItem`、`BlockDefinition` 型で定義します。詳細な型定義は [`src/types.ts`](./src/types.ts) を参照してください。
+
+### カスタムカタログの例
+
+```javascript
+export const customCatalog = {
+	// カテゴリ名
+	カスタムブロック: [
+		{
+			label: 'カスタムテキスト+画像',
+			definition: {
+				name: 'custom-text-image',
+				containerProps: {
+					type: 'grid',
+					columns: 2,
+				},
+				classList: ['custom-block'],
+				style: {
+					'max-width': '800px',
+					margin: '0 auto',
+				},
+				items: [
+					// 第一グループ：テキストと画像
+					['wysiwyg', 'image'],
+					// 第二グループ：ボタン
+					['button'],
+				],
+			},
+		},
+	],
+	特殊レイアウト: [
+		{
+			label: '3列カード',
+			definition: {
+				name: 'three-column-card',
+				containerProps: {
+					type: 'grid',
+					columns: 3,
+					justify: 'center',
+				},
+				items: [
+					// 各列に画像とテキストを配置
+					[
+						{ name: 'image', data: { alt: 'カード1' } },
+						{ name: 'wysiwyg', data: { wysiwyg: '<h3>タイトル1</h3>' } },
+					],
+					[
+						{ name: 'image', data: { alt: 'カード2' } },
+						{ name: 'wysiwyg', data: { wysiwyg: '<h3>タイトル2</h3>' } },
+					],
+					[
+						{ name: 'image', data: { alt: 'カード3' } },
+						{ name: 'wysiwyg', data: { wysiwyg: '<h3>タイトル3</h3>' } },
+					],
+				],
+			},
+		},
+	],
+};
+```
+
+### カタログの結合
+
+既存のデフォルトカタログと独自カタログを組み合わせることも可能です：
+
+```javascript
+import { defaultCatalog } from '@burger-editor/blocks';
+
+export const catalog = {
+	...defaultCatalog,
+	...customCatalog,
+};
+```
+
+### ブロック構成のポイント
+
+- **`items`配列**: 第1階層がグループ、第2階層がアイテムを表します
+- **アイテム指定**: 文字列でアイテム名のみ、またはオブジェクトで初期データ付きで指定
+- **コンテナプロパティ**: レイアウト方法（grid、inline、float）とそのオプションを指定
+- **スタイリング**: `classList`で CSS クラス、`style`でインラインスタイルを適用
