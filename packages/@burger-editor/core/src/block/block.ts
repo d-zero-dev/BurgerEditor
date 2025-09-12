@@ -1,12 +1,13 @@
-import type { BlockData, BlockOptions, ContainerFrameSemantics } from './types.js';
+import type { ContainerFrameSemantics, CreateItemElement } from './types.js';
 import type { BurgerEditorEngine } from '../engine/engine.js';
+import type { Item } from '../item/item.js';
 import type { ItemData } from '../item/types.js';
+import type { BlockData } from '../types.js';
 
-import { Item } from '../item/item.js';
-
-import { createUnknownBlock } from './create-unknown-block.js';
+import { createPlainStructuredBlockElement } from './create-plain-structured-block-element.js';
 import { exportOptions } from './export-options.js';
 import { importOptions } from './import-options.js';
+import { parseHTMLToBlockData } from './parse-html-to-definition.js';
 import { updateGridItems } from './update-grid-items.js';
 
 const bbMap = new WeakMap<BurgerBlock, HTMLElement>();
@@ -14,7 +15,7 @@ const bbMap = new WeakMap<BurgerBlock, HTMLElement>();
 let _lastUID = 0;
 
 export class BurgerBlock {
-	readonly engine: BurgerEditorEngine;
+	#createItemElement: CreateItemElement;
 	#items: readonly Item<ItemData, {}>[] = [];
 	#uid: number;
 
@@ -35,26 +36,9 @@ export class BurgerBlock {
 	}
 
 	// eslint-disable-next-line no-restricted-syntax
-	private constructor(
-		engine: BurgerEditorEngine,
-		elementOrBlockName: HTMLElement | string,
-	) {
+	private constructor(createItemElement: CreateItemElement) {
 		this.#uid = _lastUID++;
-		this.engine = engine;
-
-		if (typeof elementOrBlockName === 'string') {
-			const el = engine.getBlockTemplate(elementOrBlockName);
-			if (el) {
-				bbMap.set(this, el);
-			}
-		} else if (elementOrBlockName) {
-			const el = elementOrBlockName;
-			bbMap.set(this, el);
-		} else {
-			throw new Error('Do not create BurgerBlock. A base element is empty.');
-		}
-
-		BurgerBlock.#blocks.set(this.el, this);
+		this.#createItemElement = createItemElement;
 	}
 
 	/**
@@ -67,59 +51,48 @@ export class BurgerBlock {
 			throw new Error('Container frame not found');
 		}
 
-		// Backup current state for rollback
-		const backup = this.#export();
+		// Determine target elements
+		const frameTagName = frameSemantics === 'div' ? 'div' : frameSemantics;
+		const groupTagName = frameSemantics === 'div' ? 'div' : 'li';
 
-		try {
-			// Determine target elements
-			const frameTagName = frameSemantics === 'div' ? 'div' : frameSemantics;
-			const groupTagName = frameSemantics === 'div' ? 'div' : 'li';
+		// Create new container frame element
+		const newFrame = document.createElement(frameTagName);
+		this.#copyAttributes(containerFrame, newFrame);
 
-			// Create new container frame element
-			const newFrame = document.createElement(frameTagName);
-			this.#copyAttributes(containerFrame, newFrame);
+		// Transform groups
+		const groups = containerFrame.querySelectorAll('[data-bge-group]');
+		for (const group of groups) {
+			const newGroup = document.createElement(groupTagName);
+			this.#copyAttributes(group, newGroup);
 
-			// Transform groups
-			const groups = containerFrame.querySelectorAll('[data-bge-group]');
-			for (const group of groups) {
-				const newGroup = document.createElement(groupTagName);
-				this.#copyAttributes(group, newGroup);
-
-				// Move all child content
-				while (group.firstChild) {
-					newGroup.append(group.firstChild);
-				}
-
-				newFrame.append(newGroup);
+			// Move all child content
+			while (group.firstChild) {
+				newGroup.append(group.firstChild);
 			}
 
-			// Replace old frame with new frame
-			containerFrame.parentNode?.replaceChild(newFrame, containerFrame);
-
-			// Update internal references
-			BurgerBlock.#blocks.set(this.el, this);
-
-			// Update options with new frameSemantics
-			const currentOptions = this.exportOptions();
-			this.importOptions({
-				...currentOptions,
-				props: {
-					...currentOptions.props,
-					frameSemantics,
-				},
-			});
-		} catch (error) {
-			// Rollback on error
-			this.#import(backup);
-			throw new Error(
-				`Frame semantics change failed: ${error instanceof Error ? error.message : error}`,
-			);
+			newFrame.append(newGroup);
 		}
+
+		// Replace old frame with new frame
+		containerFrame.parentNode?.replaceChild(newFrame, containerFrame);
+
+		// Update internal references
+		BurgerBlock.#blocks.set(this.el, this);
+
+		// Update options with new frameSemantics
+		const currentOptions = this.exportOptions();
+		this.importOptions({
+			...currentOptions,
+			containerProps: {
+				...currentOptions.containerProps,
+				frameSemantics,
+			},
+		});
 	}
+
 	clone() {
 		const originalData: BlockData = this.#export();
-		const newBlock = new BurgerBlock(this.engine, this.el.dataset.bgeName ?? 'unknown');
-		newBlock.#import(originalData);
+		const newBlock = BurgerBlock.create(originalData, this.#createItemElement);
 		return newBlock;
 	}
 
@@ -139,16 +112,16 @@ export class BurgerBlock {
 		return this.el.outerHTML;
 	}
 
-	importJSONString(jsonString: string) {
+	async importJSONString(jsonString: string) {
 		const data = JSON.parse(jsonString) as BlockData;
 		try {
-			this.#import(data);
+			await this.#import(data);
 		} catch (error) {
 			throw new Error(`ImportError: ${error instanceof Error ? error.message : error}`);
 		}
 	}
 
-	importOptions(options: BlockOptions) {
+	importOptions(options: Partial<BlockData>) {
 		importOptions(this.el, options);
 	}
 
@@ -180,9 +153,7 @@ export class BurgerBlock {
 	}
 
 	isMutable() {
-		return this.el.matches(
-			':not([data-bge-container*=":immutable"]):has(>[data-bge-container-frame]>[data-bge-group])',
-		);
+		return this.el.matches(':not([data-bge-container*=":immutable"])');
 	}
 
 	remove() {
@@ -193,10 +164,10 @@ export class BurgerBlock {
 		return JSON.stringify(this.#export(), null, space);
 	}
 
-	async updateGridItems(addOrRemove: 1 | -1) {
-		await updateGridItems(
+	updateGridItems(addOrRemove: 1 | -1, engine: BurgerEditorEngine) {
+		updateGridItems(
 			[...this.el.querySelectorAll('[data-bge-group]')],
-			this.engine,
+			engine,
 			addOrRemove,
 			this.items,
 			(items) => (this.items = items),
@@ -217,38 +188,73 @@ export class BurgerBlock {
 		target.className = source.className;
 	}
 
+	#create(data: BlockData) {
+		return createPlainStructuredBlockElement(data, this.#createItemElement);
+	}
+
 	#export() {
-		const data: BlockData = {
-			...this.exportOptions(),
-			itemData: this.items.map((type) => type.export()),
+		return parseHTMLToBlockData(this.el);
+	}
+
+	#fallbackBlockData(html: string): BlockData {
+		return {
+			name: 'text',
+			containerProps: {
+				type: 'grid',
+				columns: 1,
+			},
+			classList: [],
+			items: [[{ name: 'wysiwyg', data: { wysiwyg: html } }]],
 		};
-		return data;
 	}
 
-	#import(data: BlockData) {
-		for (const [i, typeData] of data.itemData.entries()) {
-			void this.items[i]?.import(typeData);
-		}
-		importOptions(this.el, data);
+	async #import(data: BlockData) {
+		this.el.replaceWith(
+			await createPlainStructuredBlockElement(data, this.#createItemElement),
+		);
 	}
 
-	async #init() {
-		for (const $item of this.el.querySelectorAll<HTMLElement>('[data-bgi], [data-bgt]')) {
-			const item = await Item.new(this.engine, $item);
-			(this.items as Item<ItemData, {}>[])[this.items.length] = item;
+	async #rebind(el: HTMLElement) {
+		if (isBurgerBlockElement(el)) {
+			const itemContainers = el.querySelectorAll('[data-bge-item]');
+			for (const itemContainer of itemContainers) {
+				const itemElements = itemContainer.querySelectorAll<HTMLElement>('[data-bgi]');
+				for (const itemElement of itemElements) {
+					await this.#createItemElement(itemElement);
+				}
+			}
+			return el;
 		}
+
+		// eslint-disable-next-line no-console
+		console.error('%o is not a burger block', el);
+		const fallbackEl = await createPlainStructuredBlockElement(
+			this.#fallbackBlockData(el.outerHTML),
+			this.#createItemElement,
+		);
+		el.replaceWith(fallbackEl);
+		return fallbackEl;
+	}
+
+	#set(el: HTMLElement) {
+		bbMap.set(this, el);
+		BurgerBlock.#blocks.set(this.el, this);
 	}
 
 	static #blocks = new WeakMap<HTMLElement, BurgerBlock>();
 
-	static async new(engine: BurgerEditorEngine, elementOrBlockName: HTMLElement | string) {
-		const block = new BurgerBlock(engine, elementOrBlockName);
-		await block.#init();
+	static async create(data: BlockData, createItemElement: CreateItemElement) {
+		const block = new BurgerBlock(createItemElement);
+		const el = await block.#create(data);
+		block.#set(el);
 		return block;
 	}
 
-	static async createUnknownBlock(html: string, engine: BurgerEditorEngine) {
-		return createUnknownBlock(html, engine);
+	static async rebind(el: HTMLElement, createItemElement: CreateItemElement) {
+		const block = new BurgerBlock(createItemElement);
+		const newEl = await block.#rebind(el);
+		block.#set(newEl);
+		return block;
 	}
 
 	static getBlock(el: HTMLElement) {
@@ -258,4 +264,16 @@ export class BurgerBlock {
 		}
 		return block;
 	}
+}
+
+/**
+ *
+ * @param el
+ */
+function isBurgerBlockElement(el: HTMLElement) {
+	return el.matches(
+		[
+			'[data-bge-name][data-bge-container]:has(>[data-bge-container-frame]>[data-bge-group]>[data-bge-item])',
+		].join(','),
+	);
 }
