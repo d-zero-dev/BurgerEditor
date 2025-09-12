@@ -22,8 +22,9 @@
 		"types.d.ts"
 	],
 	"scripts": {
-		"build": "rollup -c",
-		"prebuild": "tsc",
+		"build": "npx run-p build:check build:build",
+		"build:build": "rollup -c",
+		"build:check": "npx tsc",
 		"dev": "rollup -c -w"
 	},
 	"dependencies": {

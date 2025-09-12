@@ -19,11 +19,11 @@
 		"style"
 	],
 	"scripts": {
-		"build": "run-p build:client build:server",
+		"build": "npx run-p build:check build:client build:server",
 		"build:client": "vite build",
-		"build:server": "tsc -p tsconfig.build.json",
-		"prebuild": "tsc",
-		"dev": "run-p dev:client dev:server",
+		"build:server": "npx tsc -p tsconfig.build.json",
+		"build:check": "npx tsc",
+		"dev": "npx run-p dev:client dev:server",
 		"dev:client": "vite build --watch",
 		"dev:server": "DEV_MODE=true DEBUG=\"@bge:*\" tsx watch src/index.ts"
 	},
@@ -48,7 +48,6 @@
 		"@types/jsdom": "21.1.7",
 		"@types/node": "24.5.1",
 		"dotenv": "17.2.2",
-		"npm-run-all2": "8.0.4",
 		"tsx": "4.20.5",
 		"vite": "7.1.5"
 	},
