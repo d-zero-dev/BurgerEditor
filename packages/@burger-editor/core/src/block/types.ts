@@ -1,16 +1,3 @@
-import type { ItemData } from '../item/types.js';
-
-export interface BlockData extends BlockOptions {
-	readonly itemData: readonly ItemData[];
-}
-
-export interface BlockOptions {
-	readonly props: ContainerProps;
-	readonly classList: readonly string[];
-	readonly id: string | null;
-	readonly style: Record<string, string>;
-}
-
 export type ContainerProps = {
 	readonly type: ContainerType;
 	readonly immutable: boolean;
