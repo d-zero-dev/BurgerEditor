@@ -1,4 +1,4 @@
-export { items } from './items.js';
+export { items } from './items/items.js';
 export { defaultCatalog } from './default-catalog.js';
 export { oldCatalog } from './old-catalog.js';
 
