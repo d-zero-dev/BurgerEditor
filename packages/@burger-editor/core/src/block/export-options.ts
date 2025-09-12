@@ -1,4 +1,4 @@
-import type { BlockOptions } from './types.js';
+import type { BlockData } from '../types.js';
 
 import { exportContainerProps } from './export-container-props.js';
 import { exportStyleOptions } from './export-style-options.js';
@@ -7,14 +7,16 @@ import { exportStyleOptions } from './export-style-options.js';
  *
  * @param el
  */
-export function exportOptions(el: HTMLElement): BlockOptions {
-	const props = exportContainerProps(el.dataset.bgeContainer);
+export function exportOptions(
+	el: HTMLElement,
+): Pick<BlockData, 'containerProps' | 'classList' | 'id' | 'style'> {
+	const containerProps = exportContainerProps(el.dataset.bgeContainer);
 	const classList = [...el.classList];
 	const id = el.id.replace(/^bge-/, '').trim() || null;
 	const style = exportStyleOptions(el);
 
 	return {
-		props,
+		containerProps,
 		classList,
 		id,
 		style,
