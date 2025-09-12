@@ -1,7 +1,7 @@
 // THIS FILE IS FOR LOCAL DEVELOPMENT ONLY
-
 import path from 'node:path';
 
+import { defaultCatalog } from '@burger-editor/blocks';
 import { config } from 'dotenv';
 
 config();
@@ -16,6 +16,28 @@ export default {
 	stylesheets: ['/css/style.css'],
 	classList: ['custom-class-bge-local'],
 	editableArea: '.custom-class-bge-local',
+	catalog: {
+		...defaultCatalog,
+		test: [
+			{
+				label: 'test',
+				definition: {
+					name: 'test',
+					svg: 'test',
+					containerProps: {
+						type: 'grid',
+						columns: 1,
+					},
+					classList: ['a', 'b', 'c'],
+					style: {
+						'max-width': 'full',
+						'padding-inline': 'none',
+					},
+					items: [['wysiwyg', 'image', 'youtube']],
+				},
+			},
+		],
+	},
 	newFileContent: `
 ---
 title: 'New Page'
