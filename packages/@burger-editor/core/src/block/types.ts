@@ -1,3 +1,4 @@
+import type { BlockItem } from '../types.js';
 export type ContainerProps = {
 	readonly type: ContainerType;
 	readonly immutable: boolean;
@@ -19,3 +20,7 @@ export type ContainerProps = {
 export type ContainerType = 'grid' | 'inline' | 'float';
 
 export type ContainerFrameSemantics = 'div' | 'ul' | 'ol';
+
+export type CreateItemElement = (
+	item: BlockItem | HTMLElement,
+) => Promise<HTMLElement> | HTMLElement;
