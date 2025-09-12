@@ -1,24 +1,24 @@
 import type { BlockCatalog } from '@burger-editor/core';
 
 // 全ブロックのアイコンをインポート
-import button3Icon from './icons/button3.svg';
-import contentNavigationIcon from './icons/content-navigation.svg';
-import disclosureIcon from './icons/disclosure.svg';
-import downloadFile3Icon from './icons/download-file3.svg';
-import googleMapsIcon from './icons/google-maps.svg';
-import hrIcon from './icons/hr.svg';
-import imageText3Icon from './icons/image-text3.svg';
-import imageIcon from './icons/image.svg';
-import tableIcon from './icons/table.svg';
-import textFloatImage1Icon from './icons/text-float-image1.svg';
-import textFloatImage2Icon from './icons/text-float-image2.svg';
-import textImageTextIcon from './icons/text-image-text.svg';
-import textImage1Icon from './icons/text-image1.svg';
-import textImage2Icon from './icons/text-image2.svg';
-import titleIcon from './icons/title.svg';
-import title2Icon from './icons/title2.svg';
-import wysiwygIcon from './icons/wysiwyg.svg';
-import youtubeIcon from './icons/youtube.svg';
+import button3Icon from '../icons/button3.svg';
+import contentNavigationIcon from '../icons/content-navigation.svg';
+import disclosureIcon from '../icons/disclosure.svg';
+import downloadFile3Icon from '../icons/download-file3.svg';
+import googleMapsIcon from '../icons/google-maps.svg';
+import hrIcon from '../icons/hr.svg';
+import imageText3Icon from '../icons/image-text3.svg';
+import imageIcon from '../icons/image.svg';
+import tableIcon from '../icons/table.svg';
+import textFloatImage1Icon from '../icons/text-float-image1.svg';
+import textFloatImage2Icon from '../icons/text-float-image2.svg';
+import textImageTextIcon from '../icons/text-image-text.svg';
+import textImage1Icon from '../icons/text-image1.svg';
+import textImage2Icon from '../icons/text-image2.svg';
+import titleIcon from '../icons/title.svg';
+import title2Icon from '../icons/title2.svg';
+import wysiwygIcon from '../icons/wysiwyg.svg';
+import youtubeIcon from '../icons/youtube.svg';
 
 export const defaultCatalog: BlockCatalog = {
 	見出し: [
