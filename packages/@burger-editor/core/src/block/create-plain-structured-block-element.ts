@@ -1,12 +1,10 @@
 import type { BlockData, BlockItemStructure } from '../types.js';
 import type { CreateItemElement } from './types.js';
 
-import { importContainerProps } from './import-container-props.js';
+import { importOptions } from './import-options.js';
 
 /**
  * BlockDataからHTML要素を生成する
- *
- * コンテナ特性・クラス・スタイル・IDは BurgerBlock#importOptions で設定される
  *
  * data.itemsの構造でgroupの有無などが確定する
  * @param data BlockData
@@ -19,7 +17,8 @@ export async function createPlainStructuredBlockElement(
 ): Promise<HTMLElement> {
 	const container = document.createElement('div');
 	container.dataset.bgeName = data.name;
-	container.dataset.bgeContainer = importContainerProps(data.containerProps);
+
+	importOptions(container, data);
 
 	const frame = document.createElement('div');
 	frame.dataset.bgeContainerFrame = '';
