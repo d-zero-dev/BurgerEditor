@@ -14,6 +14,9 @@ export async function replaceElement(elA: HTMLElement, elB: HTMLElement, duratio
 		pointerEvents: 'none',
 	} as const satisfies Partial<CSSStyleDeclaration>;
 
+	const beforeStyleA = elA.style.cssText.trim();
+	const beforeStyleB = elB.style.cssText.trim();
+
 	const boxA = elA.getBoundingClientRect();
 	const boxB = elB.getBoundingClientRect();
 
@@ -74,4 +77,11 @@ export async function replaceElement(elA: HTMLElement, elB: HTMLElement, duratio
 	tmpContainer.remove();
 	elA.removeAttribute('style');
 	elB.removeAttribute('style');
+
+	if (beforeStyleA) {
+		elA.style.cssText = beforeStyleA;
+	}
+	if (beforeStyleB) {
+		elB.style.cssText = beforeStyleB;
+	}
 }
