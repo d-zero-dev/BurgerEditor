@@ -20,13 +20,13 @@ import { Item } from '../item/item.js';
  *   1. 最後の要素を削除
  *   2. itemsから対応するアイテムを削除
  */
-export async function updateGridItems(
+export function updateGridItems(
 	$items: readonly Element[],
 	engine: BurgerEditorEngine,
 	addOrRemove: 1 | -1,
 	items: readonly Item<ItemData, { [key: string]: unknown }>[],
 	updateItem: (items: readonly Item<ItemData, { [key: string]: unknown }>[]) => void,
-): Promise<void> {
+) {
 	const $lastItem = $items.at(-1);
 	if (!$lastItem) {
 		return;
@@ -38,7 +38,7 @@ export async function updateGridItems(
 		$lastItem.parentElement?.append($newItem);
 		const $newItems = $newItem.querySelectorAll<HTMLElement>('[data-bge-group]');
 		for (const $item of $newItems) {
-			const item = await Item.new(engine, $item);
+			const item = Item.rebind(engine, $item);
 			const newItems = [...items];
 			newItems[newItems.length] = item;
 			updateItem(newItems);
