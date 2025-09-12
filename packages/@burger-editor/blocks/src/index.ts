@@ -1,5 +1,5 @@
-export { blocks } from './blocks.js';
-export { items } from './items.js';
-export { defaultCatalog } from './default-catalog.js';
+export { items } from './items/items.js';
+export { defaultCatalog } from './catalogs/default.js';
+export { legacyCatalog } from './catalogs/legacy.js';
 
 export { default as generalCSS } from './general.css';

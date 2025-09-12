@@ -1,14 +1,14 @@
 <script lang="ts">
-	import type { BurgerEditorEngine } from '@burger-editor/core';
+	import type { BlockData, BurgerEditorEngine } from '@burger-editor/core';
 	export let engine: BurgerEditorEngine;
 
 	/**
 	 *
-	 * @param blockName
+	 * @param blockData
 	 */
-	function addBlock(blockName: string) {
+	function addBlock(blockData: BlockData) {
 		engine.blockCatalogDialog.close();
-		engine.addBlock(blockName);
+		engine.addBlock(blockData);
 	}
 </script>
 
@@ -17,16 +17,16 @@
 		{#each engine.blockCatalogDialog.catalog as [category, blocks] (category)}
 			<dt>{category}</dt>
 			<div>
-				{#each blocks as [blockName, blockInfo] (blockName)}
+				{#each blocks as blockInfo (category + blockInfo.label + blockInfo.definition.name)}
 					<dd>
-						<button type="button" on:click={() => addBlock(blockName)}>
-							{#if blockInfo.img || blockInfo.svg}
+						<button type="button" on:click={() => addBlock(blockInfo.definition)}>
+							{#if blockInfo.definition.img || blockInfo.definition.svg}
 								<figure>
 									<div class="img">
-										{#if blockInfo.img}
-											<img src={blockInfo.img} alt="" loading="lazy" />
-										{:else if blockInfo.svg}
-											{@html blockInfo.svg}
+										{#if blockInfo.definition.img}
+											<img src={blockInfo.definition.img} alt="" loading="lazy" />
+										{:else if blockInfo.definition.svg}
+											{@html blockInfo.definition.svg}
 										{/if}
 									</div>
 									<figcaption>{blockInfo.label}</figcaption>

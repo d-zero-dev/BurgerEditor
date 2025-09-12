@@ -140,7 +140,7 @@
 			return;
 		}
 
-		currentBlock.updateGridItems(addOrRemove);
+		currentBlock.updateGridItems(addOrRemove, engine);
 
 		engine.save();
 	}

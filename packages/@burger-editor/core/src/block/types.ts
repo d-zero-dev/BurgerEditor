@@ -1,16 +1,4 @@
-import type { ItemData } from '../item/types.js';
-
-export interface BlockData extends BlockOptions {
-	readonly itemData: readonly ItemData[];
-}
-
-export interface BlockOptions {
-	readonly props: ContainerProps;
-	readonly classList: readonly string[];
-	readonly id: string | null;
-	readonly style: Record<string, string>;
-}
-
+import type { BlockItem } from '../types.js';
 export type ContainerProps = {
 	readonly type: ContainerType;
 	readonly immutable: boolean;
@@ -32,3 +20,7 @@ export type ContainerProps = {
 export type ContainerType = 'grid' | 'inline' | 'float';
 
 export type ContainerFrameSemantics = 'div' | 'ul' | 'ol';
+
+export type CreateItemElement = (
+	item: BlockItem | HTMLElement,
+) => Promise<HTMLElement> | HTMLElement;

@@ -1,4 +1,4 @@
-import type { FileType, SelectableValue } from '@burger-editor/core';
+import type { BlockCatalog, FileType, SelectableValue } from '@burger-editor/core';
 import type { Mergeable } from '@burger-editor/utils';
 
 export interface LocalServerConfig {
@@ -17,6 +17,7 @@ export interface LocalServerConfig {
 	readonly googleMapsApiKey: string | null;
 	readonly open: boolean;
 	readonly newFileContent: string;
+	readonly catalog: BlockCatalog;
 	readonly healthCheck: {
 		readonly enabled: boolean;
 		readonly interval: number;
