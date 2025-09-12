@@ -62,20 +62,10 @@ export interface UICreator {
 }
 
 export interface BlockCatalog {
-	readonly [category: string]: ReadonlyArray<CatalogBlockEntry>;
+	readonly [category: string]: ReadonlyArray<CatalogItem>;
 }
-
-export interface CatalogBlockEntry {
-	readonly label: string;
-	readonly svg?: string;
-	readonly img?: string;
-	readonly definition: BlockDefinition;
-}
-
 export interface CatalogItem {
 	readonly label: string;
-	readonly img?: string;
-	readonly svg?: string;
 	readonly definition: BlockDefinition;
 }
 
@@ -209,8 +199,9 @@ export interface BlockData {
 	readonly items: BlockItemStructure;
 }
 
-export interface BlockDefinition extends BlockData {
-	readonly icon: string;
+export interface BlockDefinition extends Omit<BlockData, 'id'> {
+	readonly img?: string;
+	readonly svg?: string;
 }
 
 export type BlockItemStructure = ReadonlyArray<ReadonlyArray<BlockItem>>;
