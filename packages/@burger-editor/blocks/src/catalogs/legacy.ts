@@ -1,37 +1,37 @@
 import type { BlockCatalog } from '@burger-editor/core';
 
-import buttonIcon from './icons/button.svg';
-import button2Icon from './icons/button2.svg';
-import button3Icon from './icons/button3.svg';
-import contentNavigationIcon from './icons/content-navigation.svg';
-import disclosureIcon from './icons/disclosure.svg';
-import downloadFileIcon from './icons/download-file.svg';
-import downloadFile2Icon from './icons/download-file2.svg';
-import downloadFile3Icon from './icons/download-file3.svg';
-import googleMapsIcon from './icons/google-maps.svg';
-import hrIcon from './icons/hr.svg';
-import imageText2Icon from './icons/image-text2.svg';
-import imageText3Icon from './icons/image-text3.svg';
-import imageText4Icon from './icons/image-text4.svg';
-import imageText5Icon from './icons/image-text5.svg';
-import imageIcon from './icons/image.svg';
-import image2Icon from './icons/image2.svg';
-import image3Icon from './icons/image3.svg';
-import image4Icon from './icons/image4.svg';
-import image5Icon from './icons/image5.svg';
-import tableIcon from './icons/table.svg';
-import textFloatImage1Icon from './icons/text-float-image1.svg';
-import textFloatImage2Icon from './icons/text-float-image2.svg';
-import textImageTextIcon from './icons/text-image-text.svg';
-import textImage1Icon from './icons/text-image1.svg';
-import textImage2Icon from './icons/text-image2.svg';
-import titleIcon from './icons/title.svg';
-import title2Icon from './icons/title2.svg';
-import wysiwygIcon from './icons/wysiwyg.svg';
-import wysiwyg2Icon from './icons/wysiwyg2.svg';
-import youtubeIcon from './icons/youtube.svg';
+import buttonIcon from '../icons/button.svg';
+import button2Icon from '../icons/button2.svg';
+import button3Icon from '../icons/button3.svg';
+import contentNavigationIcon from '../icons/content-navigation.svg';
+import disclosureIcon from '../icons/disclosure.svg';
+import downloadFileIcon from '../icons/download-file.svg';
+import downloadFile2Icon from '../icons/download-file2.svg';
+import downloadFile3Icon from '../icons/download-file3.svg';
+import googleMapsIcon from '../icons/google-maps.svg';
+import hrIcon from '../icons/hr.svg';
+import imageText2Icon from '../icons/image-text2.svg';
+import imageText3Icon from '../icons/image-text3.svg';
+import imageText4Icon from '../icons/image-text4.svg';
+import imageText5Icon from '../icons/image-text5.svg';
+import imageIcon from '../icons/image.svg';
+import image2Icon from '../icons/image2.svg';
+import image3Icon from '../icons/image3.svg';
+import image4Icon from '../icons/image4.svg';
+import image5Icon from '../icons/image5.svg';
+import tableIcon from '../icons/table.svg';
+import textFloatImage1Icon from '../icons/text-float-image1.svg';
+import textFloatImage2Icon from '../icons/text-float-image2.svg';
+import textImageTextIcon from '../icons/text-image-text.svg';
+import textImage1Icon from '../icons/text-image1.svg';
+import textImage2Icon from '../icons/text-image2.svg';
+import titleIcon from '../icons/title.svg';
+import title2Icon from '../icons/title2.svg';
+import wysiwygIcon from '../icons/wysiwyg.svg';
+import wysiwyg2Icon from '../icons/wysiwyg2.svg';
+import youtubeIcon from '../icons/youtube.svg';
 
-export const oldCatalog: BlockCatalog = {
+export const legacyCatalog: BlockCatalog = {
 	'見出し / テキスト / テキスト+画像': [
 		{
 			label: '大見出し',
