@@ -1,6 +1,6 @@
 import type { AppType } from '../route.js';
 
-import { blocks, defaultCatalog, generalCSS, items } from '@burger-editor/blocks';
+import { generalCSS, items } from '@burger-editor/blocks';
 import { createBurgerEditorClient } from '@burger-editor/client';
 import { CSS_LAYER } from '@burger-editor/core';
 import '@burger-editor/client/style';
@@ -44,11 +44,10 @@ export async function createEditor() {
 				})),
 			],
 		},
-		blocks,
 		items,
-		generalCSS,
-		catalog: defaultCatalog,
+		catalog: config.catalog,
 		initialContents: mainInput.value,
+		generalCSS,
 		healthCheck: config.healthCheck
 			? {
 					...config.healthCheck,

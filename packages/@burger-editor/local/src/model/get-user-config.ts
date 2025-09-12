@@ -8,6 +8,7 @@ import type {
 
 import path from 'node:path';
 
+import { defaultCatalog } from '@burger-editor/blocks';
 import { cosmiconfig } from 'cosmiconfig';
 
 const explorer = cosmiconfig('burgereditor');
@@ -37,6 +38,7 @@ export async function getUserConfig(): Promise<LocalServerConfig> {
 		filesDir,
 		editableArea: config.editableArea ?? null,
 		newFileContent: config.newFileContent?.trim() ?? '',
+		catalog: config.catalog ?? defaultCatalog,
 		sampleImagePath:
 			config.sampleImagePath ??
 			((filesDir.image.clientPath + '/' + 'sample.png') as `/${string}`),
