@@ -5,6 +5,7 @@ import { strToDOM } from '@burger-editor/utils';
 import semver from 'semver';
 
 import { BurgerEditorEngine } from '../engine/engine.js';
+import { replacePlaceholders } from '../utils/replace-placeholders.js';
 
 import { dataFromHtml } from './data-from-html.js';
 import { dataToHtml } from './data-to-html.js';
@@ -34,16 +35,12 @@ export class Item<
 	}
 
 	// eslint-disable-next-line no-restricted-syntax
-	private constructor(engine: BurgerEditorEngine, html: HTMLElement | string) {
-		let el: HTMLElement;
-		if (typeof html === 'string') {
-			el = strToDOM(html);
-		} else {
-			el = html;
-		}
-
+	private constructor(
+		engine: BurgerEditorEngine,
+		seed: ItemSeed<N, T, C>,
+		el: HTMLElement,
+	) {
 		elMap.set(el, this);
-
 		this.#el = el;
 
 		this.#el.addEventListener('click', (e) => {
@@ -54,17 +51,10 @@ export class Item<
 
 		this.#engine = engine;
 
-		const name = el.dataset.bgi ?? 'unknown';
-
-		const seed = BurgerEditorEngine.getItemSeed<T, C, N>(name);
-
 		this.name = seed.name;
-		el.dataset.bgi = this.name;
+		this.#version = seed.version;
 
-		this.#version = el.dataset.bgiVer ?? seed.version ?? '0.0.0';
-		el.dataset.bgiVer = this.#version;
 		this.#service = new ItemEditorService<T, C, N>(this, seed);
-
 		this.editor = engine.itemEditorDialog as unknown as ItemEditorDialog<T, C>;
 	}
 
@@ -126,13 +116,38 @@ export class Item<
 		await this.editor.open(this.#service);
 	}
 
-	static async new<T extends ItemData, C extends { [key: string]: unknown }>(
+	static async create<T extends ItemData, C extends { [key: string]: unknown }>(
 		engine: BurgerEditorEngine,
-		html: HTMLElement | string,
+		name: string,
 		initData: Partial<T> = {},
 	) {
-		const item = new Item<T, C>(engine, html);
+		const seed = engine.items.get(name) as ItemSeed<string, T, C> | undefined;
+		if (!seed) {
+			throw new Error(`Item seed not found: ${name}`);
+		}
+		const version = seed.version;
+		const wrapper = document.createElement('div');
+		wrapper.dataset.bgi = name;
+		wrapper.dataset.bgiVer = version;
+		wrapper.innerHTML = replacePlaceholders(seed.template, engine.config);
+		const item = new Item<T, C>(engine, seed, wrapper);
 		await item.import(initData);
+		return item;
+	}
+
+	static rebind<T extends ItemData, C extends { [key: string]: unknown }>(
+		engine: BurgerEditorEngine,
+		el: HTMLElement,
+	) {
+		const name = el.dataset.bgi;
+		if (!name) {
+			throw new Error('data-bgi not found');
+		}
+		const seed = engine.items.get(name) as ItemSeed<string, T, C> | undefined;
+		if (!seed) {
+			throw new Error(`Item seed not found: ${name}`);
+		}
+		const item = new Item<T, C>(engine, seed, el);
 		return item;
 	}
 
