@@ -1,6 +1,13 @@
 import type { ContainerType } from '../block/types.js';
 import type { ItemData, ItemSeed } from '../item/types.js';
-import type { BurgerEditorEngineOptions, UIOptions, Config, FileAPI } from '../types.js';
+import type {
+	BurgerEditorEngineOptions,
+	UIOptions,
+	Config,
+	FileAPI,
+	BlockItem,
+	BlockData,
+} from '../types.js';
 
 import { BurgerBlock } from '../block/block.js';
 import { BlockCatalogDialog } from '../block-catalog-dialog.js';
@@ -18,9 +25,8 @@ import { getElement } from '../dom-helpers/get-element.js';
 import { EditableArea } from '../editable-area.js';
 import { createBgeEvent } from '../event/create-bge-event.js';
 import { HealthMonitor } from '../health-monitor.js';
+import { Item } from '../item/item.js';
 import { ItemEditorDialog } from '../item-editor-dialog.js';
-
-import { getBlockTemplate } from './get-block-template.js';
 
 type ConfirmCallback = () => Promise<boolean> | boolean;
 
@@ -37,7 +43,6 @@ export class BurgerEditorEngine {
 		readonly classList: readonly string[];
 		readonly generalCSS: string;
 	};
-	readonly defaultBlocks: ReadonlyMap<string, string>;
 	readonly el: HTMLElement;
 	readonly itemEditorDialog: ItemEditorDialog<{}, {}>;
 	readonly items: Map<string, ItemSeed>;
@@ -88,16 +93,6 @@ export class BurgerEditorEngine {
 			generalCSS: options.generalCSS,
 		};
 
-		this.defaultBlocks = new Map(
-			Object.entries(options.blocks).map(([name, templateBlock]) => {
-				const templateCode = templateBlock.template
-					.replaceAll('%sampleImagePath%', options.config.sampleImagePath)
-					.replaceAll('%sampleFilePath%', options.config.sampleFilePath)
-					.replaceAll('%googleMapsApiKey%', options.config.googleMapsApiKey ?? '');
-				return [name, templateCode];
-			}),
-		);
-
 		if (
 			this.config.googleMapsApiKey &&
 			!document.querySelector('script[src^="https://maps.googleapis.com/maps/api/js"]')
@@ -107,11 +102,7 @@ export class BurgerEditorEngine {
 			document.head.append(script);
 		}
 
-		this.blockCatalogDialog = new BlockCatalogDialog(
-			this,
-			options.catalog,
-			options.blocks,
-		);
+		this.blockCatalogDialog = new BlockCatalogDialog(this, options.catalog);
 
 		this.blockOptionsDialog = new BlockOptionsDialog(this);
 
@@ -140,8 +131,8 @@ export class BurgerEditorEngine {
 		});
 	}
 
-	async addBlock(blockName: string) {
-		const block = await BurgerBlock.new(this, blockName);
+	async addBlock(data: BlockData) {
+		const block = await BurgerBlock.create(data, this.#createItemElement.bind(this));
 		const message = block.isDisable();
 		if (message) {
 			alert(message);
@@ -177,10 +168,6 @@ export class BurgerEditorEngine {
 			return true;
 		}
 		return false;
-	}
-
-	getBlockTemplate(name: string) {
-		return getBlockTemplate(this.defaultBlocks, name);
 	}
 
 	getCurrentBlock() {
@@ -236,6 +223,16 @@ export class BurgerEditorEngine {
 		this.migrationCheck(this.#current.containerElement);
 	}
 
+	/**
+	 * HTML要素からブロックを復元する
+	 * HTML要素から完全にBlockDefinitionを解析してブロック作成
+	 * @param element HTML要素
+	 * @returns 復元されたBurgerBlock
+	 */
+	restoreBlockFromElement(element: HTMLElement) {
+		return BurgerBlock.rebind(element, this.#createItemElement.bind(this));
+	}
+
 	save() {
 		this.#main.save();
 		if (this.#draft) {
@@ -289,6 +286,17 @@ export class BurgerEditorEngine {
 
 	showMain() {
 		this.#show(this.#main);
+	}
+
+	async #createItemElement(itemData: BlockItem | HTMLElement) {
+		if (typeof itemData !== 'string' && 'localName' in itemData) {
+			Item.rebind(this, itemData);
+			return itemData;
+		}
+
+		const name = typeof itemData === 'string' ? itemData : itemData.name;
+		const item = await Item.create(this, name);
+		return item.el;
 	}
 
 	/**
