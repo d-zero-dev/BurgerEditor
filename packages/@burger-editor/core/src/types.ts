@@ -1,4 +1,5 @@
 import type { BurgerBlock } from './block/block.js';
+import type { ContainerProps } from './block/types.js';
 import type { BurgerEditorEngine } from './engine/engine.js';
 import type { HealthCheckFunction } from './health-monitor.js';
 import type { ItemEditorService } from './item/item-editor-service.js';
@@ -17,7 +18,7 @@ export interface BurgerEditorEngineOptions {
 				readonly main: string;
 				readonly draft?: string;
 		  };
-	readonly blocks: Record<string, BlockTemplate>;
+	readonly blocks?: Record<string, BlockDefinition>;
 	readonly items: Record<string, ItemSeed>;
 	readonly catalog: BlockCatalog;
 	readonly generalCSS: string;
@@ -61,15 +62,21 @@ export interface UICreator {
 }
 
 export interface BlockCatalog {
-	readonly [category: string]: {
-		readonly [block: string]: CatalogItem | string;
-	};
+	readonly [category: string]: ReadonlyArray<CatalogBlockEntry>;
+}
+
+export interface CatalogBlockEntry {
+	readonly label: string;
+	readonly svg?: string;
+	readonly img?: string;
+	readonly definition: BlockDefinition;
 }
 
 export interface CatalogItem {
 	readonly label: string;
 	readonly img?: string;
 	readonly svg?: string;
+	readonly definition: BlockDefinition;
 }
 
 export interface Config {
@@ -193,11 +200,27 @@ export interface ItemEditorCustomFunctions<
 	) => unknown;
 }
 
-export interface BlockTemplate {
+export interface BlockData {
 	readonly name: string;
-	readonly template: string;
+	readonly containerProps: Partial<ContainerProps>;
+	readonly classList?: readonly string[];
+	readonly style?: Record<string, string>;
+	readonly id?: string | null;
+	readonly items: BlockItemStructure;
+}
+
+export interface BlockDefinition extends BlockData {
 	readonly icon: string;
 }
+
+export type BlockItemStructure = ReadonlyArray<ReadonlyArray<BlockItem>>;
+
+export type BlockItem =
+	| string // "xxx" - アイテム名のみ
+	| {
+			readonly name: string;
+			readonly data?: ItemData;
+	  }; // { name: "xxx", data?: ... } - アイテム名と初期データ
 
 /**
  * 選択可能な値のベース型
