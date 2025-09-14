@@ -27,7 +27,7 @@
 	},
 	"dependencies": {
 		"dayjs": "1.11.18",
-		"marked": "16.2.1",
+		"marked": "16.3.0",
 		"turndown": "7.2.1"
 	},
 	"devDependencies": {
