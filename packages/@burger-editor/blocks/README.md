@@ -6,7 +6,13 @@
 
 > **ℹ️ ブロックの構造仕様について**
 > ブロックの構造管理は[@burger-editor/core](../core/)で行われています。
-> ブロック構造の詳細仕様については [@burger-editor/core のREADME](../core/README.md#ブロックの仕様) を参照してください。
+> ブロック構造の詳細仕様については [ブロックアーキテクチャ](../../docs/block-architecture.md) を参照してください。
+
+## 関連ドキュメント
+
+- **[ブロックアーキテクチャ](../../docs/block-architecture.md)** - ブロック構造の仕様
+- **[カスタムブロックカタログの作成](../../docs/custom-catalog.md)** - 独自ブロック定義の方法
+- **[スタイリングガイド](../../docs/styling-guide.md)** - ブロックの見た目カスタマイズ
 
 ## 提供されるアイテム
 

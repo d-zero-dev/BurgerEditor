@@ -6,190 +6,48 @@
 
 ブロックエディタのコア機能を提供するパッケージです。ブロック・アイテムの構造管理、エディタエンジン、UI コンポーネントなどを含みます。
 
-## ブロックの仕様
+## 主な機能
 
-### ブロックの構成
+- **ブロック構造管理**: `data-bge-*` 属性による階層構造の定義・管理
+- **エディタエンジン**: ブロックエディタの中核となる制御機能
+- **UI コンポーネント**: ダイアログ、メニュー、オプション設定等の基本UI
+- **スタイリング機能**: CSS変数による動的スタイル制御
+- **型定義**: TypeScript型定義によるタイプセーフな開発支援
 
-```html
-<div data-bge-name="{ブロック名}" data-bge-container="inline:center:wrap">
-	<div data-bge-container-frame>
-		<div data-bge-group>
-			<div data-bge-item>{アイテムの01HTML}</div>
-			<div data-bge-item>{アイテムの02HTML}</div>
-		</div>
-		<div data-bge-group>
-			<div data-bge-item>{アイテムの01HTML}</div>
-			<div data-bge-item>{アイテムの02HTML}</div>
-		</div>
-		<div data-bge-group>
-			<div data-bge-item>{アイテムの01HTML}</div>
-			<div data-bge-item>{アイテムの02HTML}</div>
-		</div>
-	</div>
-</div>
+## 詳細ドキュメント
+
+このパッケージに関連する詳細な情報は、以下のドキュメントを参照してください：
+
+- **[ブロックアーキテクチャ](../../docs/block-architecture.md)** - ブロック構造の仕様と構成要素
+- **[カスタムブロックカタログの作成](../../docs/custom-catalog.md)** - 独自ブロック定義の方法
+- **[スタイリングガイド](../../docs/styling-guide.md)** - ブロックの見た目カスタマイズ
+
+## TypeScript型定義
+
+詳細な型定義は [`src/types.ts`](./src/types.ts) を参照してください。主要な型：
+
+- `BlockCatalog`: カタログ全体の型
+- `CatalogItem`: カタログ内の個別ブロック項目の型
+- `BlockDefinition`: ブロックの定義情報の型
+- `BlockData`: ブロックデータの型
+- `ContainerProps`: コンテナプロパティの型
+
+## 使用例
+
+```typescript
+import { BurgerEditorEngine } from '@burger-editor/core';
+
+// エディタエンジンの初期化
+const engine = new BurgerEditorEngine({
+	// 設定オプション
+});
+
+// 編集可能領域の設定
+engine.setup(document.querySelector('[data-bge-editable]'));
 ```
 
-### ブロックを構成する要素
+## 関連パッケージ
 
-- コンテナ: `data-bge-container`
-- コンテナフレーム: `data-bge-container-frame`
-- グループ: `data-bge-group`
-- アイテム: `data-bge-item`
-
-#### コンテナ
-
-`data-bge-container`属性はコンテナの性質を表します。ブロックのルート要素にあたります。属性値はコロン区切りで表現し、先頭はコンテナのタイプを表し、その後にオプションが続きます。
-
-`data-bge-name`属性はブロックの名前を表します。ブロック選択の際に利用されますが、振る舞いには影響しません（⚠️ つまり、この属性を利用したスタイル変更は推奨されません）。
-
-この要素には `container-name: bge-container` が付与されます。これは、CSSコンテナクエリのコンテナ名として利用されます。
-
-##### コンテナタイプ
-
-アイテムの配置方法を表します。
-
-- `grid`: グリッドに並べる（ `display: block grid;` ）
-- `inline`: インライン方向に並べる（ `display: block flex;` ）
-- `float`: 先頭のアイテムを回り込みさせる
-
-##### `grid`オプション
-
-- `[数値]`: グリッドの列数（ `grid-template-columns: repeat([数値], 1fr);` ） 1〜5の範囲で指定可能。
-- `auto-fit`: 自動列数調整（空白最小）（ `grid-template-columns: repeat(auto-fit, minmax(calc(var(--bge-auto-fit-base-width) / [数値]), 1fr));` ）
-  規定幅（CSSカスタムプロパティ`--bge-auto-fit-base-width`）を基準に指定した列数で割った数値に近い幅を保ちながら、コンテナの幅に応じて自動的に列数を調整します。空のトラックは折りたたまれ、既存のアイテムが利用可能なスペースを埋めるように拡張されます。
-- `auto-fill`: 自動列数調整（空白保持）（ `grid-template-columns: repeat(auto-fill, minmax(calc(var(--bge-auto-fit-base-width) / [数値]), 1fr));` ）
-  規定幅を基準に自動的に列数を調整しますが、アイテムが不足している場合でも空のトラックが保持され、レイアウト内に空白が生じます。
-
-例: `data-bge-container="grid:3"`、`data-bge-container="grid:3:auto-fit"`、`data-bge-container="grid:3:auto-fill"`
-
-##### `inline`オプション
-
-- `center`: 中央寄せ（ `justify-content: center;` ）
-- `start`: 左寄せ（ `justify-content: start;` ）
-- `end`: 右寄せ（ `justify-content: end;` ）
-- `between`: 両端寄せ（ `justify-content: space-between;` ）
-- `around`: 左右余白均等（ `justify-content: space-around;` ）
-- `evenly`: 要素間均等（ `justify-content: space-evenly;` ）
-- `align-center`: 垂直中央寄せ（ `align-items: center;` ）
-- `align-start`: 上寄せ（ `align-items: start;` ）
-- `align-end`: 下寄せ（ `align-items: end;` ）
-- `align-stretch`: 伸縮（ `align-items: stretch;` ）
-- `align-baseline`: ベースライン（ `align-items: baseline;` ）
-- `wrap`: 折り返し（ `flex-wrap: wrap;` ）
-- `nowrap`: 折り返さない（ `flex-wrap: nowrap;` ）
-
-例: `data-bge-container="inline:space-between:wrap"`
-
-##### `float`オプション
-
-- `start`: 左寄せ（ `float: inline-start;` ）
-- `end`: 右寄せ（ `float: inline-end;` ）
-
-例: `data-bge-container="float:start"`
-
-##### 共通オプション
-
-- `immutable`: アイテムの増減ができなくなります。また、タイプが`grid`の場合は列数の変更ができなくなります。
-
-#### コンテナフレーム
-
-コンテナフレームは`data-bge-container-frame`属性をもつ要素で、コンテナの中身をラップします。
-
-`grid`や`inline`の性質が実際に適用される要素です。
-
-※CSS Containerは自信に再帰的にクエリーや`cq`系単位が使えない仕様があるため、CSS Containerを適用させる「コンテナ」と、コンテナの性質（`grid`や`inline`）を適用させる「コンテナフレーム」に分けています。
-
-#### グループ
-
-グループは`data-bge-group`属性をもつ任意の要素です。コンテナ内の直下に配置され、アイテムのまとまりをつくります。このグループは「要素の追加/削除」機能で**増減することができます**。グループがない場合は「要素の追加/削除」機能が無効になります。
-
-#### アイテム
-
-アイテムは`data-bge-item`属性をもつ要素で、コンテンツ編集可能な要素をラップします。
-
-## カスタムブロックカタログの作成
-
-独自のブロックカタログを定義することで、プロジェクトに適した自由なブロック構成を作成できます。
-
-### データ構造
-
-カスタムブロックカタログは `BlockCatalog`、`CatalogItem`、`BlockDefinition` 型で定義します。詳細な型定義は [`src/types.ts`](./src/types.ts) を参照してください。
-
-### カスタムカタログの例
-
-```javascript
-export const customCatalog = {
-	// カテゴリ名
-	カスタムブロック: [
-		{
-			label: 'カスタムテキスト+画像',
-			definition: {
-				name: 'custom-text-image',
-				containerProps: {
-					type: 'grid',
-					columns: 2,
-				},
-				classList: ['custom-block'],
-				style: {
-					'max-width': '800px',
-					margin: '0 auto',
-				},
-				items: [
-					// 第一グループ：テキストと画像
-					['wysiwyg', 'image'],
-					// 第二グループ：ボタン
-					['button'],
-				],
-			},
-		},
-	],
-	特殊レイアウト: [
-		{
-			label: '3列カード',
-			definition: {
-				name: 'three-column-card',
-				containerProps: {
-					type: 'grid',
-					columns: 3,
-					justify: 'center',
-				},
-				items: [
-					// 各列に画像とテキストを配置
-					[
-						{ name: 'image', data: { alt: 'カード1' } },
-						{ name: 'wysiwyg', data: { wysiwyg: '<h3>タイトル1</h3>' } },
-					],
-					[
-						{ name: 'image', data: { alt: 'カード2' } },
-						{ name: 'wysiwyg', data: { wysiwyg: '<h3>タイトル2</h3>' } },
-					],
-					[
-						{ name: 'image', data: { alt: 'カード3' } },
-						{ name: 'wysiwyg', data: { wysiwyg: '<h3>タイトル3</h3>' } },
-					],
-				],
-			},
-		},
-	],
-};
-```
-
-### カタログの結合
-
-既存のデフォルトカタログと独自カタログを組み合わせることも可能です：
-
-```javascript
-import { defaultCatalog } from '@burger-editor/blocks';
-
-export const catalog = {
-	...defaultCatalog,
-	...customCatalog,
-};
-```
-
-### ブロック構成のポイント
-
-- **`items`配列**: 第1階層がグループ、第2階層がアイテムを表します
-- **アイテム指定**: 文字列でアイテム名のみ、またはオブジェクトで初期データ付きで指定
-- **コンテナプロパティ**: レイアウト方法（grid、inline、float）とそのオプションを指定
-- **スタイリング**: `classList`で CSS クラス、`style`でインラインスタイルを適用
+- [`@burger-editor/blocks`](../blocks/README.md) - 標準ブロック・アイテム集
+- [`@burger-editor/client`](../client/README.md) - クライアントサイドUI
+- [`@burger-editor/custom-element`](../custom-element/README.md) - カスタム要素
