@@ -82,6 +82,8 @@ export interface Config {
 		readonly itemOptions?: {
 			readonly button?: {
 				readonly kinds?: readonly Mergeable<SelectableValue>[];
+				readonly beforeIcons?: readonly Mergeable<SelectableValue>[];
+				readonly afterIcons?: readonly Mergeable<SelectableValue>[];
 			};
 		};
 	};

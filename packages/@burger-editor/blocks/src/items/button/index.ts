@@ -14,6 +14,8 @@ export default createItem<{
 	text: string;
 	subtext: string;
 	kind: string;
+	beforeIcon: string;
+	afterIcon: string;
 }>({
 	version: __VERSION__,
 	name: 'button',
@@ -22,35 +24,54 @@ export default createItem<{
 	editor,
 	editorOptions: {
 		beforeOpen(data, editor) {
-			// デフォルトのkind選択肢
-			const defaultKindOptions: SelectableValue[] = [
-				{ value: 'link', label: 'リンク' },
-				{ value: 'em', label: '強調リンク' },
-				{ value: 'external', label: '外部リンク' },
-				{ value: 'in-page', label: 'ページ内リンク' },
-				{ value: 'text', label: 'テキストリンク' },
-				{ value: 'back', label: '戻る' },
-			];
-
-			// configからkind選択肢をマージ
-			const configKinds = editor.engine.config.experimental?.itemOptions?.button?.kinds;
-			const kindOptions = mergeItems(defaultKindOptions, configKinds, 'value', (item) =>
-				Boolean(item.label),
+			const kindOptions = mergeOptions(
+				[
+					{ value: 'primary', label: 'プライマリボタン' },
+					{ value: 'secondary', label: 'セカンダリボタン' },
+					{ value: 'tertiary', label: 'ターシャリボタン' },
+					{ value: 'text', label: 'テキストリンク' },
+				],
+				editor.engine.config.experimental?.itemOptions?.button?.kinds,
 			);
 
-			// kind selectボックスをクリアして再構築
-			const kindSelect = editor.find<HTMLSelectElement>('select[name="bge-kind"]');
-			if (kindSelect) {
-				kindSelect.innerHTML = '';
-				for (const option of kindOptions) {
-					const optionElement = kindSelect.ownerDocument.createElement('option');
-					optionElement.value = option.value;
-					optionElement.textContent = option.label;
-					kindSelect.append(optionElement);
-				}
-			}
+			const beforeIconOptions = mergeOptions(
+				[
+					{ value: 'none', label: 'なし' },
+					{ value: 'arrow-left', label: '左矢印' },
+				],
+				editor.engine.config.experimental?.itemOptions?.button?.beforeIcons,
+			);
+
+			const afterIconOptions = mergeOptions(
+				[
+					{ value: 'none', label: 'なし' },
+					{ value: 'arrow-right', label: '右矢印' },
+					{ value: 'arrow-down', label: '下矢印' },
+					{ value: 'external', label: '別タブ' },
+					{ value: 'text-file', label: 'ファイル' },
+				],
+				editor.engine.config.experimental?.itemOptions?.button?.afterIcons,
+			);
+
+			editor.setOptions('bge-kind', kindOptions);
+			editor.setOptions('bge-before-icon', beforeIconOptions);
+			editor.setOptions('bge-after-icon', afterIconOptions);
 
 			return data;
 		},
 	},
 });
+
+/**
+ *
+ * @param defaultOptions
+ * @param configOptions
+ */
+function mergeOptions(
+	defaultOptions: readonly SelectableValue[],
+	configOptions: readonly SelectableValue[] = [],
+) {
+	return mergeItems(defaultOptions, configOptions, 'value', (item) =>
+		Boolean(item.label),
+	);
+}
