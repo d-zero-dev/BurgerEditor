@@ -1,7 +1,7 @@
 import type { Submitter } from './dom-helpers/types.js';
 import type { BurgerEditorEngine } from './engine/engine.js';
 import type { BurgerEditorEvent } from './event/create-bge-event.js';
-import type { BurgerEditorEventMap, UIOptions } from './types.js';
+import type { BurgerEditorEventMap, SelectableValue, UIOptions } from './types.js';
 
 import { EditorUI } from './editor-ui.js';
 
@@ -143,6 +143,20 @@ export abstract class EditorDialog extends EditorUI {
 
 	reset() {
 		this.#form.reset();
+	}
+
+	setOptions(name: string, options: SelectableValue[]) {
+		const el = this.find(`select[name="${name}"]`)!;
+		if (!el || !(el instanceof HTMLSelectElement)) {
+			return;
+		}
+		el.innerHTML = '';
+		for (const option of options) {
+			const optionElement = el.ownerDocument.createElement('option');
+			optionElement.value = option.value;
+			optionElement.textContent = option.label;
+			el.append(optionElement);
+		}
 	}
 
 	setTemplate(...nodes: Node[]) {
