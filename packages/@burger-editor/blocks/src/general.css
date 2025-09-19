@@ -73,7 +73,6 @@
 	container-name: bge-container;
 	container-type: inline-size;
 	background-color: var(--bge-options-bg-color);
-	border: var(--bge-options-border);
 
 	&:where(:last-child) {
 		--_margin-block-end: var(--_margin-block-end_when-last);
