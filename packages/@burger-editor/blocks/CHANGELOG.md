@@ -3,17 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-# [4.0.0-alpha.21](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.20...v4.0.0-alpha.21) (2025-09-19)
+# [4.0.0-alpha.22](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.21...v4.0.0-alpha.22) (2025-09-19)
 
+**Note:** Version bump only for package @burger-editor/blocks
+
+# [4.0.0-alpha.21](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.20...v4.0.0-alpha.21) (2025-09-19)
 
 ### Features
 
-* **blocks:** enhance button item editor with icon support ([b55ad84](https://github.com/d-zero-dev/BurgerEditor/commit/b55ad844591006f87f6c4ac622953e4c9cda701d))
-* **blocks:** implement new data-driven block catalog system ([6bd0b0e](https://github.com/d-zero-dev/BurgerEditor/commit/6bd0b0e8098f28c7f40eaebd6097ca86b5377b89))
-
-
-
-
+- **blocks:** enhance button item editor with icon support ([b55ad84](https://github.com/d-zero-dev/BurgerEditor/commit/b55ad844591006f87f6c4ac622953e4c9cda701d))
+- **blocks:** implement new data-driven block catalog system ([6bd0b0e](https://github.com/d-zero-dev/BurgerEditor/commit/6bd0b0e8098f28c7f40eaebd6097ca86b5377b89))
 
 # [4.0.0-alpha.20](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.19...v4.0.0-alpha.20) (2025-09-11)
 
