@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.24](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.23...v4.0.0-alpha.24) (2025-09-19)
+
+### Bug Fixes
+
+- **core:** remove unnecessary break statement in getStyleRules ([c3c4d92](https://github.com/d-zero-dev/BurgerEditor/commit/c3c4d92bb57e9ea1463739206ce0be15b822cd86))
+
 # [4.0.0-alpha.23](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.22...v4.0.0-alpha.23) (2025-09-19)
 
 ### Bug Fixes
