@@ -147,8 +147,6 @@ function getStyleRules(rules: CSSRuleList, scope: Document): readonly CSSStyleRu
 			styleRules.push(...getStyleRules(rule.cssRules, scope));
 			continue;
 		}
-
-		break;
 	}
 
 	return styleRules;
