@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.21](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.20...v4.0.0-alpha.21) (2025-09-19)
+
+
+### Features
+
+* **local:** add custom catalog test configuration ([3af60fc](https://github.com/d-zero-dev/BurgerEditor/commit/3af60fc98347f6737e90daee5c5dfe19ad329aa3))
+
+
+
+
+
 # [4.0.0-alpha.20](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.19...v4.0.0-alpha.20) (2025-09-11)
 
 **Note:** Version bump only for package @burger-editor/local

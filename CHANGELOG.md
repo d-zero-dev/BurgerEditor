@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.21](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.20...v4.0.0-alpha.21) (2025-09-19)
+
+
+### Bug Fixes
+
+* **client:** pass engine parameter to updateGridItems ([f821e3c](https://github.com/d-zero-dev/BurgerEditor/commit/f821e3ccf4ff5abd960d5f8ff009cf90ebf5a941))
+* **client:** preserve element styles during replace animation ([c489d73](https://github.com/d-zero-dev/BurgerEditor/commit/c489d731ec3f0f0105df004df2f0e3631b5a4569))
+
+
+### Features
+
+* **blocks:** enhance button item editor with icon support ([b55ad84](https://github.com/d-zero-dev/BurgerEditor/commit/b55ad844591006f87f6c4ac622953e4c9cda701d))
+* **blocks:** implement new data-driven block catalog system ([6bd0b0e](https://github.com/d-zero-dev/BurgerEditor/commit/6bd0b0e8098f28c7f40eaebd6097ca86b5377b89))
+* **core:** add HTML to block data parsing functionality ([d65be4e](https://github.com/d-zero-dev/BurgerEditor/commit/d65be4e204b31c19447fef586738a28d7ef431ad))
+* **core:** add new block definition system ([cb3b56b](https://github.com/d-zero-dev/BurgerEditor/commit/cb3b56b3f6b4142cddb5c3018efd0a8c12f6013d))
+* **core:** add plain structured block element creation ([113de51](https://github.com/d-zero-dev/BurgerEditor/commit/113de51e0ca9ed39ffcb68b1751174a5ce81cc44))
+* **core:** add setOptions method to EditorDialog ([fd09e73](https://github.com/d-zero-dev/BurgerEditor/commit/fd09e73e0a81abe2a5aced4dee4c7e2e070fdfef))
+* **core:** enhance Item class for new architecture ([d041d24](https://github.com/d-zero-dev/BurgerEditor/commit/d041d24cc9a5cbb1c465fc8440004ede9338e010))
+* **core:** rewrite BurgerBlock for new architecture ([de5c416](https://github.com/d-zero-dev/BurgerEditor/commit/de5c4169c71573c49c8d3f1414a293d59d93d5a9))
+* **core:** rewrite BurgerEditorEngine for new architecture ([392e5e8](https://github.com/d-zero-dev/BurgerEditor/commit/392e5e841e7db99b61388884a3ddf2292ee007d7))
+* **local:** add custom catalog test configuration ([3af60fc](https://github.com/d-zero-dev/BurgerEditor/commit/3af60fc98347f6737e90daee5c5dfe19ad329aa3))
+
+
+
+
+
 # [4.0.0-alpha.20](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.19...v4.0.0-alpha.20) (2025-09-11)
 
 ### Bug Fixes

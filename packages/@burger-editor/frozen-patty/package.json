@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/frozen-patty",
-	"version": "4.0.0-alpha.20",
+	"version": "4.0.0-alpha.21",
 	"description": "Pure HTML to JSON converter that does not use a template engine.",
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)",
@@ -41,6 +41,6 @@
 		"clean": "tsc --build --clean"
 	},
 	"dependencies": {
-		"@burger-editor/utils": "4.0.0-alpha.20"
+		"@burger-editor/utils": "4.0.0-alpha.21"
 	}
 }
