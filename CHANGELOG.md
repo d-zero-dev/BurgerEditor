@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.25](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.24...v4.0.0-alpha.25) (2025-09-19)
+
+### Bug Fixes
+
+- **blocks:** remove unnecessary border property from options container ([1bc5c3e](https://github.com/d-zero-dev/BurgerEditor/commit/1bc5c3e71dad05fd5911d078d9c3aeafa1c0f988))
+
 # [4.0.0-alpha.24](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.23...v4.0.0-alpha.24) (2025-09-19)
 
 ### Bug Fixes
