@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.23](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.22...v4.0.0-alpha.23) (2025-09-19)
+
+### Bug Fixes
+
+- **local:** move @burger-editor/blocks from devDependencies to dependencies ([2be62e3](https://github.com/d-zero-dev/BurgerEditor/commit/2be62e300381bb7a9b744527e52dff195d8802cf))
+
 # [4.0.0-alpha.22](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.21...v4.0.0-alpha.22) (2025-09-19)
 
 **Note:** Version bump only for package BurgerEditor_v4
