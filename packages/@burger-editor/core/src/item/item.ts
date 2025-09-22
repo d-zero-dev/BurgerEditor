@@ -1,10 +1,9 @@
 import type { ItemEditorDialog } from '../item-editor-dialog.js';
 import type { ItemData, ItemSeed } from './types.js';
+import type { BurgerEditorEngine } from '../engine/engine.js';
 
-import { strToDOM } from '@burger-editor/utils';
 import semver from 'semver';
 
-import { BurgerEditorEngine } from '../engine/engine.js';
 import { replacePlaceholders } from '../utils/replace-placeholders.js';
 
 import { dataFromHtml } from './data-from-html.js';
@@ -81,29 +80,6 @@ export class Item<
 
 	isDisable() {
 		return this.#service.isDisable(this);
-	}
-
-	async upgrade() {
-		if (!this.#isOld(this.#engine.items)) {
-			return;
-		}
-		const newTemplate = this.#engine.items.get(this.name)?.template;
-		if (!newTemplate) {
-			return;
-		}
-		const newEl = strToDOM(newTemplate);
-		const v = newEl.dataset.bgiVer!;
-		const itemEditor = BurgerEditorEngine.getItemSeed(this.name);
-		const currentData = itemEditor
-			? // @ts-ignore
-				itemEditor.migrate(this)
-			: this.export();
-		const newTemplateData = dataFromHtml(newEl.innerHTML);
-		const data = { ...newTemplateData, ...currentData } as T;
-		this.el.innerHTML = newEl.innerHTML;
-		this.el.dataset.bgiVer = v;
-		await this.import(data);
-		this.#version = v;
 	}
 
 	#isOld(currentItems: Map<string, ItemSeed<string, {}, {}>>) {
