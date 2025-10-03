@@ -27,11 +27,11 @@
 	},
 	"dependencies": {
 		"@tabler/icons": "3.35.0",
-		"@tiptap/core": "3.6.3",
-		"@tiptap/extension-image": "3.6.3",
-		"@tiptap/extension-table": "3.6.3",
-		"@tiptap/pm": "3.6.3",
-		"@tiptap/starter-kit": "3.6.3"
+		"@tiptap/core": "3.6.5",
+		"@tiptap/extension-image": "3.6.5",
+		"@tiptap/extension-table": "3.6.5",
+		"@tiptap/pm": "3.6.5",
+		"@tiptap/starter-kit": "3.6.5"
 	},
 	"devDependencies": {
 		"rollup": "4.52.4",
