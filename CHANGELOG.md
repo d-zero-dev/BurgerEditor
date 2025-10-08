@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.26](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.25...v4.0.0-alpha.26) (2025-10-08)
+
+### Bug Fixes
+
+- **core:** apply frame semantics during block creation ([af29386](https://github.com/d-zero-dev/BurgerEditor/commit/af293868c49dc0a10986a0fa7c7cf2649e9e8a83))
+
+### Features
+
+- **core:** add render function for block rendering ([ae5b84b](https://github.com/d-zero-dev/BurgerEditor/commit/ae5b84b78e1f3b71ed067e7cc393df3cef76e7d2))
+
 # [4.0.0-alpha.25](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.24...v4.0.0-alpha.25) (2025-09-19)
 
 ### Bug Fixes
