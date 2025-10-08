@@ -132,7 +132,7 @@ __metadata:
     "@types/jquery": "npm:3.5.33"
     jquery: "npm:3.7.1"
     svelte: "npm:5.39.11"
-    svelte-check: "npm:4.3.2"
+    svelte-check: "npm:4.3.3"
     vite: "npm:7.1.9"
     vite-plugin-dts: "npm:4.5.4"
   languageName: unknown
@@ -15153,9 +15153,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte-check@npm:4.3.2":
-  version: 4.3.2
-  resolution: "svelte-check@npm:4.3.2"
+"svelte-check@npm:4.3.3":
+  version: 4.3.3
+  resolution: "svelte-check@npm:4.3.3"
   dependencies:
     "@jridgewell/trace-mapping": "npm:^0.3.25"
     chokidar: "npm:^4.0.1"
@@ -15167,7 +15167,7 @@ __metadata:
     typescript: ">=5.0.0"
   bin:
     svelte-check: bin/svelte-check
-  checksum: 10c0/a3b35da017ae5f24b6594f713147e559c5339d9b2b3924ac53d59e07cff3ffdb11767b9aab65a9b3453c4b8f34fa7ed3045b249d7a2961fa484ce70145aa3f2b
+  checksum: 10c0/210c12a01b1535600d67866371bebdd17d2407d2ef5f0ed005f072e4976964489d85a8da35c85daa1fbf3bc19416ed0b90e77fa8ddad299b2f89282fb4e5918d
   languageName: node
   linkType: hard
 
