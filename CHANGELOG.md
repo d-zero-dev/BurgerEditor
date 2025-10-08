@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.27](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.26...v4.0.0-alpha.27) (2025-10-08)
+
+### Bug Fixes
+
+- **core:** handle JSDOM CSSStyleDeclaration iteration ([2f1ccc6](https://github.com/d-zero-dev/BurgerEditor/commit/2f1ccc633ed03c2e6961aae9d6e5ebc8d60698a8))
+
 # [4.0.0-alpha.26](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.25...v4.0.0-alpha.26) (2025-10-08)
 
 ### Bug Fixes
