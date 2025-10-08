@@ -120,3 +120,39 @@ test('two groups', async () => {
 		'</div>',
 	]);
 });
+
+test('list semantic', async () => {
+	const el = await createPlainStructuredBlockElement(
+		{
+			name: 'list',
+			containerProps: {
+				type: 'inline',
+				frameSemantics: 'ul',
+				columns: 2,
+			},
+			items: [['button'], ['button']],
+		},
+		createItemElement,
+	);
+
+	expect(el.outerHTML.split(/(?<=>)(?=<)/)).toEqual([
+		'<div data-bge-name="list" data-bge-container="inline:2:ul">',
+		'<ul data-bge-container-frame="">',
+		'<li data-bge-group="">',
+		'<div data-bge-item="">',
+		'<span>',
+		'<!-- button -->',
+		'</span>',
+		'</div>',
+		'</li>',
+		'<li data-bge-group="">',
+		'<div data-bge-item="">',
+		'<span>',
+		'<!-- button -->',
+		'</span>',
+		'</div>',
+		'</li>',
+		'</ul>',
+		'</div>',
+	]);
+});

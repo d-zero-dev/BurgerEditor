@@ -4,6 +4,7 @@ import type { Item } from '../item/item.js';
 import type { ItemData } from '../item/types.js';
 import type { BlockData } from '../types.js';
 
+import { changeFrameSemantics } from './change-frame-semantics.js';
 import { createPlainStructuredBlockElement } from './create-plain-structured-block-element.js';
 import { exportOptions } from './export-options.js';
 import { importOptions } from './import-options.js';
@@ -46,48 +47,7 @@ export class BurgerBlock {
 	 * @param frameSemantics - The semantic type to change to
 	 */
 	changeFrameSemantics(frameSemantics: ContainerFrameSemantics) {
-		const containerFrame = this.el.querySelector('[data-bge-container-frame]');
-		if (!containerFrame) {
-			throw new Error('Container frame not found');
-		}
-
-		// Determine target elements
-		const frameTagName = frameSemantics === 'div' ? 'div' : frameSemantics;
-		const groupTagName = frameSemantics === 'div' ? 'div' : 'li';
-
-		// Create new container frame element
-		const newFrame = document.createElement(frameTagName);
-		this.#copyAttributes(containerFrame, newFrame);
-
-		// Transform groups
-		const groups = containerFrame.querySelectorAll('[data-bge-group]');
-		for (const group of groups) {
-			const newGroup = document.createElement(groupTagName);
-			this.#copyAttributes(group, newGroup);
-
-			// Move all child content
-			while (group.firstChild) {
-				newGroup.append(group.firstChild);
-			}
-
-			newFrame.append(newGroup);
-		}
-
-		// Replace old frame with new frame
-		containerFrame.parentNode?.replaceChild(newFrame, containerFrame);
-
-		// Update internal references
-		BurgerBlock.#blocks.set(this.el, this);
-
-		// Update options with new frameSemantics
-		const currentOptions = this.exportOptions();
-		this.importOptions({
-			...currentOptions,
-			containerProps: {
-				...currentOptions.containerProps,
-				frameSemantics,
-			},
-		});
+		changeFrameSemantics(this.el, frameSemantics);
 	}
 
 	clone() {
@@ -172,20 +132,6 @@ export class BurgerBlock {
 			this.items,
 			(items) => (this.items = items),
 		);
-	}
-
-	/**
-	 * Copy all attributes from source to target element
-	 * @param source - Source element
-	 * @param target - Target element
-	 */
-	#copyAttributes(source: Element, target: Element) {
-		for (const attr of source.attributes) {
-			target.setAttribute(attr.name, attr.value);
-		}
-
-		// Copy classes
-		target.className = source.className;
 	}
 
 	#create(data: BlockData) {

@@ -1,6 +1,7 @@
 import type { BlockData, BlockItemStructure } from '../types.js';
 import type { CreateItemElement } from './types.js';
 
+import { changeFrameSemantics } from './change-frame-semantics.js';
 import { importOptions } from './import-options.js';
 
 /**
@@ -26,6 +27,8 @@ export async function createPlainStructuredBlockElement(
 
 	const itemElements = await createItemElements(data.items, createItemElement);
 	frame.append(...itemElements);
+
+	changeFrameSemantics(container, data.containerProps.frameSemantics ?? 'div');
 
 	return container;
 }
