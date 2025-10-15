@@ -131,7 +131,7 @@ __metadata:
     "@tabler/icons-svelte": "npm:3.35.0"
     "@types/jquery": "npm:3.5.33"
     jquery: "npm:3.7.1"
-    svelte: "npm:5.40.0"
+    svelte: "npm:5.40.1"
     svelte-check: "npm:4.3.3"
     vite: "npm:7.1.10"
     vite-plugin-dts: "npm:4.5.4"
@@ -15212,9 +15212,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte@npm:5.40.0":
-  version: 5.40.0
-  resolution: "svelte@npm:5.40.0"
+"svelte@npm:5.40.1":
+  version: 5.40.1
+  resolution: "svelte@npm:5.40.1"
   dependencies:
     "@jridgewell/remapping": "npm:^2.3.4"
     "@jridgewell/sourcemap-codec": "npm:^1.5.0"
@@ -15230,7 +15230,7 @@ __metadata:
     locate-character: "npm:^3.0.0"
     magic-string: "npm:^0.30.11"
     zimmerframe: "npm:^1.1.2"
-  checksum: 10c0/43e955a0012dca10f1595bbce939d3bd1231aee4870de8b013c37f03bb28c895320224cb351fff93901e1a6827b49ca2d152f77044f597c163a7a8ad689cb353
+  checksum: 10c0/e724dd5e3282d28cc79e6027bffbb183a7a62b57f20c197ab375dca42622b497648350cd5c344b5e43bce2ed9f6c051dea86cdd9109255b0e51dfe96abfbbaf4
   languageName: node
   linkType: hard
 
