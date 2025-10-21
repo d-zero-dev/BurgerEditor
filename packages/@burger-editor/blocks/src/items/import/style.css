@@ -1,0 +1,12 @@
+[data-bgi='import'] {
+	bge-import {
+		&::before {
+			font-weight: bold;
+			content: 'Import: ';
+		}
+
+		&::after {
+			content: attr(src);
+		}
+	}
+}
