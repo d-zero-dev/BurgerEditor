@@ -6,6 +6,7 @@ import semver from 'semver';
 
 import { replacePlaceholders } from '../utils/replace-placeholders.js';
 
+import { createUnknownContentItem } from './create-item.js';
 import { dataFromHtml } from './data-from-html.js';
 import { dataToHtml } from './data-to-html.js';
 import { ItemEditorService } from './item-editor-service.js';
@@ -36,7 +37,7 @@ export class Item<
 	// eslint-disable-next-line no-restricted-syntax
 	private constructor(
 		engine: BurgerEditorEngine,
-		seed: ItemSeed<N, T, C>,
+		seed: ItemSeed<N, T, C> | null,
 		el: HTMLElement,
 	) {
 		elMap.set(el, this);
@@ -50,10 +51,13 @@ export class Item<
 
 		this.#engine = engine;
 
-		this.name = seed.name;
-		this.#version = seed.version;
+		// Synthesize fallback seed when missing
+		const effectiveSeed = seed ?? createUnknownContentItem<T, C, N>(el);
 
-		this.#service = new ItemEditorService<T, C, N>(this, seed);
+		this.name = effectiveSeed.name;
+		this.#version = effectiveSeed.version;
+
+		this.#service = new ItemEditorService<T, C, N>(this, effectiveSeed);
 		this.editor = engine.itemEditorDialog as unknown as ItemEditorDialog<T, C>;
 	}
 
@@ -98,15 +102,19 @@ export class Item<
 		initData: Partial<T> = {},
 	) {
 		const seed = engine.items.get(name) as ItemSeed<string, T, C> | undefined;
-		if (!seed) {
-			throw new Error(`Item seed not found: ${name}`);
-		}
-		const version = seed.version;
 		const wrapper = document.createElement('div');
 		wrapper.dataset.bgi = name;
-		wrapper.dataset.bgiVer = version;
-		wrapper.innerHTML = replacePlaceholders(seed.template, engine.config);
-		const item = new Item<T, C>(engine, seed, wrapper);
+
+		if (seed) {
+			const version = seed.version;
+			wrapper.dataset.bgiVer = version;
+			wrapper.innerHTML = replacePlaceholders(seed.template, engine.config);
+		} else {
+			// Fallback: keep requested name, no version, empty HTML; constructor synthesizes seed
+			wrapper.innerHTML = '';
+		}
+
+		const item = new Item<T, C>(engine, seed ?? null, wrapper);
 		await item.import(initData);
 		return item;
 	}
@@ -120,10 +128,8 @@ export class Item<
 			throw new Error('data-bgi not found');
 		}
 		const seed = engine.items.get(name) as ItemSeed<string, T, C> | undefined;
-		if (!seed) {
-			throw new Error(`Item seed not found: ${name}`);
-		}
-		const item = new Item<T, C>(engine, seed, el);
+		// Fallback on missing seed by passing null; constructor synthesizes seed
+		const item = new Item<T, C>(engine, seed ?? null, el);
 		return item;
 	}
 
