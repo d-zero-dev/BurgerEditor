@@ -39,6 +39,7 @@ export async function getUserConfig(): Promise<LocalServerConfig> {
 		editableArea: config.editableArea ?? null,
 		newFileContent: config.newFileContent?.trim() ?? '',
 		catalog: config.catalog ?? defaultCatalog,
+		enableImportBlock: config.enableImportBlock ?? true,
 		sampleImagePath:
 			config.sampleImagePath ??
 			((filesDir.image.clientPath + '/' + 'sample.png') as `/${string}`),

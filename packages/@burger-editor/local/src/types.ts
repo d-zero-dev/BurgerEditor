@@ -18,6 +18,7 @@ export interface LocalServerConfig {
 	readonly open: boolean;
 	readonly newFileContent: string;
 	readonly catalog: BlockCatalog;
+	readonly enableImportBlock: boolean;
 	readonly healthCheck: {
 		readonly enabled: boolean;
 		readonly interval: number;

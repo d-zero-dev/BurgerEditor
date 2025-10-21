@@ -2,7 +2,7 @@ import type { AppType } from '../route.js';
 
 import { generalCSS, items } from '@burger-editor/blocks';
 import { createBurgerEditorClient } from '@burger-editor/client';
-import { CSS_LAYER } from '@burger-editor/core';
+import { CSS_LAYER, type BlockCatalog } from '@burger-editor/core';
 import '@burger-editor/client/style';
 import { hc } from 'hono/client';
 
@@ -30,6 +30,25 @@ export async function createEditor() {
 		return;
 	}
 
+	const catalog: BlockCatalog = config.enableImportBlock
+		? {
+				...config.catalog,
+				import: [
+					{
+						label: 'インポート',
+						definition: {
+							name: 'import',
+							containerProps: {
+								type: 'inline',
+								immutable: true,
+							},
+							items: [['import']],
+						},
+					},
+				],
+			}
+		: config.catalog;
+
 	await createBurgerEditorClient({
 		root: '.editor',
 		config: {
@@ -45,7 +64,7 @@ export async function createEditor() {
 			],
 		},
 		items,
-		catalog: config.catalog,
+		catalog,
 		initialContents: mainInput.value,
 		generalCSS,
 		healthCheck: config.healthCheck
