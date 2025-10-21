@@ -257,7 +257,10 @@ export class ItemEditorDialog<
 		this.#service = service;
 		const template = getItemEditorTemplate(this.engine, this.#service.item.name);
 		if (!template) {
-			throw new Error(`Template not found: ${this.#service.item.name}`);
+			alert(
+				`編集できないコンテンツです (Error: Editor template not found: "${this.#service.item.name}")`,
+			);
+			return;
 		}
 
 		this.setTemplate(...template);
