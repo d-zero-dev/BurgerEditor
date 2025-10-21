@@ -1,8 +1,7 @@
 import type { SelectableValue } from '@burger-editor/core';
 
+import { createItem } from '@burger-editor/core';
 import { mergeItems } from '@burger-editor/utils';
-
-import { createItem } from '../create-item.js';
 
 import editor from './editor.html';
 import style from './style.css';
