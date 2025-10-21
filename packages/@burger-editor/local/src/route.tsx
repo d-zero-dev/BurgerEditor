@@ -340,7 +340,7 @@ async function readFile(filePath: string): Promise<ArrayBuffer | null> {
 		buffer.buffer
 			.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
 			// eslint-disable-next-line unicorn/prefer-spread
-			.slice(0) as ArrayBuffer
+			.slice(0)
 	);
 }
 
