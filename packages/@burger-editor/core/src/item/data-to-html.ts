@@ -14,6 +14,7 @@ export function dataToHtml(html: string, data: ItemData): string {
 		attr: 'bge',
 		typeConvert: true,
 		valueFilter,
+		xssSanitize: !data.dangerouslySetInnerHTML,
 	})
 		.merge(data)
 		.toHTML();
