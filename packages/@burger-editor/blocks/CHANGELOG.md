@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.28](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.27...v4.0.0-alpha.28) (2025-10-22)
+
+### Features
+
+- **blocks:** add import item for HTML file import ([c7684ed](https://github.com/d-zero-dev/BurgerEditor/commit/c7684eda4426253d4de645ebf10399d33160e5ba))
+
 # [4.0.0-alpha.27](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.26...v4.0.0-alpha.27) (2025-10-08)
 
 **Note:** Version bump only for package @burger-editor/blocks

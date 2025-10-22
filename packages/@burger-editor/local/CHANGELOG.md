@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.28](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.27...v4.0.0-alpha.28) (2025-10-22)
+
+### Features
+
+- **local:** add block import functionality ([e4d8aac](https://github.com/d-zero-dev/BurgerEditor/commit/e4d8aac5e1bd47549de6fe2bd36d777edcabacb2))
+- **local:** add enableImportBlock configuration option ([3007e5d](https://github.com/d-zero-dev/BurgerEditor/commit/3007e5d3b046b9797f8a34b5b9236f7133e559e5))
+
 # [4.0.0-alpha.27](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.26...v4.0.0-alpha.27) (2025-10-08)
 
 **Note:** Version bump only for package @burger-editor/local

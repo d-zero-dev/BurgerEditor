@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.28](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.27...v4.0.0-alpha.28) (2025-10-22)
+
+### Features
+
+- **core:** add unknown-content fallback for missing item seeds ([5987139](https://github.com/d-zero-dev/BurgerEditor/commit/5987139d314383f59b60d1d477ef0fcf1d91b7da))
+- **core:** handle missing editor template gracefully for unknown-content items ([2c9d3dd](https://github.com/d-zero-dev/BurgerEditor/commit/2c9d3ddc30f46f5e4d56eb39a10838a1c7b11037))
+- **core:** move createItem helper to core package ([633e2f1](https://github.com/d-zero-dev/BurgerEditor/commit/633e2f1d8502ddae79c823c410586ec9bd00e51a))
+
 # [4.0.0-alpha.27](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.26...v4.0.0-alpha.27) (2025-10-08)
 
 ### Bug Fixes
