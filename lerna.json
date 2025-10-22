@@ -1,6 +1,6 @@
 {
 	"lerna": "8.2.1",
-	"version": "4.0.0-alpha.28",
+	"version": "4.0.0-alpha.29",
 	"packages": ["packages/@burger-editor/*"],
 	"npmClient": "yarn",
 	"command": {

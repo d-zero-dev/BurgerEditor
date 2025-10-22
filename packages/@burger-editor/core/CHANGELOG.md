@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.29](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.28...v4.0.0-alpha.29) (2025-10-22)
+
+### Features
+
+- **core:** add XSS sanitization with opt-out support ([cfb41c3](https://github.com/d-zero-dev/BurgerEditor/commit/cfb41c35ee0b5682a5a13b4526f8ab2bd292162d))
+
 # [4.0.0-alpha.28](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.27...v4.0.0-alpha.28) (2025-10-22)
 
 ### Features
