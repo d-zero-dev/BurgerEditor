@@ -500,57 +500,296 @@ export default createItem<{
 
 独自のアイテムを作成するには、`createItem` 関数を使用します。
 
+#### 基本的なアイテムの作成
+
+最もシンプルな形式：
+
 ```typescript
 import { createItem } from '@burger-editor/core';
 
-export type CustomItemData = {
-	title: string;
+export type SimpleTextData = {
+	text: string;
+};
+
+export default createItem<SimpleTextData>({
+	version: '1.0.0',
+	name: 'simple-text',
+	template: '<p data-bge="text">初期テキスト</p>',
+	style: 'p { margin: 1em 0; }',
+	editor: '<input type="text" data-bge="text" placeholder="テキストを入力" />',
+});
+```
+
+この例では：
+
+- `version`: アイテムのバージョン（マイグレーション時に使用）
+- `name`: アイテムの一意な名前
+- `template`: 表示用のHTMLテンプレート
+- `style`: アイテム専用のCSS
+- `editor`: エディタUIのHTMLテンプレート
+
+#### editorOptionsによる高度なカスタマイズ
+
+`editorOptions`を使用すると、アイテムの動作を細かく制御できます：
+
+```typescript
+import { createItem } from '@burger-editor/core';
+
+export type ToggleItemData = {
+	enabled: boolean;
+	label: string;
 	description: string;
 };
 
-export default createItem<CustomItemData>({
+export default createItem<ToggleItemData>({
 	version: '1.0.0',
-	name: 'custom-item',
-	template: '<h2 bge="title"></h2><p bge="description"></p>',
-	style: 'h2 { color: blue; }',
-	editor: '<input type="text" bge="title" /><textarea bge="description"></textarea>',
+	name: 'toggle-item',
+	template: `
+		<div data-bge="enabled:data-enabled" data-enabled="false">
+			<strong data-bge="label">ラベル</strong>
+			<p data-bge="description">説明文</p>
+		</div>
+	`,
+	style: `
+		[data-enabled="true"] {
+			background: #e8f5e9;
+			border-left: 4px solid #4caf50;
+			padding: 1rem;
+		}
+	`,
+	editor: `
+		<div>
+			<label>
+				<input type="checkbox" data-bge="enabled:checked" />
+				有効にする
+			</label>
+			<input type="text" data-bge="label" placeholder="ラベル" />
+			<textarea data-bge="description" placeholder="説明文"></textarea>
+		</div>
+	`,
 	editorOptions: {
-		// 初期データの設定
-		init: async (item) => ({
-			title: '初期タイトル',
-			description: '',
-		}),
-		// エディタを開く前にデータを変換
-		beforeOpen: (data) => ({
-			...data,
-			// データの前処理
-		}),
+		// エディタを開く前のデータ変換
+		beforeOpen: (data) => {
+			// データからUI用の値を生成
+			return {
+				...data,
+				// 必要に応じてデータを変換
+			};
+		},
+
 		// エディタを開いた時の処理
 		open: async (data, editor) => {
-			// カスタムUIロジック
+			// エディタ内のUI要素にイベントリスナーを追加
+			const checkbox = editor.el.querySelector('input[type="checkbox"]');
+			const textInputs = editor.el.querySelectorAll('input[type="text"], textarea');
+
+			// チェックボックスの状態に応じて他の入力欄を有効/無効化
+			editor.onChange('$enabled', (enabled) => {
+				textInputs.forEach((input) => {
+					(input as HTMLInputElement).disabled = !enabled;
+				});
+			});
 		},
+
 		// データ保存前の変換
-		beforeChange: async (newData) => ({
-			...newData,
-			// データの後処理
-		}),
-		// DOM更新後の処理
-		migrateElement: async (data, item) => {
-			// DOM要素の直接操作が必要な場合
+		beforeChange: async (newData) => {
+			// 保存前にデータを整形
+			return {
+				...newData,
+				label: newData.label.trim(),
+				description: newData.description.trim(),
+			};
 		},
 	},
 });
 ```
 
+#### editorOptionsの各メソッド詳細
+
+##### `beforeOpen(data, editor): T`
+
+エディタを開く直前に呼ばれます。保存されているデータをエディタ用に変換する場合に使用します。
+
+実例：画像アイテムでの使用（boolean値への変換）
+
+```typescript
+beforeOpen: (data) => {
+	// データからUI用の値を生成
+	const lazy = data.loading === 'lazy';
+	const popup = data.node === 'button' && data.command === 'show-modal';
+	const targetBlank = data.node === 'a' && data.target === '_blank';
+
+	return {
+		...data,
+		lazy, // 'lazy' | 'eager' → boolean
+		popup, // node + command → boolean
+		targetBlank, // node + target → boolean
+	};
+};
+```
+
+実例：テーブルアイテムでの使用（MarkdownからHTMLへの変換）
+
+```typescript
+beforeOpen: (data) => {
+	return {
+		...data,
+		// 保存データ（Markdown）をエディタ用（HTML）に変換
+		td: data.td.map(htmlToMarkdown),
+	};
+};
+```
+
+##### `open(data, editor): Promise<void> | void`
+
+エディタが開いた後に呼ばれます。エディタUI内のカスタムロジックを実装します。
+
+実例：YouTubeアイテムでの使用（プレビュー機能）
+
+```typescript
+open: ({ title }, editor) => {
+	// タイトルがデフォルト値の場合は空にする
+	editor.update('$title', (value) => {
+		if (title === FALLBACK_TITLE) {
+			return '';
+		}
+		return value;
+	});
+
+	// ID入力欄とプレビューの要素を取得
+	const $id = editor.find('[name="bge-id"]');
+	const $preview = editor.find('.bge-youtube-preview');
+
+	// プレビュー更新関数
+	const updatePreview = () => {
+		const id = parseYTId($id?.value ?? '');
+		const url = `//www.youtube.com/embed/${id}?rel=0&loop=1`;
+		$preview?.setAttribute('src', url);
+		editor.update('$url', url);
+		editor.update('$thumb', `//img.youtube.com/vi/${id}/maxresdefault.jpg`);
+	};
+
+	// IDが変更されたらプレビューを更新
+	$id?.addEventListener('input', updatePreview);
+};
+```
+
+実例：ダウンロードファイルアイテムでの使用（ファイル選択とサイズ表示）
+
+```typescript
+open: (data, editor) => {
+	// ファイル選択イベントを発火
+	editor.engine.componentObserver.notify('file-select', {
+		path: data.path,
+		fileSize: Number.parseFloat(data.size ?? '0'),
+		isEmpty: data.path === '',
+		isMounted: false,
+	});
+
+	// ファイル選択イベントを監視
+	editor.engine.componentObserver.on('file-select', ({ path, fileSize, isEmpty }) => {
+		if (isEmpty) return;
+
+		editor.update('$path', path);
+		editor.update('$formatedSize', formatByteSize(fileSize));
+		editor.update('$size', fileSize.toString());
+	});
+
+	// ダウンロード属性のチェック状態を設定
+	editor.update('$downloadCheck', !!data.download);
+};
+```
+
+##### `beforeChange(newData, editor): Promise<T> | T`
+
+保存ボタンが押された時、データがアイテムに反映される直前に呼ばれます。エディタのデータを保存用のデータに変換します。
+
+実例：画像アイテムでの使用（UI用の値を実際のデータに変換）
+
+```typescript
+beforeChange: (newData) => {
+	// UI用のboolean値を実際の属性値に変換
+	const loading = newData.lazy ? 'lazy' : 'eager';
+	const node = newData.popup ? 'button' : newData.href ? 'a' : 'div';
+	const target = node === 'a' && newData.targetBlank ? '_blank' : null;
+	const command = node === 'button' ? 'show-modal' : null;
+
+	return {
+		...newData,
+		loading,
+		node,
+		target,
+		command,
+	};
+};
+```
+
+実例：テーブルアイテムでの使用（HTMLからMarkdownへの変換）
+
+```typescript
+beforeChange: (newData) => {
+	return {
+		...newData,
+		// エディタデータ（HTML）を保存データ（Markdown）に変換
+		td: newData.td.map(markdownToHtml),
+	};
+};
+```
+
+##### `migrate(item): T`
+
+アイテムのバージョンが古い場合に呼ばれます。古いバージョンのデータを新しい形式に変換します。
+
+実例：Google Mapsアイテムでの使用（新しいフィールドの追加）
+
+```typescript
+migrate: (item) => {
+	const data = item.export();
+
+	// v2.10.0で新しいフィールド（url）を追加
+	const lat = data.lat;
+	const lng = data.lng;
+	data.url = `//maps.apple.com/?q=${lat},${lng}`;
+
+	return data;
+};
+```
+
+##### `isDisable(item): string`
+
+エディタを開けない場合にメッセージを返します。空文字列を返すと編集可能になります。
+
+実例：Google Mapsアイテムでの使用（APIキーチェック）
+
+```typescript
+isDisable: (item) => {
+	// APIキーが設定されているかチェック
+	if (item.editor.engine.config.googleMapsApiKey) {
+		return ''; // 編集可能
+	}
+	return 'Google Maps APIキーが登録されていないため、利用できません。\n「システム設定」からAPIキーを登録することができます。';
+};
+```
+
 ### 独立レンダリング機構
 
-`render` 関数を使用すると、エディタエンジンなしでブロックをレンダリングできます。これは、プレビュー機能や静的サイト生成などに活用できます。
+`render` 関数を使用すると、エディタエンジンなしでブロックをレンダリングできます。
+
+#### 使用場面
+
+- **プレビュー機能**: ユーザーが編集中のコンテンツをプレビュー表示
+- **静的サイト生成**: ビルド時にブロックデータからHTMLを生成
+- **メール配信**: ブロックデータからHTMLメールを生成
+- **外部システム連携**: BurgerEditorのデータを他のシステムで表示
+
+#### 基本的な使い方
 
 ```typescript
 import { render } from '@burger-editor/core';
 import wysiwyg from './items/wysiwyg';
 import image from './items/image';
 
+// レンダリングするブロックデータ
 const blockData = {
 	name: 'text-with-image',
 	containerProps: {
@@ -565,11 +804,14 @@ const blockData = {
 	],
 };
 
+// ブロックをレンダリング
 const blockElement = await render(blockData, {
+	// 使用するアイテムの定義
 	items: {
 		wysiwyg,
 		image,
 	},
+	// 設定（BurgerEditorEngineのconfigと同じ形式）
 	config: {
 		classList: [],
 		stylesheets: [],
@@ -579,8 +821,102 @@ const blockElement = await render(blockData, {
 	},
 });
 
+// DOM要素として取得できる
 document.body.appendChild(blockElement);
+
+// またはHTMLとして出力
+const html = blockElement.outerHTML;
+console.log(html);
 ```
+
+#### 実践例：APIから取得したデータのレンダリング
+
+```typescript
+import { render } from '@burger-editor/core';
+import { items } from './items'; // すべてのアイテム定義をインポート
+
+// APIからブロックデータを取得
+async function renderPageContent(pageId: string) {
+	const response = await fetch(`/api/pages/${pageId}`);
+	const pageData = await response.json();
+
+	// 各ブロックをレンダリング
+	const container = document.getElementById('content');
+
+	for (const blockData of pageData.blocks) {
+		const blockElement = await render(blockData, {
+			items,
+			config: {
+				classList: ['rendered-block'],
+				stylesheets: [],
+				sampleImagePath: '/images/sample.jpg',
+				sampleFilePath: '/files/sample.pdf',
+				googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
+			},
+		});
+
+		container.appendChild(blockElement);
+	}
+}
+```
+
+#### 静的サイト生成での使用例
+
+```typescript
+import { render } from '@burger-editor/core';
+import { writeFile } from 'fs/promises';
+import { items } from './items';
+
+async function generateStaticPage(blockDataList: BlockData[]) {
+	// 各ブロックをHTMLに変換
+	const htmlBlocks = await Promise.all(
+		blockDataList.map(async (blockData) => {
+			const element = await render(blockData, {
+				items,
+				config: {
+					classList: [],
+					stylesheets: [{ path: '/css/blocks.css' }],
+					sampleImagePath: '/images/sample.jpg',
+					sampleFilePath: '/files/sample.pdf',
+					googleMapsApiKey: null,
+				},
+			});
+			return element.outerHTML;
+		}),
+	);
+
+	// 完全なHTMLページを生成
+	const fullHtml = `
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Generated Page</title>
+	<link rel="stylesheet" href="/css/blocks.css">
+</head>
+<body>
+	<main>
+		${htmlBlocks.join('\n')}
+	</main>
+</body>
+</html>
+	`.trim();
+
+	// ファイルに出力
+	await writeFile('./dist/index.html', fullHtml);
+}
+```
+
+#### renderとBurgerEditorEngineの違い
+
+| 機能                 | render                       | BurgerEditorEngine |
+| -------------------- | ---------------------------- | ------------------ |
+| 用途                 | 表示のみ                     | 編集可能           |
+| エディタUI           | なし                         | あり               |
+| インタラクティブ機能 | なし                         | あり               |
+| パフォーマンス       | 軽量                         | 重い               |
+| 使用場面             | 静的HTML生成、プレビュー表示 | コンテンツ編集     |
 
 ### XSSサニタイズの無効化
 
