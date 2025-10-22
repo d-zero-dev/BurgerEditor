@@ -1,4 +1,12 @@
+import fs from 'node:fs';
+
+// @ts-ignore - rollup-plugin-string has type incompatibility with vitest's internal rollup version
+import { string } from 'rollup-plugin-string';
 import { defineConfig } from 'vitest/config';
+
+const blocksPkg = JSON.parse(
+	fs.readFileSync('./packages/@burger-editor/blocks/package.json', 'utf8'),
+);
 
 const jsdomConfig = {
 	environment: 'jsdom',
@@ -17,9 +25,20 @@ export default defineConfig({
 				test: {
 					name: 'default',
 					include: [
-						'packages/@burger-editor/{blocks,frozen-patty,legacy,mcp-server,migrator,utils}/**/*.spec.ts',
+						'packages/@burger-editor/{frozen-patty,legacy,mcp-server,migrator,utils}/**/*.spec.ts',
 					],
 					...jsdomConfig,
+				},
+			},
+			{
+				test: {
+					name: 'blocks',
+					include: ['packages/@burger-editor/blocks/**/*.spec.ts'],
+					...jsdomConfig,
+				},
+				plugins: [string({ include: ['**/*.html', '**/*.css', '**/*.svg'] })],
+				define: {
+					__VERSION__: JSON.stringify(blocksPkg.version),
 				},
 			},
 			{
