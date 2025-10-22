@@ -1,0 +1,12 @@
+{
+	"extends": ["./tsconfig.json"],
+	"compilerOptions": {
+		"noEmit": false,
+		"outDir": "./import",
+		"rootDir": "./src/import",
+		"declaration": true,
+		"declarationMap": true
+	},
+	"include": ["./src/import/**/*"],
+	"exclude": ["node_modules", "dist", "import", "server", "./src/import/**/*.spec.ts"]
+}

@@ -8,6 +8,10 @@
 	"exports": {
 		".": {
 			"types": "./server/types.d.ts"
+		},
+		"./import": {
+			"import": "./import/index.js",
+			"types": "./import/index.d.ts"
 		}
 	},
 	"bin": {
@@ -15,12 +19,14 @@
 	},
 	"files": [
 		"dist",
+		"import",
 		"server",
 		"style"
 	],
 	"scripts": {
-		"build": "npx run-p build:check build:client build:server",
+		"build": "npx run-p build:check build:client build:import build:server",
 		"build:client": "vite build",
+		"build:import": "npx tsc -p tsconfig.import.build.json",
 		"build:server": "npx tsc -p tsconfig.build.json",
 		"build:check": "npx tsc",
 		"dev": "npx run-p dev:client dev:server",

@@ -1,5 +1,14 @@
 import { defineConfig } from 'vitest/config';
 
+const jsdomConfig = {
+	environment: 'jsdom',
+	environmentOptions: {
+		jsdom: {
+			url: 'https://www.d-zero.co.jp',
+		},
+	},
+};
+
 export default defineConfig({
 	test: {
 		exclude: ['**/node_modules/**', '**/dist/**'],
@@ -10,12 +19,7 @@ export default defineConfig({
 					include: [
 						'packages/@burger-editor/{blocks,frozen-patty,legacy,mcp-server,migrator,utils}/**/*.spec.ts',
 					],
-					environment: 'jsdom',
-					environmentOptions: {
-						jsdom: {
-							url: 'https://www.d-zero.co.jp',
-						},
-					},
+					...jsdomConfig,
 				},
 			},
 			{
@@ -57,7 +61,18 @@ export default defineConfig({
 				extends: './packages/@burger-editor/local/vite.config.ts',
 				test: {
 					name: 'local',
-					include: ['packages/@burger-editor/local/**/*.spec.ts'],
+					include: [
+						'packages/@burger-editor/local/**/*.spec.ts',
+						'!packages/@burger-editor/local/src/import/**/*.spec.ts',
+					],
+				},
+			},
+			{
+				extends: './packages/@burger-editor/local/vite.config.ts',
+				test: {
+					name: 'local/import',
+					include: ['packages/@burger-editor/local/src/import/**/*.spec.ts'],
+					...jsdomConfig,
 				},
 			},
 		],
