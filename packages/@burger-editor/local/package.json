@@ -55,7 +55,7 @@
 		"@types/node": "24.9.1",
 		"dotenv": "17.2.3",
 		"tsx": "4.20.6",
-		"vite": "7.1.11"
+		"vite": "7.1.12"
 	},
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)"
