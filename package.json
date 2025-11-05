@@ -53,7 +53,7 @@
 		"@d-zero/textlint-config": "5.0.0-alpha.73",
 		"@d-zero/tsconfig": "0.5.0",
 		"@markuplint/svelte-parser": "4.7.12",
-		"@markuplint/svelte-spec": "4.5.21",
+		"@markuplint/svelte-spec": "4.5.22",
 		"@vitest/browser": "3.2.4",
 		"eslint-plugin-svelte": "3.13.0",
 		"husky": "9.1.7",
