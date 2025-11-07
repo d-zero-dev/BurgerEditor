@@ -234,7 +234,7 @@ __metadata:
     "@burger-editor/legacy": "npm:4.0.0-alpha.29"
     "@burger-editor/migrator": "npm:4.0.0-alpha.29"
     "@burger-editor/utils": "npm:4.0.0-alpha.29"
-    "@modelcontextprotocol/sdk": "npm:1.21.0"
+    "@modelcontextprotocol/sdk": "npm:1.21.1"
     vitest: "npm:3.2.4"
     zod: "npm:3.24.2"
   bin:
@@ -2390,9 +2390,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@modelcontextprotocol/sdk@npm:1.21.0":
-  version: 1.21.0
-  resolution: "@modelcontextprotocol/sdk@npm:1.21.0"
+"@modelcontextprotocol/sdk@npm:1.21.1":
+  version: 1.21.1
+  resolution: "@modelcontextprotocol/sdk@npm:1.21.1"
   dependencies:
     ajv: "npm:^8.17.1"
     ajv-formats: "npm:^3.0.1"
@@ -2412,7 +2412,7 @@ __metadata:
   peerDependenciesMeta:
     "@cfworker/json-schema":
       optional: true
-  checksum: 10c0/9feab912dcaefddc8204bf57f27cabb0c1a430bf1f9fa90f6e11ad8beea9f115374f624f490209421a876c2e7adf686e96260bd5c0109f4ebec6d6376b2145e7
+  checksum: 10c0/5493af701bf7131abd375c1769195220d5d9452373f9ec4ed01782e46bf5ad59537d5bf1926c813dc435a4b26bc6fa91e66c45c81eb250e3165a9bb53eba57af
   languageName: node
   linkType: hard
 
