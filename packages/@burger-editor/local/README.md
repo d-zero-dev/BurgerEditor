@@ -1,8 +1,202 @@
-```
-npm install
-npm run dev
+# @burger-editor/local
+
+[![npm version](https://badge.fury.io/js/@burger-editor%2Flocal.svg)](https://badge.fury.io/js/@burger-editor%2Flocal)
+
+ローカルファイルシステムで動作するBurgerEditorのCMS実装です。HTMLファイルを直接編集できるローカル開発環境を提供します。
+
+## インストール
+
+```bash
+yarn install
 ```
 
+または
+
+```bash
+npm install
 ```
-open http://localhost:3000
+
+## 起動方法
+
+```bash
+yarn dev
 ```
+
+開発サーバーが起動したら、ブラウザで以下にアクセスしてください：
+
+```
+http://localhost:3000
+```
+
+## 設定ファイル
+
+プロジェクトルートに `burgereditor.config.js` ファイルを作成することで、BurgerEditorの動作をカスタマイズできます。
+
+### 基本的な設定例
+
+```javascript
+import path from 'node:path';
+import { defaultCatalog } from '@burger-editor/blocks';
+
+export default {
+	// ドキュメントルート（HTMLファイルを配置するディレクトリ）
+	documentRoot: path.join(import.meta.dirname, 'src'),
+
+	// アセットルート（画像やファイルを配置するディレクトリ）
+	assetsRoot: path.join(import.meta.dirname, 'public'),
+
+	// 言語設定
+	lang: 'ja',
+
+	// スタイルシートのパス
+	stylesheets: ['/css/style.css'],
+
+	// ブロックに適用するCSSクラス
+	classList: ['my-editor'],
+
+	// 編集可能エリアのセレクタ
+	editableArea: '.my-editor',
+
+	// ブロックカタログ
+	catalog: defaultCatalog,
+
+	// 新規ファイル作成時のテンプレート
+	newFileContent: `
+---
+title: 'New Page'
+---
+<div class="my-editor"></div>`,
+
+	// Google Maps APIキー（使用する場合）
+	googleMapsApiKey: null,
+
+	// サンプル画像のパス
+	sampleImagePath: '/images/sample.jpg',
+
+	// サンプルファイルのパス
+	sampleFilePath: '/files/sample.pdf',
+
+	// ファイル保存先ディレクトリ
+	filesDir: {
+		image: '/files/images',
+		other: '/files/others',
+	},
+
+	// 起動時にブラウザを自動で開く
+	open: true,
+};
+```
+
+### 設定オプション
+
+#### 必須オプション
+
+- `documentRoot` (string): HTMLファイルを配置するディレクトリのパス
+- `assetsRoot` (string): 静的ファイル（画像、CSS、JSなど）を配置するディレクトリのパス
+
+#### オプショナル設定
+
+- `version` (string): 設定ファイルのバージョン（デフォルト: パッケージバージョン）
+- `port` (number): サーバーのポート番号（デフォルト: 3000）
+- `host` (string): ホスト名（デフォルト: 'localhost'）
+- `lang` (string): 言語設定（デフォルト: 'ja'）
+- `stylesheets` (string[]): 読み込むスタイルシートのパス（デフォルト: []）
+- `classList` (string[]): ブロックに適用するCSSクラス（デフォルト: []）
+- `editableArea` (string | null): 編集可能エリアのセレクタ（デフォルト: null）
+- `catalog` (BlockCatalog): ブロックカタログ（デフォルト: {}）
+- `newFileContent` (string): 新規ファイル作成時のテンプレート
+- `googleMapsApiKey` (string | null): Google Maps APIキー（デフォルト: null）
+- `sampleImagePath` (string): サンプル画像のパス
+- `sampleFilePath` (string): サンプルファイルのパス
+- `filesDir` (object): ファイルタイプごとの保存先ディレクトリ
+- `open` (boolean): 起動時にブラウザを自動で開く（デフォルト: true）
+- `enableImportBlock` (boolean): インポートブロックを有効にする（デフォルト: false）
+- `healthCheck` (object): ヘルスチェックの設定
+  - `enabled` (boolean): ヘルスチェックを有効にする（デフォルト: false）
+  - `interval` (number): チェック間隔（ミリ秒）（デフォルト: 30000）
+  - `retryCount` (number): リトライ回数（デフォルト: 3）
+
+## カスタムブロックカタログの追加
+
+既存のブロックカタログにカスタムブロックを追加できます：
+
+```javascript
+import { defaultCatalog } from '@burger-editor/blocks';
+
+export default {
+	documentRoot: './src',
+	assetsRoot: './public',
+	catalog: {
+		...defaultCatalog,
+		カスタムカテゴリ: [
+			{
+				label: '3列カード',
+				definition: {
+					name: 'three-column-card',
+					containerProps: {
+						type: 'grid',
+						columns: 3,
+					},
+					items: [
+						['image', 'wysiwyg'],
+						['image', 'wysiwyg'],
+						['image', 'wysiwyg'],
+					],
+				},
+			},
+		],
+	},
+};
+```
+
+## 実験的機能
+
+### ボタンアイテムのカスタマイズ
+
+ボタンアイテムの選択肢をカスタマイズできます：
+
+```javascript
+export default {
+	documentRoot: './src',
+	assetsRoot: './public',
+	catalog: defaultCatalog,
+	experimental: {
+		itemOptions: {
+			button: {
+				kinds: [
+					// 既存のラベルを変更
+					{ value: 'link', label: 'リンクボタン' },
+					// 既存の選択肢を削除
+					{ value: 'em', delete: true },
+					// 新しい選択肢を追加
+					{ value: 'primary', label: 'プライマリボタン' },
+					{ value: 'secondary', label: 'セカンダリボタン' },
+				],
+			},
+		},
+	},
+};
+```
+
+## カスタムアイテムの作成
+
+カスタムアイテムの作成方法については、[@burger-editor/core のREADME](../core/README.md#カスタムアイテムの作成) を参照してください。
+
+## TypeScript型定義
+
+設定ファイルでTypeScriptの型補完を利用する場合：
+
+```javascript
+/**
+ * @type {import('@burger-editor/local').LocalServerConfigUserSettings}
+ */
+export default {
+	documentRoot: './src',
+	assetsRoot: './public',
+	// ... 型補完が効きます
+};
+```
+
+## ライセンス
+
+Dual Licensed under MIT OR Apache-2.0
