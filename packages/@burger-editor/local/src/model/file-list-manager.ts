@@ -57,6 +57,7 @@ export class FileListManager {
 		const name = encode(fileBaseName);
 		const fileName = `${fileId}__${name}${ext}`;
 		const filePath = path.join(this.#serverDir, fileName);
+		await fs.mkdir(path.dirname(filePath), { recursive: true });
 		await fs.writeFile(filePath, Buffer.from(buffer));
 		const stats = await fs.stat(filePath);
 		this.#allFileListCache = null;
@@ -212,16 +213,17 @@ export class FileListManager {
 			.toReversed();
 
 		if (this.#samplePath) {
-			const stat = await fs.stat(this.#samplePath.server);
-
-			list.unshift({
-				fileId: 'sample',
-				name: 'sample',
-				url: this.#samplePath.client,
-				size: stat.size,
-				timestamp: stat.mtime.valueOf(),
-				sizes: {},
-			});
+			const stat = await fs.stat(this.#samplePath.server).catch(() => null);
+			if (stat) {
+				list.unshift({
+					fileId: 'sample',
+					name: 'sample',
+					url: this.#samplePath.client,
+					size: stat.size,
+					timestamp: stat.mtime.valueOf(),
+					sizes: {},
+				});
+			}
 		}
 
 		this.#allFileListCache = list;
