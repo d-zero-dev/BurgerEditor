@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.30](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.29...v4.0.0-alpha.30) (2025-11-13)
+
+### Bug Fixes
+
+- **blocks:** set image margin-inline to auto ([180dfb2](https://github.com/d-zero-dev/BurgerEditor/commit/180dfb2f3043912fb2e7591c4ac3a0e65cad1018))
+- **local:** ensure directory exists before saving file ([0b4c6e4](https://github.com/d-zero-dev/BurgerEditor/commit/0b4c6e4880d17ddeedfc0d87229ee9aca0ffbcc6))
+
 # [4.0.0-alpha.29](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.28...v4.0.0-alpha.29) (2025-10-22)
 
 ### Features
