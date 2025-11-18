@@ -42,7 +42,7 @@
 		"debug": "4.4.3",
 		"gray-matter": "^4.0.3",
 		"hono": "4.10.6",
-		"jsdom": "26.1.0",
+		"jsdom": "27.2.0",
 		"open": "10.2.0",
 		"prettier": "3.6.2",
 		"zod": "4.0.17"
@@ -51,7 +51,7 @@
 		"@burger-editor/client": "4.0.0-alpha.30",
 		"@burger-editor/core": "4.0.0-alpha.30",
 		"@types/debug": "4.1.12",
-		"@types/jsdom": "21.1.7",
+		"@types/jsdom": "27.0.0",
 		"@types/node": "24.10.1",
 		"dotenv": "17.2.3",
 		"tsx": "4.20.6",
