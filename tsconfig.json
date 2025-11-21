@@ -2,7 +2,6 @@
 	"extends": ["@d-zero/tsconfig"],
 	"compilerOptions": {
 		"checkJs": false,
-		"allowJs": false,
-		"types": ["@vitest/browser/providers/playwright"]
+		"allowJs": false
 	}
 }

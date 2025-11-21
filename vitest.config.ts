@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 
 // @ts-ignore - rollup-plugin-string has type incompatibility with vitest's internal rollup version
+import { playwright } from '@vitest/browser-playwright';
 import { string } from 'rollup-plugin-string';
 import { defineConfig } from 'vitest/config';
 
@@ -54,7 +55,7 @@ export default defineConfig({
 					include: ['packages/@burger-editor/custom-element/**/*.spec.ts'],
 					browser: {
 						enabled: true,
-						provider: 'playwright',
+						provider: playwright(),
 						instances: [{ browser: 'chromium' }],
 						headless: true,
 						viewport: { width: 1280, height: 720 },
@@ -68,7 +69,7 @@ export default defineConfig({
 					include: ['packages/@burger-editor/core/**/*.spec.ts'],
 					browser: {
 						enabled: true,
-						provider: 'playwright',
+						provider: playwright(),
 						instances: [{ browser: 'chromium' }],
 						headless: true,
 						viewport: { width: 1280, height: 720 },
