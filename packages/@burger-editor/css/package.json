@@ -28,6 +28,6 @@
 		"@burger-editor/blocks": "4.0.0-alpha.30",
 		"glob": "13.0.0",
 		"postcss": "8.5.6",
-		"vitest": "4.0.13"
+		"vitest": "4.0.14"
 	}
 }
