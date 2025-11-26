@@ -76,3 +76,9 @@ const wysiwygItem = items.wysiwyg;
 // ブロックカタログの使用
 const catalog = defaultCatalog;
 ```
+
+## カスタムアイテムの作成
+
+独自のアイテムを作成する場合は、[@burger-editor/core](../core/)の`createItem`関数を使用します。
+
+> **📖 エディターAPIの詳細**: アイテムエディターのAPIの使い方と実践的なユースケースについては、[アイテムエディターAPIガイド](../../docs/item-editor-api.md)を参照してください。

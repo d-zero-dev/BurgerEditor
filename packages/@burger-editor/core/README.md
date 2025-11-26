@@ -532,6 +532,8 @@ export default createItem<SimpleTextData>({
 
 `editorOptions`を使用すると、アイテムの動作を細かく制御できます：
 
+> **📖 詳細なAPIリファレンス**: エディターAPIの詳細な使い方と実践的なユースケースについては、[アイテムエディターAPIガイド](../../docs/item-editor-api.md)を参照してください。
+
 ```typescript
 import { createItem } from '@burger-editor/core';
 
@@ -613,31 +615,35 @@ export default createItem<ToggleItemData>({
 実例：画像アイテムでの使用（boolean値への変換）
 
 ```typescript
-beforeOpen: (data) => {
-	// データからUI用の値を生成
-	const lazy = data.loading === 'lazy';
-	const popup = data.node === 'button' && data.command === 'show-modal';
-	const targetBlank = data.node === 'a' && data.target === '_blank';
+editorOptions: {
+	beforeOpen: (data) => {
+		// データからUI用の値を生成
+		const lazy = data.loading === 'lazy';
+		const popup = data.node === 'button' && data.command === 'show-modal';
+		const targetBlank = data.node === 'a' && data.target === '_blank';
 
-	return {
-		...data,
-		lazy, // 'lazy' | 'eager' → boolean
-		popup, // node + command → boolean
-		targetBlank, // node + target → boolean
-	};
-};
+		return {
+			...data,
+			lazy, // 'lazy' | 'eager' → boolean
+			popup, // node + command → boolean
+			targetBlank, // node + target → boolean
+		};
+	},
+}
 ```
 
 実例：テーブルアイテムでの使用（MarkdownからHTMLへの変換）
 
 ```typescript
-beforeOpen: (data) => {
-	return {
-		...data,
-		// 保存データ（Markdown）をエディタ用（HTML）に変換
-		td: data.td.map(htmlToMarkdown),
-	};
-};
+editorOptions: {
+	beforeOpen: (data) => {
+		return {
+			...data,
+			// 保存データ（Markdown）をエディタ用（HTML）に変換
+			td: data.td.map(htmlToMarkdown),
+		};
+	},
+}
 ```
 
 ##### `open(data, editor): Promise<void> | void`
@@ -647,57 +653,61 @@ beforeOpen: (data) => {
 実例：YouTubeアイテムでの使用（プレビュー機能）
 
 ```typescript
-open: ({ title }, editor) => {
-	// タイトルがデフォルト値の場合は空にする
-	editor.update('$title', (value) => {
-		if (title === FALLBACK_TITLE) {
-			return '';
-		}
-		return value;
-	});
+editorOptions: {
+	open: ({ title }, editor) => {
+		// タイトルがデフォルト値の場合は空にする
+		editor.update('$title', (value) => {
+			if (title === FALLBACK_TITLE) {
+				return '';
+			}
+			return value;
+		});
 
-	// ID入力欄とプレビューの要素を取得
-	const $id = editor.find('[name="bge-id"]');
-	const $preview = editor.find('.bge-youtube-preview');
+		// ID入力欄とプレビューの要素を取得
+		const $id = editor.find('[name="bge-id"]');
+		const $preview = editor.find('.bge-youtube-preview');
 
-	// プレビュー更新関数
-	const updatePreview = () => {
-		const id = parseYTId($id?.value ?? '');
-		const url = `//www.youtube.com/embed/${id}?rel=0&loop=1`;
-		$preview?.setAttribute('src', url);
-		editor.update('$url', url);
-		editor.update('$thumb', `//img.youtube.com/vi/${id}/maxresdefault.jpg`);
-	};
+		// プレビュー更新関数
+		const updatePreview = () => {
+			const id = parseYTId($id?.value ?? '');
+			const url = `//www.youtube.com/embed/${id}?rel=0&loop=1`;
+			$preview?.setAttribute('src', url);
+			editor.update('$url', url);
+			editor.update('$thumb', `//img.youtube.com/vi/${id}/maxresdefault.jpg`);
+		};
 
-	// IDが変更されたらプレビューを更新
-	$id?.addEventListener('input', updatePreview);
-};
+		// IDが変更されたらプレビューを更新
+		$id?.addEventListener('input', updatePreview);
+	},
+}
 ```
 
 実例：ダウンロードファイルアイテムでの使用（ファイル選択とサイズ表示）
 
 ```typescript
-open: (data, editor) => {
-	// ファイル選択イベントを発火
-	editor.engine.componentObserver.notify('file-select', {
-		path: data.path,
-		fileSize: Number.parseFloat(data.size ?? '0'),
-		isEmpty: data.path === '',
-		isMounted: false,
-	});
+editorOptions: {
+	open: (data, editor) => {
+		// ファイル選択イベントを発火
+		editor.engine.componentObserver.notify('file-select', {
+			path: data.path,
+			fileSize: Number.parseFloat(data.size ?? '0'),
+			isEmpty: data.path === '',
+			isMounted: false,
+		});
 
-	// ファイル選択イベントを監視
-	editor.engine.componentObserver.on('file-select', ({ path, fileSize, isEmpty }) => {
-		if (isEmpty) return;
+		// ファイル選択イベントを監視
+		editor.engine.componentObserver.on('file-select', ({ path, fileSize, isEmpty }) => {
+			if (isEmpty) return;
 
-		editor.update('$path', path);
-		editor.update('$formatedSize', formatByteSize(fileSize));
-		editor.update('$size', fileSize.toString());
-	});
+			editor.update('$path', path);
+			editor.update('$formatedSize', formatByteSize(fileSize));
+			editor.update('$size', fileSize.toString());
+		});
 
-	// ダウンロード属性のチェック状態を設定
-	editor.update('$downloadCheck', !!data.download);
-};
+		// ダウンロード属性のチェック状態を設定
+		editor.update('$downloadCheck', !!data.download);
+	},
+}
 ```
 
 ##### `beforeChange(newData, editor): Promise<T> | T`
@@ -707,33 +717,37 @@ open: (data, editor) => {
 実例：画像アイテムでの使用（UI用の値を実際のデータに変換）
 
 ```typescript
-beforeChange: (newData) => {
-	// UI用のboolean値を実際の属性値に変換
-	const loading = newData.lazy ? 'lazy' : 'eager';
-	const node = newData.popup ? 'button' : newData.href ? 'a' : 'div';
-	const target = node === 'a' && newData.targetBlank ? '_blank' : null;
-	const command = node === 'button' ? 'show-modal' : null;
+editorOptions: {
+	beforeChange: (newData) => {
+		// UI用のboolean値を実際の属性値に変換
+		const loading = newData.lazy ? 'lazy' : 'eager';
+		const node = newData.popup ? 'button' : newData.href ? 'a' : 'div';
+		const target = node === 'a' && newData.targetBlank ? '_blank' : null;
+		const command = node === 'button' ? 'show-modal' : null;
 
-	return {
-		...newData,
-		loading,
-		node,
-		target,
-		command,
-	};
-};
+		return {
+			...newData,
+			loading,
+			node,
+			target,
+			command,
+		};
+	},
+}
 ```
 
 実例：テーブルアイテムでの使用（HTMLからMarkdownへの変換）
 
 ```typescript
-beforeChange: (newData) => {
-	return {
-		...newData,
-		// エディタデータ（HTML）を保存データ（Markdown）に変換
-		td: newData.td.map(markdownToHtml),
-	};
-};
+editorOptions: {
+	beforeChange: (newData) => {
+		return {
+			...newData,
+			// エディタデータ（HTML）を保存データ（Markdown）に変換
+			td: newData.td.map(markdownToHtml),
+		};
+	},
+}
 ```
 
 ##### `migrate(item): T`
@@ -743,16 +757,18 @@ beforeChange: (newData) => {
 実例：Google Mapsアイテムでの使用（新しいフィールドの追加）
 
 ```typescript
-migrate: (item) => {
-	const data = item.export();
+editorOptions: {
+	migrate: (item) => {
+		const data = item.export();
 
-	// v2.10.0で新しいフィールド（url）を追加
-	const lat = data.lat;
-	const lng = data.lng;
-	data.url = `//maps.apple.com/?q=${lat},${lng}`;
+		// v2.10.0で新しいフィールド（url）を追加
+		const lat = data.lat;
+		const lng = data.lng;
+		data.url = `//maps.apple.com/?q=${lat},${lng}`;
 
-	return data;
-};
+		return data;
+	},
+}
 ```
 
 ##### `isDisable(item): string`
@@ -762,13 +778,15 @@ migrate: (item) => {
 実例：Google Mapsアイテムでの使用（APIキーチェック）
 
 ```typescript
-isDisable: (item) => {
-	// APIキーが設定されているかチェック
-	if (item.editor.engine.config.googleMapsApiKey) {
-		return ''; // 編集可能
-	}
-	return 'Google Maps APIキーが登録されていないため、利用できません。\n「システム設定」からAPIキーを登録することができます。';
-};
+editorOptions: {
+	isDisable: (item) => {
+		// APIキーが設定されているかチェック
+		if (item.editor.engine.config.googleMapsApiKey) {
+			return ''; // 編集可能
+		}
+		return 'Google Maps APIキーが登録されていないため、利用できません。\n「システム設定」からAPIキーを登録することができます。';
+	},
+}
 ```
 
 ### 独立レンダリング機構
