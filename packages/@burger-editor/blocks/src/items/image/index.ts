@@ -3,6 +3,7 @@ import { createItem } from '@burger-editor/core';
 import editor from './editor.html';
 import style from './style.css';
 import template from './template.html';
+import { createWidthState } from './width.js';
 
 const ORIGIN = '__org';
 
@@ -23,6 +24,10 @@ export default createItem<{
 	scaleType: 'container' | 'original';
 	scale: number;
 	aspectRatio: `${number}/${number}` | 'unset';
+
+	// Editor Display
+	cssWidthNumber: number;
+	cssWidthUnit: 'px' | 'cqi';
 
 	// Attributes
 	lazy: boolean;
@@ -60,8 +65,13 @@ export default createItem<{
 				altEditable: data.alt?.[0] ?? '',
 			};
 		},
-		open(_, editor) {
+		open(initData, editor) {
 			let currentIndex = 0;
+			const widthState = createWidthState();
+
+			// Initialize width state
+			widthState.setScaleType(initData.scaleType);
+			widthState.setScale(initData.scale);
 
 			selectTab(currentIndex);
 
@@ -152,11 +162,38 @@ export default createItem<{
 				media[currentIndex] = editor.get('$mediaInput');
 				editor.update('$media', media);
 
+				// Update max number
+				widthState.setMaxNumber($src.width);
+
 				updateCSSWidth();
 			}
+			editor.onChange(
+				'$cssWidthNumber',
+				(widthNumber) => {
+					widthState.setNumber(widthNumber);
+					updateCSSWidth();
+				},
+				false,
+			);
 
-			editor.onChange('$scale', updateCSSWidth);
-			editor.onChange('$scaleType', updateCSSWidth);
+			editor.onChange(
+				'$scaleType',
+				(scaleType) => {
+					widthState.setScaleType(scaleType);
+
+					updateCSSWidth();
+				},
+				false,
+			);
+
+			editor.onChange(
+				'$scale',
+				(scale) => {
+					widthState.setScale(scale);
+					updateCSSWidth();
+				},
+				false,
+			);
 
 			editor.onChange('$mediaInput', (value) => {
 				const media = [...editor.get('$media')];
@@ -168,16 +205,13 @@ export default createItem<{
 			 *
 			 */
 			function updateCSSWidth() {
-				const scale = editor.get('$scale');
-				const width = editor.get('$width');
-				const scaleType = editor.get('$scaleType');
-				editor.update(
-					'$cssWidth',
-					scaleType === 'container'
-						? `${scale}cqi`
-						: // TODO: 複数画像の場合は、最初の画像の幅を使用するか、それともすべての画像の幅を使用するか検討
-							`${Math.round((width[0]! * scale) / 100)}px`,
-				);
+				// console.log(widthState.debug());
+				editor.max('$cssWidthNumber', widthState.getCSSWidthMaxNumber());
+				editor.update('$cssWidthUnit', widthState.getCSSWidthUnit());
+				editor.update('$cssWidthNumber', widthState.getCSSWidthNumber());
+				editor.update('$scaleType', widthState.getScaleType());
+				editor.update('$scale', widthState.getScale());
+				editor.update('$cssWidth', widthState.getCSSWidth());
 			}
 
 			editor.onChange('$popup', (disable) => {

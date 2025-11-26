@@ -31,10 +31,11 @@
 				</div>
 				<div>
 					<span>
-						<label for="bgi-image__range">幅</label>
-						<output name="bge-css-width"></output>
+						<label for="bgi-image__range-number">幅</label>
+						<input type="number" id="bgi-image__range-number" name="bge-css-width-number" min="1" step="1" value="100" />
+						<output name="bge-css-width-unit">px</output>
 					</span>
-					<input id="bgi-image__range" type="range" name="bge-scale" min="1" max="100" step="1" value="100" />
+					<input aria-label="幅" type="range" name="bge-scale" min="1" max="100" step="1" value="100" />
 				</div>
 				<div role="radiogroup" aria-labelledby="bgi-image__radio-group2">
 					<div id="bgi-image__radio-group2">縦横比</div>
@@ -43,6 +44,7 @@
 					<label><input type="radio" name="bge-aspect-ratio" value="4/3" />4 : 3</label>
 					<label><input type="radio" name="bge-aspect-ratio" value="16/9" />16 : 9</label>
 				</div>
+				<input type="hidden" name="bge-css-width" />
 			</fieldset>
 			<label>
 				<span>画像の代替テキスト(alt)</span>
