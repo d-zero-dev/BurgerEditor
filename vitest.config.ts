@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 
-// @ts-ignore - rollup-plugin-string has type incompatibility with vitest's internal rollup version
 import { playwright } from '@vitest/browser-playwright';
+// @ts-ignore - rollup-plugin-string has type incompatibility with vitest's internal rollup version
 import { string } from 'rollup-plugin-string';
 import { defineConfig } from 'vitest/config';
 
