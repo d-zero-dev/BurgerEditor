@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.31](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.30...v4.0.0-alpha.31) (2025-11-26)
+
+### Bug Fixes
+
+- **core:** add support for output elements in ItemEditorDialog ([24f4b7b](https://github.com/d-zero-dev/BurgerEditor/commit/24f4b7bff72de7ceb9768e3cfd077e33191f90ea))
+
+### Features
+
+- **core:** add max method and improve onChange handler in ItemEditorDialog ([5a614ee](https://github.com/d-zero-dev/BurgerEditor/commit/5a614ee237bd913c4b70cd04c059e71c3607a693))
+
 # [4.0.0-alpha.30](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.29...v4.0.0-alpha.30) (2025-11-13)
 
 **Note:** Version bump only for package @burger-editor/core

@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.31](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.30...v4.0.0-alpha.31) (2025-11-26)
+
+### Bug Fixes
+
+- **blocks:** correct relative paths in README links ([71096da](https://github.com/d-zero-dev/BurgerEditor/commit/71096dae67cfe8e83bd40d7fde5ae33413b1bf30))
+
 # [4.0.0-alpha.30](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.29...v4.0.0-alpha.30) (2025-11-13)
 
 ### Bug Fixes
