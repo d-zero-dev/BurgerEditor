@@ -121,6 +121,10 @@ export default createItem<{
 				updateImage($src);
 			}
 
+			editor.engine.componentObserver.on('select-tab-in-item-editor', ({ index }) => {
+				selectTab(index);
+			});
+
 			/**
 			 *
 			 * @param $src
@@ -150,10 +154,6 @@ export default createItem<{
 
 				updateCSSWidth();
 			}
-
-			editor.engine.componentObserver.on('select-tab-in-item-editor', ({ index }) => {
-				selectTab(index);
-			});
 
 			editor.onChange('$scale', updateCSSWidth);
 			editor.onChange('$scaleType', updateCSSWidth);
