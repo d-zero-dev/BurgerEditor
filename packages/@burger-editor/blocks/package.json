@@ -29,7 +29,8 @@
 	},
 	"dependencies": {
 		"@burger-editor/core": "4.0.0-alpha.30",
-		"@burger-editor/utils": "4.0.0-alpha.30"
+		"@burger-editor/utils": "4.0.0-alpha.30",
+		"@d-zero/shared": "0.16.0"
 	},
 	"devDependencies": {
 		"@burger-editor/custom-element": "4.0.0-alpha.30",

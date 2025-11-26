@@ -132,6 +132,7 @@ __metadata:
     "@burger-editor/core": "npm:4.0.0-alpha.30"
     "@burger-editor/custom-element": "npm:4.0.0-alpha.30"
     "@burger-editor/utils": "npm:4.0.0-alpha.30"
+    "@d-zero/shared": "npm:0.16.0"
     "@types/google.maps": "npm:3.58.1"
     rollup: "npm:4.53.3"
     rollup-plugin-esbuild: "npm:6.2.1"
@@ -1279,6 +1280,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@d-zero/shared@npm:0.16.0":
+  version: 0.16.0
+  resolution: "@d-zero/shared@npm:0.16.0"
+  dependencies:
+    "@holiday-jp/holiday_jp": "npm:2.5.1"
+    await-event-emitter: "npm:2.0.2"
+    dayjs: "npm:1.11.19"
+    escape-string-regexp: "npm:5.0.0"
+    front-matter: "npm:4.0.2"
+  checksum: 10c0/0ba9119a973f594837f86d29dad353c6f2b7a6a4f9bed0f7927e68e061a16cdd55bc60dd0cddb71a7d8105ca2088282d3e805ff14c3dabbae525400443ae5973
+  languageName: node
+  linkType: hard
+
 "@d-zero/stylelint-config@npm:5.0.0-alpha.73":
   version: 5.0.0-alpha.73
   resolution: "@d-zero/stylelint-config@npm:5.0.0-alpha.73"
@@ -1709,6 +1723,13 @@ __metadata:
     "@eslint/core": "npm:^0.16.0"
     levn: "npm:^0.4.1"
   checksum: 10c0/125614e902bb34c041da859794c47ac2ec4a814f5d9e7c4d37fcd34b38d8ee5cf1f97020d38d168885d9bf4046a9a7decb86b4cee8dac9eedcc6ad08ebafe204
+  languageName: node
+  linkType: hard
+
+"@holiday-jp/holiday_jp@npm:2.5.1":
+  version: 2.5.1
+  resolution: "@holiday-jp/holiday_jp@npm:2.5.1"
+  checksum: 10c0/ef6f64041ae12eaaf4e78eb3cdc63e9d47b2561231907840de0cf90b84037043c8349f0debc19ba584b9b7959443ef26d9b587474f55c9f9af8a0a2a5ad741c3
   languageName: node
   linkType: hard
 
@@ -5530,6 +5551,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"await-event-emitter@npm:2.0.2":
+  version: 2.0.2
+  resolution: "await-event-emitter@npm:2.0.2"
+  dependencies:
+    is-promise: "npm:^4.0.0"
+  checksum: 10c0/b6909df33b52181f5be42017e5a7dd48d283adff84a970d36f7578c15e8a68a4a0ab50ead6772dcad0166b60090fd4990479eb3014248ca06542cef0759bfa1a
+  languageName: node
+  linkType: hard
+
 "axios@npm:^1.12.0":
   version: 1.13.2
   resolution: "axios@npm:1.13.2"
@@ -7584,6 +7614,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"escape-string-regexp@npm:5.0.0":
+  version: 5.0.0
+  resolution: "escape-string-regexp@npm:5.0.0"
+  checksum: 10c0/6366f474c6f37a802800a435232395e04e9885919873e382b157ab7e8f0feb8fed71497f84a6f6a81a49aab41815522f5839112bd38026d203aea0c91622df95
+  languageName: node
+  linkType: hard
+
 "escape-string-regexp@npm:^1.0.5":
   version: 1.0.5
   resolution: "escape-string-regexp@npm:1.0.5"
@@ -8492,7 +8529,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"front-matter@npm:^4.0.2":
+"front-matter@npm:4.0.2, front-matter@npm:^4.0.2":
   version: 4.0.2
   resolution: "front-matter@npm:4.0.2"
   dependencies:
