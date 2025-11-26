@@ -32,6 +32,10 @@ export class ItemEditorDialog<
 
 	disable<N extends keyof T & string = keyof T & string>(name: `$${N}`, disabled = true) {
 		for (const $ctrl of this.#findAll(name)) {
+			if ($ctrl instanceof HTMLOutputElement) {
+				// HTMLOutputElement does not support disabled property
+				continue;
+			}
 			$ctrl.disabled = disabled;
 		}
 	}
@@ -97,21 +101,49 @@ export class ItemEditorDialog<
 		name: `$${N}`,
 		value:
 			| D
-			| ((value: D, el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement) => D),
+			| ((
+					value: D,
+					el:
+						| HTMLInputElement
+						| HTMLTextAreaElement
+						| HTMLSelectElement
+						| HTMLOutputElement,
+			  ) => D),
 	): void;
 	update(
 		data:
 			| T
-			| ((data: T, el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement) => T),
+			| ((
+					data: T,
+					el:
+						| HTMLInputElement
+						| HTMLTextAreaElement
+						| HTMLSelectElement
+						| HTMLOutputElement,
+			  ) => T),
 	): void;
 	update<N extends keyof T & string = keyof T & string, D extends T[N] = T[N]>(
 		nameOrData:
 			| `$${N}`
 			| T
-			| ((data: T, el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement) => T),
+			| ((
+					data: T,
+					el:
+						| HTMLInputElement
+						| HTMLTextAreaElement
+						| HTMLSelectElement
+						| HTMLOutputElement,
+			  ) => T),
 		value?:
 			| D
-			| ((value: D, el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement) => D),
+			| ((
+					value: D,
+					el:
+						| HTMLInputElement
+						| HTMLTextAreaElement
+						| HTMLSelectElement
+						| HTMLOutputElement,
+			  ) => D),
 	): void {
 		if (typeof nameOrData === 'string') {
 			const name: `$${N}` = nameOrData;
@@ -221,14 +253,18 @@ export class ItemEditorDialog<
 
 	#findAll<N extends keyof T & string = keyof T & string>(
 		name: `$${N}`,
-	): (HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)[] {
+	): (HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | HTMLOutputElement)[] {
 		const propName = name.slice(1);
-		let el: (HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)[];
+		let el: (
+			| HTMLInputElement
+			| HTMLTextAreaElement
+			| HTMLSelectElement
+			| HTMLOutputElement
+		)[];
 		for (const n of [kebabCase(propName), propName]) {
-			el = this.findAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
-				`[name="bge-${n}"], [name="bge-${n}[]"]`,
-				'input, textarea, select',
-			);
+			el = this.findAll<
+				HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | HTMLOutputElement
+			>(`[name="bge-${n}"], [name="bge-${n}[]"]`, 'input, textarea, select, output');
 			if (el.length > 0) {
 				return [...el];
 			}
@@ -257,7 +293,10 @@ export class ItemEditorDialog<
 			const name = kebabCase(_name);
 			const inputSelector = `[name="bge-${name}"], [name="bge-${name}[]"]`;
 			const value = encodeItemPrimitiveData(datum);
-			for (const targetEl of this.findAll(inputSelector, 'input, textarea, select')) {
+			for (const targetEl of this.findAll(
+				inputSelector,
+				'input, textarea, select, output',
+			)) {
 				setContent(targetEl, value);
 			}
 		}

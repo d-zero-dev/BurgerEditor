@@ -76,6 +76,7 @@ editor.onChange('$lazy', (value) => {
 	<option value="_blank">新しいウィンドウ</option>
 </select>
 <textarea name="bge-description"></textarea>
+<output name="bge-css-width-unit">px</output>
 <input type="hidden" name="bge-path[]" />
 ```
 
@@ -89,6 +90,7 @@ editorOptions: {
 		const lazy = editor.get('$lazy'); // boolean (checkbox)
 		const target = editor.get('$target'); // string (select)
 		const description = editor.get('$description'); // string (textarea)
+		const cssWidthUnit = editor.get('$cssWidthUnit'); // string (output)
 
 		// 配列データの取得
 		// string[]
@@ -98,7 +100,7 @@ editorOptions: {
 }
 ```
 
-**注意**: `get`メソッドは`<input>`, `<textarea>`, `<select>`要素に対してのみ動作します。`<output>`要素は扱えません。
+**注意**: `get`メソッドは`<input>`, `<textarea>`, `<select>`, `<output>`要素に対して動作します。
 
 **実装例**: [download-file](../packages/@burger-editor/blocks/src/items/download-file/index.ts)
 
@@ -133,6 +135,7 @@ export default createItem<{
 	<option value="_blank">新しいウィンドウ</option>
 </select>
 <textarea name="bge-description"></textarea>
+<output name="bge-css-width-unit">px</output>
 <input type="hidden" name="bge-path[]" />
 ```
 
@@ -144,6 +147,7 @@ editorOptions: {
 		editor.update('$width', 100); // number input
 		editor.update('$target', '_blank'); // select
 		editor.update('$description', '説明文'); // textarea
+		editor.update('$cssWidthUnit', 'px'); // output
 
 		// 関数を使って値を変換
 		// 関数は (currentValue, element) => newValue の形式
@@ -162,7 +166,7 @@ editorOptions: {
 }
 ```
 
-**注意**: `update`メソッドは`<input>`, `<textarea>`, `<select>`要素に対してのみ動作します。`<output>`要素は扱えません。
+**注意**: `update`メソッドは`<input>`, `<textarea>`, `<select>`, `<output>`要素に対して動作します。
 
 **実装例**: [youtube](../packages/@burger-editor/blocks/src/items/youtube/index.ts)
 
@@ -267,6 +271,8 @@ editorOptions: {
 	},
 }
 ```
+
+**注意**: `disable`メソッドは`<input>`, `<textarea>`, `<select>`要素に対して動作します。`<output>`要素は`disabled`プロパティをサポートしていないため、`disable`メソッドは`output`要素に対しては動作しません。
 
 **実装例**: [image](../packages/@burger-editor/blocks/src/items/image/index.ts)
 
