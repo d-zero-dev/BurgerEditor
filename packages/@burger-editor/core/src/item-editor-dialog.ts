@@ -19,6 +19,7 @@ export class ItemEditorDialog<
 	#contentStylesheetCache: string | null = null;
 	readonly #corePrefix = 'bge';
 	#service?: ItemEditorService<T, C>;
+	#values = new Map<string, unknown | null>();
 
 	constructor(engine: BurgerEditorEngine) {
 		super('item-editor', engine, document.createElement('div'), {
@@ -60,17 +61,30 @@ export class ItemEditorDialog<
 		return this.#service?.getData(customProperty) ?? null;
 	}
 
+	max<N extends keyof T & string = keyof T & string>(name: `$${N}`, value: number) {
+		const $ctrl = this.#find(name);
+		if ($ctrl instanceof HTMLInputElement) {
+			$ctrl.max = value.toString();
+		}
+	}
+
 	onChange<N extends keyof T & string = keyof T & string, D extends T[N] = T[N]>(
 		name: `$${N}`,
-		handler: (value: D) => void,
+		handler: (value: D, oldValue: D | null) => void,
 		runOnInit = true,
 	): void {
 		if (runOnInit) {
-			handler(this.get(name));
+			handler(this.get(name), null);
 		}
 		for (const $ctrl of this.#findAll(name)) {
 			$ctrl.addEventListener('change', () => {
-				handler(this.get(name));
+				const oldValue = (this.#values.get(name) as D) ?? null;
+				const value: D = this.get(name);
+				this.#values.set(name, value);
+				if (oldValue === value) {
+					return;
+				}
+				handler(value, oldValue);
 			});
 		}
 	}
@@ -105,6 +119,17 @@ export class ItemEditorDialog<
 			for (const $ctrl of $ctrlList) {
 				const newValue =
 					typeof value === 'function' ? value(this.get(name), $ctrl) : value;
+				if (
+					$ctrl instanceof HTMLInputElement &&
+					($ctrl.type === 'radio' || $ctrl.type === 'checkbox')
+				) {
+					if ($ctrl.value === newValue) {
+						$ctrl.checked = true;
+						return;
+					}
+					$ctrl.checked = false;
+					return;
+				}
 				setContent($ctrl, encodeItemPrimitiveData(newValue));
 				return;
 			}
