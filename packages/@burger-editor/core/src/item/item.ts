@@ -12,7 +12,7 @@ import { dataToHtml } from './data-to-html.js';
 import { ItemEditorService } from './item-editor-service.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const elMap = new WeakMap<HTMLElement, Item<any, {}>>();
+const elMap = new WeakMap<HTMLElement, Item<any, any>>();
 
 export class Item<
 	T extends ItemData,
