@@ -2,7 +2,9 @@ import type { ItemSeed } from './item/types.js';
 import type { BlockData, Config } from './types.js';
 
 import { BurgerBlock } from './block/block.js';
+import { ComponentObserver } from './component-observer.js';
 import { Item } from './item/item.js';
+import { ItemEditorDialog } from './item-editor-dialog.js';
 
 interface Options {
 	readonly items: Record<string, ItemSeed>;
@@ -26,19 +28,30 @@ export async function render(data: BlockData, options: Options) {
 		}
 
 		const name = typeof itemData === 'string' ? itemData : itemData.name;
-		const data = typeof itemData === 'string' ? {} : itemData.data;
-		const item = await Item.create(
-			// @ts-ignore
-			{
-				items: itemsMap,
-				// @ts-ignore
-				config: {
-					...options.config,
-				},
+
+		const editor = new ItemEditorDialog({
+			config: {
+				classList: [],
+				googleMapsApiKey: null,
+				sampleImagePath: '',
+				sampleFilePath: '',
+				stylesheets: [],
+				...options.config,
 			},
-			name,
-			data,
-		);
+			onOpened: () => {},
+			getComponentObserver: () => new ComponentObserver(),
+			getTemplate: () =>
+				document
+					.createRange()
+					.createContextualFragment(options.items[name]?.template ?? '').children,
+			getContentStylesheet: () => Promise.resolve(''),
+			onClosed: () => {},
+			onOpen: () => false,
+			createEditorComponent: () => {},
+		});
+
+		const data = typeof itemData === 'string' ? {} : itemData.data;
+		const item = await Item.create(name, itemsMap, editor, data);
 		return item.el;
 	});
 	return block.el;

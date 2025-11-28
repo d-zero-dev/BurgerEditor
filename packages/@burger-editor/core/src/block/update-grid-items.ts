@@ -38,7 +38,7 @@ export function updateGridItems(
 		$lastItem.parentElement?.append($newItem);
 		const $newItems = $newItem.querySelectorAll<HTMLElement>('[data-bge-group]');
 		for (const $item of $newItems) {
-			const item = Item.rebind(engine, $item);
+			const item = Item.rebind($item, engine.items, engine.itemEditorDialog);
 			const newItems = [...items];
 			newItems[newItems.length] = item;
 			updateItem(newItems);

@@ -16,7 +16,6 @@ export class ItemEditorService<
 	readonly #data?: C;
 	readonly #isDisable?: (item: Item<T, C>) => string;
 	readonly #item: Item<T, C>;
-
 	readonly #migrate?: (item: Item<T, C>) => T;
 	readonly #migrateElement?: (data: T, item: Item<T, C>) => Promise<void> | void;
 	readonly #onSubmit?: (e: SubmitEvent, submitter: Submitter) => boolean | void;

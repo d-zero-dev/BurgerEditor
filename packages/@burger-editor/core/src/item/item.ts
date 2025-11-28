@@ -1,6 +1,5 @@
 import type { ItemEditorDialog } from '../item-editor-dialog.js';
 import type { ItemData, ItemSeed } from './types.js';
-import type { BurgerEditorEngine } from '../engine/engine.js';
 
 import { replacePlaceholders } from '../utils/replace-placeholders.js';
 
@@ -33,9 +32,9 @@ export class Item<
 
 	// eslint-disable-next-line no-restricted-syntax
 	private constructor(
-		engine: BurgerEditorEngine,
 		seed: ItemSeed<N, T, C> | null,
 		el: HTMLElement,
+		editor: ItemEditorDialog<T, C>,
 	) {
 		elMap.set(el, this);
 		this.#el = el;
@@ -53,7 +52,7 @@ export class Item<
 		this.#version = effectiveSeed.version;
 
 		this.#service = new ItemEditorService<T, C, N>(this, effectiveSeed);
-		this.editor = engine.itemEditorDialog as unknown as ItemEditorDialog<T, C>;
+		this.editor = editor;
 	}
 
 	export() {
@@ -82,39 +81,42 @@ export class Item<
 	}
 
 	static async create<T extends ItemData, C extends { [key: string]: unknown }>(
-		engine: BurgerEditorEngine,
 		name: string,
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		itemSeeds: ReadonlyMap<string, ItemSeed<string, any, any>>,
+		editor: ItemEditorDialog<T, C>,
 		initData: Partial<T> = {},
 	) {
-		const seed = engine.items.get(name) as ItemSeed<string, T, C> | undefined;
+		const seed: ItemSeed<string, T, C> | null = itemSeeds.get(name) ?? null;
 		const wrapper = document.createElement('div');
 		wrapper.dataset.bgi = name;
 
 		if (seed) {
 			const version = seed.version;
 			wrapper.dataset.bgiVer = version;
-			wrapper.innerHTML = replacePlaceholders(seed.template, engine.config);
+			wrapper.innerHTML = replacePlaceholders(seed.template, editor.config);
 		} else {
 			// Fallback: keep requested name, no version, empty HTML; constructor synthesizes seed
 			wrapper.innerHTML = '';
 		}
 
-		const item = new Item<T, C>(engine, seed ?? null, wrapper);
+		const item = new Item<T, C>(seed, wrapper, editor);
 		await item.import(initData);
 		return item;
 	}
 
 	static rebind<T extends ItemData, C extends { [key: string]: unknown }>(
-		engine: BurgerEditorEngine,
 		el: HTMLElement,
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		itemSeeds: ReadonlyMap<string, ItemSeed<string, any, any>>,
+		editor: ItemEditorDialog<T, C>,
 	) {
 		const name = el.dataset.bgi;
 		if (!name) {
 			throw new Error('data-bgi not found');
 		}
-		const seed = engine.items.get(name) as ItemSeed<string, T, C> | undefined;
-		// Fallback on missing seed by passing null; constructor synthesizes seed
-		const item = new Item<T, C>(engine, seed ?? null, el);
+		const seed: ItemSeed<string, T, C> | null = itemSeeds.get(name) ?? null;
+		const item = new Item<T, C>(seed, el, editor);
 		return item;
 	}
 
