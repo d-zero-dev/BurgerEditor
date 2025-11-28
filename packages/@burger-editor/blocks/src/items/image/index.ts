@@ -52,8 +52,8 @@ export default createItem<{
 	editor,
 	editorOptions: {
 		beforeOpen(data) {
-			const path = data.path.map((p) => p.replace(ORIGIN, ''));
-			const lazy = data.loading.includes('lazy');
+			const path = (data.path ?? []).map((p) => p.replace(ORIGIN, ''));
+			const lazy = (data.loading ?? []).includes('lazy');
 			const popup = data.node === 'button' && data.command === 'show-modal';
 			const targetBlank = data.node === 'a' && data.target === '_blank';
 			return {
