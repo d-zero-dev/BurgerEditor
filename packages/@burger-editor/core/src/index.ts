@@ -10,5 +10,6 @@ export { ItemEditorDialog } from './item-editor-dialog.js';
 export { dataToHtml as itemImport } from './item/data-to-html.js';
 export { dataFromHtml as itemExport } from './item/data-from-html.js';
 export { render } from './render.js';
+export { ComponentObserver } from './component-observer.js';
 export * from './const.js';
 export * from './utils/find-value-pattern-from-array.js';

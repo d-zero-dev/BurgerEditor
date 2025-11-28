@@ -9,7 +9,12 @@ export function createItem<
 	C extends { [key: string]: unknown } = {},
 	N extends string = string,
 >(item: ItemSeed<N, T, C>) {
-	return item;
+	return {
+		...item,
+		get _(): T {
+			throw new Error('This is a test only property');
+		},
+	};
 }
 
 /**
