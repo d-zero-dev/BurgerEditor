@@ -1,4 +1,5 @@
 import type { ContainerType } from '../block/types.js';
+import type { DialogSettings } from '../editor-dialog.js';
 import type { ItemSeed } from '../item/types.js';
 import type {
 	BurgerEditorEngineOptions,
@@ -25,6 +26,7 @@ import { getElement } from '../dom-helpers/get-element.js';
 import { EditableArea } from '../editable-area.js';
 import { createBgeEvent } from '../event/create-bge-event.js';
 import { HealthMonitor } from '../health-monitor.js';
+import { getItemEditorTemplate } from '../item/get-item-editor-template.js';
 import { Item } from '../item/item.js';
 import { ItemEditorDialog } from '../item-editor-dialog.js';
 
@@ -52,6 +54,7 @@ export class BurgerEditorEngine {
 	};
 	readonly ui: UIOptions;
 	readonly viewArea: HTMLElement;
+	#contentStylesheetCache: string | null = null;
 	#current!: EditableArea;
 	#currentBlock: BurgerBlock | null = null;
 	readonly #draft!: EditableArea<'draft'> | null;
@@ -102,11 +105,75 @@ export class BurgerEditorEngine {
 			document.head.append(script);
 		}
 
-		this.blockCatalogDialog = new BlockCatalogDialog(this, options.catalog);
+		const dialogSettings: DialogSettings = {
+			onClosed: () => {
+				this.componentObserver.off();
+				this.save();
+			},
+			onOpen: () => {
+				// If the editor is already processed, return false to cancel the open
+				return !this.isProcessed;
+			},
+			createEditorComponent: (el) => {
+				const editorComponentSubClassName = el.dataset.bgeEditorUi;
+				if (editorComponentSubClassName && this.#isUIName(editorComponentSubClassName)) {
+					const cleanUpHook = this.ui[editorComponentSubClassName]?.(el, this);
+					return cleanUpHook?.cleanUp;
+				}
+				return;
+			},
+		};
 
-		this.blockOptionsDialog = new BlockOptionsDialog(this);
+		this.blockCatalogDialog = new BlockCatalogDialog(options.catalog, {
+			...dialogSettings,
+			addBlock: (blockData) => {
+				return this.addBlock(blockData);
+			},
+		});
 
-		this.itemEditorDialog = new ItemEditorDialog(this);
+		this.blockOptionsDialog = new BlockOptionsDialog({
+			...dialogSettings,
+			onChangeBlock: (callback) => {
+				this.el.addEventListener('bge:block-change', (e) => {
+					callback(e.detail.block);
+				});
+			},
+			getCurrentBlock: () => {
+				return this.getCurrentBlock();
+			},
+		});
+
+		this.itemEditorDialog = new ItemEditorDialog({
+			...dialogSettings,
+			config: this.config,
+			onOpened: (data, editor) => {
+				this.componentObserver.notify('open-editor', {
+					data,
+					editor,
+				});
+			},
+			getComponentObserver: () => {
+				return this.componentObserver;
+			},
+			getTemplate: (itemName: string) => {
+				return getItemEditorTemplate(this, itemName);
+			},
+			getContentStylesheet: async () => {
+				if (this.#contentStylesheetCache) {
+					return this.#contentStylesheetCache;
+				}
+				const css = await Promise.all(
+					this.css.stylesheets
+						.filter((sheet) => sheet.layer == null)
+						.map(async (sheet) => {
+							const res = await fetch(sheet.path);
+							return res.text();
+						}),
+				);
+				this.#contentStylesheetCache = css.join('\n');
+				return this.#contentStylesheetCache;
+			},
+		});
 
 		this.items = new Map();
 		if (options.items) {
@@ -296,6 +363,10 @@ export class BurgerEditorEngine {
 		const name = typeof itemData === 'string' ? itemData : itemData.name;
 		const item = await Item.create(this, name);
 		return item.el;
+	}
+
+	#isUIName(name: string): name is keyof UIOptions {
+		return name in this.ui;
 	}
 
 	/**

@@ -30,7 +30,7 @@ export default createItem<{
 					{ value: 'tertiary', label: 'ターシャリボタン' },
 					{ value: 'text', label: 'テキストリンク' },
 				],
-				editor.engine.config.experimental?.itemOptions?.button?.kinds,
+				editor.config.experimental?.itemOptions?.button?.kinds,
 			);
 
 			const beforeIconOptions = mergeOptions(
@@ -38,7 +38,7 @@ export default createItem<{
 					{ value: 'none', label: 'なし' },
 					{ value: 'arrow-left', label: '左矢印' },
 				],
-				editor.engine.config.experimental?.itemOptions?.button?.beforeIcons,
+				editor.config.experimental?.itemOptions?.button?.beforeIcons,
 			);
 
 			const afterIconOptions = mergeOptions(
@@ -49,7 +49,7 @@ export default createItem<{
 					{ value: 'external', label: '別タブ' },
 					{ value: 'text-file', label: 'ファイル' },
 				],
-				editor.engine.config.experimental?.itemOptions?.button?.afterIcons,
+				editor.config.experimental?.itemOptions?.button?.afterIcons,
 			);
 
 			editor.setOptions('bge-kind', kindOptions);

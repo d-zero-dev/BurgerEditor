@@ -20,13 +20,13 @@ export default createItem<{
 	editor,
 	editorOptions: {
 		open(data, editor) {
-			editor.engine.componentObserver.notify('file-select', {
+			editor.componentObserver.notify('file-select', {
 				path: data.path,
 				fileSize: Number.parseFloat(data.size ?? '0'),
 				isEmpty: data.path === '',
 				isMounted: false,
 			});
-			editor.engine.componentObserver.on('file-select', ({ path, fileSize, isEmpty }) => {
+			editor.componentObserver.on('file-select', ({ path, fileSize, isEmpty }) => {
 				if (isEmpty) {
 					return;
 				}

@@ -86,7 +86,7 @@ export default createItem<{
 					throw new Error('currentPath is not found');
 				}
 
-				editor.engine.componentObserver.notify('file-select', {
+				editor.componentObserver.notify('file-select', {
 					path: currentPath,
 					fileSize: Number.parseFloat(editor.get('$fileSize') ?? '0'),
 					isEmpty: currentPath === '',
@@ -109,7 +109,7 @@ export default createItem<{
 				editor.update('$mediaInput', media);
 			}
 
-			editor.engine.componentObserver.on('file-select', ({ path, isEmpty }) => {
+			editor.componentObserver.on('file-select', ({ path, isEmpty }) => {
 				if (isEmpty) {
 					return;
 				}
@@ -131,7 +131,7 @@ export default createItem<{
 				updateImage($src);
 			}
 
-			editor.engine.componentObserver.on('select-tab-in-item-editor', ({ index }) => {
+			editor.componentObserver.on('select-tab-in-item-editor', ({ index }) => {
 				selectTab(index);
 			});
 

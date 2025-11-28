@@ -1,33 +1,61 @@
+import type { ComponentObserver } from './component-observer.js';
 import type { Submitter } from './dom-helpers/types.js';
-import type { BurgerEditorEngine } from './engine/engine.js';
+import type { DialogSettings } from './editor-dialog.js';
 import type { ItemEditorService } from './item/item-editor-service.js';
 import type { ItemData, ItemPrimitiveData } from './item/types.js';
+import type { Config } from './types.js';
 import type { BgeWysiwygEditorElement } from '@burger-editor/custom-element';
 
 import { setContent } from '@burger-editor/frozen-patty/set-value';
 import { camelCase, kebabCase } from '@burger-editor/utils';
 
 import { EditorDialog } from './editor-dialog.js';
-import { getItemEditorTemplate } from './item/get-item-editor-template.js';
 import { decodeItemPrimitiveData } from './utils/decode-item-primitive-data.js';
 import { encodeItemPrimitiveData } from './utils/encode-item-primitive-data.js';
+
+export interface ItemEditorDialogSettings<
+	T extends ItemData,
+	C extends { [key: string]: unknown } = {},
+> extends DialogSettings {
+	config: Config;
+	onOpened: (data: T, editor: ItemEditorDialog<T, C>) => Promise<void> | void;
+	getComponentObserver: () => ComponentObserver;
+	getTemplate: (itemName: string) => HTMLCollection | null;
+	getContentStylesheet: () => Promise<string>;
+}
 
 export class ItemEditorDialog<
 	T extends ItemData,
 	C extends { [key: string]: unknown } = {},
 > extends EditorDialog {
-	#contentStylesheetCache: string | null = null;
+	readonly config: Config;
+	#componentObserver: () => ComponentObserver;
 	readonly #corePrefix = 'bge';
+
+	#getContentStylesheet: () => Promise<string>;
+	#getTemplate: (itemName: string) => HTMLCollection | null;
+	#onOpened: (data: T, editor: ItemEditorDialog<T, C>) => Promise<void> | void;
+
 	#service?: ItemEditorService<T, C>;
 	#values = new Map<string, unknown | null>();
 
-	constructor(engine: BurgerEditorEngine) {
-		super('item-editor', engine, document.createElement('div'), {
+	get componentObserver() {
+		return this.#componentObserver();
+	}
+
+	constructor(settings: ItemEditorDialogSettings<T, C>) {
+		super('item-editor', document.createElement('div'), settings, {
 			buttons: {
 				close: 'キャンセル',
 				complete: '決定',
 			},
 		});
+
+		this.config = settings.config;
+		this.#componentObserver = settings.getComponentObserver;
+		this.#onOpened = settings.onOpened;
+		this.#getTemplate = settings.getTemplate;
+		this.#getContentStylesheet = settings.getContentStylesheet;
 	}
 
 	disable<N extends keyof T & string = keyof T & string>(name: `$${N}`, disabled = true) {
@@ -276,22 +304,6 @@ export class ItemEditorDialog<
 		return [];
 	}
 
-	async #getContentStylesheet() {
-		if (this.#contentStylesheetCache) {
-			return this.#contentStylesheetCache;
-		}
-		const css = await Promise.all(
-			this.engine.css.stylesheets
-				.filter((sheet) => sheet.layer == null)
-				.map(async (sheet) => {
-					const res = await fetch(sheet.path);
-					return res.text();
-				}),
-		);
-		this.#contentStylesheetCache = css.join('\n');
-		return this.#contentStylesheetCache;
-	}
-
 	#setValues(data: T) {
 		for (const [_name, datum] of Object.entries(data)) {
 			const name = kebabCase(_name);
@@ -307,11 +319,6 @@ export class ItemEditorDialog<
 		this.update(data);
 	}
 
-	override closed() {
-		this.engine.componentObserver.off();
-		super.closed();
-	}
-
 	override async complete(formData: FormData) {
 		await this.#service?.item.import(this.#extract(), true);
 		super.complete(formData);
@@ -324,7 +331,7 @@ export class ItemEditorDialog<
 	override async open(service: ItemEditorService<T, C>) {
 		this.#service = service;
 		this.clearTemplate();
-		const template = getItemEditorTemplate(this.engine, this.#service.item.name);
+		const template = this.#getTemplate(this.#service.item.name);
 		if (!template) {
 			alert(
 				`編集できないコンテンツです (Error: Editor template not found: "${this.#service.item.name}")`,
@@ -357,9 +364,6 @@ export class ItemEditorDialog<
 
 			await this.#service.open(data, this);
 		}
-		this.engine.componentObserver.notify('open-editor', {
-			data,
-			editor: this as ItemEditorDialog<{}>,
-		});
+		await this.#onOpened(data, this);
 	}
 }

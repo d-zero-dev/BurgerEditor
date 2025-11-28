@@ -1,19 +1,29 @@
 import type { BurgerBlock } from './block/block.js';
-import type { BurgerEditorEngine } from './engine/engine.js';
+import type { DialogSettings } from './editor-dialog.js';
 import type { BlockData } from './types.js';
 
 import { EditorDialog } from './editor-dialog.js';
 
+export interface BlockOptionsDialogSettings extends DialogSettings {
+	onChangeBlock: (callback: (block: BurgerBlock) => void) => void;
+	getCurrentBlock: () => BurgerBlock | null;
+}
+
 export class BlockOptionsDialog extends EditorDialog {
 	#currentBlock: BurgerBlock | null = null;
+	#getCurrentBlock: () => BurgerBlock | null;
+	#onChangeBlock: (callback: (block: BurgerBlock) => void) => void;
 
-	constructor(engine: BurgerEditorEngine) {
-		super('options', engine, document.createElement('div'), {
+	constructor(settings: BlockOptionsDialogSettings) {
+		super('options', document.createElement('div'), settings, {
 			buttons: {
 				close: 'キャンセル',
 				complete: '決定',
 			},
 		});
+
+		this.#onChangeBlock = settings.onChangeBlock;
+		this.#getCurrentBlock = settings.getCurrentBlock;
 	}
 
 	/**
@@ -22,9 +32,7 @@ export class BlockOptionsDialog extends EditorDialog {
 	 * @deprecated
 	 */
 	onChangeBlock(callback: (block: BurgerBlock) => void) {
-		this.engine.el.addEventListener('bge:block-change', (e) => {
-			callback(e.detail.block);
-		});
+		this.#onChangeBlock(callback);
 	}
 
 	setContainerProps(formData: FormData) {
@@ -99,7 +107,7 @@ export class BlockOptionsDialog extends EditorDialog {
 		super.open();
 		this.reset();
 
-		const currentBlock = this.engine.getCurrentBlock();
+		const currentBlock = this.#getCurrentBlock();
 		if (currentBlock) {
 			this.#currentBlock = currentBlock;
 		}

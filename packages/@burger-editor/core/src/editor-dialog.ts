@@ -1,7 +1,6 @@
 import type { Submitter } from './dom-helpers/types.js';
-import type { BurgerEditorEngine } from './engine/engine.js';
 import type { BurgerEditorEvent } from './event/create-bge-event.js';
-import type { BurgerEditorEventMap, SelectableValue, UIOptions } from './types.js';
+import type { BurgerEditorEventMap, SelectableValue } from './types.js';
 
 import { EditorUI } from './editor-ui.js';
 
@@ -12,25 +11,35 @@ export interface DialogOption {
 	};
 }
 
+export interface DialogSettings {
+	readonly onClosed: () => void;
+	readonly onOpen: () => void | boolean;
+	readonly createEditorComponent: (el: HTMLElement) => void | (() => void);
+}
+
 export abstract class EditorDialog extends EditorUI {
-	readonly engine: BurgerEditorEngine;
 	readonly #body = document.createElement('div');
 	#cleanUpHooks: (() => void)[] = [];
+	readonly #createEditorComponent: (el: HTMLElement) => void | (() => void);
 	readonly #dialog = document.createElement('dialog');
 	readonly #el: HTMLElement;
 	readonly #footer = document.createElement('footer');
 	readonly #form = document.createElement('form');
+	readonly #onClosed: () => void;
+	readonly #onOpen: () => void | boolean;
 
 	constructor(
 		name: string,
-		engine: BurgerEditorEngine,
 		el: HTMLElement,
+		settings: DialogSettings,
 		options: DialogOption,
 	) {
 		super(`${name}-dialog`, el);
 
-		this.engine = engine;
 		this.#el = el;
+		this.#onClosed = settings.onClosed;
+		this.#onOpen = settings.onOpen;
+		this.#createEditorComponent = settings.createEditorComponent;
 
 		this.#form.noValidate = true;
 		this.#form.id = `${name}-dialog-form`;
@@ -135,7 +144,8 @@ export abstract class EditorDialog extends EditorUI {
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		...args: never[]
 	) {
-		if (this.engine.isProcessed) {
+		const cancel = this.#onOpen();
+		if (cancel === false) {
 			return;
 		}
 		this.#dialog.showModal();
@@ -173,21 +183,11 @@ export abstract class EditorDialog extends EditorUI {
 
 	#createEditorComponents() {
 		for (const el of this.findAll('[data-bge-editor-ui]')) {
-			const editorComponentSubClassName = el.dataset.bgeEditorUi;
-			if (editorComponentSubClassName && this.#isUIName(editorComponentSubClassName)) {
-				const cleanUpHook = this.engine.ui[editorComponentSubClassName]?.(
-					el,
-					this.engine,
-				);
-				if (cleanUpHook) {
-					this.#cleanUpHooks.push(cleanUpHook.cleanUp);
-				}
+			const cleanUpHook = this.#createEditorComponent(el);
+			if (cleanUpHook) {
+				this.#cleanUpHooks.push(cleanUpHook);
 			}
 		}
-	}
-
-	#isUIName(name: string): name is keyof UIOptions {
-		return name in this.engine.ui;
 	}
 
 	#sanitize(...nodes: readonly Node[]) {

@@ -1,23 +1,29 @@
-import type { BurgerEditorEngine } from './engine/engine.js';
+import type { DialogSettings } from './editor-dialog.js';
 import type { BlockCatalog, CatalogItem, BlockData } from './types.js';
 
 import { EditorDialog } from './editor-dialog.js';
 
+export interface BlockCatalogDialogSettings extends DialogSettings {
+	addBlock: (blockData: BlockData) => Promise<void>;
+}
+
 export class BlockCatalogDialog extends EditorDialog {
 	readonly catalog: ReadonlyMap<string, readonly CatalogItem[]>;
+	#addBlock: (blockData: BlockData) => Promise<void>;
 
-	constructor(engine: BurgerEditorEngine, catalog: BlockCatalog) {
-		super('catalog', engine, document.createElement('div'), {
+	constructor(catalog: BlockCatalog, settings: BlockCatalogDialogSettings) {
+		super('catalog', document.createElement('div'), settings, {
 			buttons: {
 				close: 'キャンセル',
 			},
 		});
 
 		this.catalog = new Map(Object.entries(catalog));
+		this.#addBlock = settings.addBlock;
 	}
 
 	async addBlock(blockData: BlockData) {
-		await this.engine.addBlock(blockData);
+		await this.#addBlock(blockData);
 		this.close();
 	}
 
