@@ -1,27 +1,35 @@
-import type { BurgerEditorEngine } from '../engine/engine.js';
+import { test, expect, beforeEach, describe } from 'vitest';
 
-import { test, expect, beforeEach, vi, describe } from 'vitest';
+import { ComponentObserver } from '../component-observer.js';
+import { ItemEditorDialog } from '../item-editor-dialog.js';
 
 import { Item } from './item.js';
 
-// Mock BurgerEditorEngine
-const createMockEngine = (
-	items: Map<string, unknown> = new Map(),
-): BurgerEditorEngine => {
-	return {
-		items,
-		config: {},
-		itemEditorDialog: {
-			open: vi.fn(),
+/**
+ *
+ */
+function createMockEditor() {
+	return new ItemEditorDialog({
+		config: {
+			classList: [],
+			googleMapsApiKey: null,
+			sampleImagePath: '',
+			sampleFilePath: '',
+			stylesheets: [],
 		},
-	} as unknown as BurgerEditorEngine;
-};
+		onOpened: () => {},
+		getComponentObserver: () => new ComponentObserver(),
+		getTemplate: () => document.createRange().createContextualFragment('').children,
+		getContentStylesheet: () => Promise.resolve(''),
+		onClosed: () => {},
+		onOpen: () => false,
+		createEditorComponent: () => {},
+	});
+}
 
 describe('Item', () => {
-	let mockEngine: BurgerEditorEngine;
-
 	beforeEach(() => {
-		mockEngine = createMockEngine();
+		document.body.innerHTML = '';
 	});
 
 	describe('create', () => {
@@ -33,9 +41,9 @@ describe('Item', () => {
 				style: '',
 				editor: '',
 			};
-			mockEngine.items.set('text', seed);
+			const seeds = new Map([['text', seed]]);
 
-			const item = await Item.create(mockEngine, 'text');
+			const item = await Item.create('text', seeds, createMockEditor());
 
 			expect(item.name).toBe('text');
 			expect(item.version).toBe('1.0.0');
@@ -44,7 +52,7 @@ describe('Item', () => {
 		});
 
 		test('should create fallback item when seed not found', async () => {
-			const item = await Item.create(mockEngine, 'unknown-item');
+			const item = await Item.create('unknown-item', new Map(), createMockEditor());
 
 			expect(item.name).toBe('unknown-item');
 			expect(item.version).toBe('0.0.0');
@@ -63,14 +71,14 @@ describe('Item', () => {
 				style: '',
 				editor: '',
 			};
-			mockEngine.items.set('text', seed);
+			const seeds = new Map([['text', seed]]);
 
 			const el = document.createElement('div');
 			el.dataset.bgi = 'text';
 			el.dataset.bgiVer = '1.0.0';
 			el.innerHTML = '<div>existing content</div>';
 
-			const item = Item.rebind(mockEngine, el);
+			const item = Item.rebind(el, seeds, createMockEditor());
 
 			expect(item.name).toBe('text');
 			expect(item.version).toBe('1.0.0');
@@ -83,7 +91,7 @@ describe('Item', () => {
 			el.dataset.bgiVer = '2.0.0';
 			el.innerHTML = '<div>preserved content</div>';
 
-			const item = Item.rebind(mockEngine, el);
+			const item = Item.rebind(el, new Map(), createMockEditor());
 
 			expect(item.name).toBe('unknown-item');
 			expect(item.version).toBe('2.0.0');
@@ -95,7 +103,9 @@ describe('Item', () => {
 			const el = document.createElement('div');
 			// No data-bgi attribute
 
-			expect(() => Item.rebind(mockEngine, el)).toThrow('data-bgi not found');
+			expect(() => Item.rebind(el, new Map(), createMockEditor())).toThrow(
+				'data-bgi not found',
+			);
 		});
 	});
 });
