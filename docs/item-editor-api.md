@@ -377,13 +377,13 @@ editorOptions: {
 
 ### 6. ファイル選択などの外部イベント連携（`componentObserver`）
 
-エディターエンジンの`componentObserver`を使用して、外部コンポーネント（ファイルアップローダーなど）と連携します。
+エディターの`componentObserver`を使用して、外部コンポーネント（ファイルアップローダーなど）と連携します。
 
 ```typescript
 editorOptions: {
 	open(data, editor) {
 		// ファイル選択イベントを発火（ファイルアップローダーに通知）
-		editor.engine.componentObserver.notify('file-select', {
+		editor.componentObserver.notify('file-select', {
 			path: data.path,
 			fileSize: Number.parseFloat(data.size ?? '0'),
 			isEmpty: data.path === '',
@@ -391,7 +391,7 @@ editorOptions: {
 		});
 
 		// ファイル選択イベントを監視
-		editor.engine.componentObserver.on('file-select', ({ path, fileSize, isEmpty }) => {
+		editor.componentObserver.on('file-select', ({ path, fileSize, isEmpty }) => {
 			if (isEmpty) {
 				return;
 			}
@@ -417,14 +417,14 @@ export default createItem<{
 	// ...
 	editorOptions: {
 		open(data, editor) {
-			editor.engine.componentObserver.notify('file-select', {
+			editor.componentObserver.notify('file-select', {
 				path: data.path,
 				fileSize: Number.parseFloat(data.size ?? '0'),
 				isEmpty: data.path === '',
 				isMounted: false,
 			});
 
-			editor.engine.componentObserver.on('file-select', ({ path, fileSize, isEmpty }) => {
+			editor.componentObserver.on('file-select', ({ path, fileSize, isEmpty }) => {
 				if (isEmpty) {
 					return;
 				}

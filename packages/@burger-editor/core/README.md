@@ -688,7 +688,7 @@ editorOptions: {
 editorOptions: {
 	open: (data, editor) => {
 		// ファイル選択イベントを発火
-		editor.engine.componentObserver.notify('file-select', {
+		editor.componentObserver.notify('file-select', {
 			path: data.path,
 			fileSize: Number.parseFloat(data.size ?? '0'),
 			isEmpty: data.path === '',
@@ -696,7 +696,7 @@ editorOptions: {
 		});
 
 		// ファイル選択イベントを監視
-		editor.engine.componentObserver.on('file-select', ({ path, fileSize, isEmpty }) => {
+		editor.componentObserver.on('file-select', ({ path, fileSize, isEmpty }) => {
 			if (isEmpty) return;
 
 			editor.update('$path', path);
@@ -781,7 +781,7 @@ editorOptions: {
 editorOptions: {
 	isDisable: (item) => {
 		// APIキーが設定されているかチェック
-		if (item.editor.engine.config.googleMapsApiKey) {
+		if (item.editor.config.googleMapsApiKey) {
 			return ''; // 編集可能
 		}
 		return 'Google Maps APIキーが登録されていないため、利用できません。\n「システム設定」からAPIキーを登録することができます。';
