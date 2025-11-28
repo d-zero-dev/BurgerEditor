@@ -14,6 +14,7 @@ export default createItem<{
 	width: number[];
 	height: number[];
 	media: string[];
+	loading: ('eager' | 'lazy')[];
 
 	// Use in editor
 	fileSize: string;
@@ -31,7 +32,6 @@ export default createItem<{
 
 	// Attributes
 	lazy: boolean;
-	loading: 'eager' | 'lazy';
 
 	// Additional Data
 	caption: string;
@@ -53,7 +53,7 @@ export default createItem<{
 	editorOptions: {
 		beforeOpen(data) {
 			const path = data.path.map((p) => p.replace(ORIGIN, ''));
-			const lazy = data.loading === 'lazy';
+			const lazy = data.loading.includes('lazy');
 			const popup = data.node === 'button' && data.command === 'show-modal';
 			const targetBlank = data.node === 'a' && data.target === '_blank';
 			return {
@@ -226,7 +226,7 @@ export default createItem<{
 			});
 		},
 		beforeChange(newData) {
-			const loading = newData.lazy ? 'lazy' : 'eager';
+			const loading: ('eager' | 'lazy')[] = [newData.lazy ? 'lazy' : 'eager'];
 			const node = newData.popup ? 'button' : newData.href ? 'a' : 'div';
 			const target = node === 'a' && newData.targetBlank ? '_blank' : null;
 			const command = node === 'button' ? 'show-modal' : null;
