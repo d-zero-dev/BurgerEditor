@@ -319,6 +319,7 @@ export class ItemEditorDialog<
 
 	override async open(service: ItemEditorService<T, C>) {
 		this.#service = service;
+		this.clearTemplate();
 		const template = getItemEditorTemplate(this.engine, this.#service.item.name);
 		if (!template) {
 			alert(
