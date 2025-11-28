@@ -2,8 +2,6 @@ import type { ItemEditorDialog } from '../item-editor-dialog.js';
 import type { ItemData, ItemSeed } from './types.js';
 import type { BurgerEditorEngine } from '../engine/engine.js';
 
-import semver from 'semver';
-
 import { replacePlaceholders } from '../utils/replace-placeholders.js';
 
 import { createUnknownContentItem } from './create-item.js';
@@ -22,7 +20,6 @@ export class Item<
 	readonly editor: ItemEditorDialog<T, C>;
 	readonly name: string;
 	readonly #el: HTMLElement;
-	readonly #engine: BurgerEditorEngine;
 	readonly #service: ItemEditorService<T, C, N>;
 	#version: string;
 
@@ -49,8 +46,6 @@ export class Item<
 			void this.#openEditor();
 		});
 
-		this.#engine = engine;
-
 		// Synthesize fallback seed when missing
 		const effectiveSeed = seed ?? createUnknownContentItem<T, C, N>(el);
 
@@ -76,20 +71,10 @@ export class Item<
 		}
 
 		this.el.innerHTML = dataToHtml(this.el.innerHTML, data);
-
-		if (this.#isOld(this.#engine.items)) {
-			await this.#service.migrateElement(data, this);
-		}
 	}
 
 	isDisable() {
 		return this.#service.isDisable(this);
-	}
-
-	#isOld(currentItems: Map<string, ItemSeed<string, {}, {}>>) {
-		const originVersion = currentItems.get(this.name)?.version ?? '0.0.0';
-		const isOld = semver.lt(this.#version, originVersion);
-		return isOld;
 	}
 
 	async #openEditor() {
