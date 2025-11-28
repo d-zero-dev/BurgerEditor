@@ -618,13 +618,13 @@ export default createItem<ToggleItemData>({
 editorOptions: {
 	beforeOpen: (data) => {
 		// データからUI用の値を生成
-		const lazy = data.loading === 'lazy';
+		const lazy = data.loading.includes('lazy');
 		const popup = data.node === 'button' && data.command === 'show-modal';
 		const targetBlank = data.node === 'a' && data.target === '_blank';
 
 		return {
 			...data,
-			lazy, // 'lazy' | 'eager' → boolean
+			lazy, // ('eager' | 'lazy')[] → boolean
 			popup, // node + command → boolean
 			targetBlank, // node + target → boolean
 		};
@@ -719,8 +719,8 @@ editorOptions: {
 ```typescript
 editorOptions: {
 	beforeChange: (newData) => {
-		// UI用のboolean値を実際の属性値に変換
-		const loading = newData.lazy ? 'lazy' : 'eager';
+		// UI用のboolean値を実際の属性値（配列形式）に変換
+		const loading: ('eager' | 'lazy')[] = [newData.lazy ? 'lazy' : 'eager'];
 		const node = newData.popup ? 'button' : newData.href ? 'a' : 'div';
 		const target = node === 'a' && newData.targetBlank ? '_blank' : null;
 		const command = node === 'button' ? 'show-modal' : null;

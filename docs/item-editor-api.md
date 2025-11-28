@@ -481,8 +481,8 @@ editorOptions: {
 ```typescript
 editorOptions: {
 	beforeOpen(data) {
-		// 保存データ（'lazy' | 'eager'）をエディター用（boolean）に変換
-		const lazy = data.loading === 'lazy';
+		// 保存データ（('eager' | 'lazy')[]）をエディター用（boolean）に変換
+		const lazy = data.loading.includes('lazy');
 		const popup = data.node === 'button' && data.command === 'show-modal';
 		const targetBlank = data.node === 'a' && data.target === '_blank';
 
@@ -535,8 +535,8 @@ editorOptions: {
 ```typescript
 editorOptions: {
 	beforeChange(newData) {
-		// エディター用（boolean）を保存データ（属性値）に変換
-		const loading = newData.lazy ? 'lazy' : 'eager';
+		// エディター用（boolean）を保存データ（配列形式）に変換
+		const loading: ('eager' | 'lazy')[] = [newData.lazy ? 'lazy' : 'eager'];
 		const node = newData.popup ? 'button' : newData.href ? 'a' : 'div';
 		const target = node === 'a' && newData.targetBlank ? '_blank' : null;
 		const command = node === 'button' ? 'show-modal' : null;
