@@ -81,7 +81,12 @@ export abstract class EditorDialog extends EditorUI {
 	}
 
 	clearTemplate() {
+		this.#cleanUp();
 		this.#el.innerHTML = '';
+		this.#dialog.style.removeProperty('display');
+		this.#dialog.style.removeProperty('width');
+		this.#dialog.style.removeProperty('height');
+		this.reset();
 	}
 
 	close() {
@@ -89,13 +94,8 @@ export abstract class EditorDialog extends EditorUI {
 	}
 
 	closed() {
-		this.#cleanUp();
 		this.clearTemplate();
-		this.#dialog.style.removeProperty('display');
-		this.#dialog.style.removeProperty('width');
-		this.#dialog.style.removeProperty('height');
-		this.reset();
-		this.engine.save();
+		this.#onClosed();
 	}
 
 	complete(
