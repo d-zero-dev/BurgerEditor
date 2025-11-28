@@ -155,6 +155,10 @@ export class ItemEditorDialog<
 					$ctrl instanceof HTMLInputElement &&
 					($ctrl.type === 'radio' || $ctrl.type === 'checkbox')
 				) {
+					if ($ctrl.type === 'checkbox') {
+						$ctrl.checked = !!newValue;
+						return;
+					}
 					if ($ctrl.value === newValue) {
 						$ctrl.checked = true;
 						return;
