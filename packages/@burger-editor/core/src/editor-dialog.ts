@@ -145,7 +145,7 @@ export abstract class EditorDialog extends EditorUI {
 		...args: never[]
 	) {
 		const cancel = this.#onOpen();
-		if (cancel === false) {
+		if (cancel === true) {
 			return;
 		}
 		this.#dialog.showModal();
