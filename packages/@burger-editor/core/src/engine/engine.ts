@@ -1,5 +1,5 @@
 import type { ContainerType } from '../block/types.js';
-import type { ItemData, ItemSeed } from '../item/types.js';
+import type { ItemSeed } from '../item/types.js';
 import type {
 	BurgerEditorEngineOptions,
 	UIOptions,
@@ -112,7 +112,6 @@ export class BurgerEditorEngine {
 		if (options.items) {
 			for (const [name, seed] of Object.entries(options.items)) {
 				this.items.set(name, seed);
-				BurgerEditorEngine.#addItem(seed);
 			}
 		}
 
@@ -332,8 +331,6 @@ export class BurgerEditorEngine {
 	static readonly BLOCK_ID_PREFIX = 'bge-';
 	static readonly STORAGE_KEY_OF_COPIED_BLOCK = 'bge-copied-block';
 
-	static readonly #itemSeeds = new Map<string, ItemSeed>();
-
 	static async new(options: BurgerEditorEngineOptions) {
 		const engine = new BurgerEditorEngine(options);
 
@@ -406,47 +403,5 @@ export class BurgerEditorEngine {
 		engine.#setupHealthEventListeners();
 
 		return engine;
-	}
-
-	static #addItem(seed: ItemSeed) {
-		if (this.#itemSeeds.has(seed.name)) {
-			// eslint-disable-next-line no-console
-			console.warn(`"${seed.name}" is already exists.`);
-			return;
-		}
-
-		this.#itemSeeds.set(seed.name, seed);
-	}
-
-	static getItemSeed<
-		T extends ItemData,
-		C extends { [key: string]: unknown },
-		N extends keyof T & string = keyof T & string,
-	>(name: string) {
-		let editor = this.#itemSeeds.get(name);
-
-		if (!editor) {
-			editor = this.#itemSeeds.get('wysiwyg');
-			if (__DEBUG__ && editor) {
-				// eslint-disable-next-line no-console
-				console.warn(`"${name}" is not found. fallback to "wysiwyg".`);
-			}
-		}
-
-		if (!editor) {
-			// Fallback to the first item seed
-			editor = this.#itemSeeds.values().next().value;
-
-			if (__DEBUG__ && editor) {
-				// eslint-disable-next-line no-console
-				console.warn(`"${name}" is not found. fallback to the first item seed.`);
-			}
-		}
-
-		if (!editor) {
-			throw new Error('There are no item seeds.');
-		}
-
-		return editor as unknown as ItemSeed<N, T, C>;
 	}
 }
