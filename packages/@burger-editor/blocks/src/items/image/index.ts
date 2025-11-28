@@ -72,6 +72,8 @@ export default createItem<{
 			// Initialize width state
 			widthState.setScaleType(initData.scaleType);
 			widthState.setScale(initData.scale);
+			widthState.setMaxNumber(initData.width[0] ?? 400);
+			updateCSSWidth();
 
 			selectTab(currentIndex);
 
