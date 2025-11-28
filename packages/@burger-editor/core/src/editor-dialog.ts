@@ -15,7 +15,7 @@ export interface DialogOption {
 export abstract class EditorDialog extends EditorUI {
 	readonly engine: BurgerEditorEngine;
 	readonly #body = document.createElement('div');
-	#cleanUpHook: (() => void) | null = null;
+	#cleanUpHooks: (() => void)[] = [];
 	readonly #dialog = document.createElement('dialog');
 	readonly #el: HTMLElement;
 	readonly #footer = document.createElement('footer');
@@ -166,8 +166,8 @@ export abstract class EditorDialog extends EditorUI {
 	}
 
 	#cleanUp() {
-		if (this.#cleanUpHook) {
-			this.#cleanUpHook();
+		for (const cleanUpHook of this.#cleanUpHooks) {
+			cleanUpHook();
 		}
 	}
 
@@ -180,7 +180,7 @@ export abstract class EditorDialog extends EditorUI {
 					this.engine,
 				);
 				if (cleanUpHook) {
-					this.#cleanUpHook = cleanUpHook.cleanUp;
+					this.#cleanUpHooks.push(cleanUpHook.cleanUp);
 				}
 			}
 		}
