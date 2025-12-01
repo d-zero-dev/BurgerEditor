@@ -77,6 +77,7 @@ export function createWidthState() {
 			return {
 				..._widthState,
 				unit: _unit,
+				css: this.getCSSWidth(),
 			};
 		},
 	};
