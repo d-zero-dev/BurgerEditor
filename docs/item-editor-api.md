@@ -635,7 +635,7 @@ editorOptions: {
 | 値変更に応じたプレビュー更新 | [youtube](../packages/@burger-editor/blocks/src/items/youtube/index.ts)             | `onChange`とDOM操作の組み合わせ |
 | 配列データの扱い             | [image](../packages/@burger-editor/blocks/src/items/image/index.ts)                 | 複数画像の管理、配列の更新      |
 | 条件付き有効/無効化          | [image](../packages/@burger-editor/blocks/src/items/image/index.ts)                 | `disable`による入力欄制御       |
-| データ形式変換               | [table](../packages/@burger-editor/blocks/src/items/table/index.ts)                 | Markdown ↔ HTML の変換         |
+| データ形式変換               | [table](../packages/@burger-editor/blocks/src/items/table/index.ts)                 | Markdown ↔ HTML の変換          |
 | 外部イベント連携             | [download-file](../packages/@burger-editor/blocks/src/items/download-file/index.ts) | `componentObserver`の使用       |
 | カスタムデータ               | [google-maps](../packages/@burger-editor/blocks/src/items/google-maps/index.ts)     | イベントハンドラーの保存        |
 
