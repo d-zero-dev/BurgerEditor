@@ -10,6 +10,7 @@ type ImageItemData = typeof imageItemSeed._;
  * @param template
  */
 function createEditor(template?: string) {
+	const componentObserver = new ComponentObserver();
 	const editor = new ItemEditorDialog<ImageItemData>({
 		config: {
 			classList: [],
@@ -22,7 +23,7 @@ function createEditor(template?: string) {
 		onOpen: () => false,
 		createEditorComponent: () => {},
 		onOpened: () => {},
-		getComponentObserver: () => new ComponentObserver(),
+		getComponentObserver: () => componentObserver,
 		getTemplate: () =>
 			document.createRange().createContextualFragment(template ?? '').children,
 		getContentStylesheet: () => Promise.resolve(''),
