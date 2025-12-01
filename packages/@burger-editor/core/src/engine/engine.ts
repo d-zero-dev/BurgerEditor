@@ -111,8 +111,7 @@ export class BurgerEditorEngine {
 				this.save();
 			},
 			onOpen: () => {
-				// If the editor is already processed, return false to cancel the open
-				return !this.isProcessed;
+				return this.isProcessed;
 			},
 			createEditorComponent: (el) => {
 				const editorComponentSubClassName = el.dataset.bgeEditorUi;
