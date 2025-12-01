@@ -2,9 +2,7 @@ import type { ItemSeed } from './item/types.js';
 import type { BlockData, Config } from './types.js';
 
 import { BurgerBlock } from './block/block.js';
-import { ComponentObserver } from './component-observer.js';
 import { Item } from './item/item.js';
-import { ItemEditorDialog } from './item-editor-dialog.js';
 
 interface Options {
 	readonly items: Record<string, ItemSeed>;
@@ -17,8 +15,7 @@ interface Options {
  * @param options
  */
 export async function render(data: BlockData, options: Options) {
-	const componentObserver = new ComponentObserver();
-	const block = await BurgerBlock.create(data, async (itemData) => {
+	const block = await BurgerBlock.create(data, (itemData) => {
 		if (typeof itemData !== 'string' && 'localName' in itemData) {
 			throw new Error('Do not support to rebind item data type.');
 		}
@@ -29,31 +26,20 @@ export async function render(data: BlockData, options: Options) {
 		}
 
 		const name = typeof itemData === 'string' ? itemData : itemData.name;
-
-		const editor = new ItemEditorDialog({
-			config: {
-				classList: [],
-				googleMapsApiKey: null,
-				sampleImagePath: '',
-				sampleFilePath: '',
-				stylesheets: [],
-				...options.config,
-			},
-			onOpened: () => {},
-			getComponentObserver: () => componentObserver,
-			getTemplate: () =>
-				document
-					.createRange()
-					.createContextualFragment(options.items[name]?.template ?? '').children,
-			getContentStylesheet: () => Promise.resolve(''),
-			onClosed: () => {},
-			onOpen: () => false,
-			createEditorComponent: () => {},
+		const seed: ItemSeed | null = itemsMap.get(name) ?? null;
+		const template = seed?.template ?? '';
+		const data = typeof itemData === 'string' ? {} : (itemData.data ?? {});
+		const html = Item.createElement(template, data);
+		const wrapper = Item.createWrapper(name, seed, {
+			classList: [],
+			googleMapsApiKey: null,
+			sampleImagePath: '',
+			sampleFilePath: '',
+			stylesheets: [],
+			...options.config,
 		});
-
-		const data = typeof itemData === 'string' ? {} : itemData.data;
-		const item = await Item.create(name, itemsMap, editor, data);
-		return item.el;
+		wrapper.innerHTML = html;
+		return wrapper;
 	});
 	return block.el;
 }

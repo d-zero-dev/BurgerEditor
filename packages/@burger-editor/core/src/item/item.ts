@@ -1,5 +1,6 @@
 import type { ItemEditorDialog } from '../item-editor-dialog.js';
 import type { ItemData, ItemSeed } from './types.js';
+import type { Config } from '../types.js';
 
 import { replacePlaceholders } from '../utils/replace-placeholders.js';
 
@@ -69,7 +70,7 @@ export class Item<
 			data = await this.#service.beforeChange(data, this.editor);
 		}
 
-		this.el.innerHTML = dataToHtml(this.el.innerHTML, data);
+		this.el.innerHTML = Item.createElement(this.el.innerHTML, data);
 	}
 
 	isDisable() {
@@ -88,21 +89,31 @@ export class Item<
 		initData: Partial<T> = {},
 	) {
 		const seed: ItemSeed<string, T, C> | null = itemSeeds.get(name) ?? null;
+		const wrapper = Item.createWrapper(name, seed, editor.config);
+		const item = new Item<T, C>(seed, wrapper, editor);
+		await item.import(initData);
+		return item;
+	}
+
+	static createElement<T extends ItemData>(template: string, data: Partial<T>) {
+		return dataToHtml(template, data);
+	}
+
+	static createWrapper<T extends ItemData, C extends { [key: string]: unknown }>(
+		name: string,
+		seed: ItemSeed<string, T, C> | null,
+		config: Config,
+	) {
 		const wrapper = document.createElement('div');
 		wrapper.dataset.bgi = name;
 
 		if (seed) {
 			const version = seed.version;
 			wrapper.dataset.bgiVer = version;
-			wrapper.innerHTML = replacePlaceholders(seed.template, editor.config);
-		} else {
-			// Fallback: keep requested name, no version, empty HTML; constructor synthesizes seed
-			wrapper.innerHTML = '';
+			wrapper.innerHTML = replacePlaceholders(seed.template, config);
 		}
 
-		const item = new Item<T, C>(seed, wrapper, editor);
-		await item.import(initData);
-		return item;
+		return wrapper;
 	}
 
 	static rebind<T extends ItemData, C extends { [key: string]: unknown }>(
