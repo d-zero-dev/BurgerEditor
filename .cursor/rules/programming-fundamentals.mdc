@@ -214,6 +214,37 @@ describe('formatText', () => {
 });
 ```
 
+### vitest/browser Testing Pattern
+
+**Principle**: Whether to use vitest/browser and Playwright depends on the `vitest.config.ts` configuration. Only available in projects where `browser.enabled: true` is set.
+
+**Pattern**: In vitest/browser environment, use vitest DOM's DOM API to get elements, then wrap them with `page.elementLocator()` before operating. BurgerEditorEngine's editor area is an iframe, so use `page.frameLocator()` to access its contents.
+
+**Important Notes**:
+
+- The `page` object from vitest/browser is different from Playwright's `page` object
+- Use vitest DOM's DOM API (e.g., `document.querySelector`) to get DOM elements
+- Wrap retrieved DOM elements with `page.elementLocator()` before operating
+- Use `page.frameLocator()` to access elements inside iframes
+
+```typescript
+// Pattern: Element operations in vitest/browser
+import { page } from 'vitest/browser';
+
+// 1. Get element using vitest DOM's DOM API
+const dialogElement = document.querySelector('dialog:has(#item-editor-dialog-form)');
+
+// 2. Wrap with elementLocator and operate
+const dialogLocator = page.elementLocator(dialogElement);
+expect(dialogLocator).toBeVisible();
+
+// 3. Access elements inside iframe
+const iframe = page.elementLocator(engine.el.querySelector('iframe'));
+const $iframe = page.frameLocator(iframe);
+const itemClickableArea = $iframe.getByAltText('Picture: Test Image');
+await itemClickableArea.click();
+```
+
 ## State Management Strategy
 
 **Principle**: Choose state management methods appropriately based on the nature and usage patterns of the state.
