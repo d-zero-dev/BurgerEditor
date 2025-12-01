@@ -185,17 +185,16 @@ export class ItemEditorDialog<
 				) {
 					if ($ctrl.type === 'checkbox') {
 						$ctrl.checked = !!newValue;
-						return;
+						continue;
 					}
 					if ($ctrl.value === newValue) {
 						$ctrl.checked = true;
-						return;
+						continue;
 					}
 					$ctrl.checked = false;
-					return;
+					continue;
 				}
 				setContent($ctrl, encodeItemPrimitiveData(newValue));
-				return;
 			}
 			return;
 		}
