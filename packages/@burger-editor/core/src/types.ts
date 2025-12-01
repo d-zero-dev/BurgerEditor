@@ -124,6 +124,10 @@ export interface Actions {
 	'select-tab-in-item-editor': {
 		readonly index: number;
 	};
+	// Use on test
+	'update-css-width': {
+		readonly cssWidth: string;
+	};
 }
 
 export interface FileAPI {

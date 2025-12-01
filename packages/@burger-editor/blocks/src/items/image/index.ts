@@ -214,6 +214,10 @@ export default createItem<{
 				editor.update('$scaleType', widthState.getScaleType());
 				editor.update('$scale', widthState.getScale());
 				editor.update('$cssWidth', widthState.getCSSWidth());
+
+				editor.componentObserver.notify('update-css-width', {
+					cssWidth: widthState.getCSSWidth(),
+				});
 			}
 
 			editor.onChange('$popup', (disable) => {
