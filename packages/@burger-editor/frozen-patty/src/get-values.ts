@@ -157,7 +157,8 @@ function getAttribute(el: Element, keyAttr: string, attr: string, typeConvert: b
 	// For shorthand notation, get value from data-field-* attribute
 	const dataAttr = ['data', attr, kebabCase(keyAttr)].join('-');
 	if (el.hasAttribute(dataAttr)) {
-		return el.getAttribute(dataAttr) ?? '';
+		const value = el.getAttribute(dataAttr);
+		return typeConvert ? convert(value) : value;
 	}
 
 	value = el.getAttribute(keyAttr) ?? null;

@@ -144,6 +144,14 @@ test('toJSON optional attribute field - stringify number - type conversion', () 
 	expect(fp.toJSON()).toStrictEqual({ fieldName: 0.1 });
 });
 
+test('toJSON optional attribute field - stringify number - type conversion with custom attr name', () => {
+	const fp = new FrozenPatty('<div data-foo-num="25" data-foo=":num" ></div>', {
+		attr: 'foo',
+		typeConvert: true,
+	});
+	expect(fp.toJSON()).toStrictEqual({ num: 25 });
+});
+
 test('toJSON custom attr name', () => {
 	const fp = new FrozenPatty('<div data-bge="text">value</div>', { attr: 'bge' });
 	expect(fp.toJSON()).toStrictEqual({ text: 'value' });
