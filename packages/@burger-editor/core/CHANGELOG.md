@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.33](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.32...v4.0.0-alpha.33) (2025-12-01)
+
+### Bug Fixes
+
+- **core:** reuse ComponentObserver instance for performance ([cd97e46](https://github.com/d-zero-dev/BurgerEditor/commit/cd97e469a71b686b7215097c4b0b88a6ca593d37))
+
 # [4.0.0-alpha.32](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.31...v4.0.0-alpha.32) (2025-12-01)
 
 ### Bug Fixes
