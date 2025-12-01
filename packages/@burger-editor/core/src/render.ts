@@ -17,6 +17,7 @@ interface Options {
  * @param options
  */
 export async function render(data: BlockData, options: Options) {
+	const componentObserver = new ComponentObserver();
 	const block = await BurgerBlock.create(data, async (itemData) => {
 		if (typeof itemData !== 'string' && 'localName' in itemData) {
 			throw new Error('Do not support to rebind item data type.');
@@ -39,7 +40,7 @@ export async function render(data: BlockData, options: Options) {
 				...options.config,
 			},
 			onOpened: () => {},
-			getComponentObserver: () => new ComponentObserver(),
+			getComponentObserver: () => componentObserver,
 			getTemplate: () =>
 				document
 					.createRange()
