@@ -254,6 +254,10 @@
 		align-items: center;
 	}
 
+	:where(span:has(label + * + output) input[type='number']) {
+		inline-size: 8em;
+	}
+
 	:where(fieldset) {
 		padding: 1em;
 		margin-block-start: 1em;
