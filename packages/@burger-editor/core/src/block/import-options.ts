@@ -20,6 +20,8 @@ export function importOptions(el: HTMLElement, options: Partial<BlockData>) {
 
 	if (classList && classList.length > 0) {
 		el.classList.add(...classList);
+	} else {
+		el.removeAttribute('class');
 	}
 
 	if (id && id.trim()) {

@@ -86,7 +86,12 @@ export class BlockOptionsDialog extends EditorDialog {
 					| null,
 				float: float as 'start' | 'end' | null,
 			},
-			classList: classes ? classes.toString().split(/\s+/) : currentOptions.classList,
+			classList:
+				classes
+					?.toString()
+					.split(/\s+/)
+					.map((cls) => cls.trim())
+					.filter((cls) => !!cls) ?? [],
 			id: id ? id.toString() : currentOptions.id,
 			style: Object.fromEntries(styles),
 		};
