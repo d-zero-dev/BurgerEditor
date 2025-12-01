@@ -1,5 +1,6 @@
-import { ComponentObserver, ItemEditorDialog } from '@burger-editor/core';
+import { ComponentObserver, ItemEditorDialog, Item } from '@burger-editor/core';
 import { test, expect, describe, beforeEach } from 'vitest';
+import { page } from 'vitest/browser';
 
 import imageItemSeed from './index.js';
 
@@ -30,6 +31,27 @@ function createEditor(template?: string) {
 	});
 
 	return editor;
+}
+
+/**
+ *
+ * @param html
+ */
+function createItemElement(html?: string) {
+	const el = document.createElement('div');
+	el.dataset.bgi = imageItemSeed.name;
+	el.innerHTML = html ?? imageItemSeed.template;
+
+	const seeds = new Map<string, typeof imageItemSeed>();
+	seeds.set(imageItemSeed.name, imageItemSeed);
+
+	const editor = createEditor(imageItemSeed.editor);
+
+	const item = Item.rebind(el, seeds, editor);
+
+	document.body.append(item.el);
+
+	return item;
 }
 
 describe('imageItemSeed', () => {
@@ -431,5 +453,240 @@ describe('imageItemSeed', () => {
 			expect(result?.style).not.toContain('--object-fit');
 			expect(result?.style).not.toContain('--aspect-ratio');
 		});
+	});
+});
+
+describe('Playwrightテスト', () => {
+	beforeEach(() => {
+		// Clean up the document body
+		document.body.innerHTML = '';
+	});
+
+	test('altEditableを変更した際にaltが即座に更新されること', async () => {
+		const item = createItemElement(imageItemSeed.template);
+		const trigger = page.getByAltText('サンプル画像');
+		await trigger.click();
+
+		const editor = item.editor;
+
+		const initialAlt = editor.get('$alt');
+		expect(initialAlt).toStrictEqual(['サンプル画像']);
+
+		const altEditableElement = editor.find('[name="bge-alt-editable"]');
+		expect(altEditableElement).toBeTruthy();
+		const altEditableLocator = page.elementLocator(altEditableElement!);
+		await altEditableLocator.fill('新しいaltテキスト');
+		altEditableLocator.element().blur();
+
+		const updatedAlt = editor.get('$alt');
+		expect(updatedAlt[0]).toBe('新しいaltテキスト');
+	});
+
+	test('scaleTypeを変更した際にcssWidthUnitが即座に更新されること', async () => {
+		const item = createItemElement(imageItemSeed.template);
+		const trigger = page.getByAltText('サンプル画像');
+		await trigger.click();
+
+		const editor = item.editor;
+
+		// Check the "container" radio button
+		const containerRadioElement = editor.find(
+			'[name="bge-scale-type"][value="container"]',
+		);
+		expect(containerRadioElement).toBeTruthy();
+		const containerRadioLocator = page.elementLocator(containerRadioElement!);
+		await containerRadioLocator.click();
+		const cssWidthUnit = editor.get('$cssWidthUnit');
+		expect(cssWidthUnit).toBe('cqi');
+
+		// Check the "original" radio button
+		const originalRadioElement = editor.find('[name="bge-scale-type"][value="original"]');
+		expect(originalRadioElement).toBeTruthy();
+		const originalRadioLocator = page.elementLocator(originalRadioElement!);
+		await originalRadioLocator.click();
+		const cssWidthUnit2 = editor.get('$cssWidthUnit');
+		expect(cssWidthUnit2).toBe('px');
+	});
+
+	test('cssWidthNumberを変更した際にcssWidthが即座に更新されること', async () => {
+		const item = createItemElement(imageItemSeed.template);
+		const trigger = page.getByAltText('サンプル画像');
+		await trigger.click();
+
+		const editor = item.editor;
+
+		// Check the "original" radio button
+		const originalRadioElement = editor.find('[name="bge-scale-type"][value="original"]');
+		expect(originalRadioElement).toBeTruthy();
+		const originalRadioLocator = page.elementLocator(originalRadioElement!);
+		await originalRadioLocator.click();
+
+		// Change the "cssWidthNumber" input field
+		const cssWidthNumberElement = editor.find('[name="bge-css-width-number"]');
+		expect(cssWidthNumberElement).toBeTruthy();
+		const cssWidthNumberLocator = page.elementLocator(cssWidthNumberElement!);
+		await cssWidthNumberLocator.fill('250');
+		cssWidthNumberLocator.element().blur();
+
+		const cssWidth = editor.get('$cssWidth');
+		expect(cssWidth).toBe('250px');
+	});
+
+	test('scaleを変更した際にcssWidthが即座に更新されること', async () => {
+		const item = createItemElement(imageItemSeed.template);
+		const trigger = page.getByAltText('サンプル画像');
+		await trigger.click();
+
+		const editor = item.editor;
+
+		// Check the "container" radio button
+		const containerRadioElement = editor.find<HTMLInputElement>(
+			'[name="bge-scale-type"][value="container"]',
+		);
+		expect(containerRadioElement).toBeTruthy();
+		const containerRadioLocator = page.elementLocator(containerRadioElement!);
+		await containerRadioLocator.click();
+
+		// Change the "scale" input field
+		const scaleElement = editor.find<HTMLInputElement>('[name="bge-scale"]');
+		expect(scaleElement).toBeTruthy();
+		const scaleLocator = page.elementLocator(scaleElement!);
+		await scaleLocator.fill('75');
+		scaleLocator.element().blur();
+
+		const cssWidth = editor.get('$cssWidth');
+		expect(cssWidth).toBe('75cqi');
+	});
+
+	test('popupチェックボックスを変更した際にhrefとtargetBlankが無効化/有効化されること', async () => {
+		const item = createItemElement(imageItemSeed.template);
+		const trigger = page.getByAltText('サンプル画像');
+		await trigger.click();
+
+		const editor = item.editor;
+
+		// Check the "popup" checkbox
+		const popupCheckboxElement = editor.find<HTMLInputElement>('[name="bge-popup"]');
+		expect(popupCheckboxElement).toBeTruthy();
+		const popupCheckboxLocator = page.elementLocator(popupCheckboxElement!);
+		await popupCheckboxLocator.click();
+
+		// Check if href and targetBlank are disabled
+		const hrefInput = editor.find<HTMLInputElement>('[name="bge-href"]');
+		const targetBlankCheckbox = editor.find<HTMLInputElement>(
+			'[name="bge-target-blank"]',
+		);
+		expect(hrefInput?.disabled).toBe(true);
+		expect(targetBlankCheckbox?.disabled).toBe(true);
+
+		// Disable the "popup" checkbox
+		await popupCheckboxLocator.click();
+
+		// Check if href and targetBlank are enabled
+		expect(hrefInput?.disabled).toBe(false);
+		expect(targetBlankCheckbox?.disabled).toBe(false);
+	});
+
+	// TODO: タブ切り替えの安定実装を待つ
+	test.skip('mediaInputを変更した際にmediaが即座に更新されること', async () => {
+		const item = createItemElement(imageItemSeed.template);
+		const trigger = page.getByAltText('サンプル画像');
+		await trigger.click();
+
+		const editor = item.editor;
+
+		// Change the "mediaInput" input field
+		const mediaInputElement = editor.find<HTMLInputElement>('[name="bge-media-input"]');
+		expect(mediaInputElement).toBeTruthy();
+		const mediaInputLocator = page.elementLocator(mediaInputElement!);
+		await mediaInputLocator.fill('(min-width: 768px)');
+		mediaInputLocator.element().blur();
+
+		// Check if media is updated
+		const media = editor.get('$media');
+		expect(media[0]).toBe('(min-width: 768px)');
+	});
+
+	test('最終的なitemDataの変化', async () => {
+		const item = createItemElement(imageItemSeed.template);
+		const trigger = page.getByAltText('サンプル画像');
+		await trigger.click();
+
+		const editor = item.editor;
+
+		const altEditableElement = editor.find('[name="bge-alt-editable"]');
+		expect(altEditableElement).toBeTruthy();
+		const altEditableLocator = page.elementLocator(altEditableElement!);
+		await altEditableLocator.fill('テストalt');
+
+		const captionElement = editor.find('[name="bge-caption"]');
+		expect(captionElement).toBeTruthy();
+		const captionLocator = page.elementLocator(captionElement!);
+		await captionLocator.fill('テストキャプション');
+
+		const containerRadioElement = editor.find(
+			'[name="bge-scale-type"][value="container"]',
+		);
+		expect(containerRadioElement).toBeTruthy();
+		const containerRadioLocator = page.elementLocator(containerRadioElement!);
+		await containerRadioLocator.click();
+
+		const lazyCheckboxElement = editor.find('[name="bge-lazy"]');
+		expect(lazyCheckboxElement).toBeTruthy();
+		const lazyCheckboxLocator = page.elementLocator(lazyCheckboxElement!);
+		await lazyCheckboxLocator.click();
+
+		// Click the complete button
+		const completeButtonElement = document.querySelector(
+			'dialog[open] footer button[type="submit"][form]',
+		);
+		expect(completeButtonElement).toBeTruthy();
+		const completeButtonLocator = page.elementLocator(completeButtonElement!);
+		await completeButtonLocator.click();
+
+		// Check if the dialog is closed
+		const closedDialogElement = document.querySelector('dialog[open]');
+		expect(closedDialogElement).toBeNull();
+
+		// Get the final itemData
+		const finalData = item.export();
+
+		const loading = finalData.loading;
+		expect(loading).toStrictEqual(['eager']);
+		const nodeElement = item.el.querySelector('[data-bge*=":node"]');
+		expect(nodeElement).toBeTruthy();
+		expect(nodeElement!.tagName.toLowerCase()).toBe('div');
+
+		expect(finalData.style).toContain('--css-width');
+	});
+
+	test('loadImage関数の正常な画像読み込み', async () => {
+		const item = createItemElement(imageItemSeed.template);
+		const trigger = page.getByAltText('サンプル画像');
+		await trigger.click();
+
+		const editor = item.editor;
+
+		// Create a 1x1 transparent PNG image (data URL)
+		const dataURL =
+			'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+		const { promise, resolve } = Promise.withResolvers<void>();
+		editor.componentObserver.on('update-css-width', () => {
+			resolve();
+		});
+
+		editor.componentObserver.notify('file-select', {
+			path: dataURL,
+			fileSize: 100,
+			isEmpty: false,
+			isMounted: false,
+		});
+
+		await promise;
+
+		const path = editor.get('$path');
+		expect(Array.isArray(path)).toBe(true);
+		expect(path[0]).toBe(dataURL);
 	});
 });

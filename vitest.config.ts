@@ -1,4 +1,7 @@
+import type { Plugin } from 'vite';
+
 import fs from 'node:fs';
+import path from 'node:path';
 
 import { playwright } from '@vitest/browser-playwright';
 // @ts-ignore - rollup-plugin-string has type incompatibility with vitest's internal rollup version
@@ -8,6 +11,21 @@ import { defineConfig } from 'vitest/config';
 const blocksPkg = JSON.parse(
 	fs.readFileSync('./packages/@burger-editor/blocks/package.json', 'utf8'),
 );
+
+const cssAsRaw = (): Plugin => {
+	return {
+		name: 'css-as-raw',
+		enforce: 'pre',
+		resolveId(id, importer) {
+			if (id.endsWith('.css') && importer) {
+				const importerDir = path.dirname(importer);
+				const resolvedPath = path.resolve(importerDir, id);
+				return `${resolvedPath}?raw`;
+			}
+			return null;
+		},
+	};
+};
 
 const jsdomConfig = {
 	environment: 'jsdom',
@@ -35,11 +53,20 @@ export default defineConfig({
 				test: {
 					name: 'blocks',
 					include: ['packages/@burger-editor/blocks/**/*.spec.ts'],
-					...jsdomConfig,
+					browser: {
+						enabled: true,
+						provider: playwright(),
+						instances: [{ browser: 'chromium' }],
+						headless: true,
+						viewport: { width: 1280, height: 720 },
+						screenshotFailures: false,
+					},
+					testTimeout: 5000,
 				},
-				plugins: [string({ include: ['**/*.html', '**/*.css', '**/*.svg'] })],
+				plugins: [cssAsRaw(), string({ include: ['**/*.html', '**/*.svg'] })],
 				define: {
 					__VERSION__: JSON.stringify(blocksPkg.version),
+					__DEBUG__: false,
 				},
 			},
 			{
