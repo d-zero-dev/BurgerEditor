@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.32](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.31...v4.0.0-alpha.32) (2025-12-01)
+
+### Bug Fixes
+
+- **blocks:** add null safety checks in image item beforeOpen ([0c2a193](https://github.com/d-zero-dev/BurgerEditor/commit/0c2a193c3f395ac00f2345011af17cec3fc61e91))
+- **blocks:** initialize width state maxNumber and CSS width ([36b28b5](https://github.com/d-zero-dev/BurgerEditor/commit/36b28b5c230119fe808592392cce439cf91f9dfb))
+- **client:** set width for number input in label-output span ([0a6e626](https://github.com/d-zero-dev/BurgerEditor/commit/0a6e626534161287fe48b566070a94abf0d23c5c))
+- **core:** add instance ID to ComponentObserver events ([17741ac](https://github.com/d-zero-dev/BurgerEditor/commit/17741acaebc528bd33148e0d15613dd068a45b57))
+- **core:** change cleanup hook to array in EditorDialog ([1d03c2c](https://github.com/d-zero-dev/BurgerEditor/commit/1d03c2c03f2e1af5fc0fb3c1ac151817927739b4))
+- **core:** clear template when opening item editor dialog ([5b95967](https://github.com/d-zero-dev/BurgerEditor/commit/5b95967f85c2053319066221db46f64ae69b8f60))
+- **core:** correct cancel check in EditorDialog open method ([c81122b](https://github.com/d-zero-dev/BurgerEditor/commit/c81122bf156f35a08e3f950310756c4d6356582e))
+- **core:** correct elMap type definition in Item class ([a8fd468](https://github.com/d-zero-dev/BurgerEditor/commit/a8fd468abe88c9a806ef65c227674514b314d31b))
+- **core:** correct onOpen callback return value logic ([1885853](https://github.com/d-zero-dev/BurgerEditor/commit/1885853fec25b6a765418420cfab101dcee55905))
+- **core:** handle checkbox value in item editor dialog ([05c3275](https://github.com/d-zero-dev/BurgerEditor/commit/05c3275536c6463b97d75b4b593b0af2c64f2cd2))
+- **core:** improve class list processing in block options ([156b730](https://github.com/d-zero-dev/BurgerEditor/commit/156b7307b00fb31ea49fc40337c2ba533f5713f3))
+- **core:** replace return with continue in item editor dialog loop ([61b1724](https://github.com/d-zero-dev/BurgerEditor/commit/61b1724ad998ce6fbade0d7ff0e7cc5bd7ce596c))
+- **core:** trim id value and return null when empty in block options ([a682bfb](https://github.com/d-zero-dev/BurgerEditor/commit/a682bfb194195dd3fbeee645f55bee894f94e47a))
+- **frozen-patty:** apply type conversion for custom attr name shorthand notation ([48de87c](https://github.com/d-zero-dev/BurgerEditor/commit/48de87cc5d2b0e8f1e5b41c7decc88fde493b41d))
+
+### Features
+
+- **blocks:** add css property to width state debug output ([be74a64](https://github.com/d-zero-dev/BurgerEditor/commit/be74a647572e5c19a8b5bf5c52bdf59a8f899305))
+- **blocks:** add debug flag to control console error output ([d60b505](https://github.com/d-zero-dev/BurgerEditor/commit/d60b505f3f41a641ae25155148c7963274bd7343))
+- **blocks:** disable size fieldset during image loading ([75b5730](https://github.com/d-zero-dev/BurgerEditor/commit/75b57305ad98f0797c2b4901a5a2c286f75c6a85))
+- **blocks:** notify css-width update via componentObserver ([821dd13](https://github.com/d-zero-dev/BurgerEditor/commit/821dd13fb1129a717eba9e966ece1455b6dca660))
+
 # [4.0.0-alpha.31](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.30...v4.0.0-alpha.31) (2025-11-26)
 
 ### Bug Fixes

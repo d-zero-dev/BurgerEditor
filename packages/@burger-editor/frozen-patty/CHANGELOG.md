@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.32](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.31...v4.0.0-alpha.32) (2025-12-01)
+
+### Bug Fixes
+
+- **frozen-patty:** apply type conversion for custom attr name shorthand notation ([48de87c](https://github.com/d-zero-dev/BurgerEditor/commit/48de87cc5d2b0e8f1e5b41c7decc88fde493b41d))
+
 # [4.0.0-alpha.31](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.30...v4.0.0-alpha.31) (2025-11-26)
 
 **Note:** Version bump only for package @burger-editor/frozen-patty

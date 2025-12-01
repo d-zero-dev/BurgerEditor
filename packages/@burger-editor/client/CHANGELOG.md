@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.32](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.31...v4.0.0-alpha.32) (2025-12-01)
+
+### Bug Fixes
+
+- **client:** set width for number input in label-output span ([0a6e626](https://github.com/d-zero-dev/BurgerEditor/commit/0a6e626534161287fe48b566070a94abf0d23c5c))
+
 # [4.0.0-alpha.31](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.30...v4.0.0-alpha.31) (2025-11-26)
 
 **Note:** Version bump only for package @burger-editor/client
