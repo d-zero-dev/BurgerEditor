@@ -68,6 +68,7 @@ export default createItem<{
 		open(initData, editor) {
 			let currentIndex = 0;
 			const widthState = createWidthState();
+			const $fieldset = editor.find<HTMLFieldSetElement>('#bge-image-size-fieldset')!;
 
 			// Initialize width state
 			widthState.setScaleType(initData.scaleType);
@@ -128,9 +129,12 @@ export default createItem<{
 					return;
 				}
 
+				$fieldset.disabled = true;
 				const $src = await loadImage(path);
 
 				updateImage($src);
+
+				$fieldset.disabled = false;
 			}
 
 			editor.componentObserver.on('select-tab-in-item-editor', ({ index }) => {
