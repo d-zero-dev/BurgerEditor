@@ -143,8 +143,10 @@ export default createItem<{
 			 */
 			function updateImage($src: ImageData) {
 				if (!$src) {
-					// eslint-disable-next-line no-console
-					console.error('画像の読み込みに失敗しました');
+					if (__DEBUG__) {
+						// eslint-disable-next-line no-console
+						console.error('画像の読み込みに失敗しました');
+					}
 					return;
 				}
 
