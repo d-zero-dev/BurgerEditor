@@ -689,4 +689,67 @@ describe('Playwrightテスト', () => {
 		expect(Array.isArray(path)).toBe(true);
 		expect(path[0]).toBe(dataURL);
 	});
+
+	test('ダイアログを閉じた際にitemDataが正しく更新されること', async () => {
+		const item = createItemElement(`
+<div data-bge=":style, :scale, :scale-type, :aspect-ratio" data-bge-scale="25" data-bge-scale-type="original" data-bge-aspect-ratio="unset" style="--css-width: 100px; --object-fit: cover; --aspect-ratio: unset">
+	<figure>
+		<div data-bge=":node, :href, :target, :command">
+			<picture data-bge-list>
+				<img src="%sampleImagePath%" alt="サンプル画像" data-bge="path:src, :alt, :width, :height, :loading, :media" width="400" height="300" loading="lazy" />
+			</picture>
+		</div>
+		<figcaption data-bge="caption"></figcaption>
+	</figure>
+</div>
+`);
+		const editor = item.editor;
+
+		const trigger = page.getByAltText('サンプル画像');
+		await trigger.click();
+
+		expect(editor.get('$cssWidthNumber')).toBe(100);
+		expect(editor.get('$cssWidthUnit')).toBe('px');
+		expect(editor.get('$scale')).toBe(25);
+		expect(editor.get('$scaleType')).toBe('original');
+
+		const containerRadioElement = editor.find(
+			'[name="bge-scale-type"][value="container"]',
+		);
+		expect(containerRadioElement).toBeTruthy();
+		const containerRadioLocator = page.elementLocator(containerRadioElement!);
+		await containerRadioLocator.click();
+
+		expect(editor.get('$cssWidthNumber')).toBe(25);
+		expect(editor.get('$cssWidthUnit')).toBe('cqi');
+		expect(editor.get('$scale')).toBe(25);
+		expect(editor.get('$scaleType')).toBe('container');
+
+		// Click the complete button
+		const completeButtonElement = document.querySelector(
+			'dialog[open] footer button[type="submit"][form]',
+		);
+		expect(completeButtonElement).toBeTruthy();
+		const completeButtonLocator = page.elementLocator(completeButtonElement!);
+		await completeButtonLocator.click();
+
+		const finalData = item.export();
+		expect(finalData).toStrictEqual({
+			path: ['%sampleImagePath%'],
+			alt: ['サンプル画像'],
+			width: [400],
+			height: [300],
+			media: [null],
+			loading: ['lazy'],
+			aspectRatio: 'unset',
+			caption: '',
+			command: null,
+			href: '',
+			node: 'div',
+			scale: 25,
+			scaleType: 'container',
+			style: '--css-width: 25cqi; --object-fit: cover; --aspect-ratio: unset;',
+			target: null,
+		});
+	});
 });
