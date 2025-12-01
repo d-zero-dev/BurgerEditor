@@ -92,7 +92,7 @@ export class BlockOptionsDialog extends EditorDialog {
 					.split(/\s+/)
 					.map((cls) => cls.trim())
 					.filter((cls) => !!cls) ?? [],
-			id: id ? id.toString() : currentOptions.id,
+			id: id?.toString().trim() || null,
 			style: Object.fromEntries(styles),
 		};
 
