@@ -184,7 +184,6 @@ export default createItem<{
 				'$scaleType',
 				(scaleType) => {
 					widthState.setScaleType(scaleType);
-
 					updateCSSWidth();
 				},
 				false,
