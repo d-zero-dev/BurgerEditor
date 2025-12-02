@@ -35,7 +35,7 @@
 		"@burger-editor/migrator": "4.0.0-alpha.34",
 		"@burger-editor/utils": "4.0.0-alpha.34",
 		"@modelcontextprotocol/sdk": "1.22.0",
-		"vitest": "4.0.14",
+		"vitest": "4.0.15",
 		"zod": "3.24.2"
 	}
 }
