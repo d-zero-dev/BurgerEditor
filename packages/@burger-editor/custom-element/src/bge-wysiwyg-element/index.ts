@@ -2,6 +2,7 @@ import type { BgeWysiwygElementOptions, Transaction } from './types.js';
 import type { ElementSeed } from '../utils/types.js';
 import type { Extensions } from '@tiptap/core';
 
+import { normalizeHtmlStructure } from '@burger-editor/utils';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
@@ -40,19 +41,100 @@ export function defineBgeWysiwygElement(
 export class BgeWysiwygElement extends HTMLElement {
 	#editor: Editor | null = null;
 	#editorRoot: HTMLDivElement | null = null;
+	#hasStructureChange = false;
+	#isExpectingHTML = false;
+	#isInitializing = true;
 	#previewStyle: HTMLStyleElement | null = null;
+	#structureChangeMessage: HTMLDivElement | null = null;
 	#textarea: HTMLTextAreaElement | null = null;
 	#textareaDescriptor: PropertyDescriptor | null = null;
 
 	get value() {
-		return this.#textarea?.value ?? '';
+		if (!this.#textarea) {
+			throw new ReferenceError('<bge-wysiwyg> is not connected');
+		}
+
+		// Wysiwygモードの場合、Tiptapエディタから値を取得
+		if (this.mode === 'wysiwyg') {
+			if (!this.#editor) {
+				throw new ReferenceError('<bge-wysiwyg> is not connected');
+			}
+			let html = this.#editor.getHTML();
+			html = html.replaceAll('<p></p>', '');
+			return html;
+		}
+
+		// HTMLモードの場合、textareaから値を取得
+		return this.#textarea.value;
 	}
 
 	set value(value: string) {
 		if (!this.#textarea) {
 			throw new ReferenceError('<bge-wysiwyg> is not connected');
 		}
+
+		// HTMLモードの場合は常にネイティブsetterを使用
+		if (this.mode === 'html') {
+			this.#textareaDescriptor?.set?.call(this.#textarea, value);
+			return;
+		}
+
+		// 初期化中、または初回の値設定時（現在の値が空）で、エディタが存在する場合、構造変更をチェック
+		const isFirstValueSet = !this.#textarea.value || this.#textarea.value.trim() === '';
+		const shouldCheckStructure =
+			(this.#isInitializing || isFirstValueSet) && this.#editor && value;
+
+		if (shouldCheckStructure) {
+			// 渡されたvalueパラメータを使って構造チェック
+			const expectedHTML = this.expectHTML(value);
+			const isStructureSame = normalizeHtmlStructure(value, expectedHTML);
+
+			if (!isStructureSame) {
+				// 構造変更がある場合、HTMLモードに切り替え
+				// ネイティブのsetterを使用してTiptapを経由せずに値を設定
+				this.#textareaDescriptor?.set?.call(this.#textarea, value);
+				this.shadowRoot!.querySelector<HTMLDivElement>(`[data-bge-mode]`)?.setAttribute(
+					'data-bge-mode',
+					'html',
+				);
+				this.#setStructureChange(true);
+				return;
+			}
+		}
+
+		// カスタムsetterを呼び出し、Tiptapを経由して値を設定
 		this.#textarea.value = value;
+	}
+
+	get mode(): 'wysiwyg' | 'html' {
+		const modeAttr = this.shadowRoot
+			?.querySelector<HTMLDivElement>(`[data-bge-mode]`)
+			?.getAttribute('data-bge-mode');
+		return modeAttr === 'html' ? 'html' : 'wysiwyg';
+	}
+
+	set mode(mode: 'wysiwyg' | 'html') {
+		if (!this.#editor || !this.#textarea) {
+			return;
+		}
+
+		// HTMLモードからWysiwygモードに切り替える場合、構造変更をチェック
+		if (mode === 'wysiwyg' && this.mode === 'html' && this.#checkStructureChange()) {
+			this.#setStructureChange(true);
+			return;
+		}
+
+		this.shadowRoot!.querySelector<HTMLDivElement>(`[data-bge-mode]`)?.setAttribute(
+			'data-bge-mode',
+			mode,
+		);
+		if (mode === 'wysiwyg') {
+			this.#editor.commands.setContent(this.#textarea.value);
+			this.#setStructureChange(false);
+		} else if (!this.#isInitializing) {
+			this.#setStructureChange(this.#checkStructureChange());
+		}
+		this.#updateStructureChangeMessage();
 	}
 
 	get editor() {
@@ -63,18 +145,8 @@ export class BgeWysiwygElement extends HTMLElement {
 		return this.#editor;
 	}
 
-	set mode(mode: 'wysiwyg' | 'html') {
-		if (!this.#editor || !this.#textarea) {
-			return;
-		}
-
-		this.shadowRoot!.querySelector<HTMLDivElement>(`[data-bge-mode]`)?.setAttribute(
-			'data-bge-mode',
-			mode,
-		);
-		if (mode === 'wysiwyg') {
-			this.#editor.commands.setContent(this.#textarea.value);
-		}
+	get hasStructureChange(): boolean {
+		return this.#hasStructureChange;
 	}
 
 	constructor() {
@@ -92,11 +164,15 @@ export class BgeWysiwygElement extends HTMLElement {
 			throw new Error('Not supported shadow DOM');
 		}
 
-		const initialValue = this.innerHTML.trim();
+		const initialValue = this.innerHTML;
 		const label = this.getAttribute('label') ?? '内容';
 		const itemName = this.getAttribute('item-name');
+		const messageId = `bge-structure-change-message-${Math.random().toString(36).slice(2, 11)}`;
 
-		this.shadowRoot.innerHTML = `<div data-bge-mode="wysiwyg"><iframe></iframe><textarea aria-label="${label} HTML"></textarea></div>`;
+		const structureChangeMessage =
+			'HTMLの構造がWYSIWYG（デザイン）モードに対応していません。HTMLモードのみで編集可能です。';
+
+		this.shadowRoot.innerHTML = `<div data-bge-mode="wysiwyg"><iframe></iframe><textarea aria-label="${label} HTML" aria-describedby="${messageId}"></textarea><div id="${messageId}" role="alert" aria-live="polite" style="display: none;">${structureChangeMessage}</div></div>`;
 
 		const preview = this.shadowRoot.querySelector('iframe');
 
@@ -145,6 +221,16 @@ export class BgeWysiwygElement extends HTMLElement {
 			[data-bge-mode="html"] iframe {
 				display: none;
 			}
+
+			[role="alert"] {
+				margin-block-start: 0.5rem;
+				padding: 0.5rem;
+				background-color: var(--bge-error-color, #fee);
+				border: 1px solid var(--bge-error-border-color, #fcc);
+				border-radius: var(--border-radius);
+				color: var(--bge-error-text-color, #c00);
+				font-size: 0.875rem;
+			}
 		`;
 
 		preview.contentDocument.body.addEventListener('focusin', () => {
@@ -168,6 +254,9 @@ export class BgeWysiwygElement extends HTMLElement {
 		}
 
 		this.#textarea = textarea;
+		this.#structureChangeMessage = this.shadowRoot.querySelector<HTMLDivElement>(
+			`#${messageId}`,
+		);
 
 		const extensions: Extensions = [
 			StarterKit.configure({
@@ -223,10 +312,63 @@ export class BgeWysiwygElement extends HTMLElement {
 		});
 
 		if (initialValue) {
-			this.#textarea.value = initialValue;
+			const expectedHTML = this.expectHTML(initialValue);
+			const isStructureSame = normalizeHtmlStructure(initialValue, expectedHTML);
+
+			if (isStructureSame) {
+				this.#textarea.value = initialValue;
+			} else {
+				// 構造変更がある場合、HTMLモードに切り替え
+				this.#textareaDescriptor.set?.call(this.#textarea, initialValue);
+				this.shadowRoot
+					.querySelector<HTMLDivElement>(`[data-bge-mode]`)
+					?.setAttribute('data-bge-mode', 'html');
+				this.#setStructureChange(true);
+			}
 		}
+
+		// 初期化完了
+		this.#isInitializing = false;
+
+		// HTMLモードでフォーカスアウト時に構造変更をチェック
+		this.#textarea.addEventListener('blur', () => {
+			if (this.mode !== 'html') {
+				return;
+			}
+
+			this.#setStructureChange(this.#checkStructureChange());
+		});
+
+		// HTMLモードで入力時に構造変更をチェック（解消された場合に状態を更新）
+		this.#textarea.addEventListener('input', () => {
+			if (this.mode !== 'html') {
+				return;
+			}
+
+			this.#setStructureChange(this.#checkStructureChange());
+		});
 	}
 
+	/**
+	 * tiptapのwysiwygが出力するであろうHTMLをレンダリングせずに文字列で返す
+	 * @param html 変換対象のHTML文字列
+	 * @returns 変換後のHTML文字列
+	 */
+	expectHTML(html: string): string {
+		// このチェックは到達不可能（すべての呼び出し元でthis.#editorの存在が保証されている）
+		// ただし、型安全性のために残している
+		if (!this.#editor) {
+			throw new ReferenceError('<bge-wysiwyg> is not connected');
+		}
+
+		const originalContent = this.#editor.getHTML();
+		this.#isExpectingHTML = true;
+		this.#editor.commands.setContent(html);
+		const result = this.#editor.getHTML().replaceAll('<p></p>', '');
+		this.#editor.commands.setContent(originalContent);
+		this.#isExpectingHTML = false;
+		return result;
+	}
 	isActive(name: string) {
 		return this.editor.isActive(name) ?? false;
 	}
@@ -270,6 +412,16 @@ export class BgeWysiwygElement extends HTMLElement {
 	}
 
 	syncWysiwygToTextarea() {
+		// expectHTML実行中は同期しない
+		if (this.#isExpectingHTML) {
+			return;
+		}
+
+		// HTMLモードの場合は同期しない（textareaの値が正しい値）
+		if (this.mode === 'html') {
+			return;
+		}
+
 		let html = this.editor.getHTML();
 		html = html.replaceAll('<p></p>', '');
 		this.#setToTextarea(html);
@@ -327,6 +479,32 @@ export class BgeWysiwygElement extends HTMLElement {
 		this.editor.chain().focus().toggleUnderline().run();
 	}
 
+	#checkStructureChange(): boolean {
+		if (!this.#editor || !this.#textarea || this.mode !== 'html') {
+			return false;
+		}
+
+		const expectedHTML = this.expectHTML(this.#textarea.value);
+		const isStructureSame = normalizeHtmlStructure(this.#textarea.value, expectedHTML);
+
+		return !isStructureSame;
+	}
+
+	#setStructureChange(hasChange: boolean): void {
+		if (this.#hasStructureChange === hasChange) {
+			return;
+		}
+
+		this.#hasStructureChange = hasChange;
+		this.#updateStructureChangeMessage();
+		this.dispatchEvent(
+			new CustomEvent('bge:structure-change', {
+				detail: { hasStructureChange: hasChange },
+				bubbles: true,
+				composed: true,
+			}),
+		);
+	}
 	#setToTextarea(html: string) {
 		if (!this.#textarea || !this.#textareaDescriptor) {
 			throw new ReferenceError('<bge-wysiwyg> is not connected');
@@ -418,6 +596,17 @@ export class BgeWysiwygElement extends HTMLElement {
 		};
 
 		return data;
+	}
+	#updateStructureChangeMessage(): void {
+		if (!this.#structureChangeMessage) {
+			return;
+		}
+
+		if (this.mode === 'html' && this.#hasStructureChange) {
+			this.#structureChangeMessage.style.display = 'block';
+		} else {
+			this.#structureChangeMessage.style.display = 'none';
+		}
 	}
 
 	static extensions: Extensions | null = null;

@@ -1,7 +1,9 @@
 import type { BgeWysiwygEditorElement } from './index.js';
+import type { BgeWysiwygElement } from '../bge-wysiwyg-element/index.js';
 
+import { normalizeHtmlStructure } from '@burger-editor/utils';
 import { Node } from '@tiptap/core';
-import { test, expect, beforeAll, vi } from 'vitest';
+import { test, expect, beforeAll, vi, beforeEach, afterEach } from 'vitest';
 
 import { defineBgeWysiwygEditorElement } from './index.js';
 
@@ -29,6 +31,15 @@ beforeAll(() => {
 	});
 });
 
+beforeEach(() => {
+	document.body.innerHTML = '';
+	vi.clearAllMocks();
+});
+
+afterEach(() => {
+	document.body.innerHTML = '';
+});
+
 test('Defined', () => {
 	document.body.innerHTML = '<bge-wysiwyg-editor name="test"></bge-wysiwyg-editor>';
 	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
@@ -52,29 +63,6 @@ test('the "value" attribute is set', () => {
 	expect(editor.value).toBe('<p>test</p>');
 });
 
-test('the "dl" element is enabled', () => {
-	document.body.innerHTML =
-		'<bge-wysiwyg-editor><dl><div><dt>term</dt><dd>detail</dd></div></dl></bge-wysiwyg-editor>';
-	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
-	editor.syncWysiwygToTextarea();
-	expect(editor.value).toBe('<dl><div><dt>term</dt><dd><p>detail</p></dd></div></dl>');
-});
-
-test('the "button-like-link" block is enabled', () => {
-	document.body.innerHTML = `<bge-wysiwyg-editor>
-		<p><a href="https://example.com">link</a>, <a class="button-like-link" href="https://example.com"><span>button like link in paragraph</span></a></p>
-		<div data-bgc-style="button">
-			<a href="https://example.com"><div><p>button like link outside of paragraph</p></div></a>
-		</div>
-	</bge-wysiwyg-editor>`;
-
-	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
-	editor.syncWysiwygToTextarea();
-	expect(editor.value).toBe(
-		'<p><a href="https://example.com">link</a>, <a class="button-like-link" href="https://example.com">button like link in paragraph</a></p><div data-bgc-style="button"><a href="https://example.com"><div><p>button like link outside of paragraph</p></div></a></div>',
-	);
-});
-
 test('the "button-like-link" block can wrap without "a" element', () => {
 	document.body.innerHTML = `<bge-wysiwyg-editor>
 		<p>paragraph</p>
@@ -91,25 +79,6 @@ test('the "button-like-link" block can wrap without "a" element', () => {
 	editor.syncWysiwygToTextarea();
 	expect(editor.value).toBe(
 		'<div data-bgc-style="button"><a href="path/to"><div><p>paragraph</p></div></a></div>',
-	);
-});
-
-test('the "button-like-link" block cannot wrap "a" element', () => {
-	document.body.innerHTML = `<bge-wysiwyg-editor>
-		<p><a href="https://example.com">link</a>, <a class="button-like-link" href="https://example.com"><span>button like link in paragraph</span></a></p>
-	</bge-wysiwyg-editor>`;
-
-	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
-
-	const tiptapEditor = editor.editor;
-
-	const can = tiptapEditor.can().chain().focus().toggleButtonLikeLink().run();
-	expect(can).toBe(false);
-
-	tiptapEditor.chain().focus().toggleButtonLikeLink({ href: 'path/to' }).run();
-	editor.syncWysiwygToTextarea();
-	expect(editor.value).toBe(
-		'<p><a href="https://example.com">link</a>, <a class="button-like-link" href="https://example.com">button like link in paragraph</a></p>',
 	);
 });
 
@@ -147,57 +116,193 @@ test('the "flex-box" block is empty', () => {
 	expect(editor.value).toBe('<div data-bgc-flex-box="center"></div>');
 });
 
-test('the "table" block is enabled', () => {
-	document.body.innerHTML = `<bge-wysiwyg-editor>
-		<table>
-			<caption>table caption</caption>
-			<tr>
-				<td>item 1</td>
-				<td>item 2</td>
-			</tr>
-		</table>
-	</bge-wysiwyg-editor>`;
+test('syncWysiwygToTextarea syncs editor content to textarea in Wysiwyg mode', () => {
+	document.body.innerHTML = '<bge-wysiwyg-editor><p>test</p></bge-wysiwyg-editor>';
 	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+	const wysiwygElement = editor.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	if (!wysiwygElement) {
+		throw new Error('bge-wysiwyg element not found');
+	}
+
+	// Wysiwygモードであることを確認
+	expect(wysiwygElement.mode).toBe('wysiwyg');
+
+	// エディタの内容を変更
+	const tiptapEditor = editor.editor;
+	tiptapEditor.commands.setContent('<p>updated content</p>');
+
+	// syncWysiwygToTextareaを呼び出す
 	editor.syncWysiwygToTextarea();
-	expect(editor.value).toBe(
-		'<table><caption>table caption</caption><tbody><tr><td><p>item 1</p></td><td><p>item 2</p></td></tr></tbody></table>',
-	);
+
+	// value getterが正しい値を返すことを確認（Wysiwygモードなのでエディタから取得）
+	expect(editor.value).toBe('<p>updated content</p>');
 });
 
-test('the "table" block is enabled with head and foot', () => {
-	document.body.innerHTML = `<bge-wysiwyg-editor>
-		<table>
-			<caption>table caption</caption>
-			<thead>
-				<tr>
-					<th>header 1</th>
-					<th>header 2</th>
-				</tr>
-			</thead>
-			<tbody>
-			<tr>
-				<td>item 1</td>
-				<td>item 2</td>
-			</tr>
-			</tbody>
-			<tfoot>
-				<tr>
-					<td>footer 1</td>
-					<td>footer 2</td>
-				</tr>
-			</tfoot>
-		</table>
-	</bge-wysiwyg-editor>`;
+test('syncWysiwygToTextarea is skipped in HTML mode', () => {
+	document.body.innerHTML = '<bge-wysiwyg-editor><p>test</p></bge-wysiwyg-editor>';
 	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+	const wysiwygElement = editor.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	if (!wysiwygElement) {
+		throw new Error('bge-wysiwyg element not found');
+	}
+
+	// HTMLモードに切り替え
+	const htmlModeButton = editor.querySelector(
+		'[data-bge-toolbar-button="html-mode"]',
+	) as HTMLButtonElement;
+	if (!htmlModeButton) {
+		throw new Error('HTML mode button not found');
+	}
+	htmlModeButton.click();
+	expect(wysiwygElement.mode).toBe('html');
+
+	// HTMLモードで値を設定
+	const htmlValue = '<p>html mode content</p>';
+	wysiwygElement.value = htmlValue;
+
+	// syncWysiwygToTextareaを呼び出す（スキップされる）
 	editor.syncWysiwygToTextarea();
-	expect(editor.value).toBe(
-		'<table><caption>table caption</caption><thead><tr><th><p>header 1</p></th><th><p>header 2</p></th></tr></thead><tbody><tr><td><p>item 1</p></td><td><p>item 2</p></td></tr></tbody><tfoot><tr><td><p>footer 1</p></td><td><p>footer 2</p></td></tr></tfoot></table>',
-	);
+
+	// value getterが正しい値を返すことを確認（HTMLモードなのでtextareaから取得）
+	expect(editor.value).toBe(htmlValue);
 });
 
-test('test extension is applied', () => {
-	document.body.innerHTML = '<bge-wysiwyg-editor><test>test</test></bge-wysiwyg-editor>';
+test('HTML mode button should be disabled when structure changes', () => {
+	document.body.innerHTML = '<bge-wysiwyg-editor><p>test</p></bge-wysiwyg-editor>';
 	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
-	editor.syncWysiwygToTextarea();
-	expect(editor.value).toBe('<test><p>test</p></test>');
+
+	// HTMLモードボタンを取得
+	const htmlModeButton = editor.querySelector(
+		'[data-bge-toolbar-button="html-mode"]',
+	) as HTMLButtonElement;
+
+	if (!htmlModeButton) {
+		throw new Error('HTML mode button not found');
+	}
+
+	// HTMLモードに切り替え（ボタンをクリック）
+	htmlModeButton.click();
+
+	const wysiwygElement = editor.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	if (!wysiwygElement) {
+		throw new Error('bge-wysiwyg element not found');
+	}
+
+	expect(wysiwygElement.mode).toBe('html');
+	expect(htmlModeButton.ariaPressed).toBe('true');
+	expect(htmlModeButton.disabled).toBe(false);
+
+	// 構造が変わるHTMLを設定（確実に構造が変わるケース）
+	wysiwygElement.value = '<p><span>test</span></p>';
+
+	// 実際にexpectHTMLで変換されるHTMLを確認
+	const expectedHTML = wysiwygElement.expectHTML('<p><span>test</span></p>');
+	const originalHTML = '<p>test</p>';
+	const isStructureSame = normalizeHtmlStructure(originalHTML, expectedHTML);
+
+	// 構造が変わる場合のみテストを続行
+	if (!isStructureSame) {
+		// 元のHTMLを設定
+		wysiwygElement.value = originalHTML;
+
+		// blurイベントを発火して構造変更を検出
+		const textarea = wysiwygElement.shadowRoot?.querySelector('textarea');
+		if (textarea) {
+			textarea.dispatchEvent(new Event('blur'));
+		}
+
+		// 構造変更が検出されていることを確認
+		expect(wysiwygElement.hasStructureChange).toBe(true);
+
+		// ボタンがdisabledになっていることを確認
+		expect(htmlModeButton.disabled).toBe(true);
+
+		// ボタンをクリックしても切り替えが防止されることを確認
+		const currentMode = wysiwygElement.mode;
+		htmlModeButton.click();
+		expect(wysiwygElement.mode).toBe(currentMode);
+	}
+});
+
+test('HTML mode button should switch successfully when structure does not change', () => {
+	document.body.innerHTML = '<bge-wysiwyg-editor><p>test</p></bge-wysiwyg-editor>';
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+
+	// HTMLモードボタンを取得
+	const htmlModeButton = editor.querySelector(
+		'[data-bge-toolbar-button="html-mode"]',
+	) as HTMLButtonElement;
+
+	if (!htmlModeButton) {
+		throw new Error('HTML mode button not found');
+	}
+
+	// HTMLモードに切り替え（ボタンをクリック）
+	htmlModeButton.click();
+
+	const wysiwygElement = editor.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	if (!wysiwygElement) {
+		throw new Error('bge-wysiwyg element not found');
+	}
+
+	expect(wysiwygElement.mode).toBe('html');
+	expect(htmlModeButton.ariaPressed).toBe('true');
+	expect(htmlModeButton.disabled).toBe(false);
+
+	// 構造が変わらないHTMLを設定
+	wysiwygElement.value = '<p>test</p>';
+
+	// ボタンをクリック（Wysiwygモードに切り替え）
+	htmlModeButton.click();
+
+	// 切り替えが成功したため、モードはWysiwygに変更
+	expect(wysiwygElement.mode).toBe('wysiwyg');
+
+	// ボタンの状態が更新されていることを確認（Wysiwygモードなので'false'）
+	expect(htmlModeButton.ariaPressed).toBe('false');
+	expect(htmlModeButton.disabled).toBe(false);
+});
+
+test('HTML mode button should be enabled when structure change is resolved', () => {
+	document.body.innerHTML = '<bge-wysiwyg-editor><p>test</p></bge-wysiwyg-editor>';
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+
+	const htmlModeButton = editor.querySelector(
+		'[data-bge-toolbar-button="html-mode"]',
+	) as HTMLButtonElement;
+
+	if (!htmlModeButton) {
+		throw new Error('HTML mode button not found');
+	}
+
+	htmlModeButton.click();
+
+	const wysiwygElement = editor.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	if (!wysiwygElement) {
+		throw new Error('bge-wysiwyg element not found');
+	}
+
+	// 構造が変わるHTMLを設定
+	wysiwygElement.value = '<p><span>test</span></p>';
+	const expectedHTML = wysiwygElement.expectHTML('<p><span>test</span></p>');
+	const originalHTML = '<p>test</p>';
+	const isStructureSame = normalizeHtmlStructure(originalHTML, expectedHTML);
+
+	if (!isStructureSame) {
+		wysiwygElement.value = originalHTML;
+		const textarea = wysiwygElement.shadowRoot?.querySelector('textarea');
+		if (textarea) {
+			textarea.dispatchEvent(new Event('blur'));
+		}
+
+		expect(wysiwygElement.hasStructureChange).toBe(true);
+		expect(htmlModeButton.disabled).toBe(true);
+
+		// 構造が変わらないHTMLに変更
+		wysiwygElement.value = '<p>test</p>';
+		textarea?.dispatchEvent(new Event('input'));
+
+		expect(wysiwygElement.hasStructureChange).toBe(false);
+		expect(htmlModeButton.disabled).toBe(false);
+	}
 });

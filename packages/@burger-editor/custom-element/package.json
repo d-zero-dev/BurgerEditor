@@ -26,6 +26,7 @@
 		"dev": "rollup -c -w"
 	},
 	"dependencies": {
+		"@burger-editor/utils": "4.0.0-alpha.34",
 		"@tabler/icons": "3.35.0",
 		"@tiptap/core": "3.13.0",
 		"@tiptap/extension-image": "3.13.0",
