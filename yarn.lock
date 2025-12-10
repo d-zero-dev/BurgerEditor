@@ -186,6 +186,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@burger-editor/custom-element@workspace:packages/@burger-editor/custom-element"
   dependencies:
+    "@burger-editor/utils": "npm:4.0.0-alpha.34"
     "@tabler/icons": "npm:3.35.0"
     "@tiptap/core": "npm:3.13.0"
     "@tiptap/extension-image": "npm:3.13.0"
