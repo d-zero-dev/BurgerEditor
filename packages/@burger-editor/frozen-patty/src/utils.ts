@@ -130,26 +130,35 @@ export function sanitizeHtml(html: string): string {
 	}
 
 	// Parse HTML safely using DOM parser for remaining sanitization
-	const doc = new DOMParser().parseFromString(sanitized, 'text/html');
-	const body = doc.body;
+	const fragment = new Range().createContextualFragment(sanitized);
 
 	// Remove event handler attributes from all elements
-	sanitizeElementAndChildren(body);
+	sanitizeElementAndChildren(fragment);
 
-	return body.innerHTML;
+	const newHtml = [...fragment.childNodes]
+		.map((node) => {
+			if (node instanceof Element) {
+				return node.outerHTML;
+			}
+			return node.textContent ?? node.nodeValue ?? '';
+		})
+		.join('');
+
+	return newHtml;
 }
 
 /**
  * Sanitizes an element and all its child elements
- * @param element Target element
+ * @param node Target element
  */
-function sanitizeElementAndChildren(element: Element): void {
-	// Remove dangerous attributes from current element
-	sanitizeAttributes(element);
+function sanitizeElementAndChildren(node: Node): void {
+	if (node instanceof Element) {
+		// Remove dangerous attributes from current element
+		sanitizeAttributes(node);
+	}
 
 	// Process child elements recursively
-	const children = element.children;
-	for (const child of children) {
+	for (const child of node.childNodes) {
 		sanitizeElementAndChildren(child);
 	}
 }

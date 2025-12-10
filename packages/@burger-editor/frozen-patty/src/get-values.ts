@@ -2,6 +2,7 @@ import type { Filter, FrozenPattyData, PrimitiveDatum } from './types.js';
 
 import { kebabCase } from '@burger-editor/utils';
 
+import { normalizeIndent } from './normalize-indent.js';
 import { parseFields } from './parse-fields.js';
 
 /**
@@ -48,7 +49,7 @@ export function getValues(
 					break;
 				}
 				case 'html': {
-					value = el.innerHTML.trim();
+					value = normalizeIndent(el.innerHTML);
 					break;
 				}
 				case 'style': {
@@ -85,7 +86,7 @@ export function getValues(
 				const val = el.value;
 				value = convertType ? convert(val) : val;
 			} else {
-				value = el.innerHTML.trim();
+				value = normalizeIndent(el.innerHTML);
 			}
 		}
 
