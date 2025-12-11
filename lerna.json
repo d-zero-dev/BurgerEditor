@@ -1,5 +1,5 @@
 {
-	"lerna": "8.2.1",
+	"lerna": "9.0.3",
 	"version": "4.0.0-alpha.34",
 	"packages": ["packages/@burger-editor/*"],
 	"npmClient": "yarn",
