@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.42](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.41...v4.0.0-alpha.42) (2025-12-11)
+
+### Features
+
+- **custom-element:** add mode switch lock on structure change ([641d2a8](https://github.com/d-zero-dev/BurgerEditor/commit/641d2a80d320691f9ea47f16af0981d567793a3a))
+
 # [4.0.0-alpha.34](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.33...v4.0.0-alpha.34) (2025-12-01)
 
 **Note:** Version bump only for package @burger-editor/custom-element
