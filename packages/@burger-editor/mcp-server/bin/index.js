@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { builtinEnvironments } from 'vitest/dist/environments.js';
+import { builtinEnvironments } from 'vitest/environments';
 
 import { run } from '../dist/index.js';
 
