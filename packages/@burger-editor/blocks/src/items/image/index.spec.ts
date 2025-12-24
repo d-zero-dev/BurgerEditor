@@ -42,8 +42,9 @@ function createItemElement(html?: string) {
 	el.dataset.bgi = imageItemSeed.name;
 	el.innerHTML = html ?? imageItemSeed.template;
 
-	const seeds = new Map<string, typeof imageItemSeed>();
-	seeds.set(imageItemSeed.name, imageItemSeed);
+	const seeds = new Map<string, typeof imageItemSeed>([
+		[imageItemSeed.name, imageItemSeed],
+	]);
 
 	const editor = createEditor(imageItemSeed.editor);
 

@@ -100,8 +100,8 @@ function compareAttributes(
 	attrs1: Record<string, string>,
 	attrs2: Record<string, string>,
 ): boolean {
-	const keys1 = Object.keys(attrs1).sort();
-	const keys2 = Object.keys(attrs2).sort();
+	const keys1 = Object.keys(attrs1).toSorted();
+	const keys2 = Object.keys(attrs2).toSorted();
 
 	// 属性名の数が異なる場合は異なる
 	if (keys1.length !== keys2.length) {

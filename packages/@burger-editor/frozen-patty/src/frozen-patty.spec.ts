@@ -258,12 +258,9 @@ test('Full data merge', () => {
 	expect(fp.toDOM().querySelector('[data-field="prop03"]')?.innerHTML).toBe(
 		'prop03-rewrite',
 	);
-	expect(
-		fp
-			.toDOM()
-			.querySelector('[data-field*="prop04:data-attr"]')
-			?.getAttribute('data-attr'),
-	).toBe('prop04-data-attr-rewrite');
+	expect(fp.toDOM().querySelector('[data-field*="prop04:data-attr"]')?.dataset.attr).toBe(
+		'prop04-data-attr-rewrite',
+	);
 	expect(fp.toDOM().querySelector('[data-field*="prop05"]')?.innerHTML).toBe(
 		'prop05-text-write',
 	);

@@ -107,9 +107,8 @@ export class BgeWysiwygElement extends HTMLElement {
 	}
 
 	get mode(): 'wysiwyg' | 'html' {
-		const modeAttr = this.shadowRoot
-			?.querySelector<HTMLDivElement>(`[data-bge-mode]`)
-			?.getAttribute('data-bge-mode');
+		const modeAttr =
+			this.shadowRoot?.querySelector<HTMLDivElement>(`[data-bge-mode]`)?.dataset.bgeMode;
 		return modeAttr === 'html' ? 'html' : 'wysiwyg';
 	}
 
