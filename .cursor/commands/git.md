@@ -1,7 +1,5 @@
 ---
 description: Git manipulation rules
-globs: *,**/*
-alwaysApply: true
 ---
 
 # Commit creation
