@@ -4,7 +4,6 @@
 	/* Custom max-width */
 	--bge-options-max-width--normal: calc(800 / 16 * 1rem);
 	--bge-options-max-width--small: calc(400 / 16 * 1rem);
-	--bge-options-max-width--medium: calc(600 / 16 * 1rem);
 	--bge-options-max-width--large: calc(1200 / 16 * 1rem);
 	--bge-options-max-width--full: 100dvi;
 	--bge-options-max-width: var(--bge-options-max-width--normal);
@@ -27,7 +26,7 @@
 	/* Custom padding-block */
 	--bge-options-padding-block--none: 0;
 	--bge-options-padding-block--small: 1rem;
-	--bge-options-padding-block--middle: 3rem;
+	--bge-options-padding-block--medium: 3rem;
 	--bge-options-padding-block--large: 5rem;
 	--bge-options-padding-block: var(--bge-options-padding-block--none);
 
@@ -35,7 +34,7 @@
 	--bge-options-padding-inline--default-gutter: 2rem;
 	--bge-options-padding-inline--none: 0;
 	--bge-options-padding-inline--small: 1rem;
-	--bge-options-padding-inline--middle: 3rem;
+	--bge-options-padding-inline--medium: 3rem;
 	--bge-options-padding-inline--large: 5rem;
 	--bge-options-padding-inline: var(--bge-options-padding-inline--default-gutter);
 
