@@ -32,7 +32,7 @@
 		"packages/@burger-editor/*"
 	],
 	"resolutions": {
-		"@burger-editor/mcp-server/zod": "3.24.2"
+		"@burger-editor/mcp-server/zod": "4.2.1"
 	},
 	"config": {
 		"commitizen": {

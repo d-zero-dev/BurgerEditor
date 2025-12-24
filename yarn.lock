@@ -249,7 +249,7 @@ __metadata:
     prettier: "npm:3.7.4"
     tsx: "npm:4.21.0"
     vite: "npm:7.3.0"
-    zod: "npm:4.0.17"
+    zod: "npm:4.2.1"
   bin:
     bge: ./server/index.js
   languageName: unknown
@@ -263,9 +263,9 @@ __metadata:
     "@burger-editor/legacy": "npm:4.0.0-alpha.42"
     "@burger-editor/migrator": "npm:4.0.0-alpha.42"
     "@burger-editor/utils": "npm:4.0.0-alpha.42"
-    "@modelcontextprotocol/sdk": "npm:1.22.0"
+    "@modelcontextprotocol/sdk": "npm:1.25.1"
     vitest: "npm:4.0.16"
-    zod: "npm:3.24.2"
+    zod: "npm:4.2.1"
   bin:
     bge-mcp-server: ./bin/mcp-server.js
   languageName: unknown
@@ -2150,7 +2150,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hono/node-server@npm:1.19.7":
+"@hono/node-server@npm:1.19.7, @hono/node-server@npm:^1.19.7":
   version: 1.19.7
   resolution: "@hono/node-server@npm:1.19.7"
   peerDependencies:
@@ -3051,10 +3051,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@modelcontextprotocol/sdk@npm:1.22.0":
-  version: 1.22.0
-  resolution: "@modelcontextprotocol/sdk@npm:1.22.0"
+"@modelcontextprotocol/sdk@npm:1.25.1":
+  version: 1.25.1
+  resolution: "@modelcontextprotocol/sdk@npm:1.25.1"
   dependencies:
+    "@hono/node-server": "npm:^1.19.7"
     ajv: "npm:^8.17.1"
     ajv-formats: "npm:^3.0.1"
     content-type: "npm:^1.0.5"
@@ -3064,16 +3065,21 @@ __metadata:
     eventsource-parser: "npm:^3.0.0"
     express: "npm:^5.0.1"
     express-rate-limit: "npm:^7.5.0"
+    jose: "npm:^6.1.1"
+    json-schema-typed: "npm:^8.0.2"
     pkce-challenge: "npm:^5.0.0"
     raw-body: "npm:^3.0.0"
-    zod: "npm:^3.23.8"
-    zod-to-json-schema: "npm:^3.24.1"
+    zod: "npm:^3.25 || ^4.0"
+    zod-to-json-schema: "npm:^3.25.0"
   peerDependencies:
     "@cfworker/json-schema": ^4.1.1
+    zod: ^3.25 || ^4.0
   peerDependenciesMeta:
     "@cfworker/json-schema":
       optional: true
-  checksum: 10c0/71f4bef238715c248aa197ce820f95ac4fc75c7c311fc7d88c2e01d12692bffc5c9b9e3fe4c266ae0cca5df08c5b2fb6d60ab05d8905399665b67417d297903e
+    zod:
+      optional: false
+  checksum: 10c0/bca74e841b5c2c534a3c20a760cc1508f0b20dab8d2b37bcb01944fac875704b40de8bf17f2865fb5d22684b261a5472ab339d80736e651639cd44d8edaa83d5
   languageName: node
   linkType: hard
 
@@ -10930,6 +10936,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"json-schema-typed@npm:^8.0.2":
+  version: 8.0.2
+  resolution: "json-schema-typed@npm:8.0.2"
+  checksum: 10c0/89f5e2fb1495483b705c027203c07277ee6bf2665165ad25a9cb55de5af7f72570326d13d32565180781e4083ad5c9688102f222baed7b353c2f39c1e02b0428
+  languageName: node
+  linkType: hard
+
 "json-stable-stringify-without-jsonify@npm:^1.0.1":
   version: 1.0.1
   resolution: "json-stable-stringify-without-jsonify@npm:1.0.1"
@@ -18065,15 +18078,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zod-to-json-schema@npm:^3.24.1":
-  version: 3.24.5
-  resolution: "zod-to-json-schema@npm:3.24.5"
-  peerDependencies:
-    zod: ^3.24.1
-  checksum: 10c0/0745b94ba53e652d39f262641cdeb2f75d24339fb6076a38ce55bcf53d82dfaea63adf524ebc5f658681005401687f8e9551c4feca7c4c882e123e66091dfb90
-  languageName: node
-  linkType: hard
-
 "zod-to-json-schema@npm:^3.25.0":
   version: 3.25.0
   resolution: "zod-to-json-schema@npm:3.25.0"
@@ -18083,17 +18087,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zod@npm:3.24.2, zod@npm:^3.23.8":
-  version: 3.24.2
-  resolution: "zod@npm:3.24.2"
-  checksum: 10c0/c638c7220150847f13ad90635b3e7d0321b36cce36f3fc6050ed960689594c949c326dfe2c6fa87c14b126ee5d370ccdebd6efb304f41ef5557a4aaca2824565
-  languageName: node
-  linkType: hard
-
-"zod@npm:4.0.17":
-  version: 4.0.17
-  resolution: "zod@npm:4.0.17"
-  checksum: 10c0/c56ef4cc02f8f52be8724c5a8b338266202d68477c7606bee9b7299818b75c9adc27f16f4b6704a372f3e7578bd016f389de19bfec766564b7c39d0d327c540a
+"zod@npm:4.2.1":
+  version: 4.2.1
+  resolution: "zod@npm:4.2.1"
+  checksum: 10c0/ecb5219bddf76a42d092a843fb98ad4cb78f1e1077082772b03ef032ee5cbc80790a4051836b962d26fb4af854323bc784d628bd1b8d9898149eba7af21c5560
   languageName: node
   linkType: hard
 
