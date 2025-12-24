@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.43](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.42...v4.0.0-alpha.43) (2025-12-24)
+
+### Bug Fixes
+
+- **mcp-server:** fix vitest import path ([bfae4a5](https://github.com/d-zero-dev/BurgerEditor/commit/bfae4a5118c6409d42b065b3fe54a6ba171d93d0))
+
 # [4.0.0-alpha.42](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.41...v4.0.0-alpha.42) (2025-12-11)
 
 **Note:** Version bump only for package @burger-editor/mcp-server
