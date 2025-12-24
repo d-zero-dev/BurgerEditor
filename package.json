@@ -26,7 +26,7 @@
 		"prepare": "husky",
 		"commit": "npx cz",
 		"co": "npx cz",
-		"up": "yarn upgrade-interactive"
+		"update": "yarn upgrade-interactive"
 	},
 	"workspaces": [
 		"packages/@burger-editor/*"
