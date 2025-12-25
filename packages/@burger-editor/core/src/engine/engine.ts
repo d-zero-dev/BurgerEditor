@@ -355,12 +355,17 @@ export class BurgerEditorEngine {
 
 	async #createItemElement(itemData: BlockItem | HTMLElement) {
 		if (typeof itemData !== 'string' && 'localName' in itemData) {
-			Item.rebind(itemData, this.items, this.itemEditorDialog);
-			return itemData;
+			const item = Item.rebind(itemData, this.items, this.itemEditorDialog);
+			return item.el;
 		}
 
 		const name = typeof itemData === 'string' ? itemData : itemData.name;
-		const item = await Item.create(name, this.items, this.itemEditorDialog);
+		const item = await Item.create(
+			name,
+			this.items,
+			this.itemEditorDialog,
+			typeof itemData === 'string' ? undefined : itemData.data,
+		);
 		return item.el;
 	}
 
