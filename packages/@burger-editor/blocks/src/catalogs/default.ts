@@ -265,19 +265,19 @@ export const defaultCatalog: BlockCatalog = {
 					[
 						{
 							name: 'button',
-							data: { kind: 'link', text: 'テキストリンク' },
+							data: { kind: 'text', text: 'テキストリンク' },
 						},
 					],
 					[
 						{
 							name: 'button',
-							data: { kind: 'link', text: 'テキストリンク' },
+							data: { kind: 'text', text: 'テキストリンク' },
 						},
 					],
 					[
 						{
 							name: 'button',
-							data: { kind: 'link', text: 'テキストリンク' },
+							data: { kind: 'text', text: 'テキストリンク' },
 						},
 					],
 				],
