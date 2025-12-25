@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.44](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.43...v4.0.0-alpha.44) (2025-12-25)
+
+### Bug Fixes
+
+- **blocks:** correct initial button kind data ([cb23669](https://github.com/d-zero-dev/BurgerEditor/commit/cb236696a94f705992ce6b6633ad366d8b0bf829))
+- **core:** apply item initial values from catalog options ([f54500d](https://github.com/d-zero-dev/BurgerEditor/commit/f54500dcb166dde8e230615a271001ae5c20121f))
+
 # [4.0.0-alpha.43](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.42...v4.0.0-alpha.43) (2025-12-24)
 
 ### Bug Fixes
