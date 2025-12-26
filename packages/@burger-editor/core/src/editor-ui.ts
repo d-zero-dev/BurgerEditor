@@ -24,7 +24,7 @@ export abstract class EditorUI {
 
 		if (options?.stylesheet) {
 			const url = createStylesheet(options.stylesheet, CSS_LAYER.ui);
-			appendStylesheetTo(this.el.ownerDocument, url);
+			appendStylesheetTo(this.el.ownerDocument, url, `${name}-${CSS_LAYER.ui}`);
 		}
 	}
 

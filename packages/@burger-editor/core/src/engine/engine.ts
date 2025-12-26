@@ -428,7 +428,20 @@ export class BurgerEditorEngine {
 			}),
 		);
 
-		const stylesheets = [layers, baseStylesheet, ...componentStylesheets];
+		const stylesheets = [
+			{
+				path: layers,
+				id: 'layers',
+			},
+			{
+				path: baseStylesheet,
+				id: 'base-stylesheet',
+			},
+			...componentStylesheets.map(({ blob, originalUrl }) => ({
+				path: blob,
+				id: originalUrl,
+			})),
+		];
 
 		const mainInitialContent =
 			typeof options.initialContents === 'string'

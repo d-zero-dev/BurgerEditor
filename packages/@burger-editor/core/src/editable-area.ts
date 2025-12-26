@@ -44,7 +44,10 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 		initialContent: string,
 		engine: BurgerEditorEngine,
 		createBlockMenu: UICreator,
-		stylesheets: readonly string[] = [],
+		stylesheets: readonly {
+			readonly path: string;
+			readonly id: string;
+		}[] = [],
 		classList: readonly string[] = [],
 	) {
 		const viewNode = document.createElement('div');
@@ -71,8 +74,8 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 		this.#frameElement.contentWindow.document.open();
 		this.#frameElement.contentWindow.document.close();
 
-		for (const cssPath of stylesheets) {
-			appendStylesheetTo(this.#frameElement.contentWindow.document, cssPath);
+		for (const { path, id } of stylesheets) {
+			appendStylesheetTo(this.#frameElement.contentWindow.document, path, id);
 		}
 
 		this.#frameElement.contentWindow.document.body.setAttribute(
@@ -257,7 +260,10 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 		initialContent: string,
 		engine: BurgerEditorEngine,
 		createBlockMenu: UICreator,
-		stylesheets?: readonly string[],
+		stylesheets?: readonly {
+			readonly path: string;
+			readonly id: string;
+		}[],
 		classList?: readonly string[],
 	) {
 		const editableArea = new EditableArea(
