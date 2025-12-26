@@ -44,7 +44,7 @@ export function getCustomProperties(
 	containerType?: ContainerType,
 ): CustomPropertyCategories {
 	const categories: CustomPropertyCategories = new Map();
-	const defaultValues = new Map<string, string>();
+	const defaultValues = new Map<string, CustomProperty>();
 
 	searchCustomProperty(scope, (cssProperty, value, layers) => {
 		if (!cssProperty.startsWith(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX)) {
@@ -84,7 +84,20 @@ export function getCustomProperties(
 					: newProperty,
 			);
 		} else {
-			defaultValues.set(propName, value);
+			const newDefaultValue: CustomProperty = {
+				value,
+				isDefault: true,
+				priority: layers.map((layer) => layer.priority),
+			};
+
+			const currentDefaultValue = defaultValues.get(propName);
+
+			defaultValues.set(
+				propName,
+				currentDefaultValue
+					? compareCustomPropertyByLayerPriority(currentDefaultValue, newDefaultValue)
+					: newDefaultValue,
+			);
 		}
 
 		categories.set(propName, currentMap);
@@ -98,7 +111,7 @@ export function getCustomProperties(
 		}
 	}
 
-	for (const [category, value] of defaultValues.entries()) {
+	for (const [category, property] of defaultValues.entries()) {
 		const currentMap = categories.get(category);
 
 		if (!currentMap) {
@@ -107,7 +120,8 @@ export function getCustomProperties(
 
 		for (const [key, customProperty] of currentMap.properties.entries()) {
 			if (
-				value === `var(${BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX}${category}--${key})`
+				property.value ===
+				`var(${BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX}${category}--${key})`
 			) {
 				customProperty.isDefault = true;
 			}

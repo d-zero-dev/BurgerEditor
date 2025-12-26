@@ -402,6 +402,96 @@ describe('Layers', () => {
 			},
 		});
 	});
+
+	test('Multiple Nested layers', () => {
+		const style = document.createElement('style');
+		style.textContent = `
+			@layer b, a;
+
+			@layer a {
+				[data-bge-container] {
+					--bge-options-width--a: 100%;
+					--bge-options-width--b: 200%;
+					--bge-options-width: var(--bge-options-width--a);
+				}
+			}
+
+			@layer b {
+				[data-bge-container] {
+					--bge-options-width--a: 100%;
+					--bge-options-width--b: 200%;
+					--bge-options-width: var(--bge-options-width--b);
+				}
+			}
+		`;
+		document.head.append(style);
+
+		const result = getCustomProperties(document);
+
+		const resultObj = toObject(result);
+
+		expect(resultObj).toMatchObject({
+			width: {
+				id: 'width',
+				name: 'width',
+				properties: {
+					a: {
+						isDefault: true,
+						value: '100%',
+					},
+					b: {
+						isDefault: false,
+						value: '200%',
+					},
+				},
+			},
+		});
+	});
+
+	test('Multiple Nested layers', () => {
+		const style = document.createElement('style');
+		style.textContent = `
+			@layer a, b;
+
+			@layer a {
+				[data-bge-container] {
+					--bge-options-width--a: 100%;
+					--bge-options-width--b: 200%;
+					--bge-options-width: var(--bge-options-width--a);
+				}
+			}
+
+			@layer b {
+				[data-bge-container] {
+					--bge-options-width--a: 100%;
+					--bge-options-width--b: 200%;
+					--bge-options-width: var(--bge-options-width--b);
+				}
+			}
+		`;
+		document.head.append(style);
+
+		const result = getCustomProperties(document);
+
+		const resultObj = toObject(result);
+
+		expect(resultObj).toMatchObject({
+			width: {
+				id: 'width',
+				name: 'width',
+				properties: {
+					a: {
+						isDefault: false,
+						value: '100%',
+					},
+					b: {
+						isDefault: true,
+						value: '200%',
+					},
+				},
+			},
+		});
+	});
 });
 
 describe('type', () => {
