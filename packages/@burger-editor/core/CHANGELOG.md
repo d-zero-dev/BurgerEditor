@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.45](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.44...v4.0.0-alpha.45) (2025-12-26)
+
+### Features
+
+- **core:** add comparePriority utility function ([35f5689](https://github.com/d-zero-dev/BurgerEditor/commit/35f5689b1605433d4bfd3ef788ff06f169eb4576))
+- **core:** add id parameter to stylesheet management ([678b012](https://github.com/d-zero-dev/BurgerEditor/commit/678b0121414bbd717a5edef13aa7e0252573d303))
+- **core:** support CSS layer priority in custom property resolution ([69eb47c](https://github.com/d-zero-dev/BurgerEditor/commit/69eb47cd815edeb7f6a8b0425888c43f24614abb))
+
 # [4.0.0-alpha.44](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.43...v4.0.0-alpha.44) (2025-12-25)
 
 ### Bug Fixes
