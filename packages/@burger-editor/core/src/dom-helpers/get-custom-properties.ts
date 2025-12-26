@@ -4,6 +4,7 @@ import {
 	BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX,
 	BLOCK_OPTION_SCOPE_SELECTOR,
 } from '../const.js';
+import { comparePriority } from '../utils/compare-priority.js';
 
 type CustomPropertyCategories = Map<string, CustomPropertyCategory>;
 
@@ -17,8 +18,21 @@ type CustomPropertyMap = Map<string, CustomProperty>;
 
 type CustomProperty = {
 	value: string;
+	priority: readonly number[];
 	isDefault: boolean;
 };
+
+interface CSSRuleWithLayerPriority {
+	readonly rule: CSSStyleRule;
+	readonly _cssText: string;
+	readonly layers: readonly LayerPriority[];
+}
+
+interface LayerPriority {
+	readonly priorityList: readonly string[];
+	readonly layerName: string | null;
+	readonly priority: number;
+}
 
 /**
  * Get all custom properties from document
@@ -32,7 +46,7 @@ export function getCustomProperties(
 	const categories: CustomPropertyCategories = new Map();
 	const defaultValues = new Map<string, string>();
 
-	searchCustomProperty(scope, (cssProperty, value) => {
+	searchCustomProperty(scope, (cssProperty, value, layers) => {
 		if (!cssProperty.startsWith(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX)) {
 			return;
 		}
@@ -51,11 +65,24 @@ export function getCustomProperties(
 		const currentMap = categories.get(propName) ?? {
 			id: propName,
 			name: propName.replaceAll(/^_[a-z]+_/g, ''),
-			properties: new Map(),
+			properties: new Map() as CustomPropertyMap,
 		};
 
 		if (key) {
-			currentMap.properties.set(key, { value, isDefault: false });
+			const newProperty: CustomProperty = {
+				value,
+				isDefault: false,
+				priority: layers.map((layer) => layer.priority),
+			};
+
+			const currentProperty = currentMap.properties.get(key);
+
+			currentMap.properties.set(
+				key,
+				currentProperty
+					? compareCustomPropertyByLayerPriority(currentProperty, newProperty)
+					: newProperty,
+			);
 		} else {
 			defaultValues.set(propName, value);
 		}
@@ -121,10 +148,15 @@ export function getCustomProperty(
 /**
  * Get all CSSStyleRule from CSSRule array recursively
  * @param rules - CSSRule array
+ * @param layers
  * @param scope - Document
  * @returns CSSStyleRule array
  */
-function getStyleRules(rules: CSSRuleList, scope: Document): readonly CSSStyleRule[] {
+function getStyleRules(
+	rules: CSSRuleList,
+	layers: readonly LayerPriority[],
+	scope: Document,
+): readonly CSSRuleWithLayerPriority[] {
 	const CSSStyleRule = scope.defaultView?.CSSStyleRule;
 	if (CSSStyleRule === undefined) {
 		throw new Error('CSSStyleRule is not available');
@@ -135,17 +167,52 @@ function getStyleRules(rules: CSSRuleList, scope: Document): readonly CSSStyleRu
 		throw new Error('CSSLayerBlockRule is not available');
 	}
 
-	const styleRules: CSSStyleRule[] = [];
+	const CSSLayerStatementRule = scope.defaultView?.CSSLayerStatementRule;
+	if (CSSLayerStatementRule === undefined) {
+		throw new Error('CSSLayerStatementRule is not available');
+	}
+
+	const layerPriorities = [...rules].filter(
+		(rule) => rule instanceof CSSLayerStatementRule,
+	);
+
+	const styleRules: CSSRuleWithLayerPriority[] = [];
 
 	for (const rule of rules) {
-		if (rule instanceof CSSStyleRule && rule.selectorText) {
-			styleRules.push(...getStyleRules(rule.cssRules, scope), rule);
-			continue;
+		if (rule instanceof CSSStyleRule) {
+			styleRules.push(
+				{
+					rule,
+					_cssText: rule.cssText,
+					layers,
+				},
+				...getStyleRules(rule.cssRules, layers, scope),
+			);
 		}
 
 		if (rule instanceof CSSLayerBlockRule) {
-			styleRules.push(...getStyleRules(rule.cssRules, scope));
-			continue;
+			const layerName = rule.name;
+			const foundPriorityLayerList = layerPriorities.find((priority) =>
+				priority.nameList.includes(layerName),
+			);
+
+			const priority =
+				foundPriorityLayerList?.nameList.toReversed().indexOf(layerName) ?? 0;
+
+			styleRules.push(
+				...getStyleRules(
+					rule.cssRules,
+					[
+						...layers,
+						{
+							priorityList: foundPriorityLayerList?.nameList ?? [],
+							layerName,
+							priority: 1 + priority,
+						},
+					],
+					scope,
+				),
+			);
 		}
 	}
 
@@ -159,21 +226,21 @@ function getStyleRules(rules: CSSRuleList, scope: Document): readonly CSSStyleRu
  */
 function searchCustomProperty(
 	scope: Document,
-	found: (property: string, value: string) => void,
+	found: (property: string, value: string, layers: readonly LayerPriority[]) => void,
 ) {
 	for (const styleSheet of scope.styleSheets) {
 		try {
-			const styleRules = getStyleRules(styleSheet.cssRules, scope);
+			const styleRules = getStyleRules(styleSheet.cssRules, [], scope);
+
 			for (const cssRule of styleRules) {
-				const selector = cssRule.selectorText.trim().replace(/^&/, '').trim();
+				const selector = cssRule.rule.selectorText.trim().replace(/^&/, '').trim();
 				if (selector === BLOCK_OPTION_SCOPE_SELECTOR) {
-					for (const cssProperty of cssRule.style) {
+					for (const cssProperty of cssRule.rule.style) {
 						if (!cssProperty.startsWith('--')) {
 							continue;
 						}
-						const value = cssRule.style.getPropertyValue(cssProperty);
-
-						found(cssProperty, value);
+						const value = cssRule.rule.style.getPropertyValue(cssProperty);
+						found(cssProperty, value, cssRule.layers);
 					}
 				}
 			}
@@ -184,4 +251,30 @@ function searchCustomProperty(
 			throw error;
 		}
 	}
+}
+
+/**
+ * Compare custom property by layer priority
+ *
+ * - レイヤーの数が少ないほど優先度が高い
+ * - レイヤーの数が同じ場合は、レイヤーの優先度の値が小さいほど優先度が高い
+ * - 全てのレイヤーの優先度が同じ場合は、bを返す
+ * @param a
+ * @param b
+ */
+function compareCustomPropertyByLayerPriority(
+	a: CustomProperty,
+	b: CustomProperty,
+): CustomProperty {
+	const result = comparePriority(a.priority, b.priority);
+	if (result === 0) {
+		return b;
+	}
+	if (result === -1) {
+		return b;
+	}
+	if (result === 1) {
+		return a;
+	}
+	return b;
 }
