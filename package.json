@@ -58,7 +58,7 @@
 		"@vitest/browser-playwright": "4.0.16",
 		"eslint-plugin-svelte": "3.13.1",
 		"husky": "9.1.7",
-		"jsdom": "27.3.0",
+		"jsdom": "27.4.0",
 		"lerna": "9.0.3",
 		"npm-run-all2": "8.0.4",
 		"playwright": "1.57.0",
