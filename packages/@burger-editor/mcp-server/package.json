@@ -36,6 +36,6 @@
 		"@burger-editor/utils": "4.0.0-alpha.45",
 		"@modelcontextprotocol/sdk": "1.25.1",
 		"vitest": "4.0.16",
-		"zod": "4.2.1"
+		"zod": "4.3.2"
 	}
 }
