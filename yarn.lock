@@ -224,7 +224,7 @@ __metadata:
     prettier: "npm:3.7.4"
     tsx: "npm:4.21.0"
     vite: "npm:7.3.0"
-    zod: "npm:4.2.1"
+    zod: "npm:4.3.2"
   bin:
     bge: ./server/index.js
   languageName: unknown
@@ -240,7 +240,7 @@ __metadata:
     "@burger-editor/utils": "npm:4.0.0-alpha.45"
     "@modelcontextprotocol/sdk": "npm:1.25.1"
     vitest: "npm:4.0.16"
-    zod: "npm:4.2.1"
+    zod: "npm:4.3.2"
   bin:
     bge-mcp-server: ./bin/mcp-server.js
   languageName: unknown
@@ -16644,7 +16644,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zod@npm:4.2.1, zod@npm:^3.25 || ^4.0":
+"zod@npm:4.3.2":
+  version: 4.3.2
+  resolution: "zod@npm:4.3.2"
+  checksum: 10c0/cc03e9372710695d64e8686d6846e13e91491fd36cee2bfb52d3191d680d646adf68aeacfae95fbb200b39e34ef7d60445d6eb34fd4e72da2251eb1518642f52
+  languageName: node
+  linkType: hard
+
+"zod@npm:^3.25 || ^4.0":
   version: 4.2.1
   resolution: "zod@npm:4.2.1"
   checksum: 10c0/ecb5219bddf76a42d092a843fb98ad4cb78f1e1077082772b03ef032ee5cbc80790a4051836b962d26fb4af854323bc784d628bd1b8d9898149eba7af21c5560
