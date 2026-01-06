@@ -1179,13 +1179,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@d-zero/markuplint-config@npm:5.0.0-alpha.76":
-  version: 5.0.0-alpha.76
-  resolution: "@d-zero/markuplint-config@npm:5.0.0-alpha.76"
+"@d-zero/markuplint-config@npm:5.0.0":
+  version: 5.0.0
+  resolution: "@d-zero/markuplint-config@npm:5.0.0"
   dependencies:
     "@markuplint/pug-parser": "npm:4.6.22"
     markuplint: "npm:4.14.0"
-  checksum: 10c0/b32e976c2e3283d0e8e80a400a00c2af17c6cf0377b26a105440674dd13fba0143b911155d12064d9399a7ee1209382363eca18aa013c68b701065bc34169779
+  checksum: 10c0/fa5a288e5380dda55f3a8efb09e5c1d8562bb7b8d40b30af334f52c089f5a016f575b30bbfe7c4e2b918b53398434af6852792366f072c375f690b9ec0415836
   languageName: node
   linkType: hard
 
@@ -13770,7 +13770,7 @@ __metadata:
     "@d-zero/cspell-config": "npm:5.0.0"
     "@d-zero/eslint-config": "npm:5.0.0"
     "@d-zero/lint-staged-config": "npm:5.0.0"
-    "@d-zero/markuplint-config": "npm:5.0.0-alpha.76"
+    "@d-zero/markuplint-config": "npm:5.0.0"
     "@d-zero/prettier-config": "npm:5.0.0-alpha.76"
     "@d-zero/stylelint-config": "npm:5.0.0-alpha.76"
     "@d-zero/textlint-config": "npm:5.0.0-alpha.76"
