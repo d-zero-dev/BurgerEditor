@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.46](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.45...v4.0.0-alpha.46) (2026-01-06)
+
+### Bug Fixes
+
+- **local:** normalize path ending with / to /index.html in content save endpoint ([db99886](https://github.com/d-zero-dev/BurgerEditor/commit/db998860e1fc945ad4bf54a942f7ae40c4b3557d))
+
+### Features
+
+- **local:** make indexFileName configurable ([bd9cda5](https://github.com/d-zero-dev/BurgerEditor/commit/bd9cda59a1ae3d8080eed132de3b166bc0a29686))
+
 # [4.0.0-alpha.45](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.44...v4.0.0-alpha.45) (2025-12-26)
 
 **Note:** Version bump only for package @burger-editor/local
