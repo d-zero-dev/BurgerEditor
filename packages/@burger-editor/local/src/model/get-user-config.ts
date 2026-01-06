@@ -37,6 +37,7 @@ export async function getUserConfig(): Promise<LocalServerConfig> {
 		classList: config.classList ?? [],
 		filesDir,
 		editableArea: config.editableArea ?? null,
+		indexFileName: config.indexFileName ?? 'index.html',
 		newFileContent: config.newFileContent?.trim() ?? '',
 		catalog: config.catalog ?? defaultCatalog,
 		enableImportBlock: config.enableImportBlock ?? true,

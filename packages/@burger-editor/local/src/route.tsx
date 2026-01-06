@@ -161,7 +161,7 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 			const data = c.req.valid('json');
 			let normalizedPath = data.path;
 			if (normalizedPath.endsWith('/')) {
-				normalizedPath += 'index.html';
+				normalizedPath += userConfig.indexFileName;
 			}
 			const targetFilePath = path.join(userConfig.documentRoot, normalizedPath);
 
@@ -257,7 +257,7 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 			let targetFilePath = path.join(userConfig.documentRoot, page);
 
 			if (targetFilePath.endsWith('/')) {
-				targetFilePath += 'index.html';
+				targetFilePath += userConfig.indexFileName;
 			}
 
 			const loadResult = await loadContent(

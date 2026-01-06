@@ -11,6 +11,7 @@ export interface LocalServerConfig {
 	readonly stylesheets: readonly string[];
 	readonly classList: readonly string[];
 	readonly editableArea: string | null;
+	readonly indexFileName: string;
 	readonly filesDir: LocalServerFileDirConfig;
 	readonly sampleImagePath: SamplePath;
 	readonly sampleFilePath: SamplePath;
