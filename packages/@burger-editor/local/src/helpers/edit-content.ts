@@ -121,52 +121,45 @@ export async function saveContent(
 		...prettierConfig,
 	};
 
+	let finalContent = newContent;
+
 	if (editableArea === null) {
 		log('No editable area, saving full content');
 
 		// Combine with Front Matter and save file if editableArea is null
-		let finalContent: string;
 		if (frontMatterData && Object.keys(frontMatterData).length > 0) {
 			finalContent = stringifyWithFrontMatter(
 				newContent,
 				frontMatterData,
 				originalFrontMatter,
 			);
-		} else {
-			finalContent = newContent;
 		}
+	} else {
+		// 1. Read existing file
+		const fileContent = await fs.readFile(filePath, 'utf8');
 
-		// Format entire file after Front Matter combination
-		finalContent = await format(finalContent, prettierOptions);
+		// 2. Front Matter separation
+		const parsed = parseFrontMatter(fileContent);
+		log('Existing Front Matter parsed: hasFrontMatter=%s', parsed.hasFrontMatter);
 
-		await fs.writeFile(filePath, finalContent, 'utf8');
-		return;
+		// 3. Update HTML (Fragment/Full Document compatible)
+		const selector = editableArea ?? 'body';
+		log('Save content to %s', selector);
+
+		// 4. Update editable area (fragment compatible)
+		const html = updateHtmlContent(parsed.content, selector, newContent);
+
+		// 5. Front Matter combination (after HTML stringification, before Prettier)
+		// Use new Front Matter data if provided, otherwise maintain existing
+		const finalFrontMatterData = frontMatterData ?? parsed.data;
+		const finalOriginalFrontMatter = originalFrontMatter ?? parsed.originalFrontMatter;
+
+		finalContent = stringifyWithFrontMatter(
+			html,
+			finalFrontMatterData,
+			finalOriginalFrontMatter,
+		);
 	}
-
-	// 1. Read existing file
-	const fileContent = await fs.readFile(filePath, 'utf8');
-
-	// 2. Front Matter separation
-	const parsed = parseFrontMatter(fileContent);
-	log('Existing Front Matter parsed: hasFrontMatter=%s', parsed.hasFrontMatter);
-
-	// 3. Update HTML (Fragment/Full Document compatible)
-	const selector = editableArea ?? 'body';
-	log('Save content to %s', selector);
-
-	// 4. Update editable area (fragment compatible)
-	const html = updateHtmlContent(parsed.content, selector, newContent);
-
-	// 5. Front Matter combination (after HTML stringification, before Prettier)
-	// Use new Front Matter data if provided, otherwise maintain existing
-	const finalFrontMatterData = frontMatterData ?? parsed.data;
-	const finalOriginalFrontMatter = originalFrontMatter ?? parsed.originalFrontMatter;
-
-	let finalContent = stringifyWithFrontMatter(
-		html,
-		finalFrontMatterData,
-		finalOriginalFrontMatter,
-	);
 
 	// 6. Format entire file after Front Matter combination
 	finalContent = await format(finalContent, prettierOptions);
