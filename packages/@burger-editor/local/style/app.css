@@ -86,3 +86,280 @@ body {
 		border-block-end: 1px solid #ffeaa7;
 	}
 }
+
+/* Front Matter Editor */
+.fm-editor {
+	margin-block-end: 1.5rem;
+	font-family:
+		system-ui,
+		-apple-system,
+		sans-serif;
+	font-size: 0.875rem;
+	background-color: var(--bge-dialog-background-color, #f9fafb);
+	border: 1px solid var(--bge-border-color, #d1d5db);
+	border-radius: 0.5rem;
+}
+
+.fm-editor-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding-block: 0.625rem;
+	padding-inline: 0.875rem;
+	background-color: var(--bge-dialog-header-background-color, #f3f4f6);
+	border-block-end: 1px solid var(--bge-border-color, #e5e7eb);
+	border-start-start-radius: 0.5rem;
+	border-start-end-radius: 0.5rem;
+	border-end-start-radius: 0;
+	border-end-end-radius: 0;
+}
+
+.fm-editor-toggle {
+	display: flex;
+	gap: 0.5rem;
+	align-items: center;
+	padding: 0;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--bge-text-color, #374151);
+	cursor: pointer;
+	background: none;
+	border: none;
+}
+
+.fm-editor-toggle:hover {
+	color: var(--bge-primary-color, #2563eb);
+}
+
+.fm-editor-toggle-icon {
+	font-size: 0.75rem;
+	transition: transform 0.15s ease;
+}
+
+.fm-editor-add {
+	padding-block: 0.375rem;
+	padding-inline: 0.75rem;
+	font-size: 0.75rem;
+	font-weight: 500;
+	color: var(--bge-primary-color, #2563eb);
+	cursor: pointer;
+	background-color: var(--bge-primary-color-light, #dbeafe);
+	border: 1px solid var(--bge-primary-color, #2563eb);
+	border-radius: 0.375rem;
+	transition:
+		background-color 0.15s ease,
+		color 0.15s ease;
+}
+
+.fm-editor-add:hover {
+	color: #fff;
+	background-color: var(--bge-primary-color, #2563eb);
+}
+
+.fm-editor-fields {
+	padding: 0.875rem;
+}
+
+.fm-editor-empty {
+	padding: 1rem;
+	color: var(--bge-text-muted-color, #6b7280);
+	text-align: center;
+}
+
+.fm-editor-field {
+	display: grid;
+	grid-template-columns: 10rem 1fr auto;
+	gap: 0.75rem;
+	align-items: start;
+	padding-block: 0.5rem;
+	border-block-end: 1px solid var(--bge-border-color, #e5e7eb);
+}
+
+.fm-editor-field:last-child {
+	border-block-end: none;
+}
+
+.fm-editor-field-label {
+	padding-block-start: 0.5rem;
+	font-weight: 500;
+	color: var(--bge-text-color, #374151);
+	word-break: break-all;
+}
+
+.fm-editor-field-input {
+	min-inline-size: 0;
+}
+
+.fm-editor-field-input input[type='text'],
+.fm-editor-field-input input[type='number'],
+.fm-editor-field-input input[type='date'],
+.fm-editor-field-input textarea {
+	inline-size: 100%;
+	padding-block: 0.5rem;
+	padding-inline: 0.75rem;
+	font-size: 0.875rem;
+	color: var(--bge-text-color, #1f2937);
+	background-color: var(--bge-input-background-color, #fff);
+	border: 1px solid var(--bge-border-color, #d1d5db);
+	border-radius: 0.375rem;
+	transition: border-color 0.15s ease;
+}
+
+.fm-editor-field-input input:focus,
+.fm-editor-field-input textarea:focus {
+	outline: none;
+	border-color: var(--bge-primary-color, #2563eb);
+}
+
+.fm-editor-field-input textarea {
+	min-block-size: 4rem;
+	font-family:
+		ui-monospace,
+		Cascadia Code,
+		Source Code Pro,
+		Menlo,
+		Consolas,
+		monospace;
+	font-size: 0.8125rem;
+	resize: vertical;
+}
+
+.fm-editor-field-input textarea.fm-editor-error {
+	background-color: var(--bge-error-background-color, #fef2f2);
+	border-color: var(--bge-error-color, #dc2626);
+}
+
+.fm-editor-field-input input[type='checkbox'] {
+	inline-size: 1.25rem;
+	block-size: 1.25rem;
+	margin-block-start: 0.5rem;
+	accent-color: var(--bge-primary-color, #2563eb);
+}
+
+.fm-editor-field[data-type='boolean'] {
+	align-items: center;
+}
+
+.fm-editor-field[data-type='boolean'] .fm-editor-field-label {
+	padding-block-start: 0;
+}
+
+.fm-editor-field-delete {
+	padding-block: 0.375rem;
+	padding-inline: 0.625rem;
+	font-size: 1rem;
+	line-height: 1;
+	color: var(--bge-text-muted-color, #9ca3af);
+	cursor: pointer;
+	background: none;
+	border: none;
+	border-radius: 0.25rem;
+	transition:
+		color 0.15s ease,
+		background-color 0.15s ease;
+}
+
+.fm-editor-field-delete:hover {
+	color: var(--bge-error-color, #dc2626);
+	background-color: var(--bge-error-background-color, #fef2f2);
+}
+
+/* Front Matter Dialog */
+.fm-editor-dialog {
+	inline-size: 24rem;
+	max-inline-size: 90vw;
+	padding: 0;
+	border: 1px solid var(--bge-border-color, #d1d5db);
+	border-radius: 0.5rem;
+	box-shadow:
+		0 20px 25px -5px rgb(0 0 0 / 0.1),
+		0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.fm-editor-dialog::backdrop {
+	background-color: rgb(0 0 0 / 0.4);
+}
+
+.fm-editor-dialog form {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	padding: 1.25rem;
+}
+
+.fm-editor-dialog h3 {
+	margin: 0;
+	font-size: 1rem;
+	font-weight: 600;
+	color: var(--bge-text-color, #1f2937);
+}
+
+.fm-editor-dialog-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+}
+
+.fm-editor-dialog-field label {
+	font-size: 0.8125rem;
+	font-weight: 500;
+	color: var(--bge-text-color, #374151);
+}
+
+.fm-editor-dialog-field input,
+.fm-editor-dialog-field select {
+	padding-block: 0.5rem;
+	padding-inline: 0.75rem;
+	font-size: 0.875rem;
+	color: var(--bge-text-color, #1f2937);
+	background-color: var(--bge-input-background-color, #fff);
+	border: 1px solid var(--bge-border-color, #d1d5db);
+	border-radius: 0.375rem;
+}
+
+.fm-editor-dialog-field input:focus,
+.fm-editor-dialog-field select:focus {
+	outline: none;
+	border-color: var(--bge-primary-color, #2563eb);
+}
+
+.fm-editor-dialog-actions {
+	display: flex;
+	gap: 0.5rem;
+	justify-content: flex-end;
+	margin-block-start: 0.5rem;
+}
+
+.fm-editor-dialog-cancel {
+	padding-block: 0.5rem;
+	padding-inline: 1rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: var(--bge-text-color, #374151);
+	cursor: pointer;
+	background-color: var(--bge-dialog-background-color, #fff);
+	border: 1px solid var(--bge-border-color, #d1d5db);
+	border-radius: 0.375rem;
+	transition: background-color 0.15s ease;
+}
+
+.fm-editor-dialog-cancel:hover {
+	background-color: var(--bge-border-color, #f3f4f6);
+}
+
+.fm-editor-dialog-submit {
+	padding-block: 0.5rem;
+	padding-inline: 1rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: #fff;
+	cursor: pointer;
+	background-color: var(--bge-primary-color, #2563eb);
+	border: 1px solid var(--bge-primary-color, #2563eb);
+	border-radius: 0.375rem;
+	transition: background-color 0.15s ease;
+}
+
+.fm-editor-dialog-submit:hover {
+	background-color: var(--bge-primary-color-dark, #1d4ed8);
+}
