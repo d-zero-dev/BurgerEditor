@@ -114,6 +114,13 @@ export async function saveContent(
 	frontMatterData?: Record<string, unknown>,
 	originalFrontMatter?: string,
 ) {
+	const prettierConfig = await resolveConfig(filePath);
+	const prettierOptions = {
+		parser: 'html',
+		printWidth: 100_000,
+		...prettierConfig,
+	};
+
 	if (editableArea === null) {
 		log('No editable area, saving full content');
 
@@ -130,12 +137,7 @@ export async function saveContent(
 		}
 
 		// Format entire file after Front Matter combination
-		const config = await resolveConfig(filePath);
-		finalContent = await format(finalContent, {
-			parser: 'html',
-			printWidth: 100_000,
-			...config,
-		});
+		finalContent = await format(finalContent, prettierOptions);
 
 		await fs.writeFile(filePath, finalContent, 'utf8');
 		return;
@@ -167,12 +169,7 @@ export async function saveContent(
 	);
 
 	// 6. Format entire file after Front Matter combination
-	const config = await resolveConfig(filePath);
-	finalContent = await format(finalContent, {
-		parser: 'html',
-		printWidth: 100_000,
-		...config,
-	});
+	finalContent = await format(finalContent, prettierOptions);
 
 	// 7. Save file
 	await fs.writeFile(filePath, finalContent, 'utf8');
