@@ -11,6 +11,7 @@ description: Git manipulation rules
      - Separate commits by package.
      - Commit dependencies first (if dependency order is unclear, check using `npx lerna list --graph`).
 - If the OS, application settings, or context suggest a language other than English is being used, provide a translation and explanation of the commit message in that language immediately before proposing the commit command to the user.
+- When the commit message is ready, try to execute it directly as `git commit` (the user will approve as appropriate).
 
 # Commit message format
 
