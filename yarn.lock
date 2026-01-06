@@ -1133,12 +1133,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@d-zero/csstree-scss-syntax@npm:5.0.0-alpha.76":
-  version: 5.0.0-alpha.76
-  resolution: "@d-zero/csstree-scss-syntax@npm:5.0.0-alpha.76"
+"@d-zero/csstree-scss-syntax@npm:5.0.0":
+  version: 5.0.0
+  resolution: "@d-zero/csstree-scss-syntax@npm:5.0.0"
   dependencies:
     css-tree: "npm:3.1.0"
-  checksum: 10c0/152e48ce84bbb2f70587a1b1f1a1ad8687ab6195c84391a408979d2108597a7014cf3b7c781066ccdf73e627c719fac672ee55b31f0907bccf4f7cfdec4316b0
+  checksum: 10c0/7f6a66a4047ae21ebfd9e74d593968af53ada188d9631a0f3b05e2e4747275a0920cb93aeb2d530e9abd74665fe66bf86504501b703cc6410542950eab2fbe99
   languageName: node
   linkType: hard
 
@@ -1215,32 +1215,32 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@d-zero/stylelint-config@npm:5.0.0-alpha.76":
-  version: 5.0.0-alpha.76
-  resolution: "@d-zero/stylelint-config@npm:5.0.0-alpha.76"
+"@d-zero/stylelint-config@npm:5.0.0":
+  version: 5.0.0
+  resolution: "@d-zero/stylelint-config@npm:5.0.0"
   dependencies:
-    "@d-zero/stylelint-rules": "npm:5.0.0-alpha.76"
+    "@d-zero/stylelint-rules": "npm:5.0.0"
     postcss-scss: "npm:4.0.9"
     stylelint: "npm:16.26.1"
     stylelint-config-recess-order: "npm:7.4.0"
     stylelint-config-standard: "npm:39.0.1"
-    stylelint-order: "npm:7.0.0"
-    stylelint-scss: "npm:6.13.0"
+    stylelint-order: "npm:7.0.1"
+    stylelint-scss: "npm:6.14.0"
     stylelint-use-logical: "npm:2.1.2"
-  checksum: 10c0/fae227228958b475abe75c4948490f9c2b6f952cbacef24c68d10d2594f1d0174da42aca31f75f1f81556ada86b5e427e8b3ac86f5367c372204c80902785fe9
+  checksum: 10c0/831fdd1c0d2726ce328acb48acc09c6fe453f79166a4bf7efdc7d0e69d8fee5445ac02dedd3d7bd652fa6eb8f243656a2cf3b378678d852b8e44f0ea32293408
   languageName: node
   linkType: hard
 
-"@d-zero/stylelint-rules@npm:5.0.0-alpha.76":
-  version: 5.0.0-alpha.76
-  resolution: "@d-zero/stylelint-rules@npm:5.0.0-alpha.76"
+"@d-zero/stylelint-rules@npm:5.0.0":
+  version: 5.0.0
+  resolution: "@d-zero/stylelint-rules@npm:5.0.0"
   dependencies:
-    "@d-zero/csstree-scss-syntax": "npm:5.0.0-alpha.76"
+    "@d-zero/csstree-scss-syntax": "npm:5.0.0"
     css-tree: "npm:3.1.0"
     postcss-selector-parser: "npm:7.1.1"
     postcss-value-parser: "npm:4.2.0"
     stylelint: "npm:16.26.1"
-  checksum: 10c0/b8d0cab48b78f1a46fdd41cc0a4232b7b594b8c6cd1cb2a467f27f6b9f111a78c3a38f2a5b96c807afb4acd6fe1c67e34f0e641276a73b7efececeee00f9710c
+  checksum: 10c0/ca1c1f4ea0c7690fa245edb63b5f1164cad31ec13e3e9b33dcef29b41bad34b2098047321d1b5082fedd4b88a7b8659b7c133a908a61539842b61fda3f1a01af
   languageName: node
   linkType: hard
 
@@ -12710,7 +12710,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss@npm:8.5.6, postcss@npm:^8.4.49, postcss@npm:^8.5.0, postcss@npm:^8.5.3, postcss@npm:^8.5.6":
+"postcss@npm:8.5.6, postcss@npm:^8.4.49, postcss@npm:^8.5.0, postcss@npm:^8.5.6":
   version: 8.5.6
   resolution: "postcss@npm:8.5.6"
   dependencies:
@@ -13772,7 +13772,7 @@ __metadata:
     "@d-zero/lint-staged-config": "npm:5.0.0"
     "@d-zero/markuplint-config": "npm:5.0.0"
     "@d-zero/prettier-config": "npm:5.0.0"
-    "@d-zero/stylelint-config": "npm:5.0.0-alpha.76"
+    "@d-zero/stylelint-config": "npm:5.0.0"
     "@d-zero/textlint-config": "npm:5.0.0-alpha.76"
     "@d-zero/tsconfig": "npm:1.0.0"
     "@markuplint/svelte-parser": "npm:4.7.12"
@@ -14607,21 +14607,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"stylelint-order@npm:7.0.0":
-  version: 7.0.0
-  resolution: "stylelint-order@npm:7.0.0"
+"stylelint-order@npm:7.0.1":
+  version: 7.0.1
+  resolution: "stylelint-order@npm:7.0.1"
   dependencies:
-    postcss: "npm:^8.5.3"
+    postcss: "npm:^8.5.6"
     postcss-sorting: "npm:^9.1.0"
   peerDependencies:
-    stylelint: ^16.18.0
-  checksum: 10c0/202ea7f0ce44b272f0ee8745383e347520663ef3defb9478c2dae8f33378950e32138815d038228db49383cab7b111148b9b9521e409311a91047cfc4740d507
+    stylelint: ^16.18.0 || ^17.0.0
+  checksum: 10c0/dfe3ab8f18725c9c2fead65f2940a6590208591ca267da6d25ee191c6e5f1df04813a6f6a76791bfe5f6fda33fbf6d81369c17c71831bfbd6802dfed26559845
   languageName: node
   linkType: hard
 
-"stylelint-scss@npm:6.13.0":
-  version: 6.13.0
-  resolution: "stylelint-scss@npm:6.13.0"
+"stylelint-scss@npm:6.14.0":
+  version: 6.14.0
+  resolution: "stylelint-scss@npm:6.14.0"
   dependencies:
     css-tree: "npm:^3.0.1"
     is-plain-object: "npm:^5.0.0"
@@ -14633,7 +14633,7 @@ __metadata:
     postcss-value-parser: "npm:^4.2.0"
   peerDependencies:
     stylelint: ^16.8.2
-  checksum: 10c0/57647d3e6d433c276d4285bb2f504e7bf9254699926da22781a39be23e702db0bbc3cb2d7e587c9267bee4f11ffae03222f2d99f8c173a0a9567ac8f5c86c7c3
+  checksum: 10c0/8bb49acc172347c644770939171d4e236dc35f5a2e9095d97ec8abbf8d1f4afe4a77a6c7b7e5e4113aa6feb0ece72d0d9b31b368183d98c9fdb040014cf2742d
   languageName: node
   linkType: hard
 
