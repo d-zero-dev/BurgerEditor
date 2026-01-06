@@ -57,6 +57,9 @@ export default {
 	// 編集可能エリアのセレクタ
 	editableArea: '.my-editor',
 
+	// インデックスファイル名（パスが / で終わる場合に使用）
+	indexFileName: 'index.html',
+
 	// ブロックカタログ
 	catalog: defaultCatalog,
 
@@ -103,6 +106,7 @@ title: 'New Page'
 - `stylesheets` (string[]): 読み込むスタイルシートのパス（デフォルト: []）
 - `classList` (string[]): ブロックに適用するCSSクラス（デフォルト: []）
 - `editableArea` (string | null): 編集可能エリアのセレクタ（デフォルト: null）
+- `indexFileName` (string): パスが `/` で終わる場合に使用するインデックスファイル名（デフォルト: 'index.html'）
 - `catalog` (BlockCatalog): ブロックカタログ（デフォルト: {}）
 - `newFileContent` (string): 新規ファイル作成時のテンプレート
 - `googleMapsApiKey` (string | null): Google Maps APIキー（デフォルト: null）
@@ -110,10 +114,10 @@ title: 'New Page'
 - `sampleFilePath` (string): サンプルファイルのパス
 - `filesDir` (object): ファイルタイプごとの保存先ディレクトリ
 - `open` (boolean): 起動時にブラウザを自動で開く（デフォルト: true）
-- `enableImportBlock` (boolean): インポートブロックを有効にする（デフォルト: false）
+- `enableImportBlock` (boolean): インポートブロックを有効にする（デフォルト: true）
 - `healthCheck` (object): ヘルスチェックの設定
-  - `enabled` (boolean): ヘルスチェックを有効にする（デフォルト: false）
-  - `interval` (number): チェック間隔（ミリ秒）（デフォルト: 30000）
+  - `enabled` (boolean): ヘルスチェックを有効にする（デフォルト: true）
+  - `interval` (number): チェック間隔（ミリ秒）（デフォルト: 10000）
   - `retryCount` (number): リトライ回数（デフォルト: 3）
 
 ## カスタムブロックカタログの追加
