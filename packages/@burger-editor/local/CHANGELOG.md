@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.47](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.46...v4.0.0-alpha.47) (2026-01-06)
+
+### Features
+
+- **local:** add Front Matter editor above BurgerEditor ([08a6f32](https://github.com/d-zero-dev/BurgerEditor/commit/08a6f328d26c88d9dff7aa529ec5e51ff8e7f161))
+
 # [4.0.0-alpha.46](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.45...v4.0.0-alpha.46) (2026-01-06)
 
 ### Bug Fixes
