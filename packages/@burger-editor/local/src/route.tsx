@@ -159,7 +159,11 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 		})
 		.post('/api/content', zValidator('json', apiSchema), async (c) => {
 			const data = c.req.valid('json');
-			const targetFilePath = path.join(userConfig.documentRoot, data.path);
+			let normalizedPath = data.path;
+			if (normalizedPath.endsWith('/')) {
+				normalizedPath += 'index.html';
+			}
+			const targetFilePath = path.join(userConfig.documentRoot, normalizedPath);
 
 			await saveContent(
 				targetFilePath,
