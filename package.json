@@ -56,7 +56,7 @@
 		"@markuplint/svelte-spec": "4.5.22",
 		"@vitest/browser": "4.0.16",
 		"@vitest/browser-playwright": "4.0.16",
-		"eslint-plugin-svelte": "3.13.1",
+		"eslint-plugin-svelte": "3.14.0",
 		"husky": "9.1.7",
 		"jsdom": "27.4.0",
 		"lerna": "9.0.3",
