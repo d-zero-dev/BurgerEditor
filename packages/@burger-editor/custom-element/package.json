@@ -28,11 +28,11 @@
 	"dependencies": {
 		"@burger-editor/utils": "4.0.0-alpha.47",
 		"@tabler/icons": "3.36.1",
-		"@tiptap/core": "3.15.1",
-		"@tiptap/extension-image": "3.15.1",
-		"@tiptap/extension-table": "3.15.1",
-		"@tiptap/pm": "3.15.1",
-		"@tiptap/starter-kit": "3.15.1"
+		"@tiptap/core": "3.15.3",
+		"@tiptap/extension-image": "3.15.3",
+		"@tiptap/extension-table": "3.15.3",
+		"@tiptap/pm": "3.15.3",
+		"@tiptap/starter-kit": "3.15.3"
 	},
 	"devDependencies": {
 		"rollup": "4.55.1",
