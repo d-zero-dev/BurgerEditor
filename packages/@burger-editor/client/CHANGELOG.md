@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.48](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.47...v4.0.0-alpha.48) (2026-01-08)
+
+### Bug Fixes
+
+- **client:** fix style extension select showing wrong value when before default ([700eae2](https://github.com/d-zero-dev/BurgerEditor/commit/700eae280d1709c005368c3b67376dae96c83993))
+
 # [4.0.0-alpha.47](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.46...v4.0.0-alpha.47) (2026-01-06)
 
 **Note:** Version bump only for package @burger-editor/client
