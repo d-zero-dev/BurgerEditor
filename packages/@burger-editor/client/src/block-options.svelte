@@ -273,7 +273,9 @@
 					{#each category.properties as [propName, data] (propName)}
 						<option
 							value={data.isDefault ? '@@default' : propName}
-							selected={options.style?.[category.id] === propName || data.isDefault}
+							selected={options.style?.[category.id] == null
+								? data.isDefault
+								: options.style[category.id] === propName}
 							>{`${propName} (${data.value})`}</option>
 					{/each}
 				</select>
