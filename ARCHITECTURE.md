@@ -15,6 +15,7 @@ graph TD
     client["@burger-editor/client<br/>(Svelte UI)"]
     custom["@burger-editor/custom-element<br/>(TipTap Web Components)"]
     migrator["@burger-editor/migrator<br/>(バージョン移行)"]
+    inspector["@burger-editor/inspector<br/>(HTML検査・検索)"]
     local["@burger-editor/local<br/>(ローカルファイルシステム CMS)"]
     mcp["@burger-editor/mcp-server<br/>(AI統合サーバー)"]
     legacy["@burger-editor/legacy<br/>(v3互換性サポート)"]
@@ -44,6 +45,12 @@ graph TD
     legacy --> migrator
     utils --> migrator
 
+    %% Inspector dependencies
+    core --> inspector
+
+    %% Local dependencies
+    inspector --> local
+
     %% MCP Server dependencies
     core --> mcp
     legacy --> mcp
@@ -51,7 +58,6 @@ graph TD
     utils --> mcp
 
     %% Independent packages
-    local
     legacy
 ```
 
@@ -103,19 +109,35 @@ graph TD
 
 #### Platform Layer（プラットフォーム層）
 
-**`@burger-editor/local`**
+**`@burger-editor/inspector`**
 
-- ローカルファイルシステム向けCMS実装
-- 依存関係: Hono, Node.js関連パッケージ、 jsdom
-- 責任: ローカルサーバー、ファイルIO、設定管理、CLI機能
-- **環境固有**: ローカルファイルシステム専用
-- **CLI機能**:
-  - `bge` - 開発サーバー起動
-  - `bge search` - HTML内のCSS変数検索（jsdomを使用してDOM解析、`@burger-editor/core`の`exportStyleOptions`を活用）
+- HTML検査・検索ユーティリティ
+- 依存関係: core, jsdom
+- 責任: HTML解析、CSS変数検索、jsdom互換性サポート
+- **プラットフォーム非依存**: Node.js環境で動作
+- **主要機能**:
+  - CSS変数検索（シンプル、ワイルドカード、OR、AND検索）
+  - jsdom要素のブラウザAPI互換化
+  - DOM解析ユーティリティ
 - **jsdom互換性**:
   - jsdomの`CSSStyleDeclaration`はiterableではないため、Proxyを使用してブラウザAPI互換にする
   - `proxyJsdomElementForIterableStyle`関数で`el.style`をiterableにラップ
   - coreの`exportStyleOptions`をそのまま再利用可能
+- **将来の拡張**:
+  - ブロック構造検索
+  - アイテム検索
+  - コンテンツ検索
+  - 依存関係分析
+
+**`@burger-editor/local`**
+
+- ローカルファイルシステム向けCMS実装
+- 依存関係: inspector, Hono, Node.js関連パッケージ
+- 責任: ローカルサーバー、ファイルIO、設定管理、CLI機能
+- **環境固有**: ローカルファイルシステム専用
+- **CLI機能**:
+  - `bge` - 開発サーバー起動
+  - `bge search` - HTML内のCSS変数検索（`@burger-editor/inspector`を使用）
 
 #### Support Layer（サポート層）
 

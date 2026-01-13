@@ -1,13 +1,14 @@
 import type { LocalServerConfig } from '../types.js';
+import type { SearchMatch, SearchParams } from '@burger-editor/inspector';
 
 import fs from 'node:fs/promises';
 
-import { getUserConfig } from '../model/get-user-config.js';
-import { parseSearchQuery, type SearchParams } from '../search/css-variable-matcher.js';
 import {
+	parseSearchQuery,
 	scanHtmlFilesWithMultipleQueries,
-	type SearchMatch,
-} from '../search/html-file-scanner.js';
+} from '@burger-editor/inspector';
+
+import { getUserConfig } from '../model/get-user-config.js';
 import { formatOutput } from '../search/output-formatter.js';
 
 export interface SearchFlags {

@@ -1,5 +1,5 @@
-import type { SearchMatch } from '../search/html-file-scanner.js';
 import type { LocalServerConfig } from '../types.js';
+import type { SearchMatch } from '@burger-editor/inspector';
 
 import path from 'node:path';
 
