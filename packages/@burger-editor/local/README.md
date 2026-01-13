@@ -16,16 +16,70 @@ yarn install
 npm install
 ```
 
-## 起動方法
+## CLIコマンド
+
+### サーバー起動
 
 ```bash
+# 開発モード
 yarn dev
+
+# 本番モード
+npx bge
+# または
+yarn bge
 ```
 
 開発サーバーが起動したら、ブラウザで以下にアクセスしてください：
 
 ```
 http://localhost:3000
+```
+
+### 検索コマンド
+
+HTMLファイル内のCSS変数（bge-options）を検索します。
+
+```bash
+# 基本的な検索
+npx bge search "margin=normal"
+
+# ワイルドカード検索（任意の値）
+npx bge search "margin=*"
+
+# OR検索（複数の値のいずれか）
+npx bge search "margin=normal,large,xlarge"
+
+# AND検索（すべての条件を満たす要素）
+npx bge search "margin=normal" "bg-color=blue"
+
+# URL形式で出力
+npx bge search "margin=normal" --url
+
+# ヘルプ表示
+npx bge search --help
+```
+
+#### 検索クエリフォーマット
+
+- **シンプル**: `{category}={value}` - 例: `"margin=normal"`
+- **ワイルドカード**: `{category}=*` - 例: `"margin=*"`（任意の値にマッチ）
+- **OR値**: `{category}={v1,v2,...}` - 例: `"margin=normal,large"`（いずれかの値）
+
+複数のクエリを指定すると、すべてのクエリに同時にマッチする要素のみを検索します（AND検索）。
+
+#### 出力形式
+
+デフォルトでは絶対パスと行番号を出力します：
+
+```
+/path/to/file.html:354
+```
+
+`--url` フラグを使用すると、localhost URLで出力します：
+
+```
+http://localhost:5255/file.html:354
 ```
 
 ## 設定ファイル

@@ -106,9 +106,16 @@ graph TD
 **`@burger-editor/local`**
 
 - ローカルファイルシステム向けCMS実装
-- 依存関係: Hono, Node.js関連パッケージ
-- 責任: ローカルサーバー、ファイルIO、設定管理
+- 依存関係: Hono, Node.js関連パッケージ、 jsdom
+- 責任: ローカルサーバー、ファイルIO、設定管理、CLI機能
 - **環境固有**: ローカルファイルシステム専用
+- **CLI機能**:
+  - `bge` - 開発サーバー起動
+  - `bge search` - HTML内のCSS変数検索（jsdomを使用してDOM解析、`@burger-editor/core`の`exportStyleOptions`を活用）
+- **jsdom互換性**:
+  - jsdomの`CSSStyleDeclaration`はiterableではないため、Proxyを使用してブラウザAPI互換にする
+  - `proxyJsdomElementForIterableStyle`関数で`el.style`をiterableにラップ
+  - coreの`exportStyleOptions`をそのまま再利用可能
 
 #### Support Layer（サポート層）
 

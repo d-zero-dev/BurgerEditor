@@ -5,6 +5,7 @@
 		// Lowercased
 		"nocheck",
 		"vbscript",
+		"xlarge",
 
 		// Dependencies
 		"hono",
