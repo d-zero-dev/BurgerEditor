@@ -286,6 +286,116 @@ export default {
 
 カスタムアイテムの作成方法については、[@burger-editor/core のREADME](../core/README.md#カスタムアイテムの作成) を参照してください。
 
+## プログラマティックAPI
+
+`@burger-editor/local` は、Honoサーバーと同じファイルアップロード機能をプログラムから使用できるAPIを提供しています。
+
+### ファイルアップロードAPI
+
+#### `getCandidateName()`
+
+アップロード候補のファイル名を生成します。ディレクトリ内の既存ファイルをスキャンし、次に使用可能なファイルIDを付与したファイル名を返します。
+
+```typescript
+import {
+	getCandidateName,
+	type EncodedFileName,
+} from '@burger-editor/local/get-candidate-name';
+
+const fileName: EncodedFileName = await getCandidateName(
+	'photo.jpg',
+	'/path/to/destination',
+);
+// => "12345__<encoded>.jpg" (ファイル名がBase64エンコードされる)
+```
+
+**パラメータ:**
+
+- `name` (string): 元のファイル名（拡張子を含む）
+- `destDir` (string): 保存先ディレクトリの絶対パス
+
+**戻り値:**
+
+- `Promise<EncodedFileName>`: エンコードされたファイル名（形式: `${number}__${string}`）
+
+#### `upload()`
+
+指定されたファイル名でファイルをアップロードします。`getCandidateName()` で取得した候補名を使用することで、ファイルの存在チェックやID管理を自分で制御できます。
+
+```typescript
+import { upload, type UploadResult } from '@burger-editor/local/upload';
+
+const result: UploadResult = await upload(
+	fileName, // getCandidateName() から取得した名前
+	'/path/to/destination',
+	fileBuffer, // File | ArrayBuffer
+);
+```
+
+**パラメータ:**
+
+- `fileName` (EncodedFileName): 保存するファイル名（`getCandidateName()` から取得）
+- `destDir` (string): 保存先ディレクトリの絶対パス
+- `file` (File | ArrayBuffer): アップロードするファイルデータ
+
+**戻り値:**
+
+- `Promise<UploadResult>`: アップロード結果
+  ```typescript
+  {
+  	filePath: string; // 保存されたファイルの絶対パス
+  	fileName: string; // 保存されたファイル名
+  	fileId: number; // ファイルID
+  	name: string; // デコードされた元のファイル名
+  	size: number; // ファイルサイズ（バイト）
+  	timestamp: number; // 保存時のタイムスタンプ
+  }
+  ```
+
+#### 使用例: ファイル存在チェック付きアップロード
+
+```typescript
+import { getCandidateName } from '@burger-editor/local/get-candidate-name';
+import { upload } from '@burger-editor/local/upload';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
+const destDir = '/path/to/images';
+const originalName = 'photo.jpg';
+
+// 1. 候補ファイル名を取得
+const fileName = await getCandidateName(originalName, destDir);
+
+// 2. ファイルの存在チェック（必要に応じて）
+const filePath = path.join(destDir, fileName);
+try {
+	await fs.access(filePath);
+	console.log('ファイルは既に存在します');
+	// 既存ファイルの処理...
+} catch {
+	// 3. ファイルが存在しない場合のみアップロード
+	const result = await upload(fileName, destDir, fileBuffer);
+	console.log('アップロード成功:', {
+		url: `/images/${result.fileName}`,
+		size: result.size,
+		id: result.fileId,
+	});
+}
+```
+
+#### 型安全性
+
+`getCandidateName()` の戻り値型は `EncodedFileName`（テンプレートリテラル型: `` `${number}__${string}` ``）であり、`upload()` の第一引数もこの型を要求します。これにより、誤った形式のファイル名を渡すことを型レベルで防ぎます。
+
+```typescript
+// OK
+const fileName = await getCandidateName('photo.jpg', '/images');
+await upload(fileName, '/images', buffer);
+
+// Type Error!
+await upload('invalid.jpg', '/images', buffer);
+```
+
 ## TypeScript型定義
 
 設定ファイルでTypeScriptの型補完を利用する場合：

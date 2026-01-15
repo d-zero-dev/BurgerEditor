@@ -12,6 +12,14 @@
 		"./import": {
 			"import": "./import/index.js",
 			"types": "./import/index.d.ts"
+		},
+		"./get-candidate-name": {
+			"import": "./server/helpers/get-candidate-name.js",
+			"types": "./server/helpers/get-candidate-name.d.ts"
+		},
+		"./upload": {
+			"import": "./server/helpers/upload.js",
+			"types": "./server/helpers/upload.d.ts"
 		}
 	},
 	"bin": {

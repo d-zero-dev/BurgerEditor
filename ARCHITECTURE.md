@@ -133,11 +133,24 @@ graph TD
 
 - ローカルファイルシステム向けCMS実装
 - 依存関係: inspector, Hono, Node.js関連パッケージ
-- 責任: ローカルサーバー、ファイルIO、設定管理、CLI機能
+- 責任: ローカルサーバー、ファイルIO、設定管理、CLI機能、プログラマティックAPI
 - **環境固有**: ローカルファイルシステム専用
 - **CLI機能**:
   - `bge` - 開発サーバー起動
   - `bge search` - HTML内のCSS変数検索（`@burger-editor/inspector`を使用）
+- **プログラマティックAPI**:
+  - ファイルアップロード機能をプログラムから利用可能
+  - Honoサーバーと同じロジックを共有
+  - `EncodedFileName` 型で誤ったファイル名を防止
+  - エクスポート:
+    - `@burger-editor/local/get-candidate-name` - ファイル名候補生成
+    - `@burger-editor/local/upload` - ファイルアップロード
+- **内部構造**:
+  - `helpers/scan-directory.ts` - ファイルスキャン共通ロジック（EXCLUDE_FILE_NAMES定義）
+  - `helpers/get-max-file-id.ts` - 最大ファイルID取得
+  - `helpers/get-candidate-name.ts` - 候補ファイル名生成（EncodedFileName型エクスポート）
+  - `helpers/upload.ts` - ファイルアップロード実装
+  - `model/FileListManager` - 上記helpers関数を使用してアップロード処理を実装
 
 #### Support Layer（サポート層）
 

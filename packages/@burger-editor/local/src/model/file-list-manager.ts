@@ -8,10 +8,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { validateClientPath } from '../helpers/client-path-validation.js';
-import { encode, parseName } from '../helpers/file-name.js';
+import { getCandidateName } from '../helpers/get-candidate-name.js';
 import { pagination } from '../helpers/pagination.js';
-
-const EXCLUDE_FILE_NAMES = [/^\..+/, 'Thumbs.db', 'desktop.ini', '$RECYCLE.BIN'];
+import { scanDirectory } from '../helpers/scan-directory.js';
+import { upload } from '../helpers/upload.js';
 
 export class FileListManager {
 	#allFileListCache: FileListItem[] | null = null;
@@ -50,25 +50,26 @@ export class FileListManager {
 		readonly uploaded: FileListItem;
 		readonly result: FileListResult;
 	}> {
-		const buffer = await file.arrayBuffer();
-		const ext = path.extname(file.name);
-		const fileBaseName = path.basename(file.name, ext);
-		const fileId = this.maxFileId() + 1;
-		const name = encode(fileBaseName);
-		const fileName = `${fileId}__${name}${ext}`;
-		const filePath = path.join(this.#serverDir, fileName);
-		await fs.mkdir(path.dirname(filePath), { recursive: true });
-		await fs.writeFile(filePath, Buffer.from(buffer));
-		const stats = await fs.stat(filePath);
+		// Get candidate file name
+		const fileName = await getCandidateName(file.name, this.#serverDir);
+
+		// Upload with the candidate name
+		const uploadResult = await upload(fileName, this.#serverDir, file);
+
+		// Clear cache after upload
 		this.#allFileListCache = null;
+
+		// Get updated list
 		const result = await this.getList();
+
+		// Convert UploadResult to FileListItem with URL
 		return {
 			uploaded: {
-				fileId: fileId.toString(),
-				name: fileBaseName,
-				url: `${this.#clientDir}/${fileName}`,
-				size: stats.size,
-				timestamp: stats.mtime.valueOf(),
+				fileId: uploadResult.fileId.toString(),
+				name: uploadResult.name,
+				url: `${this.#clientDir}/${uploadResult.fileName}`,
+				size: uploadResult.size,
+				timestamp: uploadResult.timestamp,
 				sizes: {},
 			},
 			result,
@@ -120,47 +121,26 @@ export class FileListManager {
 	}
 
 	async #getAllList(): Promise<FileListItem[]> {
-		const fileNames = await fs.readdir(this.#serverDir).catch(() => []);
-		const filePaths = fileNames.map((name) => ({
-			server: path.resolve(this.#serverDir, name),
-			client: path.join(this.#clientDir, name),
-		}));
+		// Use shared scanDirectory function
+		const excludePaths = this.#samplePath ? [this.#samplePath.server] : [];
+		const scannedFiles = await scanDirectory(this.#serverDir, excludePaths);
 
 		type FileData = Omit<FileListItem, 'sizes'> & { __size: string };
 
-		const excludes = EXCLUDE_FILE_NAMES.map((name) =>
-			typeof name === 'string' ? path.join(this.#serverDir, name) : name,
-		);
-
 		const allFiles = await Promise.all(
-			filePaths
-				.filter(
-					({ server }) =>
-						!(
-							excludes.some((exclude) => {
-								// Exclude files (Ex. .DS_Store)
-								if (exclude instanceof RegExp) {
-									return exclude.test(path.basename(server));
-								}
-								return exclude === server;
-							}) ||
-							// Exclude sample image
-							server === this.#samplePath?.server
-						),
-				)
-				.map<Promise<FileData | null>>(async (file) => {
-					const { fileId, name, size } = parseName(file.server);
-					const stat = await fs.stat(file.server);
+			scannedFiles.map<Promise<FileData | null>>(async (file) => {
+				const stat = await fs.stat(file.serverPath);
+				const clientUrl = path.join(this.#clientDir, path.basename(file.serverPath));
 
-					return {
-						fileId: fileId ?? 'N/A',
-						name,
-						url: file.client,
-						size: stat.size,
-						timestamp: stat.mtime.valueOf(),
-						__size: size,
-					};
-				}),
+				return {
+					fileId: file.fileId,
+					name: file.name,
+					url: clientUrl,
+					size: stat.size,
+					timestamp: stat.mtime.valueOf(),
+					__size: file.size,
+				};
+			}),
 		);
 
 		const fileMap = new Map<
