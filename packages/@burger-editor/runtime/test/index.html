@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ja">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>BurgerEditor Runtime Test</title>
+		<style>
+			body {
+				font-family:
+					system-ui,
+					-apple-system,
+					sans-serif;
+				max-width: 1200px;
+				margin: 0 auto;
+				padding: 2rem;
+			}
+			h1 {
+				color: #333;
+				margin-bottom: 0.5rem;
+			}
+			.description {
+				color: #666;
+				margin-bottom: 2rem;
+			}
+			#app {
+				margin-top: 2rem;
+			}
+			.test-section {
+				margin-bottom: 100px;
+				padding: 1rem;
+				border: 1px solid #eee;
+				border-radius: 8px;
+				background: #fafafa;
+			}
+			.test-section h2 {
+				margin-top: 0;
+				color: #555;
+				font-size: 1.2rem;
+			}
+			.test-section p {
+				margin: 0.5rem 0;
+				color: #666;
+				font-size: 0.9rem;
+			}
+			.spacer {
+				height: 150vh;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: #999;
+				font-size: 1.2rem;
+				background: linear-gradient(to bottom, #f0f0f0 0%, #ffffff 50%, #f0f0f0 100%);
+			}
+		</style>
+	</head>
+	<body>
+		<h1>🍔 BurgerEditor Runtime Test</h1>
+		<p class="description">Testing @burger-editor/runtime package functionality: Image modal (show-modal) and YouTube autoplay (IntersectionObserver)</p>
+
+		<div id="app"></div>
+
+		<script type="module" src="/test/main.ts"></script>
+	</body>
+</html>

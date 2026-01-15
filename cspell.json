@@ -3,6 +3,7 @@
 	"ignorePaths": [".vscode"],
 	"words": [
 		// Lowercased
+		"closedby",
 		"nocheck",
 		"vbscript",
 		"xlarge",
