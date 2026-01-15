@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.49](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.48...v4.0.0-alpha.49) (2026-01-15)
+
+### Features
+
+- **core:** export exportStyleOptions function ([02ebc4c](https://github.com/d-zero-dev/BurgerEditor/commit/02ebc4c940382745be24c57e843778951da114cb))
+- **inspector:** create new package for HTML inspection utilities ([fa418c8](https://github.com/d-zero-dev/BurgerEditor/commit/fa418c80f52148811fbb513875b4a3b3e3664058))
+- **local:** add bge search command for CSS variable search ([9e4fd1a](https://github.com/d-zero-dev/BurgerEditor/commit/9e4fd1a748f24423943bdcefaf3a9a36d2896550))
+- **runtime:** create new package for browser runtime functionality ([00446ea](https://github.com/d-zero-dev/BurgerEditor/commit/00446ea41fc8ee2c579e761526fc222de7a3d307))
+
 # [4.0.0-alpha.48](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.47...v4.0.0-alpha.48) (2026-01-08)
 
 ### Bug Fixes

@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.49](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.48...v4.0.0-alpha.49) (2026-01-15)
+
+### Features
+
+- **core:** export exportStyleOptions function ([02ebc4c](https://github.com/d-zero-dev/BurgerEditor/commit/02ebc4c940382745be24c57e843778951da114cb))
+
 # [4.0.0-alpha.48](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.47...v4.0.0-alpha.48) (2026-01-08)
 
 **Note:** Version bump only for package @burger-editor/core
