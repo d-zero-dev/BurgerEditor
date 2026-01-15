@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.50](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.49...v4.0.0-alpha.50) (2026-01-15)
+
+### Features
+
+- **local:** add programmatic file upload API ([ddaf8a0](https://github.com/d-zero-dev/BurgerEditor/commit/ddaf8a0013d83d7d736efe3d7a36d475b1d07f14))
+
 # [4.0.0-alpha.49](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.48...v4.0.0-alpha.49) (2026-01-15)
 
 ### Features
