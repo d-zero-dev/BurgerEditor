@@ -259,6 +259,14 @@
 				</label>
 			</div>
 		{/if}
+		<label>
+			<input
+				type="checkbox"
+				name="bge-options-linkarea"
+				value="true"
+				defaultChecked={options.containerProps.linkarea ?? false} />
+			<span>リンクエリア機能を有効にする</span>
+		</label>
 	</fieldset>
 {/if}
 
