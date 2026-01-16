@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/inspector",
-	"version": "4.0.0-alpha.50",
+	"version": "4.0.0-alpha.51",
 	"description": "BurgerEditor HTML inspection and search utilities",
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)",
@@ -26,7 +26,7 @@
 		"clean": "tsc --build --clean"
 	},
 	"dependencies": {
-		"@burger-editor/core": "4.0.0-alpha.50",
+		"@burger-editor/core": "4.0.0-alpha.51",
 		"jsdom": "25.0.1"
 	}
 }

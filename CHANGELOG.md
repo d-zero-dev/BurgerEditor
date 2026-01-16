@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.51](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.50...v4.0.0-alpha.51) (2026-01-16)
+
+### Features
+
+- **client:** add linkarea checkbox to block options ([c6ee2ee](https://github.com/d-zero-dev/BurgerEditor/commit/c6ee2ee23bb7c81a6285c5ade863925038e437ee))
+- **core:** add linkarea option to container props ([e283d89](https://github.com/d-zero-dev/BurgerEditor/commit/e283d892956057a3f17c60e0975875eff6fdc7d2))
+
 # [4.0.0-alpha.50](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.49...v4.0.0-alpha.50) (2026-01-15)
 
 ### Features
