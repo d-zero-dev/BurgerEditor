@@ -1,9 +1,11 @@
 import type { LocalServerConfig } from '../types.js';
 import type { SearchMatch } from '@burger-editor/inspector';
 
+import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 
-import { test, expect, describe } from 'vitest';
+import { test, expect, describe, beforeEach, afterEach } from 'vitest';
 
 import { validateAndParseQueries, formatSearchResults, executeSearch } from './search.js';
 
@@ -127,7 +129,64 @@ describe('formatSearchResults', () => {
 });
 
 describe('executeSearch (integration)', () => {
-	const testDocumentRoot = path.join(__dirname, '..', '..', '.test', 'src');
+	let testDocumentRoot: string;
+
+	beforeEach(async () => {
+		// Create temporary directory for tests
+		testDocumentRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'bge-search-test-'));
+
+		// Create test HTML files with proper BurgerEditor structure
+		// CSS variables must use the format: --bge-options-{category}: var(--bge-options-{category}--{value})
+		await fs.writeFile(
+			path.join(testDocumentRoot, 'test1.html'),
+			`<!DOCTYPE html>
+<html>
+<head>
+	<title>Test 1</title>
+</head>
+<body>
+	<div data-bge-container style="--bge-options-margin: var(--bge-options-margin--none); --bge-options-bg-color: var(--bge-options-bg-color--blue);">
+		<p>Test content</p>
+	</div>
+</body>
+</html>`,
+		);
+
+		await fs.writeFile(
+			path.join(testDocumentRoot, 'test2.html'),
+			`<!DOCTYPE html>
+<html>
+<head>
+	<title>Test 2</title>
+</head>
+<body>
+	<div data-bge-container style="--bge-options-margin: var(--bge-options-margin--large); --bge-options-padding: var(--bge-options-padding--small);">
+		<p>Another test</p>
+	</div>
+</body>
+</html>`,
+		);
+
+		await fs.writeFile(
+			path.join(testDocumentRoot, 'test3.html'),
+			`<!DOCTYPE html>
+<html>
+<head>
+	<title>Test 3</title>
+</head>
+<body>
+	<div data-bge-container style="--bge-options-margin: var(--bge-options-margin--none); --bge-options-bg-color: var(--bge-options-bg-color--blue);">
+		<p>Combined test</p>
+	</div>
+</body>
+</html>`,
+		);
+	});
+
+	afterEach(async () => {
+		// Clean up temporary directory
+		await fs.rm(testDocumentRoot, { recursive: true, force: true });
+	});
 
 	test('executes search and finds matches', async () => {
 		const searchParams = [
