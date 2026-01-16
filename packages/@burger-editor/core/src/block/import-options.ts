@@ -35,4 +35,14 @@ export function importOptions(el: HTMLElement, options: Partial<BlockData>) {
 	if (style) {
 		importStyleOptions(el, style);
 	}
+
+	// linkarea属性の処理
+	const groups = el.querySelectorAll<HTMLElement>('[data-bge-group]');
+	for (const group of groups) {
+		if (containerProps?.linkarea) {
+			group.dataset.bgeLinkarea = '';
+		} else {
+			delete group.dataset.bgeLinkarea;
+		}
+	}
 }

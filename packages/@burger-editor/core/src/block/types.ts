@@ -15,6 +15,7 @@ export type ContainerProps = {
 	readonly columns: number | null;
 	readonly float: 'start' | 'end' | null;
 	readonly frameSemantics: ContainerFrameSemantics;
+	readonly linkarea: boolean;
 };
 
 export type ContainerType = 'grid' | 'inline' | 'float';

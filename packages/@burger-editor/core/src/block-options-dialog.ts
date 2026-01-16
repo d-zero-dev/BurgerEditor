@@ -48,6 +48,7 @@ export class BlockOptionsDialog extends EditorDialog {
 		const float = formData.get('bge-options-float');
 		const classes = formData.get('bge-options-classes');
 		const id = formData.get('bge-options-id');
+		const linkarea = formData.get('bge-options-linkarea');
 
 		const styles = formData
 			.keys()
@@ -85,6 +86,7 @@ export class BlockOptionsDialog extends EditorDialog {
 					| 'align-baseline'
 					| null,
 				float: float as 'start' | 'end' | null,
+				linkarea: linkarea === 'true',
 			},
 			classList:
 				classes

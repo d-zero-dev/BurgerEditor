@@ -13,6 +13,7 @@ test('グリッドタイプのコンテナを正しく解析する', () => {
 		columns: 2,
 		float: null,
 		frameSemantics: 'div',
+		linkarea: false,
 	});
 
 	expect(exportContainerProps('grid:3:immutable')).toEqual({
@@ -25,6 +26,7 @@ test('グリッドタイプのコンテナを正しく解析する', () => {
 		columns: 3,
 		float: null,
 		frameSemantics: 'div',
+		linkarea: false,
 	});
 
 	expect(exportContainerProps('grid:3:auto-fit')).toEqual({
@@ -37,6 +39,7 @@ test('グリッドタイプのコンテナを正しく解析する', () => {
 		columns: 3,
 		float: null,
 		frameSemantics: 'div',
+		linkarea: false,
 	});
 
 	expect(exportContainerProps('grid:3:auto-fill')).toEqual({
@@ -49,6 +52,7 @@ test('グリッドタイプのコンテナを正しく解析する', () => {
 		columns: 3,
 		float: null,
 		frameSemantics: 'div',
+		linkarea: false,
 	});
 });
 
@@ -63,6 +67,7 @@ test('インラインタイプのコンテナを正しく解析する', () => {
 		columns: null,
 		float: null,
 		frameSemantics: 'div',
+		linkarea: false,
 	});
 
 	expect(exportContainerProps('inline:between:align-center:nowrap')).toEqual({
@@ -75,6 +80,7 @@ test('インラインタイプのコンテナを正しく解析する', () => {
 		columns: null,
 		float: null,
 		frameSemantics: 'div',
+		linkarea: false,
 	});
 });
 
@@ -89,6 +95,7 @@ test('フロートタイプのコンテナを正しく解析する', () => {
 		columns: null,
 		float: 'start',
 		frameSemantics: 'div',
+		linkarea: false,
 	});
 
 	expect(exportContainerProps('float:end:immutable')).toEqual({
@@ -101,6 +108,7 @@ test('フロートタイプのコンテナを正しく解析する', () => {
 		columns: null,
 		float: 'end',
 		frameSemantics: 'div',
+		linkarea: false,
 	});
 });
 
@@ -115,6 +123,7 @@ test('コンテナタイプが未定義の場合、デフォルト値を返す',
 		columns: null,
 		float: null,
 		frameSemantics: 'div',
+		linkarea: false,
 	});
 });
 
@@ -129,6 +138,7 @@ test('無効なオプションは無視される', () => {
 		columns: 2,
 		float: null,
 		frameSemantics: 'div',
+		linkarea: false,
 	});
 });
 
@@ -144,6 +154,7 @@ test('auto-fillとauto-fitの優先順位を正しく処理する', () => {
 		columns: 3,
 		float: null,
 		frameSemantics: 'div',
+		linkarea: false,
 	});
 
 	// auto-fitのみの場合
@@ -157,5 +168,6 @@ test('auto-fillとauto-fitの優先順位を正しく処理する', () => {
 		columns: 3,
 		float: null,
 		frameSemantics: 'div',
+		linkarea: false,
 	});
 });

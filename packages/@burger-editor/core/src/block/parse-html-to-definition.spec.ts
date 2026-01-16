@@ -66,6 +66,7 @@ describe('parseHTMLToBlockData', () => {
 				columns: null,
 				float: null,
 				frameSemantics: 'div',
+				linkarea: false,
 			},
 			style: {
 				'max-width': 'full',

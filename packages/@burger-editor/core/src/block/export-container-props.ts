@@ -55,5 +55,6 @@ export function exportContainerProps(containerPropsQuery?: string): ContainerPro
 				: null,
 		float: type === 'float' ? findValueFromArray(options, ['start', 'end']) : null,
 		frameSemantics: findValueFromArray(options, ['div', 'ul', 'ol']) ?? 'div',
+		linkarea: false,
 	};
 }

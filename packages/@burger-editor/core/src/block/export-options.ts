@@ -15,8 +15,17 @@ export function exportOptions(
 	const id = el.id.replace(/^bge-/, '').trim() || null;
 	const style = exportStyleOptions(el);
 
+	// linkarea状態の取得（グループ要素の属性から）
+	const groups = el.querySelectorAll<HTMLDivElement>('[data-bge-group]');
+	const hasLinkarea = [...groups].some((group) =>
+		Object.hasOwn(group.dataset, 'bgeLinkarea'),
+	);
+
 	return {
-		containerProps,
+		containerProps: {
+			...containerProps,
+			linkarea: hasLinkarea,
+		},
 		classList,
 		id,
 		style,
