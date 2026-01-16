@@ -51,6 +51,7 @@ BurgerEditorはLernaを使用したモノレポ構成を採用しています。
 | [@burger-editor/local](./packages/@burger-editor/local/)                   | [![npm version](https://badge.fury.io/js/@burger-editor%2Flocal.svg)](https://badge.fury.io/js/@burger-editor%2Flocal)                   | ローカルファイルシステム向けCMS実装       |
 | [@burger-editor/mcp-server](./packages/@burger-editor/mcp-server/)         | [![npm version](https://badge.fury.io/js/@burger-editor%2Fmcp-server.svg)](https://badge.fury.io/js/@burger-editor%2Fmcp-server)         | MCP (Model Context Protocol) サーバー実装 |
 | [@burger-editor/migrator](./packages/@burger-editor/migrator/)             | [![npm version](https://badge.fury.io/js/@burger-editor%2Fmigrator.svg)](https://badge.fury.io/js/@burger-editor%2Fmigrator)             | バージョン間移行ツール                    |
+| [@burger-editor/runtime](./packages/@burger-editor/runtime/)               | [![npm version](https://badge.fury.io/js/@burger-editor%2Fruntime.svg)](https://badge.fury.io/js/@burger-editor%2Fruntime)               | ブラウザ用ランタイムライブラリ            |
 | [@burger-editor/utils](./packages/@burger-editor/utils/)                   | [![npm version](https://badge.fury.io/js/@burger-editor%2Futils.svg)](https://badge.fury.io/js/@burger-editor%2Futils)                   | 共通ユーティリティ関数                    |
 
 #### 開発環境のセットアップ

@@ -20,6 +20,7 @@ graph TD
     mcp["@burger-editor/mcp-server<br/>(AI統合サーバー)"]
     legacy["@burger-editor/legacy<br/>(v3互換性サポート)"]
     css["@burger-editor/css<br/>(blocks全CSS統合配布)"]
+    runtime["@burger-editor/runtime<br/>(ブラウザ用ランタイム)"]
 
     %% Core dependencies
     utils --> frozen
@@ -59,6 +60,7 @@ graph TD
 
     %% Independent packages
     legacy
+    runtime
 ```
 
 ### 各パッケージの責任
@@ -176,6 +178,16 @@ graph TD
 - blocksの全CSSファイル（general.css + 各アイテムのstyle.css）を統合配布
 - 依存関係: blocks（ビルド時）
 - 責任: blocksのスタイルを単独で利用可能にする配布パッケージ
+
+**`@burger-editor/runtime`**
+
+- BurgerEditorで生成されたコンテンツをブラウザで動作させるためのランタイムライブラリ
+- 依存関係: なし（独立パッケージ）
+- 責任: ブラウザ側のインタラクティブ機能の提供
+- **プラットフォーム非依存**: どのCMSで生成されたコンテンツでも利用可能
+- **主要機能**:
+  - 画像モーダル表示（Invoker Commands API使用）
+  - 将来的な拡張機能の基盤
 
 ## アーキテクチャ原則
 
