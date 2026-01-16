@@ -30,8 +30,8 @@
 		"@burger-editor/blocks": "4.0.0-alpha.51",
 		"@burger-editor/core": "4.0.0-alpha.51",
 		"@burger-editor/css": "4.0.0-alpha.51",
-		"typescript": "^5.7.2",
-		"vite": "^6.0.7",
+		"typescript": "5.9.3",
+		"vite": "6.4.1",
 		"vite-plugin-dts": "4.5.4"
 	}
 }
