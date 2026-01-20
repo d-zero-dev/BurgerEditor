@@ -35,7 +35,7 @@
 		"@burger-editor/migrator": "4.0.0-alpha.51",
 		"@burger-editor/utils": "4.0.0-alpha.51",
 		"@tabler/icons-svelte": "3.36.1",
-		"jquery": "3.7.1",
+		"jquery": "4.0.0",
 		"svelte": "5.47.1"
 	},
 	"devDependencies": {
