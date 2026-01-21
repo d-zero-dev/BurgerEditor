@@ -344,6 +344,67 @@ export default {
 
 接続が失われると、クライアントは自動的にリトライを行い、`bge:server-offline` および `bge:server-online` イベントを発行します。
 
+## サーバー設定とヘルスチェックAPI
+
+### getUserConfig()
+
+サーバー設定を取得する関数です。`burgereditor.config.js` から設定を読み込み、デフォルト値とマージして返します。
+
+```typescript
+import { getUserConfig } from '@burger-editor/local/get-user-config';
+
+const config = await getUserConfig();
+console.log(config.host, config.port); // 'localhost' 5255
+```
+
+**戻り値:** `Promise<LocalServerConfig>`
+
+### createHealthChecker()
+
+BurgerEditor local サーバーのヘルスチェックを行う `HealthMonitor` インスタンスを作成します。ブラウザ環境で動作し、サーバーの `/api/health` エンドポイントを定期的にチェックします。
+
+```typescript
+import { getUserConfig } from '@burger-editor/local/get-user-config';
+import { createHealthChecker } from '@burger-editor/local/create-health-checker';
+
+const config = await getUserConfig();
+const healthMonitor = createHealthChecker(config);
+
+// オプション: カスタムコールバックを設定
+healthMonitor.onOffline = (timestamp) => {
+	console.log('Server went offline at', new Date(timestamp));
+	// カスタム処理（例: ユーザーに通知を表示）
+};
+
+healthMonitor.onOnline = (timestamp) => {
+	console.log('Server came online at', new Date(timestamp));
+	// カスタム処理（例: 通知を非表示）
+};
+
+// 監視を開始
+healthMonitor.start();
+
+// 現在の状態を確認
+console.log('Is online?', healthMonitor.isOnline);
+
+// 監視を停止
+// healthMonitor.stop();
+```
+
+**パラメータ:**
+
+- `config` (LocalServerConfig): `getUserConfig()` で取得したサーバー設定
+
+**戻り値:** `HealthMonitor` - ヘルスモニターインスタンス
+
+**HealthMonitor API:**
+
+- `start()`: 監視を開始
+- `stop()`: 監視を停止
+- `isOnline` (getter): 現在のオンライン状態（boolean）
+- `onOffline` (setter): サーバーがオフラインになった時のコールバック
+- `onOnline` (setter): サーバーがオンラインになった時のコールバック
+
 ## プログラマティックAPI
 
 `@burger-editor/local` は、Honoサーバーと同じファイルアップロード機能をプログラムから使用できるAPIを提供しています。

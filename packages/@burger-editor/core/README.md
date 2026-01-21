@@ -971,3 +971,67 @@ const blockData = {
 4. **編集**: ユーザーがエディタでデータを編集する
 5. **保存**: `onSubmit()` → `beforeChange()` → データ更新 → `migrateElement()` → `change` イベント発火
 6. **マイグレーション**: バージョンが古い場合、`migrate()` と `migrateElement()` が実行される
+
+## ヘルスモニタリング
+
+`@burger-editor/core/health` から `HealthMonitor` クラスをインポートして、サーバーの接続状態を監視できます。
+
+### HealthMonitor
+
+サーバーのヘルスチェックを定期的に実行し、オンライン/オフライン状態の変化をコールバックで通知します。
+
+```typescript
+import { HealthMonitor } from '@burger-editor/core/health';
+
+const healthMonitor = new HealthMonitor({
+	enabled: true,
+	interval: 10_000, // 10秒ごとにチェック
+	retryCount: 3, // 3回連続失敗でオフラインと判定
+	async checkHealth() {
+		// カスタムヘルスチェック処理
+		try {
+			const response = await fetch('//localhost:3000/api/health');
+			return response.ok;
+		} catch {
+			return false;
+		}
+	},
+	onOffline: (timestamp) => {
+		console.log('Server went offline at', new Date(timestamp));
+	},
+	onOnline: (timestamp) => {
+		console.log('Server came online at', new Date(timestamp));
+	},
+});
+
+// 監視を開始
+healthMonitor.start();
+
+// 現在の状態を確認
+console.log('Is online?', healthMonitor.isOnline);
+
+// 監視を停止
+// healthMonitor.stop();
+```
+
+**HealthMonitorOptions:**
+
+- `enabled` (boolean): ヘルスチェックを有効にするか（デフォルト: `false`）
+- `interval` (number): チェック間隔（ミリ秒）（デフォルト: `10000`）
+- `retryCount` (number): オフライン判定までの連続失敗回数（デフォルト: `3`）
+- `checkHealth` (HealthCheckFunction): ヘルスチェック関数（オプション）
+- `onOffline` (`(timestamp: number) => void`): サーバーがオフラインになった時のコールバック（オプション）
+- `onOnline` (`(timestamp: number) => void`): サーバーがオンラインになった時のコールバック（オプション）
+
+**HealthMonitor API:**
+
+- `start()`: 監視を開始
+- `stop()`: 監視を停止
+- `isOnline` (getter): 現在のオンライン状態（boolean）
+
+**動作の詳細:**
+
+- 通常状態では `interval` 間隔でヘルスチェックを実行
+- ヘルスチェックが失敗すると、指数バックオフでリトライ間隔を短縮（素早く検知）
+- `retryCount` 回連続で失敗すると、オフライン状態に遷移し `onOffline` コールバックを実行
+- オフライン状態からヘルスチェックが成功すると、オンライン状態に復帰し `onOnline` コールバックを実行
