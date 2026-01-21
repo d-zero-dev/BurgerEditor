@@ -286,6 +286,64 @@ export default {
 
 カスタムアイテムの作成方法については、[@burger-editor/core のREADME](../core/README.md#カスタムアイテムの作成) を参照してください。
 
+## APIエンドポイント
+
+### Health Check API
+
+BurgerEditorローカルサーバーが起動中かどうかを確認するためのヘルスチェックAPIを提供しています。
+
+#### エンドポイント
+
+```
+GET /api/health
+```
+
+#### レスポンス
+
+```json
+{
+	"status": "ok",
+	"timestamp": 1737446400000
+}
+```
+
+- `status` (string): サーバーの状態。常に `"ok"` を返します
+- `timestamp` (number): レスポンス生成時のタイムスタンプ（ミリ秒）
+
+#### 使用例
+
+curlコマンドで確認：
+
+```bash
+curl http://localhost:3000/api/health
+```
+
+JavaScriptで確認：
+
+```javascript
+const response = await fetch('http://localhost:3000/api/health');
+const data = await response.json();
+console.log(data.status); // "ok"
+```
+
+#### クライアント側の自動ヘルスチェック
+
+BurgerEditorクライアントは、このAPIを使用してサーバーの接続状態を自動的に監視します。ヘルスチェックの動作は設定ファイルの `healthCheck` オプションでカスタマイズできます：
+
+```javascript
+export default {
+	documentRoot: './src',
+	assetsRoot: './public',
+	healthCheck: {
+		enabled: true, // ヘルスチェックを有効化（デフォルト: true）
+		interval: 10000, // チェック間隔（ミリ秒）（デフォルト: 10000）
+		retryCount: 3, // リトライ回数（デフォルト: 3）
+	},
+};
+```
+
+接続が失われると、クライアントは自動的にリトライを行い、`bge:server-offline` および `bge:server-online` イベントを発行します。
+
 ## プログラマティックAPI
 
 `@burger-editor/local` は、Honoサーバーと同じファイルアップロード機能をプログラムから使用できるAPIを提供しています。
