@@ -1,7 +1,3 @@
-import type { BurgerEditorEngine } from './engine/engine.js';
-
-import { createBgeEvent } from './event/create-bge-event.js';
-
 export interface HealthCheckContext {
 	readonly enabled: boolean;
 	readonly interval: number;
@@ -17,7 +13,9 @@ export interface HealthMonitorOptions {
 	readonly enabled: boolean;
 	readonly interval: number;
 	readonly retryCount: number;
-	readonly checkHealth: HealthCheckFunction;
+	readonly checkHealth?: HealthCheckFunction;
+	readonly onOffline?: (timestamp: number) => void;
+	readonly onOnline?: (timestamp: number) => void;
 }
 
 /**
@@ -32,10 +30,11 @@ export class HealthMonitor {
 		return Promise.resolve(true);
 	};
 	#enabled: boolean;
-	#engine: BurgerEditorEngine;
 	#failureCount: number = 0;
 	#interval: number;
 	#isOnline: boolean = true;
+	#onOffline?: (timestamp: number) => void;
+	#onOnline?: (timestamp: number) => void;
 	#retryCount: number;
 	#timeoutId: number | null = null;
 
@@ -46,12 +45,13 @@ export class HealthMonitor {
 		return this.#isOnline;
 	}
 
-	constructor(engine: BurgerEditorEngine, options?: Partial<HealthMonitorOptions>) {
-		this.#engine = engine;
+	constructor(options?: Partial<HealthMonitorOptions>) {
 		this.#enabled = options?.enabled ?? false;
 		this.#interval = options?.interval ?? 10_000;
 		this.#retryCount = options?.retryCount ?? 3;
 		this.#checkHealth = options?.checkHealth ?? this.#defaultHealthCheck;
+		this.#onOffline = options?.onOffline;
+		this.#onOnline = options?.onOnline;
 	}
 
 	/**
@@ -97,15 +97,15 @@ export class HealthMonitor {
 	 * Dispatch server offline event
 	 */
 	#dispatchServerOfflineEvent(): void {
-		const event = createBgeEvent('bge:server-offline', { timestamp: Date.now() });
-		this.#engine.el.dispatchEvent(event);
+		const timestamp = Date.now();
+		this.#onOffline?.(timestamp);
 	}
 	/**
 	 * Dispatch server online event
 	 */
 	#dispatchServerOnlineEvent(): void {
-		const event = createBgeEvent('bge:server-online', { timestamp: Date.now() });
-		this.#engine.el.dispatchEvent(event);
+		const timestamp = Date.now();
+		this.#onOnline?.(timestamp);
 	}
 	/**
 	 * Handle health check failure

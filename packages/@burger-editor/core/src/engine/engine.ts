@@ -88,7 +88,17 @@ export class BurgerEditorEngine {
 		};
 
 		// Health monitor setup
-		this.#healthMonitor = new HealthMonitor(this, options.healthCheck);
+		this.#healthMonitor = new HealthMonitor({
+			...options.healthCheck,
+			onOffline: (timestamp) => {
+				const event = createBgeEvent('bge:server-offline', { timestamp });
+				this.el.dispatchEvent(event);
+			},
+			onOnline: (timestamp) => {
+				const event = createBgeEvent('bge:server-online', { timestamp });
+				this.el.dispatchEvent(event);
+			},
+		});
 
 		this.css = {
 			stylesheets: options.config.stylesheets ?? [],

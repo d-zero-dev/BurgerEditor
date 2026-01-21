@@ -15,6 +15,10 @@
 		".": {
 			"import": "./dist/index.js",
 			"types": "./dist/index.d.ts"
+		},
+		"./health": {
+			"import": "./dist/health-monitor.js",
+			"types": "./dist/health-monitor.d.ts"
 		}
 	},
 	"files": [
