@@ -8,6 +8,7 @@ import path from 'node:path';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 
+import { HEALTH_CHECK_END_POINT } from './constants.js';
 import { log } from './helpers/debug.js';
 import { loadContent, saveContent } from './helpers/edit-content.js';
 import { NoEditableAreaError } from './helpers/no-editable-area-error.js';
@@ -151,7 +152,7 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 		// API
 		//
 		// ------------------------------------------------------------------------------------------
-		.get('/api/health', (c) => {
+		.get(HEALTH_CHECK_END_POINT, (c) => {
 			return c.json({
 				status: 'ok',
 				timestamp: Date.now(),

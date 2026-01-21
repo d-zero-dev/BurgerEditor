@@ -13,6 +13,14 @@
 			"import": "./import/index.js",
 			"types": "./import/index.d.ts"
 		},
+		"./get-user-config": {
+			"import": "./server/model/get-user-config.js",
+			"types": "./server/model/get-user-config.d.ts"
+		},
+		"./create-health-checker": {
+			"import": "./server/create-health-checker.js",
+			"types": "./server/create-health-checker.d.ts"
+		},
 		"./get-candidate-name": {
 			"import": "./server/helpers/get-candidate-name.js",
 			"types": "./server/helpers/get-candidate-name.d.ts"
