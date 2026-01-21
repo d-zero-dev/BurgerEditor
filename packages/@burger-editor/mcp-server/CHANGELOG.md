@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.52](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.51...v4.0.0-alpha.52) (2026-01-21)
+
+**Note:** Version bump only for package @burger-editor/mcp-server
+
 # [4.0.0-alpha.51](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.50...v4.0.0-alpha.51) (2026-01-16)
 
 **Note:** Version bump only for package @burger-editor/mcp-server

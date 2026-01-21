@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.52](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.51...v4.0.0-alpha.52) (2026-01-21)
+
+### Features
+
+- **local:** export getUserConfig and createHealthChecker for 3rd party use ([17a84e4](https://github.com/d-zero-dev/BurgerEditor/commit/17a84e4f93330ef175ef163fe10275a0d332dfcf))
+
 # [4.0.0-alpha.51](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.50...v4.0.0-alpha.51) (2026-01-16)
 
 **Note:** Version bump only for package @burger-editor/local
