@@ -35,12 +35,10 @@
 		"@burger-editor/migrator": "4.0.0-alpha.51",
 		"@burger-editor/utils": "4.0.0-alpha.51",
 		"@tabler/icons-svelte": "3.36.1",
-		"jquery": "3.7.1",
 		"svelte": "5.47.1"
 	},
 	"devDependencies": {
 		"@sveltejs/vite-plugin-svelte": "6.2.4",
-		"@types/jquery": "3.5.33",
 		"svelte-check": "4.3.5",
 		"vite": "7.3.1",
 		"vite-plugin-dts": "4.5.4"
