@@ -54,6 +54,7 @@ export const defaultCatalog: BlockCatalog = {
 				containerProps: {
 					type: 'grid',
 					columns: 1,
+					autoRepeat: 'auto-fit',
 				},
 				items: [['wysiwyg']],
 			},
@@ -66,6 +67,7 @@ export const defaultCatalog: BlockCatalog = {
 				containerProps: {
 					type: 'grid',
 					columns: 1,
+					autoRepeat: 'auto-fit',
 				},
 				items: [['image']],
 			},
@@ -78,6 +80,7 @@ export const defaultCatalog: BlockCatalog = {
 				containerProps: {
 					type: 'grid',
 					columns: 1,
+					autoRepeat: 'auto-fit',
 				},
 				items: [['details']],
 			},
@@ -101,6 +104,7 @@ export const defaultCatalog: BlockCatalog = {
 				containerProps: {
 					type: 'grid',
 					columns: 1,
+					autoRepeat: 'auto-fit',
 				},
 				items: [['youtube']],
 			},
@@ -115,6 +119,7 @@ export const defaultCatalog: BlockCatalog = {
 				containerProps: {
 					type: 'grid',
 					columns: 3,
+					autoRepeat: 'auto-fit',
 				},
 				items: [
 					['image', 'wysiwyg'],
@@ -131,6 +136,7 @@ export const defaultCatalog: BlockCatalog = {
 				containerProps: {
 					type: 'grid',
 					columns: 3,
+					autoRepeat: 'auto-fit',
 				},
 				items: [
 					[{ name: 'wysiwyg', data: { wysiwyg: '<h2>見出し</h2>' } }, 'image', 'wysiwyg'],
@@ -304,6 +310,7 @@ export const defaultCatalog: BlockCatalog = {
 					frameSemantics: 'ul',
 					type: 'grid',
 					columns: 4,
+					autoRepeat: 'auto-fit',
 				},
 				items: [
 					[
@@ -367,6 +374,7 @@ export const defaultCatalog: BlockCatalog = {
 				containerProps: {
 					type: 'grid',
 					columns: 1,
+					autoRepeat: 'auto-fit',
 				},
 				items: [['google-maps']],
 			},
