@@ -1,4 +1,6 @@
 import { Extension } from '@tiptap/core';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
 
 import { ButtonLikeLink } from './button-like-link.js';
 import { DescriptionListDetail } from './description-list-detail.js';
@@ -9,6 +11,7 @@ import { FlexBox } from './flex-box.js';
 import { GeneralBlock } from './general-block.js';
 import { Image } from './image.js';
 import { Note } from './note.js';
+import { ParagraphWithAlign } from './paragraph-with-align.js';
 import { TableBody } from './table-body.js';
 import { TableCaption } from './table-caption.js';
 import { TableCell } from './table-cell.js';
@@ -22,6 +25,12 @@ export const BgeWysiwygEditorKit = Extension.create({
 	name: 'bge-wysiwyg-editor-kit',
 	addExtensions() {
 		return [
+			// Marks
+			Subscript,
+			Superscript,
+			// Paragraph拡張（StarterKitのParagraphを上書き）
+			ParagraphWithAlign,
+			// Nodes
 			Image,
 			FlexBox,
 			DescriptionList,

@@ -17,6 +17,8 @@ type EditorNode =
 	| 'italic'
 	| 'underline'
 	| 'strike'
+	| 'subscript'
+	| 'superscript'
 	| 'code'
 	| 'link'
 	| 'buttonLikeLink'
@@ -31,7 +33,10 @@ type EditorNode =
 	| 'h5'
 	| 'h6'
 	| 'flexBox'
-	| 'image';
+	| 'image'
+	| 'alignStart'
+	| 'alignCenter'
+	| 'alignEnd';
 
 export type NodeState = {
 	disabled: boolean;

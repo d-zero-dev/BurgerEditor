@@ -4,6 +4,9 @@ import type { ElementSeed } from '../utils/types.js';
 import type { Extensions } from '@tiptap/core';
 
 import IconAlignBoxCenterStretch from '@tabler/icons/outline/align-box-center-stretch.svg?raw';
+import IconAlignCenter from '@tabler/icons/outline/align-center.svg?raw';
+import IconAlignLeft from '@tabler/icons/outline/align-left.svg?raw';
+import IconAlignRight from '@tabler/icons/outline/align-right.svg?raw';
 import IconBlockquote from '@tabler/icons/outline/blockquote.svg?raw';
 import IconBold from '@tabler/icons/outline/bold.svg?raw';
 import IconCloud from '@tabler/icons/outline/cloud.svg?raw';
@@ -20,6 +23,8 @@ import IconOrderedList from '@tabler/icons/outline/list-numbers.svg?raw';
 import IconBulletList from '@tabler/icons/outline/list.svg?raw';
 import IconNotes from '@tabler/icons/outline/notes.svg?raw';
 import IconStrikethrough from '@tabler/icons/outline/strikethrough.svg?raw';
+import IconSubscript from '@tabler/icons/outline/subscript.svg?raw';
+import IconSuperscript from '@tabler/icons/outline/superscript.svg?raw';
 import IconUnderline from '@tabler/icons/outline/underline.svg?raw';
 
 import { defineBgeWysiwygElement } from '../bge-wysiwyg-element/index.js';
@@ -95,6 +100,8 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 						${commands.includes('italic') ? `<button type="button" data-bge-toolbar-button="italic">${IconItalic}</button>` : ''}
 						${commands.includes('strikethrough') ? `<button type="button" data-bge-toolbar-button="strikethrough">${IconStrikethrough}</button>` : ''}
 						${commands.includes('underline') ? `<button type="button" data-bge-toolbar-button="underline">${IconUnderline}</button>` : ''}
+						${commands.includes('subscript') ? `<button type="button" data-bge-toolbar-button="subscript">${IconSubscript}</button>` : ''}
+						${commands.includes('superscript') ? `<button type="button" data-bge-toolbar-button="superscript">${IconSuperscript}</button>` : ''}
 						${commands.includes('code') ? `<button type="button" data-bge-toolbar-button="code">${IconCode}</button>` : ''}
 						${commands.includes('link') ? `<button type="button" data-bge-toolbar-button="link">${IconLink}</button>` : ''}
 						${commands.includes('button-like-link') ? `<button type="button" data-bge-toolbar-button="button-like-link">${IconCloud}</button>` : ''}
@@ -109,6 +116,9 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 						${commands.includes('h5') ? `<button type="button" data-bge-toolbar-button="h5">${IconH5}</button>` : ''}
 						${commands.includes('h6') ? `<button type="button" data-bge-toolbar-button="h6">${IconH6}</button>` : ''}
 						${commands.includes('flex-box') ? `<button type="button" data-bge-toolbar-button="flex-box"><span data-bge-rotate>${IconAlignBoxCenterStretch}</span></button>` : ''}
+						${commands.includes('align-start') ? `<button type="button" data-bge-toolbar-button="align-start">${IconAlignLeft}</button>` : ''}
+						${commands.includes('align-center') ? `<button type="button" data-bge-toolbar-button="align-center">${IconAlignCenter}</button>` : ''}
+						${commands.includes('align-end') ? `<button type="button" data-bge-toolbar-button="align-end">${IconAlignRight}</button>` : ''}
 					</div>
 					<div data-bge-toolbar-group>
 						<button type="button" data-bge-toolbar-button="html-mode">HTML Mode</button>
@@ -231,6 +241,8 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 		'italic',
 		'underline',
 		'strikethrough',
+		'subscript',
+		'superscript',
 		'link',
 		'button-like-link',
 		'blockquote',
@@ -242,6 +254,9 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 		'h5',
 		'h6',
 		'flex-box',
+		'align-start',
+		'align-center',
+		'align-end',
 	] as const;
 }
 
@@ -341,6 +356,26 @@ function bindToggle(button: HTMLButtonElement, wysiwygElement: BgeWysiwygElement
 			wysiwygElement.toggleFlexBox();
 			break;
 		}
+		case 'subscript': {
+			wysiwygElement.toggleSubscript();
+			break;
+		}
+		case 'superscript': {
+			wysiwygElement.toggleSuperscript();
+			break;
+		}
+		case 'align-start': {
+			wysiwygElement.toggleAlign('start');
+			break;
+		}
+		case 'align-center': {
+			wysiwygElement.toggleAlign('center');
+			break;
+		}
+		case 'align-end': {
+			wysiwygElement.toggleAlign('end');
+			break;
+		}
 	}
 }
 
@@ -436,6 +471,31 @@ function updateButtonState(button: HTMLButtonElement, state: EditorState) {
 		case 'flex-box': {
 			button.disabled = state.flexBox.disabled;
 			button.ariaPressed = state.flexBox.active ? 'true' : 'false';
+			break;
+		}
+		case 'subscript': {
+			button.disabled = state.subscript.disabled;
+			button.ariaPressed = state.subscript.active ? 'true' : 'false';
+			break;
+		}
+		case 'superscript': {
+			button.disabled = state.superscript.disabled;
+			button.ariaPressed = state.superscript.active ? 'true' : 'false';
+			break;
+		}
+		case 'align-start': {
+			button.disabled = state.alignStart.disabled;
+			button.ariaPressed = state.alignStart.active ? 'true' : 'false';
+			break;
+		}
+		case 'align-center': {
+			button.disabled = state.alignCenter.disabled;
+			button.ariaPressed = state.alignCenter.active ? 'true' : 'false';
+			break;
+		}
+		case 'align-end': {
+			button.disabled = state.alignEnd.disabled;
+			button.ariaPressed = state.alignEnd.active ? 'true' : 'false';
 			break;
 		}
 	}

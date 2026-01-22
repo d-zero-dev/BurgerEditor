@@ -426,6 +426,9 @@ export class BgeWysiwygElement extends HTMLElement {
 		this.#setToTextarea(html);
 	}
 
+	toggleAlign(alignment: 'start' | 'center' | 'end') {
+		this.editor.chain().focus().toggleAlign(alignment).run();
+	}
 	toggleBlockquote() {
 		this.editor.chain().focus().toggleBlockquote().run();
 	}
@@ -472,6 +475,14 @@ export class BgeWysiwygElement extends HTMLElement {
 
 	toggleStrike() {
 		this.editor.chain().focus().toggleStrike().run();
+	}
+
+	toggleSubscript() {
+		this.editor.chain().focus().toggleSubscript().run();
+	}
+
+	toggleSuperscript() {
+		this.editor.chain().focus().toggleSuperscript().run();
 	}
 
 	toggleUnderline() {
@@ -530,6 +541,14 @@ export class BgeWysiwygElement extends HTMLElement {
 				strike: {
 					disabled: !editor.can().chain().focus().toggleStrike().run(),
 					active: editor.isActive('strike'),
+				},
+				subscript: {
+					disabled: !editor.can().chain().focus().toggleSubscript().run(),
+					active: editor.isActive('subscript'),
+				},
+				superscript: {
+					disabled: !editor.can().chain().focus().toggleSuperscript().run(),
+					active: editor.isActive('superscript'),
 				},
 				code: {
 					disabled: !editor.can().chain().focus().toggleCode().run(),
@@ -590,6 +609,18 @@ export class BgeWysiwygElement extends HTMLElement {
 				image: {
 					disabled: !editor.can().chain().focus().setImage({ src: '' }).run(),
 					active: editor.isActive('image'),
+				},
+				alignStart: {
+					disabled: !editor.can().chain().focus().toggleAlign('start').run(),
+					active: editor.isActive('paragraph', { 'data-bgc-align': 'start' }),
+				},
+				alignCenter: {
+					disabled: !editor.can().chain().focus().toggleAlign('center').run(),
+					active: editor.isActive('paragraph', { 'data-bgc-align': 'center' }),
+				},
+				alignEnd: {
+					disabled: !editor.can().chain().focus().toggleAlign('end').run(),
+					active: editor.isActive('paragraph', { 'data-bgc-align': 'end' }),
 				},
 			},
 		};
