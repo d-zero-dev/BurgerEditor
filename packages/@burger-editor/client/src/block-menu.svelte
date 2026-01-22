@@ -160,9 +160,9 @@
 		// 	return;
 		// }
 
-		const html = currentBlock.getHTMLStringify();
+		const json = currentBlock.toJSONStringify();
 
-		sessionStorage.setItem(engine.storageKey.blockClipboard, html);
+		sessionStorage.setItem(engine.storageKey.blockClipboard, json);
 
 		alert(
 			'ブロックをコピーしました。\nブロックの追加ボタンからペースト（貼り付け）することができます。',
