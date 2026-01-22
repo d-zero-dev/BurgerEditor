@@ -366,3 +366,20 @@
 		justify-content: space-evenly;
 	}
 }
+
+/**
+ * MARK: Wysiwyg内 段落整列
+ */
+:where([data-bgc-align]) {
+	&[data-bgc-align='start'] {
+		text-align: start;
+	}
+
+	&[data-bgc-align='center'] {
+		text-align: center;
+	}
+
+	&[data-bgc-align='end'] {
+		text-align: end;
+	}
+}
