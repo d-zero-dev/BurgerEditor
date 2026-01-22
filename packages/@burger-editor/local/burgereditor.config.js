@@ -67,6 +67,9 @@ title: 'New Page'
 					{ value: 'danger', label: '危険ボタン' },
 				],
 			},
+			wysiwyg: {
+				enableTextOnlyMode: true,
+			},
 		},
 	},
 };
