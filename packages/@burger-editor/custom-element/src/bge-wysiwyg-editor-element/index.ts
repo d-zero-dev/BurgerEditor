@@ -1,5 +1,5 @@
 import type { BgeWysiwygElement } from '../bge-wysiwyg-element/index.js';
-import type { EditorState } from '../bge-wysiwyg-element/types.js';
+import type { BgeMode, EditorState } from '../bge-wysiwyg-element/types.js';
 import type { ElementSeed } from '../utils/types.js';
 import type { Extensions } from '@tiptap/core';
 
@@ -32,6 +32,9 @@ import { defineBgeWysiwygElement } from '../bge-wysiwyg-element/index.js';
 export interface BgeWysiwygEditorElementOptions {
 	extensions?: Extensions;
 	wrapperElement?: ElementSeed;
+	experimental?: {
+		textOnlyMode?: boolean;
+	};
 }
 
 /**
@@ -47,6 +50,10 @@ export function defineBgeWysiwygEditorElement(
 
 	if (options?.wrapperElement) {
 		BgeWysiwygEditorElement.wrapperElement = options.wrapperElement;
+	}
+
+	if (options?.experimental?.textOnlyMode !== undefined) {
+		BgeWysiwygEditorElement.experimentalTextOnlyMode = options.experimental.textOnlyMode;
 	}
 
 	const tagName = `bge-wysiwyg-editor`;
@@ -121,7 +128,15 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 						${commands.includes('align-end') ? `<button type="button" data-bge-toolbar-button="align-end">${IconAlignRight}</button>` : ''}
 					</div>
 					<div data-bge-toolbar-group>
-						<button type="button" data-bge-toolbar-button="html-mode">HTML Mode</button>
+						${
+							BgeWysiwygEditorElement.experimentalTextOnlyMode
+								? `<select data-bge-mode-selector>
+								<option value="wysiwyg">デザインモード</option>
+								<option value="text-only">テキスト編集モード</option>
+								<option value="html">HTMLモード</option>
+							</select>`
+								: `<button type="button" data-bge-toolbar-button="html-mode">HTML Mode</button>`
+						}
 					</div>
 				</div>
 				<bge-wysiwyg ${itemName ? `item-name="${itemName}"` : ''}>
@@ -173,49 +188,102 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 			}
 		});
 
-		const htmlModeButton = this.querySelector<HTMLButtonElement>(
-			'[data-bge-toolbar-button="html-mode"]',
-		)!;
-
-		// 構造変更イベントをリッスンしてボタンのdisabled状態を更新
-		this.#wysiwygElement.addEventListener('bge:structure-change', (event) => {
-			const hasStructureChange = (event as CustomEvent<{ hasStructureChange: boolean }>)
-				.detail.hasStructureChange;
-			const isHtmlMode = this.#wysiwygElement?.mode === 'html';
-
-			// HTMLモードかつ構造変更がある場合のみdisabled
-			htmlModeButton.disabled = isHtmlMode && hasStructureChange;
-		});
-
-		// 初期状態を設定
-		const initialHasStructureChange = this.#wysiwygElement.hasStructureChange;
-		const initialIsHtmlMode = this.#wysiwygElement.mode === 'html';
-		htmlModeButton.disabled = initialIsHtmlMode && initialHasStructureChange;
-
-		htmlModeButton.addEventListener('click', () => {
-			if (!this.#wysiwygElement) {
-				throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
+		// experimental.textOnlyMode による UI 分岐
+		if (BgeWysiwygEditorElement.experimentalTextOnlyMode) {
+			// experimental.textOnlyMode = true: Select要素で3モード切り替え
+			const modeSelector = this.querySelector<HTMLSelectElement>(
+				'[data-bge-mode-selector]',
+			);
+			if (!modeSelector) {
+				throw new Error('Mode selector not found');
 			}
 
-			const currentMode = this.#wysiwygElement.mode;
-			const newMode = currentMode === 'html' ? 'wysiwyg' : 'html';
+			// 初期状態のselect値を設定
+			modeSelector.value = this.#wysiwygElement.mode;
 
-			// ボタンの状態を更新
-			htmlModeButton.ariaPressed = newMode === 'html' ? 'true' : 'false';
-
-			// モードを設定（切り替えが防止された場合、mode setter内でreturnされる）
-			this.#wysiwygElement.mode = newMode;
-
-			// 実際にモードが変更されたか確認
-			if (this.#wysiwygElement.mode === newMode) {
-				// モードが変更された場合、disabled状態を更新
-				const hasStructureChange = this.#wysiwygElement.hasStructureChange;
-				htmlModeButton.disabled = newMode === 'html' && hasStructureChange;
-			} else {
-				// 切り替えが防止された場合、ボタンの状態を元に戻す
-				htmlModeButton.ariaPressed = currentMode === 'html' ? 'true' : 'false';
+			// 初期状態のデザインモードオプションを設定
+			const initialHasStructureChange = this.#wysiwygElement.hasStructureChange;
+			const wysiwygOption = modeSelector.querySelector<HTMLOptionElement>(
+				'option[value="wysiwyg"]',
+			);
+			if (wysiwygOption) {
+				wysiwygOption.disabled = initialHasStructureChange;
 			}
-		});
+
+			// 構造変更イベントでデザインモードオプションをdisable/enable
+			const handleStructureChange = (event: Event) => {
+				const hasStructureChange = (event as CustomEvent<{ hasStructureChange: boolean }>)
+					.detail.hasStructureChange;
+				if (wysiwygOption) {
+					wysiwygOption.disabled = hasStructureChange;
+				}
+			};
+			this.#wysiwygElement.addEventListener(
+				'bge:structure-change',
+				handleStructureChange,
+			);
+
+			// Selectのchangeイベントハンドラー
+			modeSelector.addEventListener('change', () => {
+				if (!this.#wysiwygElement) {
+					throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
+				}
+
+				const newMode = modeSelector.value as BgeMode;
+				const currentMode = this.#wysiwygElement.mode;
+
+				// モードを設定
+				this.#wysiwygElement.mode = newMode;
+
+				// 実際にモードが変更されたか確認
+				if (this.#wysiwygElement.mode !== newMode) {
+					// 切り替えが防止された場合、selectの値を元に戻す
+					modeSelector.value = currentMode;
+				}
+			});
+		} else {
+			// experimental.textOnlyMode = false: HTMLモードボタンのみ（text-only実装前の動作）
+			const htmlModeButton = this.querySelector<HTMLButtonElement>(
+				'[data-bge-toolbar-button="html-mode"]',
+			);
+			if (!htmlModeButton) {
+				throw new Error('HTML mode button not found');
+			}
+
+			// 初期状態を設定
+			const initialHasStructureChange = this.#wysiwygElement.hasStructureChange;
+			const initialIsHtmlMode = this.#wysiwygElement.mode === 'html';
+			htmlModeButton.disabled = initialIsHtmlMode && initialHasStructureChange;
+			htmlModeButton.ariaPressed = initialIsHtmlMode ? 'true' : 'false';
+
+			// HTMLモードボタンのクリックハンドラー（text-only実装前の動作）
+			htmlModeButton.addEventListener('click', () => {
+				if (!this.#wysiwygElement) {
+					throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
+				}
+
+				const currentMode = this.#wysiwygElement.mode;
+				const newMode = currentMode === 'html' ? 'wysiwyg' : 'html';
+
+				htmlModeButton.ariaPressed = newMode === 'html' ? 'true' : 'false';
+				this.#wysiwygElement.mode = newMode;
+
+				if (this.#wysiwygElement.mode === newMode) {
+					const hasStructureChange = this.#wysiwygElement.hasStructureChange;
+					htmlModeButton.disabled = newMode === 'html' && hasStructureChange;
+				} else {
+					htmlModeButton.ariaPressed = currentMode === 'html' ? 'true' : 'false';
+				}
+			});
+
+			// 構造変更イベントでボタンのdisabled状態を更新
+			this.#wysiwygElement.addEventListener('bge:structure-change', (event) => {
+				const hasStructureChange = (event as CustomEvent<{ hasStructureChange: boolean }>)
+					.detail.hasStructureChange;
+				const isHtmlMode = this.#wysiwygElement!.mode === 'html';
+				htmlModeButton.disabled = isHtmlMode && hasStructureChange;
+			});
+		}
 	}
 
 	setStyle(css: string) {
@@ -235,6 +303,8 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 	static extensions: Extensions | null = null;
 
 	static wrapperElement: ElementSeed | null = null;
+
+	static experimentalTextOnlyMode: boolean = false;
 
 	static defaultCommands = [
 		'bold',

@@ -28,6 +28,7 @@ beforeAll(() => {
 
 	defineBgeWysiwygEditorElement({
 		extensions: [testExtension],
+		experimental: { textOnlyMode: false },
 	});
 });
 
@@ -305,4 +306,23 @@ test('HTML mode button should be enabled when structure change is resolved', () 
 		expect(wysiwygElement.hasStructureChange).toBe(false);
 		expect(htmlModeButton.disabled).toBe(false);
 	}
+});
+
+// experimental.textOnlyMode = false のテスト
+test('default mode (experimental=false) renders HTML mode button only', () => {
+	document.body.innerHTML = '<bge-wysiwyg-editor><p>test</p></bge-wysiwyg-editor>';
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+
+	const htmlModeButton = editor.querySelector('[data-bge-toolbar-button="html-mode"]');
+	const textOnlyModeButton = editor.querySelector(
+		'[data-bge-toolbar-button="text-only-mode"]',
+	);
+	const modeSelector = editor.querySelector('[data-bge-mode-selector]');
+
+	// HTMLモードボタンは存在する
+	expect(htmlModeButton).toBeTruthy();
+
+	// text-onlyボタンとselectは存在しない（text-only実装前の動作）
+	expect(textOnlyModeButton).toBeNull();
+	expect(modeSelector).toBeNull();
 });

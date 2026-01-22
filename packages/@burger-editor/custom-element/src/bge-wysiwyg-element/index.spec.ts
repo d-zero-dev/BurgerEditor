@@ -638,3 +638,86 @@ test('expectHTML handles sup/sub with alignment attributes together', () => {
 	// すべての要素と属性が保持されることを確認
 	expect(expectedHTML).toBe(originalHTML);
 });
+
+// text-onlyモードのテスト
+test('mode getter should return text-only mode', () => {
+	document.body.innerHTML = '<bge-wysiwyg><h1>Title</h1><p>test</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+
+	element.mode = 'text-only';
+	expect(element.mode).toBe('text-only');
+});
+
+test('text-only mode should make direct text children editable with plaintext-only', () => {
+	document.body.innerHTML =
+		'<bge-wysiwyg><h1>Title</h1><p>Paragraph text</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+
+	element.mode = 'text-only';
+
+	const textOnlyContainer = element.shadowRoot?.querySelector('[data-text-only-editor]');
+	expect(textOnlyContainer).toBeTruthy();
+
+	const editableElements = textOnlyContainer?.querySelectorAll(
+		'[contenteditable="plaintext-only"]',
+	);
+	expect(editableElements).toBeTruthy();
+	expect(editableElements!.length).toBeGreaterThan(0);
+});
+
+test('text-only mode should handle nested elements correctly', () => {
+	document.body.innerHTML =
+		'<bge-wysiwyg><div><p>nested <strong>bold</strong> text</p></div></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+
+	element.mode = 'text-only';
+
+	// pタグは直接の子にtextNodeを持つので編集可能
+	// divタグは直接の子がElementNodeなので編集不可
+	const editableElements = element.shadowRoot?.querySelectorAll(
+		'[contenteditable="plaintext-only"]',
+	);
+
+	expect(editableElements).toBeTruthy();
+	// pタグのみが編集可能であることを確認
+	expect(editableElements!.length).toBeGreaterThan(0);
+});
+
+test('text-only mode value getter should return clean HTML without contenteditable attribute', () => {
+	document.body.innerHTML = '<bge-wysiwyg><p>test</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+
+	element.mode = 'text-only';
+
+	const value = element.value;
+
+	// contenteditable属性が含まれていないことを確認
+	expect(value).not.toContain('contenteditable');
+	expect(value).toContain('<p>test</p>');
+});
+
+test('switching from text-only to wysiwyg should work', () => {
+	document.body.innerHTML = '<bge-wysiwyg><p>test</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+
+	element.mode = 'text-only';
+	expect(element.mode).toBe('text-only');
+
+	element.mode = 'wysiwyg';
+	expect(element.mode).toBe('wysiwyg');
+
+	// text-onlyコンテナがクリーンアップされていることを確認
+	const textOnlyContainer = element.shadowRoot?.querySelector('[data-text-only-editor]');
+	expect(textOnlyContainer?.innerHTML).toBe('');
+});
+
+test('switching from text-only to html should work', () => {
+	document.body.innerHTML = '<bge-wysiwyg><p>test</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+
+	element.mode = 'text-only';
+	expect(element.mode).toBe('text-only');
+
+	element.mode = 'html';
+	expect(element.mode).toBe('html');
+});

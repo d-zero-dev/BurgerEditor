@@ -42,3 +42,5 @@ export type NodeState = {
 	disabled: boolean;
 	active: boolean;
 };
+
+export type BgeMode = 'wysiwyg' | 'html' | 'text-only';
