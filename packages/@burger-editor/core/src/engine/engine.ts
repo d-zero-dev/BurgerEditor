@@ -179,7 +179,9 @@ export class BurgerEditorEngine {
 							return res.text();
 						}),
 				);
-				this.#contentStylesheetCache = css.join('\n');
+				// generalCSSを含める
+				const stylesheets = [this.css.generalCSS, ...css];
+				this.#contentStylesheetCache = stylesheets.join('\n');
 				return this.#contentStylesheetCache;
 			},
 		});
