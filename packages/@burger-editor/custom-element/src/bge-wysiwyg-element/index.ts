@@ -32,6 +32,10 @@ export function defineBgeWysiwygElement(
 		BgeWysiwygElement.wrapperElement = options.wrapperElement;
 	}
 
+	if (options?.experimental?.textOnlyMode !== undefined) {
+		BgeWysiwygElement.experimentalTextOnlyMode = options.experimental.textOnlyMode;
+	}
+
 	const tagName = `bge-wysiwyg`;
 	if (!global.customElements.get(tagName)) {
 		global.customElements.define(tagName, BgeWysiwygElement);
@@ -216,8 +220,9 @@ export class BgeWysiwygElement extends HTMLElement {
 		const itemName = this.getAttribute('item-name');
 		const messageId = `bge-structure-change-message-${Math.random().toString(36).slice(2, 11)}`;
 
-		const structureChangeMessage =
-			'HTMLの構造がWYSIWYG（デザイン）モードに対応していません。HTMLモードのみで編集可能です。';
+		const structureChangeMessage = BgeWysiwygElement.experimentalTextOnlyMode
+			? 'HTMLの構造がデザインモードに対応していません。HTMLモードまたはテキスト編集モードで編集してください。'
+			: 'HTMLの構造がWYSIWYG（デザイン）モードに対応していません。HTMLモードで編集してください。';
 
 		this.shadowRoot.innerHTML = `<div data-bge-mode="wysiwyg"><iframe></iframe><textarea aria-label="${label} HTML" aria-describedby="${messageId}"></textarea><div id="${messageId}" role="alert" aria-live="polite" style="display: none;">${structureChangeMessage}</div></div>`;
 
@@ -890,4 +895,6 @@ export class BgeWysiwygElement extends HTMLElement {
 	static extensions: Extensions | null = null;
 
 	static wrapperElement: ElementSeed | null = null;
+
+	static experimentalTextOnlyMode: boolean = false;
 }

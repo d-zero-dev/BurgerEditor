@@ -4,6 +4,9 @@ import type { Extensions } from '@tiptap/core';
 export interface BgeWysiwygElementOptions {
 	extensions?: Extensions;
 	wrapperElement?: ElementSeed;
+	experimental?: {
+		textOnlyMode?: boolean;
+	};
 }
 
 export interface Transaction {
