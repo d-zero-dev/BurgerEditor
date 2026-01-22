@@ -195,6 +195,101 @@ export const catalog = {
 - **コンテナプロパティ**: レイアウト方法（grid、inline、float）とそのオプションを指定
 - **スタイリング**: `classList`で CSS クラス、`style`でインラインスタイルを適用
 
+## 設定 (Config)
+
+BurgerEditorエンジンの動作を制御する設定オプションです。`BurgerEditorEngineOptions`の`config`プロパティで指定します。
+
+### 基本設定
+
+```typescript
+{
+	// エディタ領域に適用されるCSSクラスのリスト
+	classList: string[];
+
+	// 読み込むスタイルシートのパス
+	stylesheets: Array<string | { path: string }>;
+
+	// サンプル画像のパス（プレビュー用）
+	sampleImagePath: string;
+
+	// サンプルファイルのパス（プレビュー用）
+	sampleFilePath: string;
+
+	// Google Maps APIキー（マップアイテム用）
+	googleMapsApiKey: string | null;
+}
+```
+
+### 実験的機能 (experimental)
+
+実験的機能は`experimental`プロパティで設定します。これらの機能は将来のバージョンでAPIが変更される可能性があります。
+
+```typescript
+{
+	experimental?: {
+		itemOptions?: {
+			// WYSIWYGエディタの実験的オプション
+			wysiwyg?: {
+				// テキスト編集モードを有効化
+				enableTextOnlyMode?: boolean;
+			};
+			// ボタンアイテムの実験的オプション
+			button?: {
+				kinds?: readonly Mergeable<SelectableValue>[];
+				beforeIcons?: readonly Mergeable<SelectableValue>[];
+				afterIcons?: readonly Mergeable<SelectableValue>[];
+			};
+		};
+	};
+}
+```
+
+#### `experimental.itemOptions.wysiwyg.enableTextOnlyMode`
+
+- **型**: `boolean`
+- **デフォルト**: `false`
+- **説明**: WYSIWYGエディタのテキスト編集モード機能を有効化します
+
+この設定は`@burger-editor/custom-element`の`defineBgeWysiwygEditorElement`に自動的に渡され、エディタのUI動作を制御します。
+
+**`false`（デフォルト）の場合**:
+
+- HTMLモードボタンのみ表示
+- デザインモードとHTMLモードの2モード間をトグル
+
+**`true`の場合**:
+
+- `<select>`要素で3つのモード切り替えが可能
+  - デザインモード (wysiwyg)
+  - テキスト編集モード (text-only)
+  - HTMLモード (html)
+
+詳細は[@burger-editor/custom-element](../custom-element/)のドキュメントを参照してください。
+
+### 使用例
+
+```typescript
+import { createBurgerEditorEngine } from '@burger-editor/core';
+
+const engine = await createBurgerEditorEngine({
+	config: {
+		classList: ['my-editor'],
+		stylesheets: ['/css/editor.css'],
+		sampleImagePath: '/images/sample.jpg',
+		sampleFilePath: '/files/sample.pdf',
+		googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY ?? null,
+		experimental: {
+			itemOptions: {
+				wysiwyg: {
+					enableTextOnlyMode: true,
+				},
+			},
+		},
+	},
+	// ... その他のオプション
+});
+```
+
 ## アイテムの仕様
 
 ### アイテムとは

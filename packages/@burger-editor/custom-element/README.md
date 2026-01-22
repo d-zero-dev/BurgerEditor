@@ -133,6 +133,41 @@ defineBgeWysiwygEditorElement();
 const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
 ```
 
+### 実験的機能の設定
+
+`defineBgeWysiwygEditorElement`には実験的機能を有効化するオプションを渡すことができます。
+
+```typescript
+import { defineBgeWysiwygEditorElement } from '@burger-editor/custom-element';
+
+defineBgeWysiwygEditorElement({
+	experimental: {
+		textOnlyMode: true, // テキスト編集モードを有効化
+	},
+});
+```
+
+#### `experimental.textOnlyMode`
+
+- **型**: `boolean`
+- **デフォルト**: `false`
+- **説明**: テキスト編集モード機能を有効化します
+
+**`false`（デフォルト）の場合**:
+
+- HTMLモードボタンのみ表示
+- デザインモードとHTMLモードの2モード間をトグル
+
+**`true`の場合**:
+
+- `<select>`要素で3つのモード切り替えが可能
+  - **デザインモード** (wysiwyg): TipTapエディタでリッチテキスト編集
+  - **テキスト編集モード** (text-only): HTML構造を保持したままテキストのみ編集
+  - **HTMLモード** (html): HTMLソースコードを直接編集
+- 構造変更がある場合、デザインモードオプションが自動的に無効化されます
+
+> **ℹ️ 注意**: この機能は実験的であり、将来のバージョンでAPIが変更される可能性があります。
+
 ## 技術スタック
 
 - **TipTap** - リッチテキストエディタフレームワーク

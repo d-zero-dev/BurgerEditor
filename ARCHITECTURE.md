@@ -237,6 +237,63 @@ graph TD
 - localパッケージと同様の構造で他プラットフォーム対応可能
 - 共通機能の重複実装を回避
 
+## 実験的機能（Experimental Features）
+
+BurgerEditorでは、将来のAPIが確定していない機能を`experimental`プロパティ配下で提供する設計パターンを採用しています。
+
+### 設計原則
+
+1. **オプトイン方式**: 実験的機能はデフォルトで無効であり、明示的な設定により有効化
+2. **後方互換性の保持**: 実験的機能が無効の場合、既存の動作を完全に維持
+3. **APIの柔軟性**: 実験的機能のAPIは将来のバージョンで変更される可能性がある
+4. **段階的安定化**: 実験的機能が成熟した場合、通常のAPIとして昇格
+
+### 設定構造
+
+```typescript
+// Config型の実験的機能部分
+{
+	experimental?: {
+		itemOptions?: {
+			[itemName: string]: {
+				// アイテム固有の実験的オプション
+			};
+		};
+	};
+}
+```
+
+### 実装例: テキスト編集モード
+
+WYSIWYGエディタのテキスト編集モード機能は実験的機能として実装されています。
+
+**設定フロー**:
+
+1. ユーザーが`Config.experimental.itemOptions.wysiwyg.enableTextOnlyMode`を設定
+2. `@burger-editor/core`の`BurgerEditorEngine`が設定を保持
+3. `defineCustomElement`コールバックで`experimental`設定を渡す
+4. `@burger-editor/client`が`defineBgeWysiwygEditorElement`に転送
+5. `@burger-editor/custom-element`がUI動作を制御
+
+**実装ファイル**:
+
+- `packages/@burger-editor/core/src/types.ts` - Config型定義
+- `packages/@burger-editor/core/src/engine/engine.ts` - 設定の伝搬
+- `packages/@burger-editor/client/src/index.ts` - カスタム要素への転送
+- `packages/@burger-editor/custom-element/src/bge-wysiwyg-editor-element/index.ts` - UI制御
+
+### 実験的機能の追加ガイドライン
+
+新しい実験的機能を追加する際は、以下の手順に従ってください：
+
+1. **Config型の拡張**: `@burger-editor/core/src/types.ts`の`Config.experimental`に追加
+2. **設定の伝搬**: 必要に応じて`defineCustomElement`コールバックで設定を渡す
+3. **デフォルト動作の保証**: 実験的機能が無効の場合、既存動作を維持するテストを追加
+4. **ドキュメント更新**: 以下のファイルに実験的機能として明記
+   - 影響するパッケージのREADME
+   - `@burger-editor/core/README.md`の「設定 (Config)」セクション
+   - このARCHITECTURE.mdファイル
+
 ## Tiptap拡張機能の追加方法（コントリビュータ向け）
 
 `@burger-editor/custom-element`パッケージにTiptap拡張機能を追加する際のガイドラインです。
