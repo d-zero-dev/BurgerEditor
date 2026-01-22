@@ -502,3 +502,139 @@ test('should start in HTML mode when initial value contains span tags that will 
 		expect(textarea?.value).toBe(initialHTML);
 	}
 });
+
+test('expectHTML preserves <sup> elements correctly', () => {
+	document.body.innerHTML =
+		'<bge-wysiwyg><p>これは<sup>上付き文字</sup>のサンプルです。</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const originalHTML = '<p>これは<sup>上付き文字</sup>のサンプルです。</p>';
+	const expectedHTML = element.expectHTML(originalHTML);
+
+	// sup要素が保持されることを確認
+	expect(expectedHTML).toBe('<p>これは<sup>上付き文字</sup>のサンプルです。</p>');
+});
+
+test('expectHTML preserves <sub> elements correctly', () => {
+	document.body.innerHTML =
+		'<bge-wysiwyg><p>これは<sub>下付き文字</sub>のサンプルです。</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const originalHTML = '<p>これは<sub>下付き文字</sub>のサンプルです。</p>';
+	const expectedHTML = element.expectHTML(originalHTML);
+
+	// sub要素が保持されることを確認
+	expect(expectedHTML).toBe('<p>これは<sub>下付き文字</sub>のサンプルです。</p>');
+});
+
+test('expectHTML handles mixed sup and sub elements', () => {
+	document.body.innerHTML =
+		'<bge-wysiwyg><p>x<sup>2</sup> + y<sub>0</sub></p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const originalHTML = '<p>x<sup>2</sup> + y<sub>0</sub></p>';
+	const expectedHTML = element.expectHTML(originalHTML);
+
+	// sup/sub両方が保持されることを確認
+	expect(expectedHTML).toBe('<p>x<sup>2</sup> + y<sub>0</sub></p>');
+});
+
+test('should allow switching to Wysiwyg mode when sup/sub elements exist', () => {
+	const initialHTML =
+		'<p>これは<sup>上付き文字</sup>と<sub>下付き文字</sub>のサンプルです。</p>';
+	document.body.innerHTML = `<bge-wysiwyg>${initialHTML}</bge-wysiwyg>`;
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+
+	// Wysiwygモードで開始されることを確認（構造変更なし）
+	expect(element.mode).toBe('wysiwyg');
+	expect(element.hasStructureChange).toBe(false);
+
+	// HTMLモードに切り替え
+	element.mode = 'html';
+	expect(element.mode).toBe('html');
+
+	// 再びWysiwygモードに切り替え可能であることを確認
+	element.mode = 'wysiwyg';
+	expect(element.mode).toBe('wysiwyg');
+	expect(element.hasStructureChange).toBe(false);
+});
+
+test('expectHTML preserves data-bgc-align="start" attribute', () => {
+	document.body.innerHTML =
+		'<bge-wysiwyg><p data-bgc-align="start">左寄せテキスト</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const originalHTML = '<p data-bgc-align="start">左寄せテキスト</p>';
+	const expectedHTML = element.expectHTML(originalHTML);
+
+	// data-bgc-align属性が保持されることを確認
+	expect(expectedHTML).toBe('<p data-bgc-align="start">左寄せテキスト</p>');
+});
+
+test('expectHTML preserves data-bgc-align="center" attribute', () => {
+	document.body.innerHTML =
+		'<bge-wysiwyg><p data-bgc-align="center">中央寄せテキスト</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const originalHTML = '<p data-bgc-align="center">中央寄せテキスト</p>';
+	const expectedHTML = element.expectHTML(originalHTML);
+
+	expect(expectedHTML).toBe('<p data-bgc-align="center">中央寄せテキスト</p>');
+});
+
+test('expectHTML preserves data-bgc-align="end" attribute', () => {
+	document.body.innerHTML =
+		'<bge-wysiwyg><p data-bgc-align="end">右寄せテキスト</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const originalHTML = '<p data-bgc-align="end">右寄せテキスト</p>';
+	const expectedHTML = element.expectHTML(originalHTML);
+
+	expect(expectedHTML).toBe('<p data-bgc-align="end">右寄せテキスト</p>');
+});
+
+test('expectHTML handles multiple paragraphs with different alignments', () => {
+	const originalHTML =
+		'<p data-bgc-align="start">左寄せ</p><p data-bgc-align="center">中央寄せ</p><p data-bgc-align="end">右寄せ</p><p>デフォルト</p>';
+	document.body.innerHTML = `<bge-wysiwyg>${originalHTML}</bge-wysiwyg>`;
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const expectedHTML = element.expectHTML(originalHTML);
+
+	// すべての属性が保持されることを確認
+	expect(expectedHTML).toBe(originalHTML);
+});
+
+test('expectHTML ignores invalid data-bgc-align values', () => {
+	const originalHTML = '<p data-bgc-align="invalid">テキスト</p>';
+	document.body.innerHTML = `<bge-wysiwyg>${originalHTML}</bge-wysiwyg>`;
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const expectedHTML = element.expectHTML(originalHTML);
+
+	// 不正な値は削除され、属性なしのpタグになることを確認
+	expect(expectedHTML).toBe('<p>テキスト</p>');
+});
+
+test('should allow switching to Wysiwyg mode when data-bgc-align attributes exist', () => {
+	const initialHTML =
+		'<p data-bgc-align="center">中央寄せテキスト</p><p data-bgc-align="end">右寄せテキスト</p>';
+	document.body.innerHTML = `<bge-wysiwyg>${initialHTML}</bge-wysiwyg>`;
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+
+	// Wysiwygモードで開始されることを確認（構造変更なし）
+	expect(element.mode).toBe('wysiwyg');
+	expect(element.hasStructureChange).toBe(false);
+
+	// HTMLモードに切り替え
+	element.mode = 'html';
+	expect(element.mode).toBe('html');
+
+	// 再びWysiwygモードに切り替え可能であることを確認
+	element.mode = 'wysiwyg';
+	expect(element.mode).toBe('wysiwyg');
+	expect(element.hasStructureChange).toBe(false);
+});
+
+test('expectHTML handles sup/sub with alignment attributes together', () => {
+	const originalHTML =
+		'<p data-bgc-align="center">これは<sup>上付き</sup>と<sub>下付き</sub>のサンプル</p>';
+	document.body.innerHTML = `<bge-wysiwyg>${originalHTML}</bge-wysiwyg>`;
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const expectedHTML = element.expectHTML(originalHTML);
+
+	// すべての要素と属性が保持されることを確認
+	expect(expectedHTML).toBe(originalHTML);
+});
