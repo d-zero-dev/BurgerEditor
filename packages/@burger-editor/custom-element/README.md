@@ -65,14 +65,19 @@ defineBgeWysiwygEditorElement();
 - `italic` - 斜体
 - `underline` - 下線
 - `strikethrough` - 取り消し線
+- `subscript` - 下付き文字
+- `superscript` - 上付き文字
 
 **リンク:**
 
 - `link` - ハイパーリンク
+- `button-like-link` - ボタン風リンク
 
-**引用:**
+**ブロック:**
 
 - `blockquote` - 引用ブロック
+- `note` - ノートブロック
+- `flex-box` - フレックスボックス
 
 **リスト:**
 
@@ -81,12 +86,16 @@ defineBgeWysiwygEditorElement();
 
 **見出し:**
 
-- `h1` - 見出しレベル1
-- `h2` - 見出しレベル2
 - `h3` - 見出しレベル3
 - `h4` - 見出しレベル4
 - `h5` - 見出しレベル5
 - `h6` - 見出しレベル6
+
+**段落整列:**
+
+- `align-start` - 左寄せ
+- `align-center` - 中央寄せ
+- `align-end` - 右寄せ
 
 #### 例: 基本的なエディタ
 
@@ -132,15 +141,25 @@ const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorE
 このパッケージは以下のTipTap拡張機能を使用しています：
 
 - @tiptap/core
+- @tiptap/starter-kit
 - @tiptap/extension-bold
 - @tiptap/extension-italic
 - @tiptap/extension-underline
 - @tiptap/extension-strike
+- @tiptap/extension-subscript
+- @tiptap/extension-superscript
 - @tiptap/extension-link
 - @tiptap/extension-blockquote
 - @tiptap/extension-bullet-list
 - @tiptap/extension-ordered-list
 - @tiptap/extension-heading
+- @tiptap/extension-paragraph
+- @tiptap/extension-image
+
+およびカスタム拡張機能：
+
+- ParagraphWithAlign - 段落整列属性 (`data-bgc-align`) をサポート
+- その他のBurgerEditor独自拡張 (FlexBox, Note, ButtonLikeLink, etc.)
 
 ## 関連パッケージ
 
@@ -155,6 +174,34 @@ Web Components（Custom Elements v1）をサポートするモダンブラウザ
 - Firefox 63+
 - Safari 10.1+
 - Edge 79+
+
+## コントリビュータ向け情報
+
+### Tiptap拡張機能の追加方法
+
+このパッケージにTiptap拡張機能（新しい要素やフォーマット）を追加する際は、[ARCHITECTURE.md](../../../ARCHITECTURE.md#tiptap拡張機能の追加方法コントリビュータ向け) の「Tiptap拡張機能の追加方法」セクションを参照してください。
+
+以下の情報が含まれています：
+
+- **Mark vs Node の判断基準** - テキスト装飾とブロック要素の違い
+- **実装パターン** - 公式拡張の使用 vs カスタム拡張の実装
+- **実装チェックリスト** - 8ステップの詳細ガイド
+- **よくある落とし穴** - ツールバーボタンが表示されない、属性が保持されないなどの対処法
+- **デバッグ方法** - Transactionイベントのリスニング、内部状態確認
+- **実装例** - subscript, superscript, paragraph alignment機能の実装
+
+### 開発環境
+
+```bash
+# パッケージのビルド
+yarn build
+
+# テストの実行
+yarn test
+
+# Lintの実行
+yarn lint
+```
 
 ## ライセンス
 
