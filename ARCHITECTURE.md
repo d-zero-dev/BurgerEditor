@@ -569,6 +569,37 @@ parseHTML: (element) => {
 - `parseHTML`と`renderHTML`の実装を確認
 - テストで`hasStructureChange`をチェック
 
+#### 4.6 カスタム属性のスタイルが適用されない
+
+**原因**: 対応するCSSスタイルの追加漏れ
+
+**解決方法**:
+
+カスタム属性（特に見た目に影響するもの）を追加した場合、対応するCSSを`@burger-editor/blocks`パッケージに追加する必要があります。
+
+1. **general.cssへの追加** - Wysiwyg内で使用する属性の場合
+
+   ```css
+   /* packages/@burger-editor/blocks/src/general.css */
+   :where([data-bgc-align]) {
+   	&[data-bgc-align='start'] {
+   		text-align: start;
+   	}
+   	&[data-bgc-align='center'] {
+   		text-align: center;
+   	}
+   	&[data-bgc-align='end'] {
+   		text-align: end;
+   	}
+   }
+   ```
+
+2. **アイテム固有のstyle.cssへの追加** - 特定のアイテムでのみ使用する属性の場合
+
+   各アイテムのディレクトリ内の`style.css`に追加します
+
+**注意**: `@burger-editor/css`パッケージは`@burger-editor/blocks`のCSSを自動的に統合するため、blocksパッケージにスタイルを追加すれば、cssパッケージにも自動的に反映されます。
+
 ### 5. デバッグ方法
 
 #### Transactionイベントのリスン

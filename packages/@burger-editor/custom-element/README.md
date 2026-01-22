@@ -93,9 +93,11 @@ defineBgeWysiwygEditorElement();
 
 **段落整列:**
 
-- `align-start` - 左寄せ
-- `align-center` - 中央寄せ
-- `align-end` - 右寄せ
+- `align-start` - 左寄せ（`<p data-bgc-align="start">`として出力）
+- `align-center` - 中央寄せ（`<p data-bgc-align="center">`として出力）
+- `align-end` - 右寄せ（`<p data-bgc-align="end">`として出力）
+
+> **ℹ️ スタイルシートが必要**: 段落整列を使用する場合、[@burger-editor/css](../css/)または[@burger-editor/blocks](../blocks/)の`general.css`を読み込む必要があります。
 
 #### 例: 基本的なエディタ
 
