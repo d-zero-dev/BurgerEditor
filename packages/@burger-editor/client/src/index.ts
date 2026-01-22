@@ -144,6 +144,11 @@ export async function createBurgerEditorClient(
 				wrapperElement: {
 					className: context.className ?? '',
 				},
+				experimental: context.experimental?.itemOptions?.wysiwyg?.enableTextOnlyMode
+					? {
+							textOnlyMode: context.experimental.itemOptions.wysiwyg.enableTextOnlyMode,
+						}
+					: undefined,
 			});
 		},
 	});
