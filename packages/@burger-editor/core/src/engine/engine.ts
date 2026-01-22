@@ -495,6 +495,7 @@ export class BurgerEditorEngine {
 		if (options.defineCustomElement) {
 			await options.defineCustomElement({
 				className: options.config.classList.join(' '),
+				experimental: options.config.experimental,
 			});
 		}
 

@@ -29,6 +29,7 @@ export interface BurgerEditorEngineOptions {
 	};
 	readonly defineCustomElement?: (context: {
 		readonly className?: string;
+		readonly experimental?: Config['experimental'];
 	}) => void | Promise<void>;
 	readonly onUpdated?: (main: string, draft?: string) => void | Promise<void>;
 	readonly fileIO?: FileAPI;
@@ -80,6 +81,9 @@ export interface Config {
 	readonly googleMapsApiKey: string | null;
 	readonly experimental?: {
 		readonly itemOptions?: {
+			readonly wysiwyg?: {
+				readonly enableTextOnlyMode?: boolean;
+			};
 			readonly button?: {
 				readonly kinds?: readonly Mergeable<SelectableValue>[];
 				readonly beforeIcons?: readonly Mergeable<SelectableValue>[];
