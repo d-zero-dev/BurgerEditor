@@ -219,6 +219,52 @@ await createBurgerEditorClient({
 });
 ```
 
+## ブロックのコピー&ペースト
+
+BurgerEditorは、ブロック単位でのコピー&ペースト機能を提供します。
+
+### 使用方法
+
+1. **ブロックのコピー**
+   - コピーしたいブロックを選択
+   - ブロックメニューから「ブロックをコピー」をクリック
+   - ブロックのデータがクリップボード（sessionStorage）に保存されます
+
+2. **ブロックのペースト**
+   - ブロック追加ダイアログを開く
+   - クリップボードにデータがある場合、「クリップボードから貼り付け」ボタンが表示されます
+   - ボタンをクリックすると、コピーしたブロックが挿入されます
+
+### 仕様
+
+- **保存形式**: JSON形式（BlockData）
+- **保存先**: sessionStorage
+- **有効期限**: ブラウザセッション内のみ（タブを閉じると消去）
+- **保存キー**: `engine.storageKey.blockClipboard`（デフォルト: `'bge-copied-block'`）
+- **動作**: ペースト後、クリップボードは自動的にクリアされます
+
+### ストレージキーのカスタマイズ
+
+```typescript
+await createBurgerEditorClient({
+	root: '.editor',
+	config: {
+		classList: [],
+		stylesheets: [],
+		sampleImagePath: '/images/sample.jpg',
+		sampleFilePath: '/files/sample.pdf',
+		googleMapsApiKey: null,
+	},
+	items,
+	catalog: defaultCatalog,
+	generalCSS,
+	initialContents: '<div></div>',
+	storageKey: {
+		blockClipboard: 'my-custom-clipboard-key', // カスタムキー
+	},
+});
+```
+
 ## 詳細なAPI仕様
 
 ブロックの構造やアイテムの作成方法など、より詳細な技術仕様については [@burger-editor/core のREADME](../core/README.md) を参照してください。
