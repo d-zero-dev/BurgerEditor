@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.53](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.52...v4.0.0-alpha.53) (2026-01-22)
+
+### Features
+
+- **client:** add paste functionality to block catalog dialog ([3512478](https://github.com/d-zero-dev/BurgerEditor/commit/35124780830703e462c203c6c401db492f46a1ae))
+
 # [4.0.0-alpha.52](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.51...v4.0.0-alpha.52) (2026-01-21)
 
 **Note:** Version bump only for package @burger-editor/client
