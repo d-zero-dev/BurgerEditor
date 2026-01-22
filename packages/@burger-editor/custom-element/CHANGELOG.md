@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.54](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.53...v4.0.0-alpha.54) (2026-01-22)
+
+### Features
+
+- **custom-element:** add subscript, superscript, and paragraph alignment ([4eb0ca6](https://github.com/d-zero-dev/BurgerEditor/commit/4eb0ca6d33fcbc18a3654afb8c4860764886d094))
+
 # [4.0.0-alpha.53](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.52...v4.0.0-alpha.53) (2026-01-22)
 
 **Note:** Version bump only for package @burger-editor/custom-element

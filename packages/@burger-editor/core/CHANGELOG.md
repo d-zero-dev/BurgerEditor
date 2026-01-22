@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.54](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.53...v4.0.0-alpha.54) (2026-01-22)
+
+### Bug Fixes
+
+- **core:** include generalCSS in WYSIWYG editor dialog stylesheet ([52f819e](https://github.com/d-zero-dev/BurgerEditor/commit/52f819e73bf194c66f46d44303d0ad2a737458d0))
+
 # [4.0.0-alpha.53](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.52...v4.0.0-alpha.53) (2026-01-22)
 
 **Note:** Version bump only for package @burger-editor/core
