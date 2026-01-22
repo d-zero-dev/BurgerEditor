@@ -15,6 +15,8 @@
 	--bge-focus-outline-width: 2px;
 	--bge-tooltip-background-color: rgb(0 0 0 / 60%);
 	--bge-font-family-monospace: 'Courier New', monospace;
+	--bge-form-control-padding-inline: 0.7em;
+	--bge-form-control-padding-block: 0.5em;
 }
 
 :where(body:has(dialog[open])) {
@@ -123,8 +125,8 @@
 		textarea
 	) {
 		inline-size: 100%;
-		padding-block: 0.5em;
-		padding-inline: 0.7em;
+		padding-block: var(--bge-form-control-padding-block);
+		padding-inline: var(--bge-form-control-padding-inline);
 		font-size: 1em;
 		line-height: 1.1;
 	}
@@ -158,6 +160,10 @@
 		--separator-width: 1px;
 		--separator-height: calc(100% - 4px * 2);
 		--separator-color: var(--bge-border-color);
+		padding-inline-end: calc(
+			var(--allow-padding) + var(--allow-size) * 4 + var(--separator-width) +
+				var(--allow-padding) + var(--bge-form-control-padding-inline)
+		);
 		appearance: none;
 		background-image:
 			linear-gradient(45deg, transparent 50%, var(--allow-color) 50%),
