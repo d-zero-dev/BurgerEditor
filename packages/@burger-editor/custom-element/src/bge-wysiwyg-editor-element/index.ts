@@ -30,6 +30,37 @@ import IconUnderline from '@tabler/icons/outline/underline.svg?raw';
 import { defineBgeWysiwygElement } from '../bge-wysiwyg-element/index.js';
 import { getCurrentEditorState } from '../utils/get-current-editor-state.js';
 
+/**
+ * ツールバーボタン型（kebab-case）をEditorStateキー（camelCase）にマッピング
+ * ボタン名とstateキーが異なる8箇所を処理
+ */
+const BUTTON_TO_STATE_KEY_MAP: Record<string, keyof EditorState> = {
+	bold: 'bold',
+	italic: 'italic',
+	underline: 'underline',
+	strikethrough: 'strike',
+	code: 'code',
+	link: 'link',
+	'button-like-link': 'buttonLikeLink',
+	blockquote: 'blockquote',
+	'bullet-list': 'bulletList',
+	'ordered-list': 'orderedList',
+	note: 'note',
+	h1: 'h1',
+	h2: 'h2',
+	h3: 'h3',
+	h4: 'h4',
+	h5: 'h5',
+	h6: 'h6',
+	'flex-box': 'flexBox',
+	subscript: 'subscript',
+	superscript: 'superscript',
+	'align-start': 'alignStart',
+	'align-center': 'alignCenter',
+	'align-end': 'alignEnd',
+	image: 'image',
+} as const;
+
 export interface BgeWysiwygEditorElementOptions {
 	extensions?: Extensions;
 	wrapperElement?: ElementSeed;
@@ -479,10 +510,10 @@ function bindToggle(button: HTMLButtonElement, wysiwygElement: BgeWysiwygElement
  * @param wysiwygElement
  */
 /**
- *
- * @param button
- * @param state
- * @param editorElement
+ * エディタ状態に基づいて単一ボタンのdisabledとaria-pressed状態を更新
+ * @param button - 更新するボタン要素
+ * @param state - 全ボタンの状態を含む現在のエディタ状態
+ * @param editorElement - モード確認用のエディタ要素
  */
 function updateButtonState(
 	button: HTMLButtonElement,
@@ -491,125 +522,29 @@ function updateButtonState(
 ) {
 	const buttonType = button.dataset.bgeToolbarButton;
 
-	// モード切り替えボタンはスキップ
+	// モード切り替えボタンはスキップ - 独自の状態管理
 	if (buttonType === 'html-mode' || buttonType === 'text-only-mode') {
 		return;
 	}
 
-	// 非WYSIWYGモードの判定
+	// このボタン型に対応するstateキーを取得
+	const stateKey = BUTTON_TO_STATE_KEY_MAP[buttonType];
+
+	if (!stateKey) {
+		// 未知のボタン型 - 開発時に警告だがクラッシュはしない
+		if (process.env.NODE_ENV !== 'production') {
+			// eslint-disable-next-line no-console
+			console.warn(`Unknown button type: ${buttonType}`);
+		}
+		return;
+	}
+
+	// 非WYSIWYGモードかチェック
 	const currentMode = editorElement.mode;
 	const isNonWysiwygMode = currentMode === 'html' || currentMode === 'text-only';
 
-	switch (buttonType) {
-		case 'bold': {
-			button.disabled = isNonWysiwygMode || state.bold.disabled;
-			button.ariaPressed = state.bold.active ? 'true' : 'false';
-			break;
-		}
-		case 'italic': {
-			button.disabled = isNonWysiwygMode || state.italic.disabled;
-			button.ariaPressed = state.italic.active ? 'true' : 'false';
-			break;
-		}
-		case 'underline': {
-			button.disabled = isNonWysiwygMode || state.underline.disabled;
-			button.ariaPressed = state.underline.active ? 'true' : 'false';
-			break;
-		}
-		case 'strikethrough': {
-			button.disabled = isNonWysiwygMode || state.strike.disabled;
-			button.ariaPressed = state.strike.active ? 'true' : 'false';
-			break;
-		}
-		case 'code': {
-			button.disabled = isNonWysiwygMode || state.code.disabled;
-			button.ariaPressed = state.code.active ? 'true' : 'false';
-			break;
-		}
-		case 'link': {
-			button.disabled = isNonWysiwygMode || state.link.disabled;
-			button.ariaPressed = state.link.active ? 'true' : 'false';
-			break;
-		}
-		case 'button-like-link': {
-			button.disabled = isNonWysiwygMode || state.buttonLikeLink.disabled;
-			button.ariaPressed = state.buttonLikeLink.active ? 'true' : 'false';
-			break;
-		}
-		case 'blockquote': {
-			button.disabled = isNonWysiwygMode || state.blockquote.disabled;
-			button.ariaPressed = state.blockquote.active ? 'true' : 'false';
-			break;
-		}
-		case 'bullet-list': {
-			button.disabled = isNonWysiwygMode || state.bulletList.disabled;
-			button.ariaPressed = state.bulletList.active ? 'true' : 'false';
-			break;
-		}
-		case 'ordered-list': {
-			button.disabled = isNonWysiwygMode || state.orderedList.disabled;
-			button.ariaPressed = state.orderedList.active ? 'true' : 'false';
-			break;
-		}
-		case 'note': {
-			button.disabled = isNonWysiwygMode || state.note.disabled;
-			button.ariaPressed = state.note.active ? 'true' : 'false';
-			break;
-		}
-		case 'h2': {
-			button.disabled = isNonWysiwygMode || state.h2.disabled;
-			button.ariaPressed = state.h2.active ? 'true' : 'false';
-			break;
-		}
-		case 'h3': {
-			button.disabled = isNonWysiwygMode || state.h3.disabled;
-			button.ariaPressed = state.h3.active ? 'true' : 'false';
-			break;
-		}
-		case 'h4': {
-			button.disabled = isNonWysiwygMode || state.h4.disabled;
-			button.ariaPressed = state.h4.active ? 'true' : 'false';
-			break;
-		}
-		case 'h5': {
-			button.disabled = isNonWysiwygMode || state.h5.disabled;
-			button.ariaPressed = state.h5.active ? 'true' : 'false';
-			break;
-		}
-		case 'h6': {
-			button.disabled = isNonWysiwygMode || state.h6.disabled;
-			button.ariaPressed = state.h6.active ? 'true' : 'false';
-			break;
-		}
-		case 'flex-box': {
-			button.disabled = isNonWysiwygMode || state.flexBox.disabled;
-			button.ariaPressed = state.flexBox.active ? 'true' : 'false';
-			break;
-		}
-		case 'subscript': {
-			button.disabled = isNonWysiwygMode || state.subscript.disabled;
-			button.ariaPressed = state.subscript.active ? 'true' : 'false';
-			break;
-		}
-		case 'superscript': {
-			button.disabled = isNonWysiwygMode || state.superscript.disabled;
-			button.ariaPressed = state.superscript.active ? 'true' : 'false';
-			break;
-		}
-		case 'align-start': {
-			button.disabled = isNonWysiwygMode || state.alignStart.disabled;
-			button.ariaPressed = state.alignStart.active ? 'true' : 'false';
-			break;
-		}
-		case 'align-center': {
-			button.disabled = isNonWysiwygMode || state.alignCenter.disabled;
-			button.ariaPressed = state.alignCenter.active ? 'true' : 'false';
-			break;
-		}
-		case 'align-end': {
-			button.disabled = isNonWysiwygMode || state.alignEnd.disabled;
-			button.ariaPressed = state.alignEnd.active ? 'true' : 'false';
-			break;
-		}
-	}
+	// エディタ状態からボタン状態を更新
+	const buttonState = state[stateKey];
+	button.disabled = isNonWysiwygMode || buttonState.disabled;
+	button.ariaPressed = buttonState.active ? 'true' : 'false';
 }
