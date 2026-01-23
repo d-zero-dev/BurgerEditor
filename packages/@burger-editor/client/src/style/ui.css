@@ -265,8 +265,10 @@
 	}
 
 	:where(fieldset) {
+		inline-size: 100%;
 		padding: 1em;
 		margin-block-start: 1em;
+		container-type: inline-size;
 		border: 1px solid var(--bge-border-color);
 		border-radius: var(--border-radius);
 
