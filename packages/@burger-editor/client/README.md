@@ -102,7 +102,7 @@ async function initEditor() {
 				},
 				{
 					path: generalCSS,
-					layer: CSS_LAYER.general,
+					layer: CSS_LAYER.base,
 				},
 			],
 			sampleImagePath: '/images/sample.jpg',

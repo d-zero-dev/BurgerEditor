@@ -333,6 +333,50 @@ const engine = await createBurgerEditorEngine({
 });
 ```
 
+### CSSレイヤー定数 (CSS_LAYER)
+
+BurgerEditorは[CSSカスケードレイヤー](https://developer.mozilla.org/ja/docs/Web/CSS/@layer)を使用してスタイルの優先順位を管理しています。`CSS_LAYER`定数は、スタイルシートを適切なレイヤーに配置するために使用されます。
+
+**定義:**
+
+```typescript
+export const CSS_LAYER = {
+	base: 'bge-component-bases', // 基本コンポーネントスタイル
+	components: 'bge-components', // ブロックコンポーネントスタイル
+	ui: 'bge-ui', // UIスタイル（最高優先度）
+} as const;
+```
+
+**レイヤーの優先順位:**
+
+1. `base` - 最も低い優先度。一般的なCSS（general.css）とアイテムのベーススタイルに使用されます
+2. `components` - ブロックごとのコンポーネントスタイルに使用されます
+3. `ui` - 最も高い優先度。カスタムUIスタイルに使用されます
+
+**使用例:**
+
+```typescript
+import { CSS_LAYER } from '@burger-editor/core';
+
+const options = {
+	config: {
+		stylesheets: [
+			{
+				path: '/path/to/custom-ui.css',
+				layer: CSS_LAYER.ui, // UIレイヤーに配置
+			},
+			{
+				path: generalCSS,
+				layer: CSS_LAYER.base, // ベースレイヤーに配置
+			},
+		],
+		// ...
+	},
+};
+```
+
+> **ℹ️ 注意**: CSSレイヤーを使用することで、スタイルの詳細度（specificity）に依存せずに優先順位を制御できます。
+
 ## アイテムの仕様
 
 ### アイテムとは

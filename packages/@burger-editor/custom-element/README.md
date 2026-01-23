@@ -128,6 +128,7 @@ defineBgeWysiwygEditorElement();
 - `name` (readonly): エディタの識別子（`name`属性の値）
 - `value` (readonly): 現在のHTML内容
 - `innerHTML` (setter): エディタの内容を設定
+- `mode` (readonly): 現在のエディタモード（`'wysiwyg'` | `'html'` | `'text-only'`）
 
 **メソッド:**
 
@@ -144,6 +145,9 @@ editor.editor.chain().focus().toggleBold().run();
 
 // 現在の内容を取得
 console.log(editor.value);
+
+// 現在のモードを確認
+console.log(editor.mode); // 'wysiwyg', 'html', or 'text-only'
 
 // 内容を設定
 editor.innerHTML = '<p>新しい内容</p>';
@@ -194,6 +198,7 @@ defineBgeWysiwygEditorElement({
 
 - HTMLモードボタンのみ表示
 - デザインモードとHTMLモードの2モード間をトグル
+- HTMLモード中は、すべてのWYSIWYGフォーマットボタン（太字、斜体、リンク、見出しなど）が自動的に無効化されます
 
 **`true`の場合**:
 
@@ -202,6 +207,7 @@ defineBgeWysiwygEditorElement({
   - **テキスト編集モード** (text-only): HTML構造を保持したままテキストのみ編集
   - **HTMLモード** (html): HTMLソースコードを直接編集
 - 構造変更がある場合、デザインモードオプションが自動的に無効化されます
+- HTMLモードまたはテキスト編集モード中は、すべてのWYSIWYGフォーマットボタン（太字、斜体、リンク、見出しなど）が自動的に無効化されます
 
 > **ℹ️ 注意**: この機能は実験的であり、将来のバージョンでAPIが変更される可能性があります。
 
