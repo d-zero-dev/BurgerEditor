@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.55](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.54...v4.0.0-alpha.55) (2026-01-23)
+
+### Bug Fixes
+
+- **client:** adjust select element padding for experimental mode selector ([a86bf75](https://github.com/d-zero-dev/BurgerEditor/commit/a86bf75a7ca1d47ebc825b95e2c3cfa35d86bf04))
+
+### Features
+
+- **client:** pass experimental.itemOptions.wysiwyg.enableTextOnlyMode to custom element ([1101db6](https://github.com/d-zero-dev/BurgerEditor/commit/1101db656215c37e873b8af1e14140021d5a2451))
+
 # [4.0.0-alpha.54](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.53...v4.0.0-alpha.54) (2026-01-22)
 
 **Note:** Version bump only for package @burger-editor/client

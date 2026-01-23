@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.55](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.54...v4.0.0-alpha.55) (2026-01-23)
+
+### Bug Fixes
+
+- **custom-element:** adapt structure change warning message based on experimental flag ([7740886](https://github.com/d-zero-dev/BurgerEditor/commit/7740886eb5fe3483debf050568a8043ffe05c1a8))
+
+### Features
+
+- **custom-element:** add experimental.textOnlyMode option for conditional UI ([1f7fda8](https://github.com/d-zero-dev/BurgerEditor/commit/1f7fda80a5fd6adfac5122855e7e82f545486b54))
+- **custom-element:** disable WYSIWYG buttons in HTML and text-only modes ([06714c9](https://github.com/d-zero-dev/BurgerEditor/commit/06714c9a88613d0f07f3340b86ed2de4e3f1f63e))
+
 # [4.0.0-alpha.54](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.53...v4.0.0-alpha.54) (2026-01-22)
 
 ### Features

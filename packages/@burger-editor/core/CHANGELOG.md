@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.55](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.54...v4.0.0-alpha.55) (2026-01-23)
+
+### Features
+
+- **core:** add experimental.itemOptions.wysiwyg.enableTextOnlyMode config option ([6202eb1](https://github.com/d-zero-dev/BurgerEditor/commit/6202eb1e6cbdbc10e216a5e8c1739672ff377689))
+
 # [4.0.0-alpha.54](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.53...v4.0.0-alpha.54) (2026-01-22)
 
 ### Bug Fixes
