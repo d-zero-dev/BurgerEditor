@@ -8,6 +8,7 @@ import StarterKit from '@tiptap/starter-kit';
 
 import { BgeWysiwygEditorKit } from '../tiptap-extentions/index.js';
 import { createElement } from '../utils/create-element.js';
+import { getCurrentEditorState } from '../utils/get-current-editor-state.js';
 
 declare global {
 	interface HTMLElementEventMap {
@@ -776,106 +777,10 @@ export class BgeWysiwygElement extends HTMLElement {
 		this.#textareaDescriptor.set?.call(this.#textarea, html);
 	}
 
-	#transaction(editor: Editor) {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	#transaction(_editor: Editor) {
 		const data: Transaction = {
-			state: {
-				bold: {
-					disabled: !editor.can().chain().focus().toggleBold().run(),
-					active: editor.isActive('bold'),
-				},
-				italic: {
-					disabled: !editor.can().chain().focus().toggleItalic().run(),
-					active: editor.isActive('italic'),
-				},
-				underline: {
-					disabled: !editor.can().chain().focus().toggleUnderline().run(),
-					active: editor.isActive('underline'),
-				},
-				strike: {
-					disabled: !editor.can().chain().focus().toggleStrike().run(),
-					active: editor.isActive('strike'),
-				},
-				subscript: {
-					disabled: !editor.can().chain().focus().toggleSubscript().run(),
-					active: editor.isActive('subscript'),
-				},
-				superscript: {
-					disabled: !editor.can().chain().focus().toggleSuperscript().run(),
-					active: editor.isActive('superscript'),
-				},
-				code: {
-					disabled: !editor.can().chain().focus().toggleCode().run(),
-					active: editor.isActive('code'),
-				},
-				link: {
-					disabled: !editor.can().chain().focus().toggleLink().run(),
-					active: editor.isActive('link'),
-				},
-				buttonLikeLink: {
-					disabled: !editor.can().chain().focus().toggleButtonLikeLink().run(),
-					active: editor.isActive('buttonLikeLink'),
-				},
-				blockquote: {
-					disabled: !editor.can().chain().focus().toggleBlockquote().run(),
-					active: editor.isActive('blockquote'),
-				},
-				bulletList: {
-					disabled: !editor.can().chain().focus().toggleBulletList().run(),
-					active: editor.isActive('bulletList'),
-				},
-				orderedList: {
-					disabled: !editor.can().chain().focus().toggleOrderedList().run(),
-					active: editor.isActive('orderedList'),
-				},
-				note: {
-					disabled: !editor.can().chain().focus().toggleNote().run(),
-					active: editor.isActive('note'),
-				},
-				h1: {
-					disabled: !editor.can().chain().focus().toggleHeading({ level: 1 }).run(),
-					active: editor.isActive('heading', { level: 1 }),
-				},
-				h2: {
-					disabled: !editor.can().chain().focus().toggleHeading({ level: 2 }).run(),
-					active: editor.isActive('heading', { level: 2 }),
-				},
-				h3: {
-					disabled: !editor.can().chain().focus().toggleHeading({ level: 3 }).run(),
-					active: editor.isActive('heading', { level: 3 }),
-				},
-				h4: {
-					disabled: !editor.can().chain().focus().toggleHeading({ level: 4 }).run(),
-					active: editor.isActive('heading', { level: 4 }),
-				},
-				h5: {
-					disabled: !editor.can().chain().focus().toggleHeading({ level: 5 }).run(),
-					active: editor.isActive('heading', { level: 5 }),
-				},
-				h6: {
-					disabled: !editor.can().chain().focus().toggleHeading({ level: 6 }).run(),
-					active: editor.isActive('heading', { level: 6 }),
-				},
-				flexBox: {
-					disabled: !editor.can().chain().focus().toggleFlexBox().run(),
-					active: editor.isActive('flexBox'),
-				},
-				image: {
-					disabled: !editor.can().chain().focus().setImage({ src: '' }).run(),
-					active: editor.isActive('image'),
-				},
-				alignStart: {
-					disabled: !editor.can().chain().focus().toggleAlign('start').run(),
-					active: editor.isActive('paragraph', { 'data-bgc-align': 'start' }),
-				},
-				alignCenter: {
-					disabled: !editor.can().chain().focus().toggleAlign('center').run(),
-					active: editor.isActive('paragraph', { 'data-bgc-align': 'center' }),
-				},
-				alignEnd: {
-					disabled: !editor.can().chain().focus().toggleAlign('end').run(),
-					active: editor.isActive('paragraph', { 'data-bgc-align': 'end' }),
-				},
-			},
+			state: getCurrentEditorState(this),
 		};
 
 		return data;
