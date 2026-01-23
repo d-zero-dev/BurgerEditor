@@ -233,7 +233,7 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 
 		// structure-changeイベント（HTMLモード切り替え時）にもボタン状態を更新
 		this.#wysiwygElement.addEventListener('bge:structure-change', () => {
-			const currentState = getCurrentEditorState(this.#wysiwygElement);
+			const currentState = getCurrentEditorState(this.#wysiwygElement!);
 			for (const button of buttons) {
 				updateButtonState(button, currentState, this);
 			}
@@ -537,6 +537,10 @@ function updateButtonState(
 	editorElement: BgeWysiwygEditorElement,
 ) {
 	const buttonType = button.dataset.bgeToolbarButton;
+
+	if (!buttonType) {
+		return;
+	}
 
 	// モード切り替えボタンはスキップ - 独自の状態管理
 	if (buttonType === 'html-mode' || buttonType === 'text-only-mode') {
