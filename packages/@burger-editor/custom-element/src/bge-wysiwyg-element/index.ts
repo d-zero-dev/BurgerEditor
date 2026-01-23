@@ -593,7 +593,9 @@ export class BgeWysiwygElement extends HTMLElement {
 		if (!this.#textOnlyContainer) {
 			this.#textOnlyContainer = document.createElement('div');
 			this.#textOnlyContainer.dataset.textOnlyEditor = '';
-			this.shadowRoot!.querySelector('[data-bge-mode]')!.append(this.#textOnlyContainer);
+			// アラートメッセージの前に挿入（DOMの順番を正しく保つ）
+			const modeContainer = this.shadowRoot!.querySelector('[data-bge-mode]')!;
+			modeContainer.insertBefore(this.#textOnlyContainer, this.#structureChangeMessage);
 		}
 
 		// 3. スタイルタグを作成してwysiwygと同じCSSを適用
