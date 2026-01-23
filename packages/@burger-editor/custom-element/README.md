@@ -118,6 +118,43 @@ defineBgeWysiwygEditorElement();
 </bge-wysiwyg-editor>
 ```
 
+#### API
+
+`<bge-wysiwyg-editor>`要素は以下のプロパティとメソッドを提供します：
+
+**プロパティ:**
+
+- `editor` (readonly): TipTapエディタインスタンスへのアクセス
+- `name` (readonly): エディタの識別子（`name`属性の値）
+- `value` (readonly): 現在のHTML内容
+- `innerHTML` (setter): エディタの内容を設定
+
+**メソッド:**
+
+- `setStyle(css: string)`: エディタのプレビューエリアにカスタムCSSを適用
+- `syncWysiwygToTextarea()`: WYSIWYGモードの内容をテキストエリアに同期
+
+**使用例:**
+
+```typescript
+const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+
+// TipTapエディタに直接アクセス
+editor.editor.chain().focus().toggleBold().run();
+
+// 現在の内容を取得
+console.log(editor.value);
+
+// 内容を設定
+editor.innerHTML = '<p>新しい内容</p>';
+
+// カスタムスタイルを適用
+editor.setStyle('p { color: red; }');
+
+// 手動同期（通常は自動的に同期されます）
+editor.syncWysiwygToTextarea();
+```
+
 ## TypeScriptでの使用
 
 ```typescript

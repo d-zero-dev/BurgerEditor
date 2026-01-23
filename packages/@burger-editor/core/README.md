@@ -266,6 +266,49 @@ BurgerEditorエンジンの動作を制御する設定オプションです。`B
 
 詳細は[@burger-editor/custom-element](../custom-element/)のドキュメントを参照してください。
 
+#### `experimental.itemOptions.button`
+
+- **型**: `{ kinds?, beforeIcons?, afterIcons? }`
+- **説明**: ボタンアイテムの選択肢をカスタマイズします
+
+ボタンアイテムの種類（`kinds`）、前アイコン（`beforeIcons`）、後アイコン（`afterIcons`）の選択肢を追加・変更・削除できます。
+
+**設定可能なプロパティ**:
+
+- `kinds`: ボタンの種類（primary, secondary, tertiary, textなど）
+- `beforeIcons`: ボタンの前に表示するアイコン（arrow-leftなど）
+- `afterIcons`: ボタンの後に表示するアイコン（arrow-right, arrow-down, external, text-fileなど）
+
+各プロパティは`Mergeable<SelectableValue>[]`型で、以下の操作が可能です：
+
+- **追加**: 新しい選択肢を追加（`{ value: 'custom', label: 'カスタム' }`）
+- **変更**: 既存の選択肢のラベルを変更（`{ value: 'primary', label: '新ラベル' }`）
+- **削除**: 既存の選択肢を削除（`{ value: 'tertiary', delete: true }`）
+
+**使用例**:
+
+```typescript
+experimental: {
+	itemOptions: {
+		button: {
+			kinds: [
+				// 既存のラベルを変更
+				{ value: 'primary', label: 'メインボタン' },
+				// 既存の選択肢を削除
+				{ value: 'tertiary', delete: true },
+				// 新しい選択肢を追加
+				{ value: 'danger', label: '危険ボタン' },
+				{ value: 'outline', label: 'アウトラインボタン' },
+			],
+			afterIcons: [
+				// 新しいアイコンを追加
+				{ value: 'download', label: 'ダウンロード' },
+			],
+		},
+	},
+}
+```
+
 ### 使用例
 
 ```typescript
