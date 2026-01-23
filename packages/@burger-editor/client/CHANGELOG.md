@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.56](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.55...v4.0.0-alpha.56) (2026-01-23)
+
+### Features
+
+- **client:** add container query support to fieldset elements ([acbe312](https://github.com/d-zero-dev/BurgerEditor/commit/acbe312865289e725e541698a452a9e7f73e9322))
+
 # [4.0.0-alpha.55](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.54...v4.0.0-alpha.55) (2026-01-23)
 
 ### Bug Fixes

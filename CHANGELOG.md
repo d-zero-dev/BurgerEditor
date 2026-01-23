@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.56](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.55...v4.0.0-alpha.56) (2026-01-23)
+
+### Bug Fixes
+
+- **custom-element:** insert text-only container before alert message ([14bf8c7](https://github.com/d-zero-dev/BurgerEditor/commit/14bf8c78b96f63014a367a1872384a10a0f62bc7))
+- **custom-element:** sync UI state on dialog open and mode changes ([7f26621](https://github.com/d-zero-dev/BurgerEditor/commit/7f266217ca0fbf0de3ace7e3e73ee76d182a67e8))
+
+### Features
+
+- **client:** add container query support to fieldset elements ([acbe312](https://github.com/d-zero-dev/BurgerEditor/commit/acbe312865289e725e541698a452a9e7f73e9322))
+
 # [4.0.0-alpha.55](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.54...v4.0.0-alpha.55) (2026-01-23)
 
 ### Bug Fixes
