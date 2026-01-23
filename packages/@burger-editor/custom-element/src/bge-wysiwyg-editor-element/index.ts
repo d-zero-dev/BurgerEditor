@@ -83,6 +83,17 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 		return this.#wysiwygElement.value;
 	}
 
+	/**
+	 * 現在のエディタモードを取得
+	 * @returns 'wysiwyg' | 'html' | 'text-only'
+	 */
+	get mode(): BgeMode {
+		if (!this.#wysiwygElement) {
+			throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
+		}
+		return this.#wysiwygElement.mode;
+	}
+
 	constructor() {
 		super();
 
@@ -184,7 +195,7 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 
 		this.#wysiwygElement.addEventListener('transaction', (event) => {
 			for (const button of buttons) {
-				updateButtonState(button, event.detail.state);
+				updateButtonState(button, event.detail.state, this);
 			}
 		});
 
@@ -236,7 +247,13 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 				this.#wysiwygElement.mode = newMode;
 
 				// 実際にモードが変更されたか確認
-				if (this.#wysiwygElement.mode !== newMode) {
+				if (this.#wysiwygElement.mode === newMode) {
+					// モード変更成功時、全ボタンを即座に更新
+					const currentState = getCurrentEditorState(this.#wysiwygElement);
+					for (const button of buttons) {
+						updateButtonState(button, currentState, this);
+					}
+				} else {
 					// 切り替えが防止された場合、selectの値を元に戻す
 					modeSelector.value = currentMode;
 				}
@@ -269,6 +286,12 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 				this.#wysiwygElement.mode = newMode;
 
 				if (this.#wysiwygElement.mode === newMode) {
+					// モード変更成功時、全ボタンを即座に更新
+					const currentState = getCurrentEditorState(this.#wysiwygElement);
+					for (const button of buttons) {
+						updateButtonState(button, currentState, this);
+					}
+
 					const hasStructureChange = this.#wysiwygElement.hasStructureChange;
 					htmlModeButton.disabled = newMode === 'html' && hasStructureChange;
 				} else {
@@ -450,121 +473,246 @@ function bindToggle(button: HTMLButtonElement, wysiwygElement: BgeWysiwygElement
 }
 
 /**
+ * 現在のエディタ状態をオンデマンドで取得
+ * モード切り替え直後のボタン更新に使用
+ * @param wysiwygElement
+ */
+function getCurrentEditorState(wysiwygElement: BgeWysiwygElement): EditorState {
+	const editor = wysiwygElement.editor;
+	if (!editor) {
+		throw new ReferenceError('TipTap editor is not initialized');
+	}
+
+	return {
+		bold: {
+			disabled: !editor.can().chain().focus().toggleBold().run(),
+			active: editor.isActive('bold'),
+		},
+		italic: {
+			disabled: !editor.can().chain().focus().toggleItalic().run(),
+			active: editor.isActive('italic'),
+		},
+		underline: {
+			disabled: !editor.can().chain().focus().toggleUnderline().run(),
+			active: editor.isActive('underline'),
+		},
+		strike: {
+			disabled: !editor.can().chain().focus().toggleStrike().run(),
+			active: editor.isActive('strike'),
+		},
+		subscript: {
+			disabled: !editor.can().chain().focus().toggleSubscript().run(),
+			active: editor.isActive('subscript'),
+		},
+		superscript: {
+			disabled: !editor.can().chain().focus().toggleSuperscript().run(),
+			active: editor.isActive('superscript'),
+		},
+		code: {
+			disabled: !editor.can().chain().focus().toggleCode().run(),
+			active: editor.isActive('code'),
+		},
+		link: {
+			disabled: false, // linkは常に有効
+			active: editor.isActive('link'),
+		},
+		buttonLikeLink: {
+			disabled: false,
+			active: editor.isActive('buttonLikeLink'),
+		},
+		bulletList: {
+			disabled: !editor.can().chain().focus().toggleBulletList().run(),
+			active: editor.isActive('bulletList'),
+		},
+		orderedList: {
+			disabled: !editor.can().chain().focus().toggleOrderedList().run(),
+			active: editor.isActive('orderedList'),
+		},
+		blockquote: {
+			disabled: !editor.can().chain().focus().toggleBlockquote().run(),
+			active: editor.isActive('blockquote'),
+		},
+		note: {
+			disabled: !editor.can().chain().focus().toggleNote().run(),
+			active: editor.isActive('note'),
+		},
+		flexBox: {
+			disabled: !editor.can().chain().focus().toggleFlexBox().run(),
+			active: editor.isActive('flexBox'),
+		},
+		h1: {
+			disabled: !editor.can().chain().focus().toggleHeading({ level: 1 }).run(),
+			active: editor.isActive('heading', { level: 1 }),
+		},
+		h2: {
+			disabled: !editor.can().chain().focus().toggleHeading({ level: 2 }).run(),
+			active: editor.isActive('heading', { level: 2 }),
+		},
+		h3: {
+			disabled: !editor.can().chain().focus().toggleHeading({ level: 3 }).run(),
+			active: editor.isActive('heading', { level: 3 }),
+		},
+		h4: {
+			disabled: !editor.can().chain().focus().toggleHeading({ level: 4 }).run(),
+			active: editor.isActive('heading', { level: 4 }),
+		},
+		h5: {
+			disabled: !editor.can().chain().focus().toggleHeading({ level: 5 }).run(),
+			active: editor.isActive('heading', { level: 5 }),
+		},
+		h6: {
+			disabled: !editor.can().chain().focus().toggleHeading({ level: 6 }).run(),
+			active: editor.isActive('heading', { level: 6 }),
+		},
+		image: {
+			disabled: !editor.can().chain().focus().setImage({ src: '' }).run(),
+			active: editor.isActive('image'),
+		},
+		alignStart: {
+			disabled: !editor.can().chain().focus().toggleAlign('start').run(),
+			active: editor.isActive('paragraph', { 'data-bgc-align': 'start' }),
+		},
+		alignCenter: {
+			disabled: !editor.can().chain().focus().toggleAlign('center').run(),
+			active: editor.isActive('paragraph', { 'data-bgc-align': 'center' }),
+		},
+		alignEnd: {
+			disabled: !editor.can().chain().focus().toggleAlign('end').run(),
+			active: editor.isActive('paragraph', { 'data-bgc-align': 'end' }),
+		},
+	};
+}
+
+/**
  *
  * @param button
  * @param state
+ * @param editorElement
  */
-function updateButtonState(button: HTMLButtonElement, state: EditorState) {
+function updateButtonState(
+	button: HTMLButtonElement,
+	state: EditorState,
+	editorElement: BgeWysiwygEditorElement,
+) {
 	const buttonType = button.dataset.bgeToolbarButton;
+
+	// モード切り替えボタンはスキップ
+	if (buttonType === 'html-mode' || buttonType === 'text-only-mode') {
+		return;
+	}
+
+	// 非WYSIWYGモードの判定
+	const currentMode = editorElement.mode;
+	const isNonWysiwygMode = currentMode === 'html' || currentMode === 'text-only';
 
 	switch (buttonType) {
 		case 'bold': {
-			button.disabled = state.bold.disabled;
+			button.disabled = isNonWysiwygMode || state.bold.disabled;
 			button.ariaPressed = state.bold.active ? 'true' : 'false';
 			break;
 		}
 		case 'italic': {
-			button.disabled = state.italic.disabled;
+			button.disabled = isNonWysiwygMode || state.italic.disabled;
 			button.ariaPressed = state.italic.active ? 'true' : 'false';
 			break;
 		}
 		case 'underline': {
-			button.disabled = state.underline.disabled;
+			button.disabled = isNonWysiwygMode || state.underline.disabled;
 			button.ariaPressed = state.underline.active ? 'true' : 'false';
 			break;
 		}
 		case 'strikethrough': {
-			button.disabled = state.strike.disabled;
+			button.disabled = isNonWysiwygMode || state.strike.disabled;
 			button.ariaPressed = state.strike.active ? 'true' : 'false';
 			break;
 		}
 		case 'code': {
-			button.disabled = state.code.disabled;
+			button.disabled = isNonWysiwygMode || state.code.disabled;
 			button.ariaPressed = state.code.active ? 'true' : 'false';
 			break;
 		}
 		case 'link': {
-			button.disabled = state.link.disabled;
+			button.disabled = isNonWysiwygMode || state.link.disabled;
 			button.ariaPressed = state.link.active ? 'true' : 'false';
 			break;
 		}
 		case 'button-like-link': {
-			button.disabled = state.buttonLikeLink.disabled;
+			button.disabled = isNonWysiwygMode || state.buttonLikeLink.disabled;
 			button.ariaPressed = state.buttonLikeLink.active ? 'true' : 'false';
 			break;
 		}
 		case 'blockquote': {
-			button.disabled = state.blockquote.disabled;
+			button.disabled = isNonWysiwygMode || state.blockquote.disabled;
 			button.ariaPressed = state.blockquote.active ? 'true' : 'false';
 			break;
 		}
 		case 'bullet-list': {
-			button.disabled = state.bulletList.disabled;
+			button.disabled = isNonWysiwygMode || state.bulletList.disabled;
 			button.ariaPressed = state.bulletList.active ? 'true' : 'false';
 			break;
 		}
 		case 'ordered-list': {
-			button.disabled = state.orderedList.disabled;
+			button.disabled = isNonWysiwygMode || state.orderedList.disabled;
 			button.ariaPressed = state.orderedList.active ? 'true' : 'false';
 			break;
 		}
 		case 'note': {
-			button.disabled = state.note.disabled;
+			button.disabled = isNonWysiwygMode || state.note.disabled;
 			button.ariaPressed = state.note.active ? 'true' : 'false';
 			break;
 		}
 		case 'h2': {
-			button.disabled = state.h2.disabled;
+			button.disabled = isNonWysiwygMode || state.h2.disabled;
 			button.ariaPressed = state.h2.active ? 'true' : 'false';
 			break;
 		}
 		case 'h3': {
-			button.disabled = state.h3.disabled;
+			button.disabled = isNonWysiwygMode || state.h3.disabled;
 			button.ariaPressed = state.h3.active ? 'true' : 'false';
 			break;
 		}
 		case 'h4': {
-			button.disabled = state.h4.disabled;
+			button.disabled = isNonWysiwygMode || state.h4.disabled;
 			button.ariaPressed = state.h4.active ? 'true' : 'false';
 			break;
 		}
 		case 'h5': {
-			button.disabled = state.h5.disabled;
+			button.disabled = isNonWysiwygMode || state.h5.disabled;
 			button.ariaPressed = state.h5.active ? 'true' : 'false';
 			break;
 		}
 		case 'h6': {
-			button.disabled = state.h6.disabled;
+			button.disabled = isNonWysiwygMode || state.h6.disabled;
 			button.ariaPressed = state.h6.active ? 'true' : 'false';
 			break;
 		}
 		case 'flex-box': {
-			button.disabled = state.flexBox.disabled;
+			button.disabled = isNonWysiwygMode || state.flexBox.disabled;
 			button.ariaPressed = state.flexBox.active ? 'true' : 'false';
 			break;
 		}
 		case 'subscript': {
-			button.disabled = state.subscript.disabled;
+			button.disabled = isNonWysiwygMode || state.subscript.disabled;
 			button.ariaPressed = state.subscript.active ? 'true' : 'false';
 			break;
 		}
 		case 'superscript': {
-			button.disabled = state.superscript.disabled;
+			button.disabled = isNonWysiwygMode || state.superscript.disabled;
 			button.ariaPressed = state.superscript.active ? 'true' : 'false';
 			break;
 		}
 		case 'align-start': {
-			button.disabled = state.alignStart.disabled;
+			button.disabled = isNonWysiwygMode || state.alignStart.disabled;
 			button.ariaPressed = state.alignStart.active ? 'true' : 'false';
 			break;
 		}
 		case 'align-center': {
-			button.disabled = state.alignCenter.disabled;
+			button.disabled = isNonWysiwygMode || state.alignCenter.disabled;
 			button.ariaPressed = state.alignCenter.active ? 'true' : 'false';
 			break;
 		}
 		case 'align-end': {
-			button.disabled = state.alignEnd.disabled;
+			button.disabled = isNonWysiwygMode || state.alignEnd.disabled;
 			button.ariaPressed = state.alignEnd.active ? 'true' : 'false';
 			break;
 		}
