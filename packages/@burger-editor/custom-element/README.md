@@ -159,6 +159,93 @@ editor.setStyle('p { color: red; }');
 editor.syncWysiwygToTextarea();
 ```
 
+#### カスタムイベント
+
+`<bge-wysiwyg-editor>`の内部にある`<bge-wysiwyg>`要素は、以下のカスタムイベントを発火します：
+
+**`transaction`イベント**
+
+- **発火タイミング**: エディタの状態が変更されるたび（テキスト入力、フォーマット変更など）
+- **用途**: マークアップボタン（太字、斜体など）の状態を更新
+- **イベント詳細**: `event.detail.state` にTipTapのエディタ状態が含まれる
+
+```typescript
+const wysiwygElement = editor.querySelector('bge-wysiwyg');
+wysiwygElement.addEventListener('transaction', (event) => {
+	console.log('Editor state changed:', event.detail.state);
+	// マークアップボタンの状態を更新する処理
+});
+```
+
+**`bge:structure-change`イベント**
+
+- **発火タイミング**:
+  - HTMLモードに切り替わった時
+  - HTMLモードからデザインモードへの切り替えが構造変更により防止された時
+  - 構造変更状態が変化した時
+- **用途**:
+  - マークアップボタンの無効化（HTMLモード時）
+  - モード切り替えUIの同期（セレクトボックスやHTMLモードボタン）
+  - デザインモードオプションの有効/無効化
+- **イベント詳細**: `event.detail.hasStructureChange` に構造変更の有無が含まれる
+
+```typescript
+const wysiwygElement = editor.querySelector('bge-wysiwyg');
+wysiwygElement.addEventListener('bge:structure-change', (event) => {
+	console.log('Structure change:', event.detail.hasStructureChange);
+	console.log('Current mode:', wysiwygElement.mode);
+	// モード切り替えUIやボタン状態を更新する処理
+});
+```
+
+#### 内部アーキテクチャ
+
+`<bge-wysiwyg-editor>`は以下の親子構造を持ちます：
+
+```
+<bge-wysiwyg-editor>
+  ├─ マークアップボタン（太字、斜体など）
+  ├─ モード切り替えUI（セレクトボックスまたはHTMLモードボタン）
+  └─ <bge-wysiwyg>（子要素：実際のエディタ）
+```
+
+**設計思想：**
+
+1. **子要素が状態の所有者**: `<bge-wysiwyg>`が`mode`、`hasStructureChange`、エディタ状態を管理
+2. **親要素がUIの監視者**: `<bge-wysiwyg-editor>`が子要素のイベントを監視してUIを更新
+3. **イベント駆動**: 子要素の状態変更は必ずイベントで通知される
+
+**UI要素と監視すべきイベントのマッピング:**
+
+| UI要素                                          | 監視すべきイベント                     | 理由                                                                                 |
+| ----------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------ |
+| マークアップボタン                              | `transaction` + `bge:structure-change` | エディタ状態変更と、モード切り替え（HTMLモード時の無効化）の両方に反応する必要がある |
+| セレクトボックス（値）                          | `bge:structure-change`                 | モード切り替え時に表示値を同期                                                       |
+| セレクトボックス（wysiwygオプションのdisabled） | `bge:structure-change`                 | 構造変更時にデザインモードを無効化                                                   |
+| HTMLモードボタン（ariaPressed）                 | `bge:structure-change`                 | モード切り替え時に状態を同期                                                         |
+| HTMLモードボタン（disabled）                    | `bge:structure-change`                 | HTMLモード時に構造変更があれば無効化                                                 |
+
+**初期化パターン:**
+
+親要素の`connectedCallback()`では、以下の順序で初期化します：
+
+```typescript
+// 1. 子要素の参照を取得
+const wysiwygElement = this.querySelector('bge-wysiwyg');
+
+// 2. イベントリスナーを登録
+wysiwygElement.addEventListener('transaction', ...);
+wysiwygElement.addEventListener('bge:structure-change', ...);
+
+// 3. 子要素の現在の状態を読み取ってUIを初期化（イベントリスナー登録後）
+const initialState = getCurrentEditorState(wysiwygElement);
+updateButtonState(button, initialState, this);
+modeSelector.value = wysiwygElement.mode;
+wysiwygOption.disabled = wysiwygElement.hasStructureChange;
+```
+
+**重要**: イベントリスナー登録**前**に子要素の状態を読み取ると、その後のイベントとの同期が取れなくなる可能性があります。必ずイベントリスナー登録**後**に初期化してください。
+
 ## TypeScriptでの使用
 
 ```typescript
@@ -269,6 +356,120 @@ Web Components（Custom Elements v1）をサポートするモダンブラウザ
 - **よくある落とし穴** - ツールバーボタンが表示されない、属性が保持されないなどの対処法
 - **デバッグ方法** - Transactionイベントのリスニング、内部状態確認
 - **実装例** - subscript, superscript, paragraph alignment機能の実装
+
+### UI拡張・カスタマイズ時の注意点
+
+`<bge-wysiwyg-editor>`のUIを拡張・カスタマイズする際は、以下のよくある間違いに注意してください：
+
+#### ❌ よくある間違い1: イベントの監視不足
+
+**症状**: ダイアログ表示時やモード切り替え時にUIが正しく更新されない
+
+**原因**: UI要素が必要なイベントを監視していない
+
+**例**: マークアップボタンが`transaction`イベントのみを監視し、HTMLモード切り替え時に無効化されない
+
+```typescript
+// ❌ 間違い：transactionイベントしか監視していない
+wysiwygElement.addEventListener('transaction', (event) => {
+	updateButtonState(button, event.detail.state, this);
+});
+// → HTMLモードに切り替わってもボタンが有効のまま
+```
+
+**解決策**: 上記の「UI要素と監視すべきイベントのマッピング」表を参照し、必要なイベントを全て監視する
+
+```typescript
+// ✅ 正解：両方のイベントを監視
+wysiwygElement.addEventListener('transaction', (event) => {
+	updateButtonState(button, event.detail.state, this);
+});
+wysiwygElement.addEventListener('bge:structure-change', () => {
+	const currentState = getCurrentEditorState(wysiwygElement);
+	updateButtonState(button, currentState, this);
+});
+```
+
+#### ❌ よくある間違い2: 初期化のタイミングミス
+
+**症状**: ダイアログ表示直後だけUIの初期状態が間違っている（その後のイベントでは正しく更新される）
+
+**原因**: イベントリスナー登録**前**に子要素の状態を読み取っている
+
+```typescript
+// ❌ 間違い：イベントリスナー登録前に初期化
+const initialMode = wysiwygElement.mode;
+modeSelector.value = initialMode;
+
+wysiwygElement.addEventListener('bge:structure-change', (event) => {
+	modeSelector.value = wysiwygElement.mode;
+});
+// → 初期化時点の状態と、その後のイベント発火時の状態が不整合になる可能性
+```
+
+**解決策**: イベントリスナー登録**後**に初期化する
+
+```typescript
+// ✅ 正解：イベントリスナー登録後に初期化
+wysiwygElement.addEventListener('bge:structure-change', (event) => {
+	modeSelector.value = wysiwygElement.mode;
+});
+
+// イベントリスナー登録後に初期状態を設定
+modeSelector.value = wysiwygElement.mode;
+```
+
+#### ❌ よくある間違い3: イベントで一部のプロパティしか更新しない
+
+**症状**: モード切り替え時に、一部のUIだけが更新されない
+
+**原因**: イベントハンドラーで関連する全てのプロパティを更新していない
+
+**例**: セレクトボックスのオプションの`disabled`だけ更新し、セレクトボックスの`value`を更新していない
+
+```typescript
+// ❌ 間違い：wysiwygOptionのdisabledしか更新していない
+wysiwygElement.addEventListener('bge:structure-change', (event) => {
+	wysiwygOption.disabled = event.detail.hasStructureChange;
+	// modeSelector.valueを更新していない！
+});
+// → HTMLモードに切り替わってもセレクトボックスの表示が「デザインモード」のまま
+```
+
+**解決策**: 関連する全てのプロパティを更新する
+
+```typescript
+// ✅ 正解：関連する全てのプロパティを更新
+wysiwygElement.addEventListener('bge:structure-change', (event) => {
+	wysiwygOption.disabled = event.detail.hasStructureChange;
+	modeSelector.value = wysiwygElement.mode; // 表示値も同期
+});
+```
+
+#### デバッグのヒント
+
+問題が発生した場合は、以下を確認してください：
+
+1. **イベントは発火しているか？**
+
+   ```typescript
+   wysiwygElement.addEventListener('transaction', (e) =>
+   	console.log('transaction', e.detail),
+   );
+   wysiwygElement.addEventListener('bge:structure-change', (e) =>
+   	console.log('structure-change', e.detail),
+   );
+   ```
+
+2. **子要素の状態は正しいか？**
+
+   ```typescript
+   console.log('mode:', wysiwygElement.mode);
+   console.log('hasStructureChange:', wysiwygElement.hasStructureChange);
+   ```
+
+3. **イベントリスナーは登録されているか？初期化の順序は正しいか？**
+   - イベントリスナー登録前に初期化していないか確認
 
 ### 開発環境
 

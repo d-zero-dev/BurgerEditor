@@ -231,6 +231,20 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 			}
 		});
 
+		// structure-changeイベント（HTMLモード切り替え時）にもボタン状態を更新
+		this.#wysiwygElement.addEventListener('bge:structure-change', () => {
+			const currentState = getCurrentEditorState(this.#wysiwygElement);
+			for (const button of buttons) {
+				updateButtonState(button, currentState, this);
+			}
+		});
+
+		// マークアップボタンの初期状態を設定
+		const initialState = getCurrentEditorState(this.#wysiwygElement);
+		for (const button of buttons) {
+			updateButtonState(button, initialState, this);
+		}
+
 		// experimental.textOnlyMode による UI 分岐
 		if (BgeWysiwygEditorElement.experimentalTextOnlyMode) {
 			// experimental.textOnlyMode = true: Select要素で3モード切り替え
@@ -244,14 +258,10 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 			// 初期状態のselect値を設定
 			modeSelector.value = this.#wysiwygElement.mode;
 
-			// 初期状態のデザインモードオプションを設定
-			const initialHasStructureChange = this.#wysiwygElement.hasStructureChange;
+			// デザインモードオプションの参照を取得
 			const wysiwygOption = modeSelector.querySelector<HTMLOptionElement>(
 				'option[value="wysiwyg"]',
 			);
-			if (wysiwygOption) {
-				wysiwygOption.disabled = initialHasStructureChange;
-			}
 
 			// 構造変更イベントでデザインモードオプションをdisable/enable
 			const handleStructureChange = (event: Event) => {
@@ -260,11 +270,18 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 				if (wysiwygOption) {
 					wysiwygOption.disabled = hasStructureChange;
 				}
+				// モードが変更された可能性があるので、セレクトボックスの値も同期
+				modeSelector.value = this.#wysiwygElement!.mode;
 			};
 			this.#wysiwygElement.addEventListener(
 				'bge:structure-change',
 				handleStructureChange,
 			);
+
+			// 初期状態のデザインモードオプションを設定（イベントリスナー登録後）
+			if (wysiwygOption) {
+				wysiwygOption.disabled = this.#wysiwygElement.hasStructureChange;
+			}
 
 			// Selectのchangeイベントハンドラー
 			modeSelector.addEventListener('change', () => {
@@ -299,12 +316,6 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 				throw new Error('HTML mode button not found');
 			}
 
-			// 初期状態を設定
-			const initialHasStructureChange = this.#wysiwygElement.hasStructureChange;
-			const initialIsHtmlMode = this.#wysiwygElement.mode === 'html';
-			htmlModeButton.disabled = initialIsHtmlMode && initialHasStructureChange;
-			htmlModeButton.ariaPressed = initialIsHtmlMode ? 'true' : 'false';
-
 			// HTMLモードボタンのクリックハンドラー（text-only実装前の動作）
 			htmlModeButton.addEventListener('click', () => {
 				if (!this.#wysiwygElement) {
@@ -338,6 +349,11 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 				const isHtmlMode = this.#wysiwygElement!.mode === 'html';
 				htmlModeButton.disabled = isHtmlMode && hasStructureChange;
 			});
+
+			// 初期状態を設定（イベントリスナー登録後）
+			const isHtmlMode = this.#wysiwygElement.mode === 'html';
+			htmlModeButton.ariaPressed = isHtmlMode ? 'true' : 'false';
+			htmlModeButton.disabled = isHtmlMode && this.#wysiwygElement.hasStructureChange;
 		}
 	}
 
