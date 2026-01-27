@@ -38,7 +38,7 @@
 		"@tiptap/starter-kit": "3.17.1"
 	},
 	"devDependencies": {
-		"rollup": "4.56.0",
+		"rollup": "4.57.0",
 		"rollup-plugin-dts": "6.3.0",
 		"rollup-plugin-esbuild": "6.2.1",
 		"rollup-plugin-string": "3.0.0"
