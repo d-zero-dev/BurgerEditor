@@ -133,7 +133,7 @@ __metadata:
     "@sveltejs/vite-plugin-svelte": "npm:6.2.4"
     "@tabler/icons-svelte": "npm:3.36.1"
     svelte: "npm:5.49.1"
-    svelte-check: "npm:4.3.5"
+    svelte-check: "npm:4.3.6"
     vite: "npm:7.3.1"
     vite-plugin-dts: "npm:4.5.4"
   languageName: unknown
@@ -15080,9 +15080,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte-check@npm:4.3.5":
-  version: 4.3.5
-  resolution: "svelte-check@npm:4.3.5"
+"svelte-check@npm:4.3.6":
+  version: 4.3.6
+  resolution: "svelte-check@npm:4.3.6"
   dependencies:
     "@jridgewell/trace-mapping": "npm:^0.3.25"
     chokidar: "npm:^4.0.1"
@@ -15094,7 +15094,7 @@ __metadata:
     typescript: ">=5.0.0"
   bin:
     svelte-check: bin/svelte-check
-  checksum: 10c0/a9196c61b9aea4dd597f268362452189df81db08332477727037d5270fad4de733addf6954b57aeeb6825df34f9b20a282ec16f964186c82f39f8456bc4a533c
+  checksum: 10c0/0b2a70efaedb9bae01ab9a4b6086a1445f24aec3132002bcd69b43e40a8baf259c8f3eac8b83ac681d7cfbf13804351f860959026335ad59a02ae4455cf599ce
   languageName: node
   linkType: hard
 
