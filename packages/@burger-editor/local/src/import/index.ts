@@ -18,6 +18,11 @@ export async function importBlock(elements: Element[], documentRoot: string) {
 			: [...el.querySelectorAll(IMPORT_BLOCK_SELECTOR)],
 	);
 	for (const importBlock of importBlocks) {
+		const container = importBlock.closest('[data-bge-container]');
+		if (container == null) {
+			continue;
+		}
+
 		const src = importBlock.getAttribute('src');
 		if (src == null) {
 			continue;
@@ -36,11 +41,6 @@ export async function importBlock(elements: Element[], documentRoot: string) {
 		const fragmentContainer = elements[0].ownerDocument.createElement('div');
 		fragmentContainer.innerHTML = content.trim();
 		const importedBlocks = fragmentContainer.querySelectorAll('[data-bge-container]');
-
-		const container = importBlock.closest('[data-bge-container]');
-		if (container == null) {
-			continue;
-		}
 
 		for (const importedBlock of importedBlocks) {
 			container.after(importedBlock);
