@@ -42,9 +42,7 @@ export async function importBlock(elements: Element[], documentRoot: string) {
 		fragmentContainer.innerHTML = content.trim();
 		const importedBlocks = fragmentContainer.querySelectorAll('[data-bge-container]');
 
-		for (const importedBlock of importedBlocks) {
-			container.after(importedBlock);
-		}
+		container.after(...importedBlocks);
 		container.remove();
 	}
 }

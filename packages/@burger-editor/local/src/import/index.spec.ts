@@ -59,8 +59,8 @@ describe('importBlock', () => {
 
 		const importedBlocks = document.querySelectorAll('[data-bge-container]');
 		expect(importedBlocks).toHaveLength(2);
-		expect(importedBlocks[0]?.textContent?.trim()).toContain('Imported content 2');
-		expect(importedBlocks[1]?.textContent?.trim()).toContain('Imported content 1');
+		expect(importedBlocks[0]?.textContent?.trim()).toContain('Imported content 1');
+		expect(importedBlocks[1]?.textContent?.trim()).toContain('Imported content 2');
 	});
 
 	test('should handle multiple import blocks', async () => {
