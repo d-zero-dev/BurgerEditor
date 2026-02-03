@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.57](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.56...v4.0.0-alpha.57) (2026-02-03)
+
+### Bug Fixes
+
+- **frozen-patty:** set value via attribute for custom elements so it is reflected ([33e6a83](https://github.com/d-zero-dev/BurgerEditor/commit/33e6a83b5feeb4375fd8f9ae5c1c5028a75bc12d))
+
 # [4.0.0-alpha.56](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.55...v4.0.0-alpha.56) (2026-01-23)
 
 **Note:** Version bump only for package @burger-editor/frozen-patty
