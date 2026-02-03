@@ -163,6 +163,12 @@ function set(
 		return;
 	}
 
+	// Custom elements
+	if (el.localName.includes('-')) {
+		el.setAttribute(name, `${datum}`);
+		return;
+	}
+
 	if (!name.startsWith('data-') && !propInElement(el, name)) {
 		const dataAttr = `data-${prefix}-${kebabCase(name)}`;
 		if (el.hasAttribute(dataAttr)) {
