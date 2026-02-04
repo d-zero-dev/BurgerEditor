@@ -163,7 +163,7 @@ export const defaultCatalog: BlockCatalog = {
 							data: {
 								scale: 50,
 								cssWidth: '50cqi',
-								style: '--css-width:50cqi;--object-fit:cover;--aspect-ratio:unset',
+								style: '--css-width:50cqi;--object-fit:cover;--aspect-ratio:revert',
 							},
 						},
 					],
@@ -187,7 +187,7 @@ export const defaultCatalog: BlockCatalog = {
 							data: {
 								scale: 50,
 								cssWidth: '50cqi',
-								style: '--css-width:50cqi;--object-fit:cover;--aspect-ratio:unset',
+								style: '--css-width:50cqi;--object-fit:cover;--aspect-ratio:revert',
 							},
 						},
 					],
@@ -212,7 +212,7 @@ export const defaultCatalog: BlockCatalog = {
 							data: {
 								scale: 50,
 								cssWidth: '50cqi',
-								style: '--css-width:50cqi;--object-fit:cover;--aspect-ratio:unset',
+								style: '--css-width:50cqi;--object-fit:cover;--aspect-ratio:revert',
 							},
 						},
 					],
@@ -235,7 +235,7 @@ export const defaultCatalog: BlockCatalog = {
 							data: {
 								scale: 50,
 								cssWidth: '50cqi',
-								style: '--css-width:50cqi;--object-fit:cover;--aspect-ratio:unset',
+								style: '--css-width:50cqi;--object-fit:cover;--aspect-ratio:revert',
 							},
 						},
 					],
