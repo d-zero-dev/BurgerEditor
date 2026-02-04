@@ -23,7 +23,7 @@
 		inline-size: var(--css-width, auto);
 		max-inline-size: 100%;
 		block-size: auto;
-		aspect-ratio: var(--aspect-ratio, unset);
+		aspect-ratio: var(--aspect-ratio, revert);
 		object-fit: var(--object-fit, unset);
 	}
 

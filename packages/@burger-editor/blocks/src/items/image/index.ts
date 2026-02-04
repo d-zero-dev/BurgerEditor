@@ -24,7 +24,7 @@ export default createItem<{
 	cssWidth: `${number}px` | `${number}cqi`;
 	scaleType: 'container' | 'original';
 	scale: number;
-	aspectRatio: `${number}/${number}` | 'unset';
+	aspectRatio: `${number}/${number}` | 'revert';
 
 	// Editor Display
 	cssWidthNumber: number;
