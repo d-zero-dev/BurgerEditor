@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.58](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.57...v4.0.0-alpha.58) (2026-02-05)
+
+### Bug Fixes
+
+- **blocks:** replace unset with revert for image aspectRatio ([9a9c99e](https://github.com/d-zero-dev/BurgerEditor/commit/9a9c99eb230818797d79f2f495b22f146bf00b29))
+
 # [4.0.0-alpha.57](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.56...v4.0.0-alpha.57) (2026-02-03)
 
 **Note:** Version bump only for package @burger-editor/runtime
