@@ -2490,12 +2490,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@markuplint/svelte-spec@npm:4.5.22":
-  version: 4.5.22
-  resolution: "@markuplint/svelte-spec@npm:4.5.22"
+"@markuplint/svelte-spec@npm:4.5.23":
+  version: 4.5.23
+  resolution: "@markuplint/svelte-spec@npm:4.5.23"
   dependencies:
-    "@markuplint/ml-spec": "npm:4.10.1"
-  checksum: 10c0/a491ea7e9e7ac1606731ed3c5e15d941730482f2141c8bd0aa71a950b8cc24c691fb2cc9d7522b2ac8fea56d00bb42ffe64cbfe2c135b556926df64a720b78eb
+    "@markuplint/ml-spec": "npm:4.10.2"
+  checksum: 10c0/7ab41cbb8cd278aae079ffcabef664ca2beb3efe9317597e48bd9025f210c1b4501d8e399ab455586f23cf6ee273188b80d027aeb5ce53d8f14e268e44cdf822
   languageName: node
   linkType: hard
 
@@ -13947,7 +13947,7 @@ __metadata:
     "@d-zero/textlint-config": "npm:5.0.0"
     "@d-zero/tsconfig": "npm:1.0.0"
     "@markuplint/svelte-parser": "npm:4.7.13"
-    "@markuplint/svelte-spec": "npm:4.5.22"
+    "@markuplint/svelte-spec": "npm:4.5.23"
     "@vitest/browser": "npm:4.0.18"
     "@vitest/browser-playwright": "npm:4.0.18"
     eslint-plugin-svelte: "npm:3.14.0"
