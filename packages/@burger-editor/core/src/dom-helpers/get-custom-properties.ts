@@ -25,6 +25,7 @@ type CustomProperty = {
 interface CSSRuleWithLayerPriority {
 	readonly rule: CSSStyleRule;
 	readonly layers: readonly LayerPriority[];
+	readonly scopeRoot: string | null;
 }
 
 interface LayerPriority {
@@ -166,12 +167,14 @@ export function getCustomProperty(
  * @param rules - CSSRule array
  * @param layers
  * @param scope - Document
+ * @param scopeRoot
  * @returns CSSStyleRule array
  */
 function getStyleRules(
 	rules: CSSRuleList,
 	layers: readonly LayerPriority[],
 	scope: Document,
+	scopeRoot: string | null = null,
 ): readonly CSSRuleWithLayerPriority[] {
 	const CSSStyleRule = scope.defaultView?.CSSStyleRule;
 	if (CSSStyleRule === undefined) {
@@ -218,8 +221,9 @@ function getStyleRules(
 				{
 					rule,
 					layers,
+					scopeRoot,
 				},
-				...getStyleRules(rule.cssRules, layers, scope),
+				...getStyleRules(rule.cssRules, layers, scope, scopeRoot),
 			);
 		}
 
@@ -240,12 +244,14 @@ function getStyleRules(
 						},
 					],
 					scope,
+					scopeRoot,
 				),
 			);
 		}
 
 		if (CSSScopeRule && rule instanceof CSSScopeRule) {
-			styleRules.push(...getStyleRules(rule.cssRules, layers, scope));
+			const start = 'start' in rule && typeof rule.start === 'string' ? rule.start : null;
+			styleRules.push(...getStyleRules(rule.cssRules, layers, scope, start));
 		}
 	}
 
@@ -267,7 +273,10 @@ function searchCustomProperty(
 
 			for (const cssRule of styleRules) {
 				const selector = cssRule.rule.selectorText.trim().replace(/^&/, '').trim();
-				if (selector === BLOCK_OPTION_SCOPE_SELECTOR) {
+				if (
+					selector === BLOCK_OPTION_SCOPE_SELECTOR ||
+					(selector === ':scope' && cssRule.scopeRoot === BLOCK_OPTION_SCOPE_SELECTOR)
+				) {
 					for (const cssProperty of cssRule.rule.style) {
 						if (!cssProperty.startsWith('--')) {
 							continue;

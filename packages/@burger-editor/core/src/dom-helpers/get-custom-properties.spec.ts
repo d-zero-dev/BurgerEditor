@@ -1042,6 +1042,79 @@ describe('@scope traversal', () => {
 		// @scope は走査されるが、その中の @media は走査されない
 		expect(resultObj.width.properties.a.value).toBe('100%');
 	});
+
+	test('@scope ([data-bge-container]) { :scope { ... } } is detected', () => {
+		const style = document.createElement('style');
+		style.textContent = `
+			@scope ([data-bge-container]) {
+				:scope {
+					--bge-options-width--a: 100%;
+					--bge-options-width: var(--bge-options-width--a);
+				}
+			}
+		`;
+		document.head.append(style);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+		expect(resultObj.width.properties.a.value).toBe('100%');
+		expect(resultObj.width.properties.a.priority).toEqual([]);
+	});
+
+	test(':scope inside @scope overrides earlier rule', () => {
+		const style = document.createElement('style');
+		style.textContent = `
+			[data-bge-container] {
+				--bge-options-width--a: 100%;
+				--bge-options-width: var(--bge-options-width--a);
+			}
+			@scope ([data-bge-container]) {
+				:scope {
+					--bge-options-width--a: 200%;
+				}
+			}
+		`;
+		document.head.append(style);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+		// @scope 内の :scope が後勝ちで 200%
+		expect(resultObj.width.properties.a.value).toBe('200%');
+	});
+
+	test(':scope inside @scope with non-matching root is not detected', () => {
+		const style = document.createElement('style');
+		style.textContent = `
+			@scope (.other-selector) {
+				:scope {
+					--bge-options-width--a: 100%;
+					--bge-options-width: var(--bge-options-width--a);
+				}
+			}
+		`;
+		document.head.append(style);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+		// scopeRoot が [data-bge-container] ではないので検出されない
+		expect(resultObj).not.toHaveProperty('width');
+	});
+
+	test(':scope inside @layer inside @scope ([data-bge-container])', () => {
+		const style = document.createElement('style');
+		style.textContent = `
+			@scope ([data-bge-container]) {
+				@layer a {
+					:scope {
+						--bge-options-width--a: 100%;
+						--bge-options-width: var(--bge-options-width--a);
+					}
+				}
+			}
+		`;
+		document.head.append(style);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+		expect(resultObj.width.properties.a.value).toBe('100%');
+		expect(resultObj.width.properties.a.priority).toEqual([1]);
+	});
 });
 
 describe('Multiple stylesheets', () => {

@@ -168,6 +168,33 @@
 
 結果: `100%`（検出される）。
 
+### `@scope ([data-bge-container])` + `:scope` セレクター
+
+`@scope` のルートが `[data-bge-container]` の場合、内部の `:scope` セレクターもマッチする。
+
+```css
+/* 検出される: :scope は @scope のルート（= [data-bge-container]）を指す */
+@scope ([data-bge-container]) {
+	:scope {
+		--bge-options-width--a: 100%;
+		--bge-options-width: var(--bge-options-width--a);
+	}
+}
+```
+
+結果: `100%`（検出される）。
+
+```css
+/* 検出されない: @scope のルートが [data-bge-container] ではない */
+@scope (.other) {
+	:scope {
+		--bge-options-width--a: 100%;
+	}
+}
+```
+
+結果: 検出されない（`:scope` は `.other` を指すので `[data-bge-container]` と一致しない）。
+
 ---
 
 ## `@media` / `@supports` / `@container`: 検出されない
