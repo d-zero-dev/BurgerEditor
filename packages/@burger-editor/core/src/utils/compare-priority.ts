@@ -33,14 +33,12 @@ export function comparePriority(a: readonly number[], b: readonly number[]): num
 		const aLast = a[minLength - 1]!;
 		const bLast = b[minLength - 1]!;
 
-		// Special case: if minLength >= 3, all previous elements match, and last elements are both in [0, 1] range,
-		// ignore the last element difference and check length
+		// Special case for deeply nested layers (depth >= 3):
+		// When the last element is in the [0, 1] range (0 = unlayered fallback, 1 = single declared layer),
+		// the difference at that depth is not meaningful for priority resolution.
+		// This treats sub-layer positions with only trivial priority values as equivalent,
+		// deferring to the parent layer priority already resolved by earlier elements.
 		if (minLength >= 3 && aLast >= 0 && aLast <= 1 && bLast >= 0 && bLast <= 1) {
-			// If lengths differ, shorter array's elements are all matched
-			if (a.length !== b.length) {
-				return 0;
-			}
-			// Same length, all elements matched including last (treated as equal)
 			return 0;
 		}
 
@@ -53,6 +51,8 @@ export function comparePriority(a: readonly number[], b: readonly number[]): num
 		}
 	}
 
-	// All elements are equal up to minLength
+	// All elements are equal up to minLength — shorter array (unlayered) has higher priority
+	if (a.length < b.length) return 1;
+	if (a.length > b.length) return -1;
 	return 0;
 }
