@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.59](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.58...v4.0.0-alpha.59) (2026-02-12)
+
+### Features
+
+- **core:** add CSSScopeRule traversal support in getStyleRules ([250426e](https://github.com/d-zero-dev/BurgerEditor/commit/250426e6bfeda6d45b116e378c2e0600fa8bd57a))
+- **core:** support :scope selector inside [@scope](https://github.com/scope) with matching root ([05ba726](https://github.com/d-zero-dev/BurgerEditor/commit/05ba7260b1e68118ea80cb856a21e803587b9776))
+
 # [4.0.0-alpha.58](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.57...v4.0.0-alpha.58) (2026-02-05)
 
 **Note:** Version bump only for package @burger-editor/core

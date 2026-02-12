@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/runtime",
-	"version": "4.0.0-alpha.58",
+	"version": "4.0.0-alpha.59",
 	"description": "Runtime library for BurgerEditor generated content in the browser",
 	"author": "D-ZERO",
 	"license": "MIT",
@@ -27,9 +27,9 @@
 		"test:serve": "vite --config vite.config.test.ts"
 	},
 	"devDependencies": {
-		"@burger-editor/blocks": "4.0.0-alpha.58",
-		"@burger-editor/core": "4.0.0-alpha.58",
-		"@burger-editor/css": "4.0.0-alpha.58",
+		"@burger-editor/blocks": "4.0.0-alpha.59",
+		"@burger-editor/core": "4.0.0-alpha.59",
+		"@burger-editor/css": "4.0.0-alpha.59",
 		"typescript": "5.9.3",
 		"vite": "7.3.1",
 		"vite-plugin-dts": "4.5.4"
