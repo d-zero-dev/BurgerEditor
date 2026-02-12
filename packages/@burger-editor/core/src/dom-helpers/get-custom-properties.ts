@@ -24,12 +24,13 @@ type CustomProperty = {
 
 interface CSSRuleWithLayerPriority {
 	readonly rule: CSSStyleRule;
-	readonly _cssText: string;
 	readonly layers: readonly LayerPriority[];
 }
 
 interface LayerPriority {
+	/** Layer declaration order list (diagnostic — not consumed by priority logic) */
 	readonly priorityList: readonly string[];
+	/** Layer name (diagnostic — not consumed by priority logic) */
 	readonly layerName: string | null;
 	readonly priority: number;
 }
@@ -64,7 +65,7 @@ export function getCustomProperties(
 
 		const currentMap = categories.get(propName) ?? {
 			id: propName,
-			name: propName.replaceAll(/^_[a-z]+_/g, ''),
+			name: propName.replace(/^_[a-z]+_/, ''),
 			properties: new Map() as CustomPropertyMap,
 		};
 
@@ -83,6 +84,8 @@ export function getCustomProperties(
 					? compareCustomPropertyByLayerPriority(currentProperty, newProperty)
 					: newProperty,
 			);
+
+			categories.set(propName, currentMap);
 		} else {
 			const newDefaultValue: CustomProperty = {
 				value,
@@ -99,8 +102,6 @@ export function getCustomProperties(
 					: newDefaultValue,
 			);
 		}
-
-		categories.set(propName, currentMap);
 	});
 
 	for (const propList of categories.values()) {
@@ -120,7 +121,7 @@ export function getCustomProperties(
 
 		for (const [key, customProperty] of currentMap.properties.entries()) {
 			if (
-				property.value ===
+				property.value.trim() ===
 				`var(${BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX}${category}--${key})`
 			) {
 				customProperty.isDefault = true;
@@ -140,23 +141,24 @@ export function getCustomProperty(
 	scope: Document,
 	property: string | RegExp,
 ): string | null {
-	let result: string | null = null;
+	let resultValue: string | null = null;
+	let resultPriority: readonly number[] = [];
 
-	searchCustomProperty(scope, (cssProperty, value) => {
-		if (property instanceof RegExp) {
-			if (property.test(cssProperty)) {
-				result = value;
-				return;
-			}
-		} else {
-			if (cssProperty === property) {
-				result = value;
-				return;
-			}
+	searchCustomProperty(scope, (cssProperty, value, layers) => {
+		const matches =
+			property instanceof RegExp ? property.test(cssProperty) : cssProperty === property;
+		if (!matches) {
+			return;
+		}
+
+		const newPriority = layers.map((l) => l.priority);
+		if (resultValue == null || comparePriority(resultPriority, newPriority) <= 0) {
+			resultValue = value;
+			resultPriority = newPriority;
 		}
 	});
 
-	return result;
+	return resultValue;
 }
 
 /**
@@ -186,9 +188,27 @@ function getStyleRules(
 		throw new Error('CSSLayerStatementRule is not available');
 	}
 
-	const layerPriorities = [...rules].filter(
-		(rule) => rule instanceof CSSLayerStatementRule,
-	);
+	const CSSScopeRule = scope.defaultView?.CSSScopeRule;
+
+	// Build unified layer order from CSSLayerStatementRules and CSSLayerBlockRules (first-occurrence order per CSS spec)
+	// Pass 1: Collect layers declared in @layer statements (explicit order takes precedence)
+	const allLayerNames: string[] = [];
+	for (const rule of rules) {
+		if (rule instanceof CSSLayerStatementRule) {
+			for (const name of rule.nameList) {
+				if (!allLayerNames.includes(name)) {
+					allLayerNames.push(name);
+				}
+			}
+		}
+	}
+	// Pass 2: Append layers that appear only in @layer block rules (first-occurrence after statements)
+	for (const rule of rules) {
+		if (rule instanceof CSSLayerBlockRule && !allLayerNames.includes(rule.name)) {
+			allLayerNames.push(rule.name);
+		}
+	}
+	const reversedLayerNames = allLayerNames.toReversed();
 
 	const styleRules: CSSRuleWithLayerPriority[] = [];
 
@@ -197,7 +217,6 @@ function getStyleRules(
 			styleRules.push(
 				{
 					rule,
-					_cssText: rule.cssText,
 					layers,
 				},
 				...getStyleRules(rule.cssRules, layers, scope),
@@ -206,12 +225,8 @@ function getStyleRules(
 
 		if (rule instanceof CSSLayerBlockRule) {
 			const layerName = rule.name;
-			const foundPriorityLayerList = layerPriorities.find((priority) =>
-				priority.nameList.includes(layerName),
-			);
-
-			const priority =
-				foundPriorityLayerList?.nameList.toReversed().indexOf(layerName) ?? 0;
+			const reversedIndex = reversedLayerNames.indexOf(layerName);
+			const priority = Math.max(reversedIndex, 0);
 
 			styleRules.push(
 				...getStyleRules(
@@ -219,7 +234,7 @@ function getStyleRules(
 					[
 						...layers,
 						{
-							priorityList: foundPriorityLayerList?.nameList ?? [],
+							priorityList: allLayerNames,
 							layerName,
 							priority: 1 + priority,
 						},
@@ -227,6 +242,10 @@ function getStyleRules(
 					scope,
 				),
 			);
+		}
+
+		if (CSSScopeRule && rule instanceof CSSScopeRule) {
+			styleRules.push(...getStyleRules(rule.cssRules, layers, scope));
 		}
 	}
 
@@ -281,12 +300,6 @@ function compareCustomPropertyByLayerPriority(
 	b: CustomProperty,
 ): CustomProperty {
 	const result = comparePriority(a.priority, b.priority);
-	if (result === 0) {
-		return b;
-	}
-	if (result === -1) {
-		return b;
-	}
 	if (result === 1) {
 		return a;
 	}
