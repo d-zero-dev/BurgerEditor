@@ -28,6 +28,29 @@ package.jsonで2つのエントリポイントを公開しています：
 
 Stylelintプラグインの実装本体です。`stylelint.createPlugin()`でプラグインを生成します。
 
+## エクスポートされる型
+
+### `SecondaryOptions`
+
+`plugin.ts`からエクスポートされるルールのセカンダリオプションの型定義です。
+
+```typescript
+export interface SecondaryOptions {
+	readonly disallowedAttrPatterns?: readonly (string | RegExp)[];
+	readonly disallowedTypePatterns?: readonly (string | RegExp)[];
+}
+```
+
+## プラグインメタデータ
+
+プラグインのルール関数には以下のメタデータが付与されています（Stylelint標準）：
+
+| プロパティ | 値 |
+| --- | --- |
+| `ruleName` | `@burger-editor/no-internal-selector` |
+| `messages.rejected(selector)` | `` Unexpected BurgerEditor internal selector "${selector}". Styling BurgerEditor internal elements may cause unexpected behavior. `` |
+| `meta.url` | パッケージのGitHubリポジトリURL |
+
 ## プラグインの処理フロー
 
 ```
