@@ -129,6 +129,38 @@ describe('@burger-editor/no-internal-selector', () => {
 		});
 	});
 
+	describe('rejects attribute selectors with operators', () => {
+		test('[data-bge~="val"]', async () => {
+			const result = await lint('[data-bge~="val"] { color: red; }');
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('[data-bge|="val"]', async () => {
+			const result = await lint('[data-bge|="val"] { color: red; }');
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('[data-bge^="val"]', async () => {
+			const result = await lint('[data-bge^="val"] { color: red; }');
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('[data-bge$="val"]', async () => {
+			const result = await lint('[data-bge$="val"] { color: red; }');
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('[data-bge*="val"]', async () => {
+			const result = await lint('[data-bge*="val"] { color: red; }');
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('[data-bge="val" i] case-insensitive flag', async () => {
+			const result = await lint('[data-bge="val" i] { color: red; }');
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+	});
+
 	describe('rejects in complex selectors', () => {
 		test('.my-class [data-bge]', async () => {
 			const result = await lint('.my-class [data-bge] { color: red; }');
@@ -148,6 +180,43 @@ describe('@burger-editor/no-internal-selector', () => {
 		test('selector list with internal selector', async () => {
 			const result = await lint('.ok, [data-bge] { color: red; }');
 			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('[data-bge]:hover pseudo-class', async () => {
+			const result = await lint('[data-bge]:hover { color: red; }');
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('[data-bge]::before pseudo-element', async () => {
+			const result = await lint('[data-bge]::before { content: ""; }');
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('[data-bge].some-class compound selector', async () => {
+			const result = await lint('[data-bge].some-class { color: red; }');
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('bge-wysiwyg > .child', async () => {
+			const result = await lint('bge-wysiwyg > .child { color: red; }');
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('.class + [data-bge-item] sibling combinator', async () => {
+			const result = await lint('.class + [data-bge-item] { color: red; }');
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('.class ~ [data-bge-item] general sibling combinator', async () => {
+			const result = await lint('.class ~ [data-bge-item] { color: red; }');
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('multiple rules in one stylesheet', async () => {
+			const result = await lint(
+				'[data-bge] { color: red; } .safe { margin: 0; } [data-bgi] { padding: 0; }',
+			);
+			expect(result.results[0].warnings).toHaveLength(2);
 		});
 	});
 
@@ -180,12 +249,46 @@ describe('@burger-editor/no-internal-selector', () => {
 		});
 
 		test('@scope limit with internal selector is allowed', async () => {
-			const result = await lint('@scope (.root) to ([data-bge-item]) { .child { color: red; } }');
+			const result = await lint(
+				'@scope (.root) to ([data-bge-item]) { .child { color: red; } }',
+			);
 			expect(result.results[0].warnings).toHaveLength(0);
 		});
 
+		test('@scope limit with bge-* type selector is allowed', async () => {
+			const result = await lint(
+				'@scope (.root) to (bge-wysiwyg) { .child { color: red; } }',
+			);
+			expect(result.results[0].warnings).toHaveLength(0);
+		});
+
+		test('@scope with compound root selector containing internal attr', async () => {
+			const result = await lint(
+				'@scope (.wrapper[data-bge-container]) { .child { color: red; } }',
+			);
+			expect(result.results[0].warnings).toHaveLength(1);
+			expect(result.results[0].warnings[0].text).toContain('data-bge-container');
+		});
+
+		test('@scope root flagged + body internal selector flagged', async () => {
+			const result = await lint(
+				'@scope ([data-bge]) { [data-bgi] { color: red; } }',
+			);
+			expect(result.results[0].warnings).toHaveLength(2);
+		});
+
+		test('@scope inside @media', async () => {
+			const result = await lint(
+				'@media (width >= 768px) { @scope ([data-bge]) { .child { color: red; } } }',
+			);
+			expect(result.results[0].warnings).toHaveLength(1);
+			expect(result.results[0].warnings[0].text).toContain('data-bge');
+		});
+
 		test('@scope with safe selectors passes', async () => {
-			const result = await lint('@scope (.my-scope) to (.limit) { .child { color: red; } }');
+			const result = await lint(
+				'@scope (.my-scope) to (.limit) { .child { color: red; } }',
+			);
 			expect(result.results[0].warnings).toHaveLength(0);
 		});
 	});
@@ -225,6 +328,28 @@ describe('@burger-editor/no-internal-selector', () => {
 
 		test('CSS nesting with internal selector', async () => {
 			const result = await lint('.parent { [data-bge] { color: red; } }');
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('deep CSS nesting with internal selector', async () => {
+			const result = await lint('.a { .b { [data-bge] { color: red; } } }');
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('CSS nesting with & and internal attr', async () => {
+			const result = await lint('.parent { &[data-bge] { color: red; } }');
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('CSS nesting with & and internal type', async () => {
+			const result = await lint('.parent { & bge-wysiwyg { color: red; } }');
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('@media nested in CSS nesting', async () => {
+			const result = await lint(
+				'.parent { @media (width >= 768px) { [data-bge] { color: red; } } }',
+			);
 			expect(result.results[0].warnings).toHaveLength(1);
 		});
 
@@ -274,6 +399,40 @@ describe('@burger-editor/no-internal-selector', () => {
 			const result = await lint('[data-bgx] { color: red; }');
 			expect(result.results[0].warnings).toHaveLength(0);
 		});
+
+		test('universal selector', async () => {
+			const result = await lint('* { margin: 0; }');
+			expect(result.results[0].warnings).toHaveLength(0);
+		});
+
+		test(':root pseudo-class', async () => {
+			const result = await lint(':root { --color: red; }');
+			expect(result.results[0].warnings).toHaveLength(0);
+		});
+
+		test('complex safe selector', async () => {
+			const result = await lint(
+				'.header > nav ul li a:hover { color: blue; }',
+			);
+			expect(result.results[0].warnings).toHaveLength(0);
+		});
+
+		test('empty stylesheet', async () => {
+			const result = await lint('');
+			expect(result.results[0].warnings).toHaveLength(0);
+		});
+
+		test('only comments', async () => {
+			const result = await lint('/* comment */');
+			expect(result.results[0].warnings).toHaveLength(0);
+		});
+	});
+
+	describe('rule disabled', () => {
+		test('no warnings when rule is disabled', async () => {
+			const result = await lintWithOptions('[data-bge] { color: red; }', false);
+			expect(result.results[0].warnings).toHaveLength(0);
+		});
 	});
 
 	describe('custom options: disallowedAttrPatterns', () => {
@@ -302,6 +461,24 @@ describe('@burger-editor/no-internal-selector', () => {
 			);
 			expect(result.results[0].warnings).toHaveLength(2);
 		});
+
+		test('plain string pattern (not regex syntax)', async () => {
+			const result = await lintWithOptions('[data-bge] { color: red; }', [
+				true,
+				{ disallowedAttrPatterns: ['data-bge'] },
+			]);
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('only disallowedAttrPatterns keeps default type patterns', async () => {
+			const result = await lintWithOptions('bge-wysiwyg { color: red; }', [
+				true,
+				{ disallowedAttrPatterns: ['/^data-bge/'] },
+			]);
+			// default type patterns still apply
+			expect(result.results[0].warnings).toHaveLength(1);
+			expect(result.results[0].warnings[0].text).toContain('bge-wysiwyg');
+		});
 	});
 
 	describe('custom options: disallowedTypePatterns', () => {
@@ -321,6 +498,16 @@ describe('@burger-editor/no-internal-selector', () => {
 			]);
 			expect(result.results[0].warnings).toHaveLength(1);
 			expect(result.results[0].warnings[0].text).toContain('x-internal');
+		});
+
+		test('only disallowedTypePatterns keeps default attr patterns', async () => {
+			const result = await lintWithOptions('[data-bge] { color: red; }', [
+				true,
+				{ disallowedTypePatterns: ['/^x-/'] },
+			]);
+			// default attr patterns still apply
+			expect(result.results[0].warnings).toHaveLength(1);
+			expect(result.results[0].warnings[0].text).toContain('data-bge');
 		});
 	});
 
@@ -366,6 +553,32 @@ describe('@burger-editor/no-internal-selector', () => {
 			);
 			// limit is allowed
 			expect(result.results[0].warnings).toHaveLength(0);
+		});
+
+		test('custom patterns in nested at-rules', async () => {
+			const result = await lintWithOptions(
+				'@media (width >= 768px) { [data-internal] { color: red; } }',
+				[
+					true,
+					{
+						disallowedAttrPatterns: ['/^data-internal/'],
+					},
+				],
+			);
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('custom patterns in CSS nesting', async () => {
+			const result = await lintWithOptions(
+				'.parent { x-comp { color: red; } }',
+				[
+					true,
+					{
+						disallowedTypePatterns: ['/^x-/'],
+					},
+				],
+			);
+			expect(result.results[0].warnings).toHaveLength(1);
 		});
 	});
 });
