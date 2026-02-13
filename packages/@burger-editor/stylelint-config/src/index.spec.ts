@@ -158,19 +158,6 @@ describe('@burger-editor/no-internal-selector', () => {
 			expect(result.results[0].warnings[0].text).toContain('data-bge');
 		});
 
-		test('@scope with internal selector in "to" limit', async () => {
-			const result = await lint('@scope (.root) to ([data-bge-item]) { .child { color: red; } }');
-			expect(result.results[0].warnings).toHaveLength(1);
-			expect(result.results[0].warnings[0].text).toContain('data-bge-item');
-		});
-
-		test('@scope with internal selectors in both root and limit', async () => {
-			const result = await lint(
-				'@scope ([data-bge]) to ([data-bgi]) { .child { color: red; } }',
-			);
-			expect(result.results[0].warnings).toHaveLength(2);
-		});
-
 		test('@scope with bge-* type selector in prelude', async () => {
 			const result = await lint('@scope (bge-wysiwyg) { p { color: red; } }');
 			expect(result.results[0].warnings).toHaveLength(1);
@@ -183,8 +170,66 @@ describe('@burger-editor/no-internal-selector', () => {
 			expect(result.results[0].warnings[0].text).toContain('data-bge');
 		});
 
+		test('@scope root flagged but limit allowed', async () => {
+			const result = await lint(
+				'@scope ([data-bge]) to ([data-bgi]) { .child { color: red; } }',
+			);
+			// root [data-bge] is flagged, but limit [data-bgi] is allowed
+			expect(result.results[0].warnings).toHaveLength(1);
+			expect(result.results[0].warnings[0].text).toContain('data-bge');
+		});
+
+		test('@scope limit with internal selector is allowed', async () => {
+			const result = await lint('@scope (.root) to ([data-bge-item]) { .child { color: red; } }');
+			expect(result.results[0].warnings).toHaveLength(0);
+		});
+
 		test('@scope with safe selectors passes', async () => {
 			const result = await lint('@scope (.my-scope) to (.limit) { .child { color: red; } }');
+			expect(result.results[0].warnings).toHaveLength(0);
+		});
+	});
+
+	describe('rejects internal selectors in nested at-rules', () => {
+		test('@media with nested internal selector', async () => {
+			const result = await lint('@media (width >= 768px) { [data-bge] { color: red; } }');
+			expect(result.results[0].warnings).toHaveLength(1);
+			expect(result.results[0].warnings[0].text).toContain('data-bge');
+		});
+
+		test('@supports with nested internal selector', async () => {
+			const result = await lint(
+				'@supports (display: grid) { [data-bge-container] { display: grid; } }',
+			);
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('@layer with nested internal selector', async () => {
+			const result = await lint('@layer base { [data-bgi] { margin: 0; } }');
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('@container with nested internal selector', async () => {
+			const result = await lint(
+				'@container sidebar (min-width: 400px) { [data-bge] { font-size: 1.5rem; } }',
+			);
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('deeply nested at-rules', async () => {
+			const result = await lint(
+				'@media (width >= 768px) { @layer base { [data-bge] { display: grid; } } }',
+			);
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('CSS nesting with internal selector', async () => {
+			const result = await lint('.parent { [data-bge] { color: red; } }');
+			expect(result.results[0].warnings).toHaveLength(1);
+		});
+
+		test('nested at-rules with safe selectors pass', async () => {
+			const result = await lint('@media (width >= 768px) { .safe { color: red; } }');
 			expect(result.results[0].warnings).toHaveLength(0);
 		});
 	});
@@ -294,7 +339,7 @@ describe('@burger-editor/no-internal-selector', () => {
 			expect(result.results[0].warnings).toHaveLength(2);
 		});
 
-		test('custom patterns with @scope', async () => {
+		test('custom patterns with @scope root', async () => {
 			const result = await lintWithOptions(
 				'@scope ([data-internal]) { x-comp { color: red; } }',
 				[
@@ -305,8 +350,22 @@ describe('@burger-editor/no-internal-selector', () => {
 					},
 				],
 			);
-			// 1 from @scope prelude + 1 from body rule
+			// 1 from @scope root + 1 from body rule
 			expect(result.results[0].warnings).toHaveLength(2);
+		});
+
+		test('custom patterns with @scope limit are allowed', async () => {
+			const result = await lintWithOptions(
+				'@scope (.safe) to ([data-internal]) { .child { color: red; } }',
+				[
+					true,
+					{
+						disallowedAttrPatterns: ['/^data-internal/'],
+					},
+				],
+			);
+			// limit is allowed
+			expect(result.results[0].warnings).toHaveLength(0);
 		});
 	});
 });

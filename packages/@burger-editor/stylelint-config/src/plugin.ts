@@ -83,18 +83,13 @@ function checkSelector(
 }
 
 /**
- * Extract selector strings from `@scope` params.
+ * Extract the root selector from `@scope` params (excludes the limit selector).
  * `@scope ([data-bge])` → `[data-bge]`
- * `@scope ([data-bge]) to (.limit)` → `[data-bge]`, `.limit`
+ * `@scope ([data-bge]) to (.limit)` → `[data-bge]` (limit is allowed)
  */
-function extractScopeSelectors(params: string): string[] {
-	const selectors: string[] = [];
-	const re = /\(([^)]+)\)/g;
-	let match;
-	while ((match = re.exec(params)) !== null) {
-		selectors.push(match[1].trim());
-	}
-	return selectors;
+function extractScopeRootSelector(params: string): string | null {
+	const match = /^\s*\(([^)]+)\)/.exec(params);
+	return match ? match[1].trim() : null;
 }
 
 const ruleFunction: Rule<true, SecondaryOptions> = (primary, secondaryOptions) => {
@@ -125,6 +120,9 @@ const ruleFunction: Rule<true, SecondaryOptions> = (primary, secondaryOptions) =
 			? secondaryOptions.disallowedTypePatterns.map(toRegExp)
 			: DEFAULT_TYPE_PATTERNS;
 
+		// walkRules walks ALL Rule nodes at any nesting depth,
+		// including rules inside @media, @supports, @layer, @container,
+		// @scope, CSS nesting, etc.
 		root.walkRules((ruleNode) => {
 			const selector = ruleNode.selector;
 			if (!selector) {
@@ -133,14 +131,16 @@ const ruleFunction: Rule<true, SecondaryOptions> = (primary, secondaryOptions) =
 			checkSelector(selector, ruleNode, result, attrPatterns, typePatterns);
 		});
 
+		// @scope is the only at-rule with CSS selectors in its params.
+		// Only the root selector is checked; the limit (to ...) is allowed.
 		root.walkAtRules('scope', (atRule: AtRule) => {
 			const params = atRule.params;
 			if (!params) {
 				return;
 			}
-			const selectors = extractScopeSelectors(params);
-			for (const selector of selectors) {
-				checkSelector(selector, atRule, result, attrPatterns, typePatterns);
+			const rootSelector = extractScopeRootSelector(params);
+			if (rootSelector) {
+				checkSelector(rootSelector, atRule, result, attrPatterns, typePatterns);
 			}
 		});
 	};
