@@ -44,7 +44,7 @@ export default defineConfig({
 				test: {
 					name: 'default',
 					include: [
-						'packages/@burger-editor/{frozen-patty,legacy,mcp-server,migrator,utils}/**/*.spec.ts',
+						'packages/@burger-editor/{frozen-patty,legacy,mcp-server,migrator,stylelint-config,utils}/**/*.spec.ts',
 					],
 					...jsdomConfig,
 				},

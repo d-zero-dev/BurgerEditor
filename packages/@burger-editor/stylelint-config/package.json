@@ -1,0 +1,38 @@
+{
+	"name": "@burger-editor/stylelint-config",
+	"version": "4.0.0-alpha.59",
+	"description": "Stylelint config for BurgerEditor page authors",
+	"author": "D-ZERO",
+	"license": "(MIT OR Apache-2.0)",
+	"repository": {
+		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		},
+		"./plugin": {
+			"import": "./dist/plugin.js",
+			"types": "./dist/plugin.d.ts"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc --project tsconfig.build.json",
+		"dev": "tsc --watch --project tsconfig.build.json",
+		"clean": "tsc --build --clean"
+	},
+	"dependencies": {
+		"postcss-selector-parser": "^7.1.0"
+	},
+	"peerDependencies": {
+		"stylelint": ">=16.0.0"
+	}
+}
