@@ -49,6 +49,9 @@ export class BlockOptionsDialog extends EditorDialog {
 		const classes = formData.get('bge-options-classes');
 		const id = formData.get('bge-options-id');
 		const linkarea = formData.get('bge-options-linkarea');
+		const repeatMinInlineSize = formData.get('bge-options-repeat-min-inline-size') as
+			| string
+			| null;
 
 		const styles = formData
 			.keys()
@@ -87,6 +90,7 @@ export class BlockOptionsDialog extends EditorDialog {
 					| null,
 				float: float as 'start' | 'end' | null,
 				linkarea: linkarea === 'true',
+				repeatMinInlineSize: repeatMinInlineSize || null,
 			},
 			classList:
 				classes

@@ -15,6 +15,7 @@ export function importContainerProps(containerProps?: Partial<ContainerProps>): 
 		columns = null,
 		float = null,
 		frameSemantics = 'div',
+		repeatMinInlineSize = null,
 	}: Partial<ContainerProps> = containerProps ?? {};
 	const options = new Set<string>();
 
@@ -37,7 +38,7 @@ export function importContainerProps(containerProps?: Partial<ContainerProps>): 
 	if (wrap) {
 		options.add(wrap);
 	}
-	if (columns) {
+	if (columns && autoRepeat === 'fixed') {
 		options.add(columns.toString());
 	}
 	if (float) {
@@ -45,6 +46,9 @@ export function importContainerProps(containerProps?: Partial<ContainerProps>): 
 	}
 	if (frameSemantics && frameSemantics !== 'div') {
 		options.add(frameSemantics);
+	}
+	if (repeatMinInlineSize) {
+		options.add(`--${repeatMinInlineSize}`);
 	}
 
 	const query = [type, ...options].join(':');

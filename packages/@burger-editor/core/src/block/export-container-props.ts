@@ -51,10 +51,11 @@ export function exportContainerProps(containerPropsQuery?: string): ContainerPro
 		wrap: type === 'inline' ? findValueFromArray(options, ['wrap', 'nowrap']) : null,
 		columns:
 			type === 'grid'
-				? (Number.parseInt(findValuePatternFromArray(options, /[1-9]\d*/) ?? '', 10) ?? 1)
+				? Number.parseInt(findValuePatternFromArray(options, /[1-9]\d*/) ?? '', 10) || 1
 				: null,
 		float: type === 'float' ? findValueFromArray(options, ['start', 'end']) : null,
 		frameSemantics: findValueFromArray(options, ['div', 'ul', 'ol']) ?? 'div',
 		linkarea: false,
+		repeatMinInlineSize: findValuePatternFromArray(options, /^--(.+)$/)?.slice(2) ?? null,
 	};
 }

@@ -21,6 +21,7 @@ import { createStylesheet } from '../dom-helpers/create-stylesheet.js';
 import {
 	getCustomProperties,
 	getCustomProperty,
+	getRepeatMinInlineSizeVariants,
 } from '../dom-helpers/get-custom-properties.js';
 import { getElement } from '../dom-helpers/get-element.js';
 import { EditableArea } from '../editable-area.js';
@@ -264,6 +265,10 @@ export class BurgerEditorEngine {
 
 	getCustomProperty(property: string | RegExp) {
 		return getCustomProperty(this.#current.containerElement.ownerDocument, property);
+	}
+
+	getRepeatMinInlineSizeVariants() {
+		return getRepeatMinInlineSizeVariants(this.#current.containerElement.ownerDocument);
 	}
 
 	hasDraft() {

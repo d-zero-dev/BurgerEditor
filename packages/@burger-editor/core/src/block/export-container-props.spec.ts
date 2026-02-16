@@ -14,6 +14,7 @@ test('グリッドタイプのコンテナを正しく解析する', () => {
 		float: null,
 		frameSemantics: 'div',
 		linkarea: false,
+		repeatMinInlineSize: null,
 	});
 
 	expect(exportContainerProps('grid:3:immutable')).toEqual({
@@ -27,6 +28,7 @@ test('グリッドタイプのコンテナを正しく解析する', () => {
 		float: null,
 		frameSemantics: 'div',
 		linkarea: false,
+		repeatMinInlineSize: null,
 	});
 
 	expect(exportContainerProps('grid:3:auto-fit')).toEqual({
@@ -40,6 +42,7 @@ test('グリッドタイプのコンテナを正しく解析する', () => {
 		float: null,
 		frameSemantics: 'div',
 		linkarea: false,
+		repeatMinInlineSize: null,
 	});
 
 	expect(exportContainerProps('grid:3:auto-fill')).toEqual({
@@ -53,6 +56,7 @@ test('グリッドタイプのコンテナを正しく解析する', () => {
 		float: null,
 		frameSemantics: 'div',
 		linkarea: false,
+		repeatMinInlineSize: null,
 	});
 });
 
@@ -68,6 +72,7 @@ test('インラインタイプのコンテナを正しく解析する', () => {
 		float: null,
 		frameSemantics: 'div',
 		linkarea: false,
+		repeatMinInlineSize: null,
 	});
 
 	expect(exportContainerProps('inline:between:align-center:nowrap')).toEqual({
@@ -81,6 +86,7 @@ test('インラインタイプのコンテナを正しく解析する', () => {
 		float: null,
 		frameSemantics: 'div',
 		linkarea: false,
+		repeatMinInlineSize: null,
 	});
 });
 
@@ -96,6 +102,7 @@ test('フロートタイプのコンテナを正しく解析する', () => {
 		float: 'start',
 		frameSemantics: 'div',
 		linkarea: false,
+		repeatMinInlineSize: null,
 	});
 
 	expect(exportContainerProps('float:end:immutable')).toEqual({
@@ -109,6 +116,7 @@ test('フロートタイプのコンテナを正しく解析する', () => {
 		float: 'end',
 		frameSemantics: 'div',
 		linkarea: false,
+		repeatMinInlineSize: null,
 	});
 });
 
@@ -124,6 +132,7 @@ test('コンテナタイプが未定義の場合、デフォルト値を返す',
 		float: null,
 		frameSemantics: 'div',
 		linkarea: false,
+		repeatMinInlineSize: null,
 	});
 });
 
@@ -139,6 +148,53 @@ test('無効なオプションは無視される', () => {
 		float: null,
 		frameSemantics: 'div',
 		linkarea: false,
+		repeatMinInlineSize: null,
+	});
+});
+
+test('列数が数値でない場合、デフォルト値1を返す', () => {
+	expect(exportContainerProps('grid')).toEqual({
+		type: 'grid',
+		immutable: false,
+		autoRepeat: 'fixed',
+		justify: null,
+		align: null,
+		wrap: null,
+		columns: 1,
+		float: null,
+		frameSemantics: 'div',
+		linkarea: false,
+		repeatMinInlineSize: null,
+	});
+});
+
+test('auto-fit + バリアント指定を正しく解析する', () => {
+	expect(exportContainerProps('grid:3:auto-fit:--large')).toEqual({
+		type: 'grid',
+		immutable: false,
+		autoRepeat: 'auto-fit',
+		justify: null,
+		align: null,
+		wrap: null,
+		columns: 3,
+		float: null,
+		frameSemantics: 'div',
+		linkarea: false,
+		repeatMinInlineSize: 'large',
+	});
+
+	expect(exportContainerProps('grid:auto-fill:--small:2')).toEqual({
+		type: 'grid',
+		immutable: false,
+		autoRepeat: 'auto-fill',
+		justify: null,
+		align: null,
+		wrap: null,
+		columns: 2,
+		float: null,
+		frameSemantics: 'div',
+		linkarea: false,
+		repeatMinInlineSize: 'small',
 	});
 });
 
@@ -155,6 +211,7 @@ test('auto-fillとauto-fitの優先順位を正しく処理する', () => {
 		float: null,
 		frameSemantics: 'div',
 		linkarea: false,
+		repeatMinInlineSize: null,
 	});
 
 	// auto-fitのみの場合
@@ -169,5 +226,6 @@ test('auto-fillとauto-fitの優先順位を正しく処理する', () => {
 		float: null,
 		frameSemantics: 'div',
 		linkarea: false,
+		repeatMinInlineSize: null,
 	});
 });

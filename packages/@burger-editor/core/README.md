@@ -54,13 +54,36 @@
 
 ##### `grid`オプション
 
-- `[数値]`: グリッドの列数（ `grid-template-columns: repeat([数値], 1fr);` ） 1〜5の範囲で指定可能。
-- `auto-fit`: 自動列数調整（空白最小）（ `grid-template-columns: repeat(auto-fit, minmax(calc(var(--bge-auto-fit-base-width) / [数値]), 1fr));` ）
-  規定幅（CSSカスタムプロパティ`--bge-auto-fit-base-width`）を基準に指定した列数で割った数値に近い幅を保ちながら、コンテナの幅に応じて自動的に列数を調整します。空のトラックは折りたたまれ、既存のアイテムが利用可能なスペースを埋めるように拡張されます。
-- `auto-fill`: 自動列数調整（空白保持）（ `grid-template-columns: repeat(auto-fill, minmax(calc(var(--bge-auto-fit-base-width) / [数値]), 1fr));` ）
-  規定幅を基準に自動的に列数を調整しますが、アイテムが不足している場合でも空のトラックが保持され、レイアウト内に空白が生じます。
+- `[数値]`: グリッドの列数（ `grid-template-columns: repeat([数値], minmax(0, 1fr));` ） 1〜5の範囲で指定可能。固定列数（`auto-fit`/`auto-fill`なし）の場合のみ有効。
+- `auto-fit`: 自動列数調整（空白最小）（ `grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--bge-repeat-min-inline-size)), 1fr));` ）
+  折り返し基準インラインサイズ（CSSカスタムプロパティ`--bge-repeat-min-inline-size`）を最小インラインサイズとして、コンテナのインラインサイズに応じて自動的に列数を調整します。空のトラックは折りたたまれ、既存のアイテムが利用可能なスペースを埋めるように拡張されます。`auto-fit`指定時は列数（`[数値]`）は不要です。
+- `auto-fill`: 自動列数調整（空白保持）（ `grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--bge-repeat-min-inline-size)), 1fr));` ）
+  折り返し基準インラインサイズを最小インラインサイズとして自動的に列数を調整しますが、アイテムが不足している場合でも空のトラックが保持され、レイアウト内に空白が生じます。`auto-fill`指定時は列数（`[数値]`）は不要です。
+- `--[バリアント名]`: `auto-fit`/`auto-fill`と併用して、折り返し基準インラインサイズのプリセットを指定します。プリセットはCSSカスタムプロパティ`--bge-repeat-min-inline-size--[バリアント名]`として定義され、プロジェクトCSSで自由に追加・上書きできます。デフォルトのプリセット: `--small`（150px）、`--medium`（300px）、`--large`（500px）。
 
-例: `data-bge-container="grid:3"`、`data-bge-container="grid:3:auto-fit"`、`data-bge-container="grid:3:auto-fill"`
+例: `data-bge-container="grid:3"`、`data-bge-container="grid:auto-fit:--medium"`、`data-bge-container="grid:auto-fill:--large"`
+
+> **⚠️ `auto-fit`/`auto-fill`の折り返し基準インラインサイズにプロジェクト独自のプリセットを追加する場合**: カスタムプロパティの値定義に加えて、`data-bge-container`属性の`--[バリアント名]`をグリッドに反映するためのセレクタールールも必要です。デフォルトの`--small`、`--medium`、`--large`のセレクターは`general.css`に含まれていますが、それ以外のプリセット名を使う場合はプロジェクトCSS側で対応するセレクターを定義してください。
+>
+> ```css
+> /* auto-fit/auto-fill 用プリセットの追加例 */
+> :where([data-bge-container='grid'], [data-bge-container^='grid:']) {
+> 	/* カスタムプロパティの値定義 */
+> 	--bge-repeat-min-inline-size--x-small: 100px;
+> 	--bge-repeat-min-inline-size--x-large: 800px;
+>
+> 	/* data-bge-container 属性の --[プリセット名] をグリッドに反映するセレクター（必須） */
+> 	&:where([data-bge-container$=':--x-small'], [data-bge-container*=':--x-small:'])
+> 		:where([data-bge-container-frame]) {
+> 		--bge-repeat-min-inline-size: var(--bge-repeat-min-inline-size--x-small);
+> 	}
+>
+> 	&:where([data-bge-container$=':--x-large'], [data-bge-container*=':--x-large:'])
+> 		:where([data-bge-container-frame]) {
+> 		--bge-repeat-min-inline-size: var(--bge-repeat-min-inline-size--x-large);
+> 	}
+> }
+> ```
 
 ##### `inline`オプション
 

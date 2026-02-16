@@ -69,3 +69,35 @@ test('グループ要素が存在しない場合、linkarea: falseを返す', ()
 
 	expect(options.containerProps.linkarea).toBe(false);
 });
+
+test('data-bge-containerにバリアント指定がある場合、repeatMinInlineSizeを返す', () => {
+	const el = document.createElement('div');
+	el.dataset.bgeContainer = 'grid:3:auto-fit:--medium';
+	el.innerHTML = `
+		<div data-bge-container-frame>
+			<div data-bge-group>
+				<div data-bge-item></div>
+			</div>
+		</div>
+	`;
+
+	const options = exportOptions(el);
+
+	expect(options.containerProps.repeatMinInlineSize).toBe('medium');
+});
+
+test('data-bge-containerにバリアント指定がない場合、repeatMinInlineSize: nullを返す', () => {
+	const el = document.createElement('div');
+	el.dataset.bgeContainer = 'grid:3:auto-fit';
+	el.innerHTML = `
+		<div data-bge-container-frame>
+			<div data-bge-group>
+				<div data-bge-item></div>
+			</div>
+		</div>
+	`;
+
+	const options = exportOptions(el);
+
+	expect(options.containerProps.repeatMinInlineSize).toBeNull();
+});

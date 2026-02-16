@@ -296,6 +296,61 @@ function searchCustomProperty(
 }
 
 /**
+ * Get repeat-min-inline-size variant definitions from document
+ * @param scope
+ */
+export function getRepeatMinInlineSizeVariants(
+	scope: Document,
+): CustomPropertyCategory | null {
+	const PREFIX = '--bge-repeat-min-inline-size';
+	const properties: CustomPropertyMap = new Map();
+	const baseRef: { value: string | null; priority: readonly number[] } = {
+		value: null,
+		priority: [],
+	};
+
+	searchCustomProperty(scope, (cssProperty, value, layers) => {
+		if (cssProperty === PREFIX) {
+			const newPriority = layers.map((l) => l.priority);
+			if (!baseRef.value || comparePriority(baseRef.priority, newPriority) <= 0) {
+				baseRef.value = value;
+				baseRef.priority = newPriority;
+			}
+		} else if (cssProperty.startsWith(PREFIX + '--')) {
+			const key = cssProperty.slice((PREFIX + '--').length);
+			const newProperty: CustomProperty = {
+				value,
+				priority: layers.map((l) => l.priority),
+				isDefault: false,
+			};
+			const existing = properties.get(key);
+			properties.set(
+				key,
+				existing
+					? compareCustomPropertyByLayerPriority(existing, newProperty)
+					: newProperty,
+			);
+		}
+	});
+
+	if (properties.size === 0) return null;
+
+	// デフォルト判定: var(--bge-repeat-min-inline-size--{key}) を参照しているか
+	if (baseRef.value) {
+		const match = baseRef.value.match(/--bge-repeat-min-inline-size--([^)]+)/);
+		const defaultKey = match?.[1]?.trim();
+		if (defaultKey) {
+			const prop = properties.get(defaultKey);
+			if (prop) {
+				properties.set(defaultKey, { ...prop, isDefault: true });
+			}
+		}
+	}
+
+	return { id: 'repeat-min-inline-size', name: 'repeat-min-inline-size', properties };
+}
+
+/**
  * Compare custom property by layer priority
  *
  * - レイヤーの数が少ないほど優先度が高い

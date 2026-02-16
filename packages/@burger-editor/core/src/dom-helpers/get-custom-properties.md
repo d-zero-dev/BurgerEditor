@@ -434,3 +434,55 @@
 ## `@scope` 未対応ブラウザでの振る舞い
 
 `CSSScopeRule` が存在しない環境では、`@scope` 内のルールは単にスキップされる（エラーにならない）。`@scope` 以外のルールは通常通り検出される。
+
+---
+
+## `getRepeatMinInlineSizeVariants`: 折り返し基準インラインサイズバリアントの検出
+
+`getRepeatMinInlineSizeVariants` は `--bge-repeat-min-inline-size--{バリアント名}` パターンのカスタムプロパティを検出する。`--bge-options-` プレフィックスではなく `--bge-repeat-min-inline-size` プレフィックスを対象とする点が `getCustomProperties` と異なる。
+
+検出の仕組み（セレクター照合、`@layer` 優先度、`@scope` 透過など）は `getCustomProperties` と同じ。
+
+```css
+/* 検出される: バリアント定義 */
+[data-bge-container] {
+	--bge-repeat-min-inline-size--small: 150px;
+	--bge-repeat-min-inline-size--medium: 300px;
+	--bge-repeat-min-inline-size--large: 500px;
+	--bge-repeat-min-inline-size: var(--bge-repeat-min-inline-size--medium);
+}
+```
+
+結果:
+
+- 選択肢 `small: 150px`、`medium: 300px`、`large: 500px` が検出される。
+- `--bge-repeat-min-inline-size: var(--bge-repeat-min-inline-size--medium)` により `medium` がデフォルトになる。
+
+### プロジェクトCSSでの上書き・追加
+
+プロジェクトCSS（上位レイヤー）で値の上書きや新規バリアントの追加ができる。
+
+```css
+@layer main-base {
+	[data-bge-container] {
+		--bge-repeat-min-inline-size--small: 200px; /* 値を上書き */
+		--bge-repeat-min-inline-size--x-large: 800px; /* 新規バリアント追加 */
+		--bge-repeat-min-inline-size: var(--bge-repeat-min-inline-size--medium);
+	}
+}
+```
+
+結果: `small: 200px`（上書き）、`medium: 300px`、`large: 500px`、`x-large: 800px`（新規）が検出される。レイヤー優先度により上位レイヤーの値が採用される。
+
+**注意**: `auto-fit`/`auto-fill`の折り返し基準インラインサイズにデフォルト以外のプリセット名を追加した場合、カスタムプロパティの値定義だけでなく、`data-bge-container`属性の`--[プリセット名]`をグリッドに反映するためのセレクタールールもプロジェクトCSS側で必要になる。`--small`、`--medium`、`--large`のセレクターは`general.css`に含まれているが、それ以外のプリセット名には対応するセレクターがない。
+
+```css
+@layer main-base {
+	:where([data-bge-container='grid'], [data-bge-container^='grid:']) {
+		&:where([data-bge-container$=':--x-large'], [data-bge-container*=':--x-large:'])
+			:where([data-bge-container-frame]) {
+			--bge-repeat-min-inline-size: var(--bge-repeat-min-inline-size--x-large);
+		}
+	}
+}
+```
