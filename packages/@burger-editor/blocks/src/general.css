@@ -1,6 +1,12 @@
 [data-bge-container] {
 	--bge-auto-repeat-base-width: calc(800 / 16 * 1rem);
 
+	/* Custom repeat min width (for auto-fit/auto-fill) */
+	--bge-repeat-min-inline-size--small: 150px;
+	--bge-repeat-min-inline-size--medium: 300px;
+	--bge-repeat-min-inline-size--large: 500px;
+	--bge-repeat-min-inline-size: var(--bge-repeat-min-inline-size--medium);
+
 	/* Custom max-width */
 	--bge-options-max-width--normal: calc(800 / 16 * 1rem);
 	--bge-options-max-width--small: calc(400 / 16 * 1rem);
@@ -116,24 +122,40 @@
 
 	:where([data-bge-container-frame]) {
 		--_grid-col: var(--bge-grid-col, 1);
-		--_repeat-base-width: calc(var(--bge-auto-repeat-base-width) / var(--_grid-col));
+		--_grid-repeat: var(--_grid-repeat-type, var(--_grid-col));
 		display: grid;
-		grid-template-columns: repeat(var(--_grid-col), minmax(0, 1fr));
+		grid-template-columns: repeat(
+			var(--_grid-repeat),
+			minmax(min(100%, var(--_repeat-min-inline-size, 0px)), 1fr)
+		);
 		gap: var(--_gap-block) var(--_gap-inline);
+	}
 
-		&:is([data-bge-container*=':auto-fit:'] *) {
-			grid-template-columns: repeat(
-				auto-fit,
-				minmax(min(100%, var(--_repeat-base-width)), 1fr)
-			);
-		}
+	&:where([data-bge-container$=':auto-fit'], [data-bge-container*=':auto-fit:'])
+		:where([data-bge-container-frame]) {
+		--_grid-repeat-type: auto-fit;
+		--_repeat-min-inline-size: var(--bge-repeat-min-inline-size);
+	}
 
-		&:is([data-bge-container*=':auto-fill:'] *) {
-			grid-template-columns: repeat(
-				auto-fill,
-				minmax(min(100%, var(--_repeat-base-width)), 1fr)
-			);
-		}
+	&:where([data-bge-container$=':auto-fill'], [data-bge-container*=':auto-fill:'])
+		:where([data-bge-container-frame]) {
+		--_grid-repeat-type: auto-fill;
+		--_repeat-min-inline-size: var(--bge-repeat-min-inline-size);
+	}
+
+	&:where([data-bge-container$=':--small'], [data-bge-container*=':--small:'])
+		:where([data-bge-container-frame]) {
+		--bge-repeat-min-inline-size: var(--bge-repeat-min-inline-size--small);
+	}
+
+	&:where([data-bge-container$=':--medium'], [data-bge-container*=':--medium:'])
+		:where([data-bge-container-frame]) {
+		--bge-repeat-min-inline-size: var(--bge-repeat-min-inline-size--medium);
+	}
+
+	&:where([data-bge-container$=':--large'], [data-bge-container*=':--large:'])
+		:where([data-bge-container-frame]) {
+		--bge-repeat-min-inline-size: var(--bge-repeat-min-inline-size--large);
 	}
 
 	:where([data-bge-group]) {
