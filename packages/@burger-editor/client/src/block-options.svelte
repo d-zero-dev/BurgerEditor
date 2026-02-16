@@ -22,11 +22,12 @@
 	const options = currentBlock.exportOptions();
 	const cssProps = engine.getCustomProperties(options.containerProps.type);
 
-	const autoRepeatBaseWidth = engine.getCustomProperty('--bge-auto-repeat-base-width');
+	const repeatMinInlineSizeVariants = engine.getRepeatMinInlineSizeVariants();
 
 	let currentColumns = $state(options.containerProps.columns ?? 1);
 	let currentContainerType = $state(options.containerProps.type);
 	let currentFrameSemantics = $state(options.containerProps.frameSemantics);
+	let currentAutoRepeat = $state(options.containerProps.autoRepeat ?? 'fixed');
 
 	// アイテム数をリアクティブに管理
 	const itemCount = $derived(currentBlock.items.length);
@@ -45,6 +46,15 @@
 	function handleContainerTypeChange(e: Event) {
 		const target = e.currentTarget as HTMLSelectElement;
 		currentContainerType = target.value as 'grid' | 'inline' | 'float';
+	}
+
+	/**
+	 * 列の自動調整変更時の処理
+	 * @param e - change イベント
+	 */
+	function handleAutoRepeatChange(e: Event) {
+		const target = e.currentTarget as HTMLSelectElement;
+		currentAutoRepeat = target.value as 'fixed' | 'auto-fill' | 'auto-fit';
 	}
 
 	/**
@@ -199,19 +209,8 @@
 				<p>このブロックはコンテナタイプを変更できません。</p>
 			{:else}
 				<label>
-					<span>基準列数</span>
-					<output>{currentColumns}</output>
-					<input
-						name="bge-options-columns"
-						type="range"
-						bind:value={currentColumns}
-						defaultValue={options.containerProps.columns ?? 1}
-						min="1"
-						max="5" />
-				</label>
-				<label>
 					<span>列の自動調整</span>
-					<select name="bge-options-auto-repeat">
+					<select name="bge-options-auto-repeat" onchange={handleAutoRepeatChange}>
 						<option
 							value="fixed"
 							selected={(options.containerProps.autoRepeat ?? 'fixed') === 'fixed'}>
@@ -229,14 +228,34 @@
 						</option>
 					</select>
 				</label>
-				<small>
-					規定幅（<code
-						title="CSSカスタムプロパティ: --bge-auto-repeat-base-width に設定されている値"
-						>{autoRepeatBaseWidth}</code
-					>）を基準に「基準列数:
-					<code>{currentColumns}</code
-					>」で割った数値に近い幅を保ちます。「空白保持」は空のスペースを残し、「空白最小」はアイテムの幅を広げます。
-				</small>
+				{#if currentAutoRepeat === 'fixed'}
+					<label>
+						<span>基準列数</span>
+						<output>{currentColumns}</output>
+						<input
+							name="bge-options-columns"
+							type="range"
+							bind:value={currentColumns}
+							defaultValue={options.containerProps.columns ?? 1}
+							min="1"
+							max="5" />
+					</label>
+				{/if}
+				{#if currentAutoRepeat !== 'fixed' && repeatMinInlineSizeVariants}
+					<label>
+						<span>折り返し基準幅</span>
+						<select name="bge-options-repeat-min-inline-size">
+							{#each repeatMinInlineSizeVariants.properties as [variantName, data] (variantName)}
+								<option
+									value={variantName}
+									selected={options.containerProps.repeatMinInlineSize == null
+										? data.isDefault
+										: options.containerProps.repeatMinInlineSize === variantName}
+									>{`${variantName} (${data.value})`}</option>
+							{/each}
+						</select>
+					</label>
+				{/if}
 			{/if}
 		{/if}
 		{#if effectiveContainerType === 'float'}
