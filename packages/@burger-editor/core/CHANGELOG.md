@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.60](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.59...v4.0.0-alpha.60) (2026-02-16)
+
+### Features
+
+- **core:** add repeat-min-inline-size preset support for grid auto-fit/auto-fill ([0cef027](https://github.com/d-zero-dev/BurgerEditor/commit/0cef027c42388f584a4ad30b3a14b2103c49a2d7))
+
 # [4.0.0-alpha.59](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.58...v4.0.0-alpha.59) (2026-02-12)
 
 ### Features

@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.60](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.59...v4.0.0-alpha.60) (2026-02-16)
+
+### Features
+
+- **client:** add repeat-min-inline-size preset selector to block options UI ([a60077a](https://github.com/d-zero-dev/BurgerEditor/commit/a60077a29d20bc8819559eca73b9686d114a1cf6))
+
 # [4.0.0-alpha.59](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.58...v4.0.0-alpha.59) (2026-02-12)
 
 **Note:** Version bump only for package @burger-editor/client
