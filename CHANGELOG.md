@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.61](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.60...v4.0.0-alpha.61) (2026-02-18)
+
+### Bug Fixes
+
+- **core:** migrate disable sentinel from null to empty value ([174edb1](https://github.com/d-zero-dev/BurgerEditor/commit/174edb1cce31d317f68d98d44102e0cce2b161c9))
+- **core:** resolve CSS [@layer](https://github.com/layer) order globally across stylesheets ([b59b5a3](https://github.com/d-zero-dev/BurgerEditor/commit/b59b5a337265150a5c8a41ca7f4d226022fb84d1))
+
 # [4.0.0-alpha.60](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.59...v4.0.0-alpha.60) (2026-02-16)
 
 ### Features
