@@ -1164,7 +1164,7 @@ describe('Multiple stylesheets', () => {
 		expect(resultObj.width.properties.a.value).toBe('200%');
 	});
 
-	test('Layer order is resolved per-stylesheet independently', () => {
+	test('Layer order is resolved globally across stylesheets', () => {
 		const style1 = document.createElement('style');
 		style1.textContent = `
 			@layer a, b;
@@ -1187,11 +1187,81 @@ describe('Multiple stylesheets', () => {
 		document.head.append(style1, style2);
 		const result = getCustomProperties(document);
 		const resultObj = toObject(result);
-		// style1 の @layer statement は style2 には影響しない（スタイルシートごとに独立）
-		// style2 は block rule のみ → allLayerNames = [a, b] → reversed [b, a]
-		// a: indexOf=1, priority=2 / b: indexOf=0, priority=1
+		// グローバルレイヤー順序: style1 の @layer a, b; → [a, b]
+		// style2 の block rule a, b はすでに登録済み
 		// b が高優先度 → 200% が勝つ
 		expect(resultObj.width.properties.a.value).toBe('200%');
+	});
+
+	test('Cross-stylesheet reversed @layer statement: earlier layer wins', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = `
+			@layer b, a;
+		`;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			@layer a {
+				[data-bge-container] {
+					--bge-options-width--x: from-a;
+				}
+			}
+		`;
+		const style3 = document.createElement('style');
+		style3.textContent = `
+			@layer b {
+				[data-bge-container] {
+					--bge-options-width--x: from-b;
+				}
+			}
+		`;
+		document.head.append(style1, style2, style3);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+		// グローバルレイヤー順序: @layer b, a; → [b, a]
+		// a が後 = 高優先度 → from-a が勝つ
+		expect(resultObj.width.properties.x.value).toBe('from-a');
+	});
+
+	test('BurgerEditor 3-sheet structure: declaration + base + project null', () => {
+		// Sheet 0: グローバルレイヤー順序宣言
+		const sheet0 = document.createElement('style');
+		sheet0.textContent = `
+			@layer bge-component-bases, bge-components, bge-ui;
+		`;
+		// Sheet 1: ベース値定義
+		const sheet1 = document.createElement('style');
+		sheet1.textContent = `
+			@layer bge-component-bases {
+				[data-bge-container] {
+					--bge-options-max-width--normal: 50rem;
+					--bge-options-max-width--small: 25rem;
+					--bge-options-max-width--large: 75rem;
+					--bge-options-max-width--full: 100dvi;
+					--bge-options-max-width: var(--bge-options-max-width--normal);
+				}
+			}
+		`;
+		// Sheet 2: プロジェクトCSS（上位レイヤーで null 上書き）
+		const sheet2 = document.createElement('style');
+		sheet2.textContent = `
+			@layer bge-components {
+				@layer main {
+					.c-content-main {
+						& [data-bge-container] {
+							--bge-options-max-width--normal: null;
+						}
+					}
+				}
+			}
+		`;
+		document.head.append(sheet0, sheet1, sheet2);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+		// bge-components > bge-component-bases なので null が正しく効く
+		expect(resultObj['max-width'].properties).not.toHaveProperty('normal');
+		expect(resultObj['max-width'].properties).toHaveProperty('small');
+		expect(resultObj['max-width'].properties).toHaveProperty('large');
+		expect(resultObj['max-width'].properties).toHaveProperty('full');
 	});
 });
 
@@ -1259,5 +1329,603 @@ describe('Deeply nested layers', () => {
 		// y 内で @layer p, q; → q が高優先度
 		// → y.q (400%) が最高優先度
 		expect(resultObj.width.properties.a.value).toBe('400%');
+	});
+});
+
+// ============================================================================
+// Null value handling in @layer / @scope / CSS nesting
+// Production CSS の2層構造（general.css + ユーザーCSS）をシミュレート
+// ============================================================================
+
+/**
+ * ベースCSS（general.css相当）
+ */
+const BASE_CSS = `
+@layer bge-component-bases, bge-components;
+
+@layer bge-component-bases {
+	[data-bge-container] {
+		--bge-options-max-width--normal: calc(800 / 16 * 1rem);
+		--bge-options-max-width--small: calc(400 / 16 * 1rem);
+		--bge-options-max-width--large: calc(1200 / 16 * 1rem);
+		--bge-options-max-width--full: 100dvi;
+		--bge-options-max-width: var(--bge-options-max-width--normal);
+
+		--bge-options-margin--normal: 3rem;
+		--bge-options-margin--none: 0;
+		--bge-options-margin--small: 1rem;
+		--bge-options-margin--large: 8rem;
+		--bge-options-margin: var(--bge-options-margin--normal);
+
+		--bge-options-bg-color--transparent: transparent;
+		--bge-options-bg-color--white: #fff;
+		--bge-options-bg-color--gray: #dfdfdf;
+		--bge-options-bg-color: var(--bge-options-bg-color--transparent);
+	}
+}
+`;
+
+describe('Null value in @layer bge-components (Group 1)', () => {
+	test('1-1: Partial null in @layer bge-components', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = BASE_CSS;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			@layer bge-components {
+				[data-bge-container] {
+					--bge-options-max-width--full: null;
+					--bge-options-max-width--large: null;
+				}
+			}
+		`;
+		document.head.append(style1, style2);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		// full, large は除外
+		expect(resultObj['max-width'].properties).not.toHaveProperty('full');
+		expect(resultObj['max-width'].properties).not.toHaveProperty('large');
+		// normal(isDefault:true), small は残る
+		expect(resultObj['max-width'].properties).toHaveProperty('normal');
+		expect(resultObj['max-width'].properties.normal.isDefault).toBe(true);
+		expect(resultObj['max-width'].properties).toHaveProperty('small');
+		// margin, bg-color は影響なし
+		expect(Object.keys(resultObj.margin.properties)).toHaveLength(4);
+		expect(Object.keys(resultObj['bg-color'].properties)).toHaveLength(3);
+	});
+
+	test('1-2: All keys null in a category', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = BASE_CSS;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			@layer bge-components {
+				[data-bge-container] {
+					--bge-options-bg-color--transparent: null;
+					--bge-options-bg-color--white: null;
+					--bge-options-bg-color--gray: null;
+				}
+			}
+		`;
+		document.head.append(style1, style2);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		// bg-color カテゴリの properties が空
+		expect(Object.keys(resultObj['bg-color'].properties)).toHaveLength(0);
+		// max-width, margin は影響なし
+		expect(Object.keys(resultObj['max-width'].properties)).toHaveLength(4);
+		expect(Object.keys(resultObj.margin.properties)).toHaveLength(4);
+	});
+
+	test('1-3: Null the default reference key', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = BASE_CSS;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			@layer bge-components {
+				[data-bge-container] {
+					--bge-options-margin--normal: null;
+				}
+			}
+		`;
+		document.head.append(style1, style2);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		// normal は除外
+		expect(resultObj.margin.properties).not.toHaveProperty('normal');
+		// none, small, large は残る
+		expect(resultObj.margin.properties).toHaveProperty('none');
+		expect(resultObj.margin.properties).toHaveProperty('small');
+		expect(resultObj.margin.properties).toHaveProperty('large');
+		// normalが消えたので、残りのどのキーにもisDefault: trueがつかない
+		for (const prop of Object.values(resultObj.margin.properties)) {
+			expect((prop as { isDefault: boolean }).isDefault).toBe(false);
+		}
+	});
+});
+
+describe('Null value in @scope (Group 2)', () => {
+	test('2-1: @layer bge-components > @scope null', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = BASE_CSS;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			@layer bge-components {
+				@scope (.custom-section) {
+					[data-bge-container] {
+						--bge-options-max-width--full: null;
+						--bge-options-max-width--large: null;
+					}
+				}
+			}
+		`;
+		document.head.append(style1, style2);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		expect(resultObj['max-width'].properties).not.toHaveProperty('full');
+		expect(resultObj['max-width'].properties).not.toHaveProperty('large');
+		expect(resultObj['max-width'].properties).toHaveProperty('normal');
+		expect(resultObj['max-width'].properties.normal.isDefault).toBe(true);
+		expect(resultObj['max-width'].properties).toHaveProperty('small');
+	});
+
+	test('2-2: Unlayered @scope null', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = BASE_CSS;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			@scope (.custom-section) {
+				[data-bge-container] {
+					--bge-options-max-width--full: null;
+				}
+			}
+		`;
+		document.head.append(style1, style2);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		// unlayered [] > bge-component-bases → full 除外
+		expect(resultObj['max-width'].properties).not.toHaveProperty('full');
+		expect(resultObj['max-width'].properties).toHaveProperty('normal');
+		expect(resultObj['max-width'].properties).toHaveProperty('small');
+		expect(resultObj['max-width'].properties).toHaveProperty('large');
+	});
+
+	test('2-3: @scope([data-bge-container]) + :scope null', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = BASE_CSS;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			@layer bge-components {
+				@scope ([data-bge-container]) {
+					:scope {
+						--bge-options-max-width--full: null;
+						--bge-options-margin--large: null;
+					}
+				}
+			}
+		`;
+		document.head.append(style1, style2);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		// max-width--full と margin--large が除外
+		expect(resultObj['max-width'].properties).not.toHaveProperty('full');
+		expect(resultObj.margin.properties).not.toHaveProperty('large');
+		// 他は残存
+		expect(resultObj['max-width'].properties).toHaveProperty('normal');
+		expect(resultObj['max-width'].properties).toHaveProperty('small');
+		expect(resultObj['max-width'].properties).toHaveProperty('large');
+		expect(resultObj.margin.properties).toHaveProperty('normal');
+		expect(resultObj.margin.properties).toHaveProperty('none');
+		expect(resultObj.margin.properties).toHaveProperty('small');
+	});
+
+	test('2-4: @scope null overridden by later real value', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = BASE_CSS;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			@scope (.section) {
+				[data-bge-container] {
+					--bge-options-max-width--full: null;
+				}
+			}
+			[data-bge-container] {
+				--bge-options-max-width--full: 100dvi;
+			}
+		`;
+		document.head.append(style1, style2);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		// 後から来た実値が後勝ちで null を上書き → full は残る
+		expect(resultObj['max-width'].properties).toHaveProperty('full');
+		expect(resultObj['max-width'].properties.full.value).toBe('100dvi');
+	});
+
+	test('2-5: Nested @scope null', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = BASE_CSS;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			@layer bge-components {
+				@scope (.outer) {
+					@scope (.inner) {
+						[data-bge-container] {
+							--bge-options-max-width--full: null;
+						}
+					}
+				}
+			}
+		`;
+		document.head.append(style1, style2);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		expect(resultObj['max-width'].properties).not.toHaveProperty('full');
+		expect(resultObj['max-width'].properties).toHaveProperty('normal');
+		expect(resultObj['max-width'].properties).toHaveProperty('small');
+		expect(resultObj['max-width'].properties).toHaveProperty('large');
+	});
+});
+
+describe('Null value in CSS nesting (Group 3)', () => {
+	test('3-1: @layer bge-components > CSS nesting null', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = BASE_CSS;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			@layer bge-components {
+				.custom-theme {
+					[data-bge-container] {
+						--bge-options-bg-color--gray: null;
+						--bge-options-bg-color--white: null;
+					}
+				}
+			}
+		`;
+		document.head.append(style1, style2);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		expect(resultObj['bg-color'].properties).not.toHaveProperty('gray');
+		expect(resultObj['bg-color'].properties).not.toHaveProperty('white');
+		expect(resultObj['bg-color'].properties).toHaveProperty('transparent');
+		expect(resultObj['bg-color'].properties.transparent.isDefault).toBe(true);
+	});
+
+	test('3-2: Deep CSS nesting (3 levels) null', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = BASE_CSS;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			@layer bge-components {
+				.theme {
+					.section {
+						[data-bge-container] {
+							--bge-options-margin--large: null;
+						}
+					}
+				}
+			}
+		`;
+		document.head.append(style1, style2);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		expect(resultObj.margin.properties).not.toHaveProperty('large');
+		expect(resultObj.margin.properties).toHaveProperty('normal');
+		expect(resultObj.margin.properties).toHaveProperty('none');
+		expect(resultObj.margin.properties).toHaveProperty('small');
+	});
+});
+
+describe('Null value composite patterns (Group 4)', () => {
+	test('4-1: @layer + @scope + nesting triple structure', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = BASE_CSS;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			@layer bge-components {
+				@scope (.landing-page) {
+					.hero {
+						[data-bge-container] {
+							--bge-options-max-width--small: null;
+							--bge-options-max-width--normal: null;
+							--bge-options-margin--small: null;
+						}
+					}
+				}
+			}
+		`;
+		document.head.append(style1, style2);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		// max-width: small, normal 除外。large, full 残存
+		expect(resultObj['max-width'].properties).not.toHaveProperty('small');
+		expect(resultObj['max-width'].properties).not.toHaveProperty('normal');
+		expect(resultObj['max-width'].properties).toHaveProperty('large');
+		expect(resultObj['max-width'].properties).toHaveProperty('full');
+		// normalが消えたのでどれもisDefault: trueにならない
+		for (const prop of Object.values(resultObj['max-width'].properties)) {
+			expect((prop as { isDefault: boolean }).isDefault).toBe(false);
+		}
+		// margin: small 除外。normal(isDefault:true), none, large 残存
+		expect(resultObj.margin.properties).not.toHaveProperty('small');
+		expect(resultObj.margin.properties).toHaveProperty('normal');
+		expect(resultObj.margin.properties.normal.isDefault).toBe(true);
+		expect(resultObj.margin.properties).toHaveProperty('none');
+		expect(resultObj.margin.properties).toHaveProperty('large');
+	});
+
+	test('4-2: @scope > @layer reverse nesting', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = BASE_CSS;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			@scope (.custom-section) {
+				@layer bge-components {
+					[data-bge-container] {
+						--bge-options-max-width--full: null;
+					}
+				}
+			}
+		`;
+		document.head.append(style1, style2);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		expect(resultObj['max-width'].properties).not.toHaveProperty('full');
+		expect(resultObj['max-width'].properties).toHaveProperty('normal');
+	});
+
+	test('4-3: Multiple user stylesheets with different null keys', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = BASE_CSS;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			@layer bge-components {
+				@scope (.block-type-a) {
+					[data-bge-container] {
+						--bge-options-max-width--full: null;
+					}
+				}
+			}
+		`;
+		const style3 = document.createElement('style');
+		style3.textContent = `
+			@layer bge-components {
+				@scope (.block-type-b) {
+					[data-bge-container] {
+						--bge-options-max-width--small: null;
+						--bge-options-margin--large: null;
+					}
+				}
+			}
+		`;
+		document.head.append(style1, style2, style3);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		// max-width: full, small 除外。normal(isDefault:true), large 残存
+		expect(resultObj['max-width'].properties).not.toHaveProperty('full');
+		expect(resultObj['max-width'].properties).not.toHaveProperty('small');
+		expect(resultObj['max-width'].properties).toHaveProperty('normal');
+		expect(resultObj['max-width'].properties.normal.isDefault).toBe(true);
+		expect(resultObj['max-width'].properties).toHaveProperty('large');
+		// margin: large 除外。normal(isDefault:true), none, small 残存
+		expect(resultObj.margin.properties).not.toHaveProperty('large');
+		expect(resultObj.margin.properties).toHaveProperty('normal');
+		expect(resultObj.margin.properties.normal.isDefault).toBe(true);
+		expect(resultObj.margin.properties).toHaveProperty('none');
+		expect(resultObj.margin.properties).toHaveProperty('small');
+	});
+
+	test('4-4: Null in base layer overridden by real value in higher layer', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = `
+			@layer bge-component-bases, bge-components;
+
+			@layer bge-component-bases {
+				[data-bge-container] {
+					--bge-options-shadow--none: none;
+					--bge-options-shadow--fancy: null;
+					--bge-options-shadow: var(--bge-options-shadow--none);
+				}
+			}
+		`;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			@layer bge-components {
+				[data-bge-container] {
+					--bge-options-shadow--fancy: 0 4px 8px black;
+				}
+			}
+		`;
+		document.head.append(style1, style2);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		// bge-components の実値が bge-component-bases の null に勝つ
+		expect(resultObj.shadow.properties).toHaveProperty('fancy');
+		expect(resultObj.shadow.properties.fancy.value).toBe('0 4px 8px black');
+		expect(resultObj.shadow.properties).toHaveProperty('none');
+	});
+
+	test('4-5: @layer > @scope > @layer > :scope deepest nesting', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = BASE_CSS;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			@layer bge-components {
+				@scope ([data-bge-container]) {
+					@layer inner {
+						:scope {
+							--bge-options-max-width--full: null;
+						}
+					}
+				}
+			}
+		`;
+		document.head.append(style1, style2);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		expect(resultObj['max-width'].properties).not.toHaveProperty('full');
+		expect(resultObj['max-width'].properties).toHaveProperty('normal');
+	});
+});
+
+describe('Null value edge cases (Group 5)', () => {
+	test('5-1: containerType (_grid_) + user null', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = `
+			@layer bge-component-bases, bge-components;
+
+			@layer bge-component-bases {
+				[data-bge-container] {
+					--bge-options-_grid_subgrid-gap--normal: 1rem;
+					--bge-options-_grid_subgrid-gap--none: 0;
+					--bge-options-_grid_subgrid-gap--large: 1rem;
+					--bge-options-_grid_subgrid-gap: var(--bge-options-_grid_subgrid-gap--normal);
+				}
+			}
+		`;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			@layer bge-components {
+				[data-bge-container] {
+					--bge-options-_grid_subgrid-gap--large: null;
+				}
+			}
+		`;
+		document.head.append(style1, style2);
+		const result = getCustomProperties(document, 'grid');
+		const resultObj = toObject(result);
+
+		expect(resultObj['_grid_subgrid-gap'].properties).not.toHaveProperty('large');
+		expect(resultObj['_grid_subgrid-gap'].properties).toHaveProperty('normal');
+		expect(resultObj['_grid_subgrid-gap'].properties.normal.isDefault).toBe(true);
+		expect(resultObj['_grid_subgrid-gap'].properties).toHaveProperty('none');
+	});
+
+	test('5-2: NULL/Null case insensitive in @scope', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = BASE_CSS;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			@layer bge-components {
+				@scope (.block) {
+					[data-bge-container] {
+						--bge-options-max-width--full: NULL;
+						--bge-options-max-width--large:  Null ;
+					}
+				}
+			}
+		`;
+		document.head.append(style1, style2);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		expect(resultObj['max-width'].properties).not.toHaveProperty('full');
+		expect(resultObj['max-width'].properties).not.toHaveProperty('large');
+		expect(resultObj['max-width'].properties).toHaveProperty('normal');
+		expect(resultObj['max-width'].properties).toHaveProperty('small');
+	});
+
+	test('5-3: Real value in second stylesheet overrides null in first', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = `
+			[data-bge-container] {
+				--bge-options-shadow--none: none;
+				--bge-options-shadow--fancy: null;
+				--bge-options-shadow: var(--bge-options-shadow--none);
+			}
+		`;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			[data-bge-container] {
+				--bge-options-shadow--fancy: 0 4px 8px black;
+			}
+		`;
+		document.head.append(style1, style2);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		// 後勝ち → fancy 残る
+		expect(resultObj.shadow.properties).toHaveProperty('fancy');
+		expect(resultObj.shadow.properties.fancy.value).toBe('0 4px 8px black');
+	});
+
+	test('5-4: Null in second stylesheet overrides real value in first', () => {
+		const style1 = document.createElement('style');
+		style1.textContent = `
+			[data-bge-container] {
+				--bge-options-shadow--none: none;
+				--bge-options-shadow--fancy: 0 4px 8px black;
+				--bge-options-shadow: var(--bge-options-shadow--none);
+			}
+		`;
+		const style2 = document.createElement('style');
+		style2.textContent = `
+			[data-bge-container] {
+				--bge-options-shadow--fancy: null;
+			}
+		`;
+		document.head.append(style1, style2);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		// 後勝ち → fancy 除外
+		expect(resultObj.shadow.properties).not.toHaveProperty('fancy');
+		expect(resultObj.shadow.properties).toHaveProperty('none');
+	});
+});
+
+// ============================================================================
+// Production 再現テスト: プロジェクトの実構造
+// @layer main-base にベース定義、@layer main の CSS nesting 内で null
+// ============================================================================
+
+describe('Production reproduction: @layer main-base + @layer main nesting null', () => {
+	test('Null in @layer main > .parent > [data-bge-container] overrides @layer main-base base', () => {
+		const style = document.createElement('style');
+		style.textContent = `
+			@layer main-base, main;
+
+			@layer main-base {
+				[data-bge-container] {
+					--bge-options-max-width--normal: 50rem;
+					--bge-options-max-width--small: 25rem;
+					--bge-options-max-width--large: 75rem;
+					--bge-options-max-width--full: 100dvi;
+					--bge-options-max-width: var(--bge-options-max-width--normal);
+				}
+			}
+
+			@layer main {
+				.c-content-main {
+					[data-bge-container] {
+						--bge-options-max-width--normal: null;
+						--bge-options-max-width--small: null;
+					}
+				}
+			}
+		`;
+		document.head.append(style);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		// null が main-base のベース定義を上書き → normal, small は除外
+		expect(resultObj['max-width'].properties).not.toHaveProperty('normal');
+		expect(resultObj['max-width'].properties).not.toHaveProperty('small');
+		// large, full は残る
+		expect(resultObj['max-width'].properties).toHaveProperty('large');
+		expect(resultObj['max-width'].properties).toHaveProperty('full');
 	});
 });

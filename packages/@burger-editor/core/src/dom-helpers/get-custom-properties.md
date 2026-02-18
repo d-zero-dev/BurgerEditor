@@ -112,28 +112,32 @@
 
 結果: `400%`。親レイヤーの優先度が先に比較され、同じ親内ではサブレイヤーの宣言順で決まる。
 
-### レイヤー順序はスタイルシートごとに独立
+### レイヤー順序はドキュメント全体でグローバル
+
+CSS仕様に従い、`@layer` の順序はドキュメント内のすべてのスタイルシートをまたいでグローバルに解決される。別の `<style>` 要素にある `@layer` 宣言も順序決定に影響する。
 
 ```html
-<!-- style1 の @layer statement は style2 に影響しない -->
+<!-- style1 の @layer statement がグローバルな順序を確立する -->
 <style>
-	@layer a, b;
+	@layer b, a;
 </style>
 <style>
 	@layer a {
 		[data-bge-container] {
-			--bge-options-width--x: 100%;
+			--bge-options-width--x: from-a;
 		}
 	}
+</style>
+<style>
 	@layer b {
 		[data-bge-container] {
-			--bge-options-width--x: 200%;
+			--bge-options-width--x: from-b;
 		}
 	}
 </style>
 ```
 
-結果: `200%`。style2 内の出現順（`a` → `b`）で `b` が優先。style1 の `@layer a, b;` は style2 のレイヤー順序に影響しない。
+結果: `from-a`。style1の`@layer b, a;`によりグローバル順序は`b` → `a`。`a`が後 = 高優先度なので`from-a`が採用される。
 
 ---
 

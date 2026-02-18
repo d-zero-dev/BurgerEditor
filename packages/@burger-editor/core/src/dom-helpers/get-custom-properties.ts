@@ -163,11 +163,77 @@ export function getCustomProperty(
 }
 
 /**
+ * Collect the global top-level layer order across all stylesheets in the document.
+ *
+ * CSS cascade layers are ordered globally across the entire document, not per-stylesheet.
+ * This function mirrors the browser's layer ordering algorithm:
+ * - Pass 1: Collect layers declared in `@layer` statement rules (first-occurrence wins)
+ * - Pass 2: Append layers that appear only in `@layer` block rules
+ *
+ * Cross-origin stylesheets that throw `SecurityError` are silently skipped.
+ * @see {@link https://www.w3.org/TR/css-cascade-5/#layer-ordering CSS Cascading and Inheritance Level 5 §6.4.3 Layer Ordering}
+ * > "Cascade layers are sorted by the order in which they first are declared,
+ * > with nested layers grouped within their parent layers before any unlayered rules."
+ * @see {@link https://www.w3.org/TR/css-cascade-5/#layer-empty CSS Cascading and Inheritance Level 5 §6.4.4.2 Declaring Without Styles}
+ * @param scope - Document to scan
+ * @returns Ordered array of top-level layer names
+ */
+function collectGlobalTopLevelLayerOrder(scope: Document): readonly string[] {
+	const CSSLayerStatementRule = scope.defaultView?.CSSLayerStatementRule;
+	const CSSLayerBlockRule = scope.defaultView?.CSSLayerBlockRule;
+
+	if (CSSLayerStatementRule === undefined || CSSLayerBlockRule === undefined) {
+		return [];
+	}
+
+	const allLayerNames: string[] = [];
+
+	// Pass 1: Collect layers declared in @layer statements (explicit order takes precedence)
+	for (const styleSheet of scope.styleSheets) {
+		try {
+			for (const rule of styleSheet.cssRules) {
+				if (rule instanceof CSSLayerStatementRule) {
+					for (const name of rule.nameList) {
+						if (!allLayerNames.includes(name)) {
+							allLayerNames.push(name);
+						}
+					}
+				}
+			}
+		} catch (error) {
+			if (error instanceof Error && error.name === 'SecurityError') {
+				continue;
+			}
+			throw error;
+		}
+	}
+
+	// Pass 2: Append layers that appear only in @layer block rules (first-occurrence after statements)
+	for (const styleSheet of scope.styleSheets) {
+		try {
+			for (const rule of styleSheet.cssRules) {
+				if (rule instanceof CSSLayerBlockRule && !allLayerNames.includes(rule.name)) {
+					allLayerNames.push(rule.name);
+				}
+			}
+		} catch (error) {
+			if (error instanceof Error && error.name === 'SecurityError') {
+				continue;
+			}
+			throw error;
+		}
+	}
+
+	return allLayerNames;
+}
+
+/**
  * Get all CSSStyleRule from CSSRule array recursively
  * @param rules - CSSRule array
  * @param layers
  * @param scope - Document
  * @param scopeRoot
+ * @param topLevelLayerOrder - Global layer order from collectGlobalTopLevelLayerOrder (top-level calls only)
  * @returns CSSStyleRule array
  */
 function getStyleRules(
@@ -175,6 +241,7 @@ function getStyleRules(
 	layers: readonly LayerPriority[],
 	scope: Document,
 	scopeRoot: string | null = null,
+	topLevelLayerOrder?: readonly string[],
 ): readonly CSSRuleWithLayerPriority[] {
 	const CSSStyleRule = scope.defaultView?.CSSStyleRule;
 	if (CSSStyleRule === undefined) {
@@ -193,14 +260,18 @@ function getStyleRules(
 
 	const CSSScopeRule = scope.defaultView?.CSSScopeRule;
 
-	// Build unified layer order from CSSLayerStatementRules and CSSLayerBlockRules (first-occurrence order per CSS spec)
-	// Pass 1: Collect layers declared in @layer statements (explicit order takes precedence)
-	const allLayerNames: string[] = [];
-	for (const rule of rules) {
-		if (rule instanceof CSSLayerStatementRule) {
-			for (const name of rule.nameList) {
-				if (!allLayerNames.includes(name)) {
-					allLayerNames.push(name);
+	// Build unified layer order:
+	// - When topLevelLayerOrder is provided (top-level call), use it as the base and append any local-only names
+	// - When not provided (recursive call for nested layers), compute locally from this rule list
+	const allLayerNames: string[] = topLevelLayerOrder ? [...topLevelLayerOrder] : [];
+	if (!topLevelLayerOrder) {
+		// Pass 1: Collect layers declared in @layer statements (explicit order takes precedence)
+		for (const rule of rules) {
+			if (rule instanceof CSSLayerStatementRule) {
+				for (const name of rule.nameList) {
+					if (!allLayerNames.includes(name)) {
+						allLayerNames.push(name);
+					}
 				}
 			}
 		}
@@ -267,9 +338,17 @@ function searchCustomProperty(
 	scope: Document,
 	found: (property: string, value: string, layers: readonly LayerPriority[]) => void,
 ) {
+	const globalLayerOrder = collectGlobalTopLevelLayerOrder(scope);
+
 	for (const styleSheet of scope.styleSheets) {
 		try {
-			const styleRules = getStyleRules(styleSheet.cssRules, [], scope);
+			const styleRules = getStyleRules(
+				styleSheet.cssRules,
+				[],
+				scope,
+				null,
+				globalLayerOrder,
+			);
 
 			for (const cssRule of styleRules) {
 				const selector = cssRule.rule.selectorText.trim().replace(/^&/, '').trim();
