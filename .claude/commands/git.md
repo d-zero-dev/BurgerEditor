@@ -13,6 +13,11 @@ description: Git manipulation rules
 - If the OS, application settings, or context suggest a language other than English is being used, provide a translation and explanation of the commit message in that language immediately before proposing the commit command to the user.
 - When the commit message is ready, try to execute it directly as `git commit` (the user will approve as appropriate).
 
+# Pre-commit content check
+
+- Before executing `git commit`, always scan `git diff --staged` for project-specific names, company names, and customer information that should not be included in the repository.
+- If any are found, remove them from the staged files before committing.
+
 # Commit message format
 
 - You must write in English
