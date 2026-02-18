@@ -1,8 +1,9 @@
 {
 	"import": ["@d-zero/cspell-config"],
-	"ignorePaths": [".vscode"],
+	"ignorePaths": [".vscode", ".claude"],
 	"words": [
 		// CSS terminology
+		"CSSWG",
 		"unlayered",
 
 		// Lowercased
