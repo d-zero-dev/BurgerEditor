@@ -105,9 +105,14 @@ export function getCustomProperties(
 		}
 	});
 
+	// Filter out disabled properties declared with empty value (e.g. `--prop: ;`)
+	// CSSOM getPropertyValue() returns ' ' for `--prop: ;`, which becomes '' after trim().
+	// Note: `--prop:;` (no space) is dropped by current browsers (parse error).
+	// @see https://drafts.csswg.org/css-variables-2/#defining-variables
+	// @see https://github.com/w3c/csswg-drafts/issues/774
 	for (const propList of categories.values()) {
 		for (const [key, customProperty] of propList.properties.entries()) {
-			if (customProperty.value.trim().toLowerCase() === 'null') {
+			if (customProperty.value.trim() === '') {
 				propList.properties.delete(key);
 			}
 		}
