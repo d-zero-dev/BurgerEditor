@@ -98,7 +98,8 @@ BurgerEditorは以下のパターンでCSS変数を自動検出します：
 - `[data-bge-container]` セレクター内で定義された変数のみ検出
 - カテゴリごとにグループ化してプルダウンメニューでUI表示
 - 各プロパティの値も自動で表示
-- **値に `null` を設定すると選択肢から除外される**（条件によって選択肢を制御可能）
+- **値を空（`--prop: ;`）にすると選択肢から除外される**（条件によって選択肢を制御可能）
+  **注意**: コロンとセミコロンの間には必ず半角スペースを入れること（`--prop:;` は無効）
 
 ### コンテナタイプ固有のスタイル
 
@@ -200,7 +201,7 @@ BurgerEditorは以下のパターンでCSS変数を自動検出します：
 	--bge-options-shadow--subtle: 0 1px 3px rgba(0, 0, 0, 0.12);
 	--bge-options-shadow--medium: 0 4px 6px rgba(0, 0, 0, 0.12);
 	--bge-options-shadow--strong: 0 10px 25px rgba(0, 0, 0, 0.15);
-	--bge-options-shadow--premium: null; /* 条件によって表示/非表示を制御 */
+	--bge-options-shadow--premium: ; /* 空値: 条件によって表示/非表示を制御 */
 	--bge-options-shadow: var(--bge-options-shadow--none);
 
 	--bge-options-border-radius--none: 0;
@@ -241,6 +242,54 @@ BurgerEditorは以下のパターンでCSS変数を自動検出します：
 }
 ```
 
+## 折り返し基準インラインサイズのプリセット
+
+gridコンテナの `auto-fit`/`auto-fill` で使用する折り返し基準インラインサイズのプリセットを定義できます。スタイルオプション（`--bge-options-`）とは別の命名規則を使用します。
+
+### 命名規則
+
+```css
+--bge-repeat-min-inline-size--[プリセット名]: [値];
+--bge-repeat-min-inline-size: var(
+	--bge-repeat-min-inline-size--[デフォルトのプリセット名]
+);
+```
+
+### 標準プリセット
+
+[`general.css`](../packages/@burger-editor/blocks/src/general.css) には以下のプリセットが標準で含まれています:
+
+- `--bge-repeat-min-inline-size--small`
+- `--bge-repeat-min-inline-size--medium`
+- `--bge-repeat-min-inline-size--large`
+
+### プロジェクトCSSでのカスタマイズ
+
+プロジェクトCSSで値の上書きや新規プリセットの追加ができます:
+
+```css
+@layer main-base {
+	[data-bge-container] {
+		--bge-repeat-min-inline-size--small: 200px; /* 値を上書き */
+		--bge-repeat-min-inline-size--x-large: 800px; /* 新規プリセット追加 */
+		--bge-repeat-min-inline-size: var(--bge-repeat-min-inline-size--medium);
+	}
+}
+```
+
+**注意**: デフォルト以外のプリセット名を追加した場合、カスタムプロパティの定義に加えて、`data-bge-container` 属性値をグリッドに反映するセレクタールールもプロジェクトCSS側で必要になります。`small`・`medium`・`large` のセレクターは `general.css` に含まれていますが、それ以外のプリセット名には対応するセレクターがないため、以下のようにプロジェクトCSS側で定義する必要があります:
+
+```css
+@layer main-base {
+	:where([data-bge-container='grid'], [data-bge-container^='grid:']) {
+		&:where([data-bge-container$=':--x-large'], [data-bge-container*=':--x-large:'])
+			:where([data-bge-container-frame]) {
+			--bge-repeat-min-inline-size: var(--bge-repeat-min-inline-size--x-large);
+		}
+	}
+}
+```
+
 ## 注意事項
 
 ### CSS変数の制約
@@ -251,7 +300,7 @@ BurgerEditorは以下のパターンでCSS変数を自動検出します：
 - コンテナタイプ固有にする場合は `--bge-options-_grid_[カテゴリ]--[プロパティ]` のように `_コンテナタイプ_` を追加
 - **重要**: 変数を定義するだけでなく、実際のCSSスタイルとして実装する必要がある
 - 値の変更はCSS側で行い、UIでは選択のみ
-- 値に `null` を設定すると選択肢から除外される（動的な選択肢制御に活用）
+- 値を空（`--prop: ;`）にすると選択肢から除外される（動的な選択肢制御に活用）。コロンとセミコロンの間に半角スペース必須（`--prop:;` は無効）
 
 ### 実装時の注意点
 
