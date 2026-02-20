@@ -143,7 +143,7 @@ __metadata:
     "@burger-editor/utils": "npm:4.0.0-alpha.61"
     "@sveltejs/vite-plugin-svelte": "npm:6.2.4"
     "@tabler/icons-svelte": "npm:3.36.1"
-    svelte: "npm:5.51.2"
+    svelte: "npm:5.51.5"
     svelte-check: "npm:4.4.1"
     vite: "npm:7.3.1"
     vite-plugin-dts: "npm:4.5.4"
@@ -6935,6 +6935,13 @@ __metadata:
   version: 5.6.2
   resolution: "devalue@npm:5.6.2"
   checksum: 10c0/654f257ec525a2d3f35c941bfbb361148bc65ced060710969fbaa1c45abf1c9d7c4fcb77310bf8d2fb73c34cf60bad10710e7bf5b15643bbc082518ea04cb00b
+  languageName: node
+  linkType: hard
+
+"devalue@npm:^5.6.3":
+  version: 5.6.3
+  resolution: "devalue@npm:5.6.3"
+  checksum: 10c0/701fbe57b9b8b71cf5f9e706a6c977cffadd5083298e442d460e82f04480b8c5656aa3c6eb36aed33b387f4266aed6abd2143cd91e94f96931302225d14789ba
   languageName: node
   linkType: hard
 
@@ -14913,9 +14920,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte@npm:5.51.2":
-  version: 5.51.2
-  resolution: "svelte@npm:5.51.2"
+"svelte@npm:5.51.5":
+  version: 5.51.5
+  resolution: "svelte@npm:5.51.5"
   dependencies:
     "@jridgewell/remapping": "npm:^2.3.4"
     "@jridgewell/sourcemap-codec": "npm:^1.5.0"
@@ -14926,14 +14933,14 @@ __metadata:
     aria-query: "npm:^5.3.1"
     axobject-query: "npm:^4.1.0"
     clsx: "npm:^2.1.1"
-    devalue: "npm:^5.6.2"
+    devalue: "npm:^5.6.3"
     esm-env: "npm:^1.2.1"
     esrap: "npm:^2.2.2"
     is-reference: "npm:^3.0.3"
     locate-character: "npm:^3.0.0"
     magic-string: "npm:^0.30.11"
     zimmerframe: "npm:^1.1.2"
-  checksum: 10c0/19f120e8a8e8681cec464263e1ddaca24c93f0d385c4ed77b82438d6f1f0a40e6d34a06bab2bcd93cdb12d6b6c5533e16de26b5a07c219601d12242f7f0175f9
+  checksum: 10c0/d14c0e3cae78d0aea61a6156075304fd7ac32163a809d24c284462e589fd585cdc8916d47f5df8da9c8220f79f0e1ead39933f14650ea663163400a61463c128
   languageName: node
   linkType: hard
 
