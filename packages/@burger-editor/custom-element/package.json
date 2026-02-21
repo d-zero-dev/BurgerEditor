@@ -28,14 +28,14 @@
 	"dependencies": {
 		"@burger-editor/utils": "4.0.0-alpha.61",
 		"@tabler/icons": "3.37.1",
-		"@tiptap/core": "3.19.0",
-		"@tiptap/extension-image": "3.19.0",
-		"@tiptap/extension-paragraph": "3.19.0",
-		"@tiptap/extension-subscript": "3.19.0",
-		"@tiptap/extension-superscript": "3.19.0",
-		"@tiptap/extension-table": "3.19.0",
-		"@tiptap/pm": "3.19.0",
-		"@tiptap/starter-kit": "3.19.0"
+		"@tiptap/core": "3.20.0",
+		"@tiptap/extension-image": "3.20.0",
+		"@tiptap/extension-paragraph": "3.20.0",
+		"@tiptap/extension-subscript": "3.20.0",
+		"@tiptap/extension-superscript": "3.20.0",
+		"@tiptap/extension-table": "3.20.0",
+		"@tiptap/pm": "3.20.0",
+		"@tiptap/starter-kit": "3.20.0"
 	},
 	"devDependencies": {
 		"rollup": "4.58.0",
