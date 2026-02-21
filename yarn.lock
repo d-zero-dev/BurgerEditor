@@ -143,7 +143,7 @@ __metadata:
     "@burger-editor/utils": "npm:4.0.0-alpha.61"
     "@sveltejs/vite-plugin-svelte": "npm:6.2.4"
     "@tabler/icons-svelte": "npm:3.37.1"
-    svelte: "npm:5.51.5"
+    svelte: "npm:5.53.1"
     svelte-check: "npm:4.4.3"
     vite: "npm:7.3.1"
     vite-plugin-dts: "npm:4.5.4"
@@ -15192,9 +15192,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte@npm:5.51.5":
-  version: 5.51.5
-  resolution: "svelte@npm:5.51.5"
+"svelte@npm:5.53.1":
+  version: 5.53.1
+  resolution: "svelte@npm:5.53.1"
   dependencies:
     "@jridgewell/remapping": "npm:^2.3.4"
     "@jridgewell/sourcemap-codec": "npm:^1.5.0"
@@ -15212,7 +15212,7 @@ __metadata:
     locate-character: "npm:^3.0.0"
     magic-string: "npm:^0.30.11"
     zimmerframe: "npm:^1.1.2"
-  checksum: 10c0/d14c0e3cae78d0aea61a6156075304fd7ac32163a809d24c284462e589fd585cdc8916d47f5df8da9c8220f79f0e1ead39933f14650ea663163400a61463c128
+  checksum: 10c0/2d35a089d7d7921a52d699bae04086e2ef40c336043a98f22f12bf475370f7fa321ccdfda286ddef60319154519ebee97218bb60ae54d2698857eb386460139a
   languageName: node
   linkType: hard
 
