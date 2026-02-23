@@ -240,7 +240,7 @@ __metadata:
     debug: "npm:4.4.3"
     dotenv: "npm:17.3.1"
     gray-matter: "npm:^4.0.3"
-    hono: "npm:4.12.1"
+    hono: "npm:4.12.2"
     jsdom: "npm:28.1.0"
     open: "npm:11.0.0"
     prettier: "npm:3.8.1"
@@ -8970,7 +8970,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"hono@npm:4.12.1, hono@npm:^4.11.4":
+"hono@npm:4.12.2":
+  version: 4.12.2
+  resolution: "hono@npm:4.12.2"
+  checksum: 10c0/c7a60969ea03384898b3ddd216912fee3ecb7640a250b95078ea6548afe5ad29ad2d378f45fa49eee5969dcbb2a5849dff808d0d38e7472ca2d886b59ba25e11
+  languageName: node
+  linkType: hard
+
+"hono@npm:^4.11.4":
   version: 4.12.1
   resolution: "hono@npm:4.12.1"
   checksum: 10c0/e4cd5f1eb0a6986866c7e25fa9be233a21c10ba27e6530b933eb79cd0463d29ec07efe7c47ece996009bf11c0f6b503bc5cfb85c6562092713302b1a7e005b92
