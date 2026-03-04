@@ -74,6 +74,10 @@ export default defineConfig({
 				test: {
 					name: 'client',
 					include: ['packages/@burger-editor/client/**/*.spec.ts'],
+					...jsdomConfig,
+				},
+				define: {
+					__DEBUG__: false,
 				},
 			},
 			{
