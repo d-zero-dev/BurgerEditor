@@ -9,6 +9,7 @@ import BlockOptions from './block-options.svelte';
 import DraftSwitcher from './draft-switcher.svelte';
 import FileList from './file-list.svelte';
 import FileUploader from './file-uploader.svelte';
+import InitialInsertionButton from './initial-insertion-button.svelte';
 import Preview from './preview.svelte';
 import { svelteMount } from './svelte-mount.js';
 import TableEditor from './table-editor.svelte';
@@ -47,6 +48,14 @@ export async function createBurgerEditorClient(
 ) {
 	const engine = await BurgerEditorEngine.new({
 		...options,
+		initialInsertionButton: (container, onInsert) => {
+			return svelteMount(InitialInsertionButton, {
+				target: container,
+				props: {
+					onInsert,
+				},
+			});
+		},
 		blockMenu: (el, engine) => {
 			return svelteMount(BlockMenu, {
 				target: el,

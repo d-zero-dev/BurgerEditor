@@ -473,6 +473,7 @@ export class BurgerEditorEngine {
 				mainInitialContent,
 				engine,
 				options.blockMenu,
+				options.initialInsertionButton,
 				stylesheets,
 				options.config.classList,
 			);
@@ -489,6 +490,7 @@ export class BurgerEditorEngine {
 						draftInitialContent,
 						engine,
 						options.blockMenu,
+						options.initialInsertionButton,
 						stylesheets,
 						options.config.classList,
 					);

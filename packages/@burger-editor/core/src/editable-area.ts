@@ -1,5 +1,5 @@
 import type { BurgerEditorEngine } from './engine/engine.js';
-import type { UICreator } from './types.js';
+import type { InitialInsertionButtonCreator, UICreator } from './types.js';
 
 import { BlockMenu } from './block-menu.js';
 import { appendStylesheetTo } from './dom-helpers/append-stylesheet-to.js';
@@ -27,7 +27,11 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 	readonly #containerElement: HTMLElement;
 	readonly #engine: BurgerEditorEngine;
 	readonly #frameElement: HTMLIFrameElement;
-	readonly #insertionButton: InitialInsertionButton;
+	readonly #insertionButton: {
+		readonly el: HTMLElement;
+		show(): void;
+		hide(): void;
+	};
 	#isVisualMode = true;
 	readonly #sourceTextarea: HTMLTextAreaElement;
 
@@ -44,6 +48,7 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 		initialContent: string,
 		engine: BurgerEditorEngine,
 		createBlockMenu: UICreator,
+		createInitialInsertionButton: InitialInsertionButtonCreator | undefined,
 		stylesheets: readonly {
 			readonly path: string;
 			readonly id: string;
@@ -106,11 +111,35 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 
 		this.insertionPoint = new InsertionPoint(this.#engine);
 
-		this.#insertionButton = new InitialInsertionButton(
-			this.insertionPoint,
-			this.#engine,
-			() => this.#engine.blockCatalogDialog.open(),
-		);
+		const onInsert = () => {
+			if (this.#engine.isProcessed) {
+				return;
+			}
+			this.#insertionButton.hide();
+			this.insertionPoint.set(null, false);
+			this.#engine.blockCatalogDialog.open();
+		};
+
+		if (createInitialInsertionButton) {
+			const buttonEl = this.#frameElement.contentWindow.document.createElement('div');
+			buttonEl.dataset.bgeComponent = 'initial-insertion';
+			createInitialInsertionButton(buttonEl, onInsert);
+			this.#insertionButton = {
+				el: buttonEl,
+				show: () => {
+					buttonEl.hidden = false;
+				},
+				hide: () => {
+					buttonEl.hidden = true;
+				},
+			};
+		} else {
+			this.#insertionButton = new InitialInsertionButton(
+				this.insertionPoint,
+				this.#engine,
+				() => this.#engine.blockCatalogDialog.open(),
+			);
+		}
 
 		const els = this.#frameElement.contentWindow.document.createDocumentFragment();
 		els.append(this.blockMenu.el);
@@ -260,6 +289,7 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 		initialContent: string,
 		engine: BurgerEditorEngine,
 		createBlockMenu: UICreator,
+		createInitialInsertionButton?: InitialInsertionButtonCreator,
 		stylesheets?: readonly {
 			readonly path: string;
 			readonly id: string;
@@ -271,6 +301,7 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 			initialContent,
 			engine,
 			createBlockMenu,
+			createInitialInsertionButton,
 			stylesheets,
 			classList,
 		);
