@@ -112,7 +112,7 @@ describe('BlockCatalogDialog', () => {
 				containerProps: {},
 				items: [[{ name: 'text' }]],
 			};
-			await dialog.addBlock(blockData as unknown);
+			await dialog.addBlock(blockData as never);
 
 			expect(settings.addBlock).toHaveBeenCalledWith(blockData);
 		});
@@ -128,7 +128,7 @@ describe('BlockCatalogDialog', () => {
 				name: 'test',
 				containerProps: {},
 				items: [],
-			} as unknown);
+			} as never);
 
 			expect(dialogEl.close).toHaveBeenCalled();
 		});

@@ -16,7 +16,8 @@ function createMockEngine() {
 			update: vi.fn(),
 		},
 		save: vi.fn(),
-	} as unknown;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	} as any;
 }
 
 /**
@@ -26,7 +27,8 @@ function createMockBlock() {
 	const el = document.createElement('div');
 	el.dataset.bgeContainer = 'block';
 	el.textContent = 'block content';
-	return { el } as unknown;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	return { el } as any;
 }
 
 describe('InsertionPoint', () => {

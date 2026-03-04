@@ -20,7 +20,8 @@ function createMockEngine() {
 				el: document.createElement('div'),
 			},
 		},
-	} as unknown;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	} as any;
 }
 
 describe('BlockMenu', () => {

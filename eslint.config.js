@@ -28,6 +28,12 @@ export default [
 		},
 	},
 	{
+		files: ['**/*.svelte.ts'],
+		languageOptions: {
+			parser: typescriptParser,
+		},
+	},
+	{
 		files: ['*.mjs', '**/*.spec.{js,mjs,ts}', '**/*.config.ts'],
 		rules: {
 			'import-x/no-extraneous-dependencies': 0,

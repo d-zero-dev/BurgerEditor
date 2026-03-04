@@ -156,7 +156,7 @@ describe('ItemEditorDialog', () => {
 			const template = settings.getTemplate('test');
 			dialog.setTemplate(...template!);
 
-			dialog.update('$active', true as unknown);
+			dialog.update('$active', true as never);
 
 			const checkbox = dialog.find<HTMLInputElement>('[name="bge-active"]')!;
 			expect(checkbox.checked).toBe(true);
@@ -171,7 +171,7 @@ describe('ItemEditorDialog', () => {
 			const template = settings.getTemplate('test');
 			dialog.setTemplate(...template!);
 
-			dialog.update('$align', 'right' as unknown);
+			dialog.update('$align', 'right' as never);
 
 			const radios = dialog.findAll<HTMLInputElement>('[name="bge-align"]');
 			const rightRadio = radios.find(

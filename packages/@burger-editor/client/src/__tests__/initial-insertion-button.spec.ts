@@ -8,7 +8,8 @@ import { InitialInsertionButton } from '../../../core/src/initial-insertion-butt
 function createMockEngine() {
 	return {
 		isProcessed: false,
-	} as unknown;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	} as any;
 }
 
 /**
@@ -17,7 +18,8 @@ function createMockEngine() {
 function createMockInsertionPoint() {
 	return {
 		set: vi.fn(),
-	} as unknown;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	} as any;
 }
 
 describe('InitialInsertionButton', () => {
