@@ -56,13 +56,19 @@ export async function createBurgerEditorClient(
 				},
 			});
 		},
-		blockMenu: (el, engine) => {
-			return svelteMount(BlockMenu, {
-				target: el,
+		blockMenu: (container, engine) => {
+			const { cleanUp } = svelteMount(BlockMenu, {
+				target: container,
 				props: {
 					engine,
+					onHide: () => engine.clearCurrentBlock(),
 				},
 			});
+
+			return {
+				hide: () => engine.clearCurrentBlock(),
+				cleanUp,
+			};
 		},
 		ui: {
 			blockCatalog: (el, engine) => {

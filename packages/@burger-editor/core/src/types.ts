@@ -23,7 +23,7 @@ export interface BurgerEditorEngineOptions {
 	readonly catalog: BlockCatalog;
 	readonly generalCSS: string;
 	readonly ui: UIOptions;
-	readonly blockMenu: UICreator;
+	readonly blockMenu: BlockMenuCreator;
 	readonly initialInsertionButton?: InitialInsertionButtonCreator;
 	readonly storageKey?: {
 		readonly blockClipboard?: string;
@@ -59,6 +59,16 @@ export interface UICreator {
 		el: HTMLElement,
 		engine: BurgerEditorEngine,
 	): {
+		readonly cleanUp: () => void;
+	};
+}
+
+export interface BlockMenuCreator {
+	(
+		container: HTMLElement,
+		engine: BurgerEditorEngine,
+	): {
+		hide(): void;
 		readonly cleanUp: () => void;
 	};
 }

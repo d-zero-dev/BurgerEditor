@@ -14,3 +14,4 @@ export { ComponentObserver } from './component-observer.js';
 export * from './const.js';
 export * from './utils/find-value-pattern-from-array.js';
 export { exportStyleOptions } from './block/export-style-options.js';
+export { getBlockAtPosition } from './get-block-at-position.js';

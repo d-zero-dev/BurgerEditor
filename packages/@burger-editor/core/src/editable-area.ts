@@ -1,8 +1,9 @@
 import type { BurgerEditorEngine } from './engine/engine.js';
-import type { InitialInsertionButtonCreator, UICreator } from './types.js';
+import type { BlockMenuCreator, InitialInsertionButtonCreator } from './types.js';
 
-import { BlockMenu } from './block-menu.js';
+import { CSS_LAYER } from './const.js';
 import { appendStylesheetTo } from './dom-helpers/append-stylesheet-to.js';
+import { createStylesheet } from './dom-helpers/create-stylesheet.js';
 import { sanitizeAttrs } from './dom-helpers/sanitize-attrs.js';
 import { EditorUI } from './editor-ui.js';
 import { InitialInsertionButton } from './initial-insertion-button.js';
@@ -21,7 +22,10 @@ export interface EditableAreaOptions<T extends EditableAreaType> {
 }
 
 export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI {
-	readonly blockMenu: BlockMenu;
+	readonly blockMenu: {
+		readonly el: HTMLElement;
+		hide(): void;
+	};
 	readonly insertionPoint: InsertionPoint;
 	readonly type: 'main' | 'draft';
 	readonly #containerElement: HTMLElement;
@@ -47,7 +51,7 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 		type: T,
 		initialContent: string,
 		engine: BurgerEditorEngine,
-		createBlockMenu: UICreator,
+		createBlockMenu: BlockMenuCreator,
 		createInitialInsertionButton: InitialInsertionButtonCreator | undefined,
 		stylesheets: readonly {
 			readonly path: string;
@@ -103,11 +107,29 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 		this.#containerElement.innerHTML = initialContent;
 		this.#containerElement.dataset.bgeComponent = 'editable-area';
 
-		this.blockMenu = new BlockMenu(
-			this.#engine,
-			this.#frameElement.contentWindow.document.createElement('div'),
-			(el: HTMLElement) => createBlockMenu(el, engine),
+		const blockMenuEl = this.#frameElement.contentWindow.document.createElement('div');
+		blockMenuEl.dataset.bgeComponent = 'block-menu';
+		const blockMenuStylesheetUrl = createStylesheet(
+			`[data-bge-component='block-menu'] {
+				position: absolute;
+				z-index: 2147483647;
+				pointer-events: none;
+			}`,
+			CSS_LAYER.ui,
 		);
+		appendStylesheetTo(
+			this.#frameElement.contentWindow.document,
+			blockMenuStylesheetUrl,
+			`block-menu-${CSS_LAYER.ui}`,
+		);
+		const { hide: blockMenuHide } = createBlockMenu(blockMenuEl, engine);
+		this.blockMenu = {
+			el: blockMenuEl,
+			hide: () => {
+				blockMenuEl.hidden = true;
+				blockMenuHide();
+			},
+		};
 
 		this.insertionPoint = new InsertionPoint(this.#engine);
 
@@ -288,7 +310,7 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 		type: T,
 		initialContent: string,
 		engine: BurgerEditorEngine,
-		createBlockMenu: UICreator,
+		createBlockMenu: BlockMenuCreator,
 		createInitialInsertionButton?: InitialInsertionButtonCreator,
 		stylesheets?: readonly {
 			readonly path: string;
