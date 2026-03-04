@@ -2,17 +2,18 @@
 	import type { BurgerEditorEngine } from '@burger-editor/core';
 
 	import { getExt } from './get-ext.js';
-	export let engine: BurgerEditorEngine;
 
-	let selectedPath = '';
-	let width = Number.NaN;
-	let height = Number.NaN;
-	let file: ReturnType<typeof getExt> | null = null;
+	const { engine }: { engine: BurgerEditorEngine } = $props();
 
-	let uploaded = 0;
-	let total = 100;
+	let selectedPath = $state('');
+	let width = $state(Number.NaN);
+	let height = $state(Number.NaN);
+	let file: ReturnType<typeof getExt> | null = $state(null);
 
-	$: isUploadingMode = selectedPath.startsWith('blob:');
+	let uploaded = $state(0);
+	let total = $state(100);
+
+	const isUploadingMode = $derived(selectedPath.startsWith('blob:'));
 
 	engine.componentObserver.on('file-select', ({ path }) => {
 		selectedPath = path;
@@ -26,7 +27,7 @@
 		}
 	});
 
-	$: {
+	$effect(() => {
 		width = Number.NaN;
 		height = Number.NaN;
 
@@ -53,7 +54,7 @@
 				{ once: true },
 			);
 		}
-	}
+	});
 </script>
 
 <div>

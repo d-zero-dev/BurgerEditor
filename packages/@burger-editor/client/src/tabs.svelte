@@ -1,16 +1,14 @@
 <script lang="ts">
 	import type { BurgerEditorEngine } from '@burger-editor/core';
 
-	import { onMount } from 'svelte';
-
-	export let engine: BurgerEditorEngine;
-	export let contentId: string;
+	const { engine, contentId }: { engine: BurgerEditorEngine; contentId: string } =
+		$props();
 
 	const refs: HTMLButtonElement[] = [];
 	let tabPanel: HTMLElement | null = null;
 
 	const length = 2;
-	let currentIndex = 0;
+	let currentIndex = $state(0);
 
 	engine.componentObserver.on('select-tab-in-item-editor', ({ index }) => {
 		currentIndex = index;
@@ -55,7 +53,7 @@
 		tabPanel?.setAttribute('aria-label', createLabel(currentIndex));
 	}
 
-	onMount(() => {
+	$effect(() => {
 		tabPanel = document.getElementById(contentId);
 		if (!tabPanel) {
 			throw new Error('Tab panel not found');

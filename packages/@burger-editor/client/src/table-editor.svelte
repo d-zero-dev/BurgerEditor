@@ -5,7 +5,7 @@
 	import IconRowInsertBottom from '@tabler/icons-svelte/icons/row-insert-bottom';
 	import IconTrash from '@tabler/icons-svelte/icons/trash';
 
-	export let engine: BurgerEditorEngine;
+	const { engine }: { engine: BurgerEditorEngine } = $props();
 
 	type Data = {
 		th: string[];
@@ -13,7 +13,7 @@
 	};
 	type Table = [th: string, td: string][];
 
-	let table: Table = [];
+	let table: Table = $state([]);
 
 	engine.componentObserver.on('open-editor', ({ data }) => {
 		const { th, td } = data as Data;
@@ -45,10 +45,10 @@
 	 * @param to
 	 */
 	function move(from: number, to: number) {
-		const $from = table[from]!;
-		const $to = table[to]!;
-		table = table.toSpliced(from, 1, $to);
-		table = table.toSpliced(to, 1, $from);
+		const fromRow = table[from]!;
+		const toRow = table[to]!;
+		table = table.toSpliced(from, 1, toRow);
+		table = table.toSpliced(to, 1, fromRow);
 		updateDataEl();
 	}
 

@@ -13,18 +13,19 @@
 
 	import BlockMenuButton from './block-menu-button.svelte';
 	import { replaceElement } from './replace-element.js';
-	export let engine: BurgerEditorEngine;
 
-	let currentBlock: BurgerBlock | null = null;
+	const { engine }: { engine: BurgerEditorEngine } = $props();
 
-	$: isMutable = currentBlock?.isMutable();
+	let currentBlock = $state<BurgerBlock | null>(null);
 
-	let _width = 0;
-	let _height = 0;
-	let _x = 0;
-	let _y = 0;
-	let _marginBlockEnd = 0;
-	let marginBlockEndValue = '0px';
+	const isMutable = $derived(currentBlock?.isMutable());
+
+	let _width = $state(0);
+	let _height = $state(0);
+	let _x = $state(0);
+	let _y = $state(0);
+	let _marginBlockEnd = $state(0);
+	let marginBlockEndValue = $state('0px');
 
 	engine.blockOptionsDialog.onChangeBlock((block) => {
 		currentBlock = block;
@@ -73,23 +74,23 @@
 			return;
 		}
 
-		let $from: HTMLElement | null;
-		let $to: HTMLElement | null;
+		let fromEl: HTMLElement | null;
+		let toEl: HTMLElement | null;
 		if (toTop) {
-			$from = currentBlock.el.previousElementSibling as HTMLElement;
-			$to = currentBlock.el;
+			fromEl = currentBlock.el.previousElementSibling as HTMLElement;
+			toEl = currentBlock.el;
 		} else {
-			$from = currentBlock.el;
-			$to = currentBlock.el.nextElementSibling as HTMLElement;
+			fromEl = currentBlock.el;
+			toEl = currentBlock.el.nextElementSibling as HTMLElement;
 		}
 
-		if (!$from || !$to) {
+		if (!fromEl || !toEl) {
 			return;
 		}
 
 		engine.isProcessed = true;
 
-		await replaceElement($from, $to);
+		await replaceElement(fromEl, toEl);
 
 		engine.isProcessed = false;
 		engine.save();

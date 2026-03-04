@@ -3,12 +3,11 @@
 
 	import IconClipboard from '@tabler/icons-svelte/icons/clipboard';
 
-	export let engine: BurgerEditorEngine;
+	const { engine }: { engine: BurgerEditorEngine } = $props();
 
-	let hasCopiedBlock = false;
-
-	// コンポーネント初期化時にsessionStorageをチェック
-	hasCopiedBlock = !!sessionStorage.getItem(engine.storageKey.blockClipboard);
+	const hasCopiedBlock = $state(
+		!!sessionStorage.getItem(engine.storageKey.blockClipboard),
+	);
 
 	/**
 	 *
@@ -60,7 +59,7 @@
 <div class="block-catalog">
 	{#if hasCopiedBlock}
 		<div class="paste-section">
-			<button type="button" class="paste-button" on:click={pasteBlock}>
+			<button type="button" class="paste-button" onclick={pasteBlock}>
 				<IconClipboard />
 				<span>クリップボードから貼り付け</span>
 			</button>
@@ -73,7 +72,7 @@
 			<div>
 				{#each blocks as blockInfo (category + blockInfo.label + blockInfo.definition.name)}
 					<dd>
-						<button type="button" on:click={() => addBlock(blockInfo.definition)}>
+						<button type="button" onclick={() => addBlock(blockInfo.definition)}>
 							{#if blockInfo.definition.img || blockInfo.definition.svg}
 								<figure>
 									<div class="img">

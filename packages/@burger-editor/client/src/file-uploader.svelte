@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { BurgerEditorEngine, FileType } from '@burger-editor/core';
-	export let engine: BurgerEditorEngine;
-	export let fileType: FileType;
+
+	const { engine, fileType }: { engine: BurgerEditorEngine; fileType: FileType } =
+		$props();
 
 	const accept = fileType === 'image' ? 'image/*' : '*';
 
@@ -57,8 +58,8 @@
 </script>
 
 <div>
-	<input type="file" bind:this={inputFile} on:change={stageFile} {accept} />
-	<button type="button" on:click={openFile}>ファイルを追加アップロードする</button>
+	<input type="file" bind:this={inputFile} onchange={stageFile} {accept} />
+	<button type="button" onclick={openFile}>ファイルを追加アップロードする</button>
 </div>
 
 <style>
