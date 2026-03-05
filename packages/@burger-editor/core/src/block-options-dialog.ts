@@ -15,7 +15,7 @@ export class BlockOptionsDialog extends EditorDialog {
 	#onChangeBlock: (callback: (block: BurgerBlock) => void) => void;
 
 	constructor(settings: BlockOptionsDialogSettings) {
-		super('options', document.createElement('div'), settings, {
+		super('options', settings, {
 			buttons: {
 				close: 'キャンセル',
 				complete: '決定',

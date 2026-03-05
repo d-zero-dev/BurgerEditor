@@ -25,6 +25,7 @@ export interface BurgerEditorEngineOptions {
 	readonly ui: UIOptions;
 	readonly blockMenu: BlockMenuCreator;
 	readonly initialInsertionButton?: InitialInsertionButtonCreator;
+	readonly dialogShell?: EditorDialogShellCreator;
 	readonly storageKey?: {
 		readonly blockClipboard?: string;
 	};
@@ -80,6 +81,22 @@ export interface InitialInsertionButtonCreator {
 	): {
 		readonly cleanUp: () => void;
 	};
+}
+
+export interface EditorDialogShell {
+	readonly dialogElement: HTMLDialogElement;
+	readonly containerElement: HTMLElement;
+	readonly formElement: HTMLFormElement;
+}
+
+export interface EditorDialogShellCreator {
+	(options: {
+		readonly name: string;
+		readonly buttons?: {
+			readonly close?: string;
+			readonly complete?: string;
+		};
+	}): EditorDialogShell;
 }
 
 export interface BlockCatalog {

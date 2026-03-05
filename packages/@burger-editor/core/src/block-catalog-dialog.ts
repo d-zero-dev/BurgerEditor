@@ -12,7 +12,7 @@ export class BlockCatalogDialog extends EditorDialog {
 	#addBlock: (blockData: BlockData) => Promise<void>;
 
 	constructor(catalog: BlockCatalog, settings: BlockCatalogDialogSettings) {
-		super('catalog', document.createElement('div'), settings, {
+		super('catalog', settings, {
 			buttons: {
 				close: 'キャンセル',
 			},

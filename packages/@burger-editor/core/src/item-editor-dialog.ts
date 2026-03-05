@@ -44,7 +44,7 @@ export class ItemEditorDialog<
 	}
 
 	constructor(settings: ItemEditorDialogSettings<T, C>) {
-		super('item-editor', document.createElement('div'), settings, {
+		super('item-editor', settings, {
 			buttons: {
 				close: 'キャンセル',
 				complete: '決定',

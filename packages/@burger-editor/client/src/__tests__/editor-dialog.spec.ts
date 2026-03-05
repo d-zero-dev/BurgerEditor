@@ -14,7 +14,7 @@ class ConcreteDialog extends EditorDialog {
 			buttons?: { close?: string; complete?: string };
 		} = {},
 	) {
-		super(name, document.createElement('div'), settings, options);
+		super(name, settings, options);
 	}
 }
 

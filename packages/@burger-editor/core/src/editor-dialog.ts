@@ -1,6 +1,11 @@
 import type { Submitter } from './dom-helpers/types.js';
 import type { BurgerEditorEvent } from './event/create-bge-event.js';
-import type { BurgerEditorEventMap, SelectableValue } from './types.js';
+import type {
+	BurgerEditorEventMap,
+	EditorDialogShell,
+	EditorDialogShellCreator,
+	SelectableValue,
+} from './types.js';
 
 import { EditorUI } from './editor-ui.js';
 
@@ -15,59 +20,32 @@ export interface DialogSettings {
 	readonly onClosed: () => void;
 	readonly onOpen: () => void | boolean;
 	readonly createEditorComponent: (el: HTMLElement) => void | (() => void);
+	readonly createDialogShell?: EditorDialogShellCreator;
 }
 
 export abstract class EditorDialog extends EditorUI {
-	readonly #body = document.createElement('div');
 	#cleanUpHooks: (() => void)[] = [];
 	readonly #createEditorComponent: (el: HTMLElement) => void | (() => void);
-	readonly #dialog = document.createElement('dialog');
+	readonly #dialog: HTMLDialogElement;
 	readonly #el: HTMLElement;
-	readonly #footer = document.createElement('footer');
-	readonly #form = document.createElement('form');
+	readonly #form: HTMLFormElement;
 	readonly #onClosed: () => void;
 	readonly #onOpen: () => void | boolean;
 
-	constructor(
-		name: string,
-		el: HTMLElement,
-		settings: DialogSettings,
-		options: DialogOption,
-	) {
-		super(`${name}-dialog`, el);
+	constructor(name: string, settings: DialogSettings, options: DialogOption) {
+		const shell = settings.createDialogShell
+			? settings.createDialogShell({ name, buttons: options.buttons })
+			: createDefaultDialogShell(name, options);
 
-		this.#el = el;
+		super(`${name}-dialog`, shell.containerElement);
+
+		this.#el = shell.containerElement;
+		this.#dialog = shell.dialogElement;
+		this.#form = shell.formElement;
 		this.#onClosed = settings.onClosed;
 		this.#onOpen = settings.onOpen;
 		this.#createEditorComponent = settings.createEditorComponent;
 
-		this.#form.noValidate = true;
-		this.#form.id = `${name}-dialog-form`;
-
-		this.#form.append(this.#el);
-		this.#body.append(this.#form);
-
-		if (options.buttons?.close) {
-			const button = document.createElement('button');
-			button.textContent = options.buttons.close;
-			button.type = 'button';
-			button.addEventListener('click', () => {
-				this.close();
-			});
-			this.#footer.append(button);
-		}
-
-		if (options.buttons?.complete) {
-			const button = document.createElement('button');
-			button.textContent = options.buttons.complete;
-			button.type = 'submit';
-			button.setAttribute('form', this.#form.id);
-			this.#footer.append(button);
-		}
-
-		this.#dialog.append(this.#body, this.#footer);
-
-		this.#form.method = 'dialog';
 		this.#form.addEventListener('submit', (e) => {
 			const submitter: Submitter = this.#form.ownerDocument.activeElement as Submitter;
 			const cancel = this.onSubmit(e, submitter);
@@ -83,9 +61,6 @@ export abstract class EditorDialog extends EditorUI {
 
 		this.#sanitize(this.#el);
 
-		document.body.append(this.#dialog);
-
-		this.#dialog.classList.add('bge-dialog');
 		this.#dialog.addEventListener('close', this.closed.bind(this));
 	}
 
@@ -206,4 +181,62 @@ export abstract class EditorDialog extends EditorUI {
 			}
 		}
 	}
+}
+
+/**
+ *
+ * @param name
+ * @param options
+ */
+function createDefaultDialogShell(
+	name: string,
+	options: DialogOption,
+): EditorDialogShell {
+	const dialogId = `${name}-dialog`;
+	const formId = `${name}-dialog-form`;
+
+	const dialog = document.createElement('dialog');
+	dialog.id = dialogId;
+	dialog.classList.add('bge-dialog');
+	dialog.setAttribute('closedby', 'any');
+
+	const body = document.createElement('div');
+	const form = document.createElement('form');
+	form.noValidate = true;
+	form.method = 'dialog';
+	form.id = formId;
+
+	const container = document.createElement('div');
+	form.append(container);
+	body.append(form);
+
+	const footer = document.createElement('footer');
+
+	if (options.buttons?.close) {
+		const button = document.createElement('button');
+		button.textContent = options.buttons.close;
+		button.type = 'button';
+		button.setAttribute('command', 'close');
+		button.setAttribute('commandfor', dialogId);
+		// Fallback for environments without Invoker Commands support
+		button.addEventListener('click', () => dialog.close());
+		footer.append(button);
+	}
+
+	if (options.buttons?.complete) {
+		const button = document.createElement('button');
+		button.textContent = options.buttons.complete;
+		button.type = 'submit';
+		button.setAttribute('form', formId);
+		footer.append(button);
+	}
+
+	dialog.append(body, footer);
+	document.body.append(dialog);
+
+	return {
+		dialogElement: dialog,
+		containerElement: container,
+		formElement: form,
+	};
 }

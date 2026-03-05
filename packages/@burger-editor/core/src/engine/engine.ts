@@ -132,6 +132,7 @@ export class BurgerEditorEngine {
 				}
 				return;
 			},
+			createDialogShell: options.dialogShell,
 		};
 
 		this.blockCatalogDialog = new BlockCatalogDialog(options.catalog, {
