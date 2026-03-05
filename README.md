@@ -75,7 +75,7 @@ yarn build
 yarn build
 
 # テストの実行
-yarn vitest run
+yarn test
 
 # Lintの実行
 yarn lint

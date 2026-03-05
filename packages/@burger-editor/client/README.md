@@ -7,13 +7,13 @@ BurgerEditorのクライアント側UIパッケージです。Svelteベースの
 ## インストール
 
 ```bash
-npm install @burger-editor/client @burger-editor/core @burger-editor/blocks
+yarn add @burger-editor/client @burger-editor/core @burger-editor/blocks
 ```
 
 または
 
 ```bash
-yarn add @burger-editor/client @burger-editor/core @burger-editor/blocks
+npm install @burger-editor/client @burger-editor/core @burger-editor/blocks
 ```
 
 ## 公開API
@@ -34,7 +34,7 @@ function createBurgerEditorClient(
 
 #### パラメータ
 
-`options` は `BurgerEditorEngineOptions` から `ui` と `blockMenu` を除いたオプションです。以下の主要なプロパティがあります：
+`options` は `BurgerEditorEngineOptions` から `ui` と `blockMenu` を除いたオプションです。client は内部で `ui`, `blockMenu`, `initialInsertionButton`, `defineCustomElement` を Svelte 実装で上書きするため、これらを手動で指定する必要はありません。以下の主要なプロパティがあります：
 
 **必須プロパティ:**
 
@@ -70,6 +70,28 @@ Promise<{
 ```
 
 - `engine`: BurgerEditorエンジンのインスタンス
+
+### `version`
+
+パッケージのバージョン文字列定数です。
+
+### `attachDraftSwitcher(engine)`
+
+下書き切り替えUIを手動でアタッチする関数です。`engine.hasDraft()` が `true` の場合にのみ UI を生成します。
+
+```typescript
+import { attachDraftSwitcher } from '@burger-editor/client';
+
+attachDraftSwitcher(engine);
+```
+
+### `Migrator`
+
+`@burger-editor/migrator` パッケージからの re-export です。
+
+### `getConfig()` (非推奨)
+
+> **⚠️ @deprecated**: この関数は非推奨です。各プラットフォームで Config の型が異なるため、直接使用しないでください。
 
 ## 使用例
 

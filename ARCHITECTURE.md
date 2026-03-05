@@ -51,6 +51,7 @@ graph TD
 
     %% Local dependencies
     inspector --> local
+    blocks --> local
 
     %% MCP Server dependencies
     core --> mcp
@@ -214,11 +215,60 @@ graph TD
 - エディタの基本動作に関わる機能
 - 例: ブロック管理、編集状態管理、イベント処理
 
+**UI Layerに配置する機能:**
+
+- UIフレームワーク固有の実装（Svelte コンポーネント等）
+- core が定義するファクトリインタフェースの具象実装
+- 例: ブロックメニュー、初期挿入ボタン、ダイアログシェル、編集エリアシェル
+
 **Platform Layerに配置する機能:**
 
 - 特定環境に依存する機能
 - 環境固有の設定や統合機能
 - 例: ファイルシステム操作、サーバー設定、環境固有API
+
+### 4. Factory/Shell DI パターン
+
+core パッケージは UI コンポーネントの生成をファクトリインタフェースとして定義し、client パッケージが Svelte ベースの具象実装を注入します。これにより、core は UI フレームワークに依存せず、UI の差し替えが可能です。
+
+**ファクトリインタフェース:**
+
+- `BlockMenuCreator` — ブロックメニューUI生成
+- `InitialInsertionButtonCreator` — 初期挿入ボタンUI生成
+- `EditorDialogShellCreator` — ダイアログシェル生成
+- `EditableAreaShellCreator` — 編集エリアシェル生成
+
+**依存関係の流れ:**
+
+```
+core（インタフェース定義） ← client（Svelte 実装を注入）
+```
+
+`BurgerEditorEngineOptions` の `blockMenu`, `initialInsertionButton`, `dialogShell`, `editableAreaShell` プロパティを通じて注入されます。
+
+### 5. Svelte 5 ルーンと EngineState ブリッジ
+
+client パッケージは Svelte 5 ルーン（`$state`, `$derived`, `$effect`, `$props()`）を使用してリアクティブな UI を構築しています。
+
+**EngineState ブリッジ層:**
+
+core の `ComponentObserver` が発行するイベントを Svelte 5 の `$state` に変換する橋渡し層です。これにより、core のイベントベースの状態管理と Svelte のリアクティブシステムを統合しています。
+
+**Invoker Commands API:**
+
+ダイアログの開閉制御に HTML の `command`/`commandfor` 属性（Invoker Commands API）を使用しています。
+
+## テストアーキテクチャ
+
+テストは vitest を使用し、パッケージごとに適切な実行環境を使い分けます。
+
+| プロジェクト | 実行環境                        | 対象パッケージ               |
+| ------------ | ------------------------------- | ---------------------------- |
+| core         | Playwright Chromium（ブラウザ） | core, blocks, custom-element |
+| client       | jsdom                           | client                       |
+
+- core プロジェクト: iframe の `contentWindow` 等、実ブラウザ API が必要なテストはブラウザ環境で実行
+- client プロジェクト: Svelte コンポーネントのテストは jsdom 環境で実行
 
 ## モノレポ構成の利点
 

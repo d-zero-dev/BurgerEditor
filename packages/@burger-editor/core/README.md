@@ -229,8 +229,8 @@ BurgerEditorエンジンの動作を制御する設定オプションです。`B
 	// エディタ領域に適用されるCSSクラスのリスト
 	classList: string[];
 
-	// 読み込むスタイルシートのパス
-	stylesheets: Array<string | { path: string }>;
+	// 読み込むスタイルシートのパス（layerでCSSカスケードレイヤーを指定可能）
+	stylesheets: readonly { readonly path: string; readonly layer?: string }[];
 
 	// サンプル画像のパス（プレビュー用）
 	sampleImagePath: string;
@@ -332,15 +332,37 @@ experimental: {
 }
 ```
 
+### UI ファクトリオプション
+
+`BurgerEditorEngineOptions` には、UI コンポーネントの生成を外部から注入するためのファクトリプロパティがあります。これにより、core パッケージは特定の UI フレームワークに依存しません。
+
+```typescript
+{
+	// ブロックメニューUI生成ファクトリ（必須）
+	blockMenu: BlockMenuCreator;
+
+	// 初期挿入ボタンUI生成ファクトリ（オプション）
+	initialInsertionButton?: InitialInsertionButtonCreator;
+
+	// ダイアログシェル生成ファクトリ（オプション）
+	dialogShell?: EditorDialogShellCreator;
+
+	// 編集エリアシェル生成ファクトリ（オプション）
+	editableAreaShell?: EditableAreaShellCreator;
+}
+```
+
+通常、これらのファクトリは `@burger-editor/client` パッケージが Svelte 実装を注入するため、直接指定する必要はありません。独自の UI フレームワークで統合する場合にのみ実装してください。
+
 ### 使用例
 
 ```typescript
-import { createBurgerEditorEngine } from '@burger-editor/core';
+import { BurgerEditorEngine } from '@burger-editor/core';
 
-const engine = await createBurgerEditorEngine({
+const engine = await BurgerEditorEngine.new({
 	config: {
 		classList: ['my-editor'],
-		stylesheets: ['/css/editor.css'],
+		stylesheets: [{ path: '/css/editor.css' }],
 		sampleImagePath: '/images/sample.jpg',
 		sampleFilePath: '/files/sample.pdf',
 		googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY ?? null,
