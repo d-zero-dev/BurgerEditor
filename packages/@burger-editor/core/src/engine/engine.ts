@@ -477,6 +477,7 @@ export class BurgerEditorEngine {
 				options.initialInsertionButton,
 				stylesheets,
 				options.config.classList,
+				options.editableAreaShell,
 			);
 
 		const draftInitialContent =
@@ -494,6 +495,7 @@ export class BurgerEditorEngine {
 						options.initialInsertionButton,
 						stylesheets,
 						options.config.classList,
+						options.editableAreaShell,
 					);
 
 		engine.#current = engine.#main;

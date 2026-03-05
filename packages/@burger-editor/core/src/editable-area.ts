@@ -1,5 +1,10 @@
 import type { BurgerEditorEngine } from './engine/engine.js';
-import type { BlockMenuCreator, InitialInsertionButtonCreator } from './types.js';
+import type {
+	BlockMenuCreator,
+	EditableAreaShell,
+	EditableAreaShellCreator,
+	InitialInsertionButtonCreator,
+} from './types.js';
 
 import { CSS_LAYER } from './const.js';
 import { appendStylesheetTo } from './dom-helpers/append-stylesheet-to.js';
@@ -58,56 +63,38 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 			readonly id: string;
 		}[] = [],
 		classList: readonly string[] = [],
+		createShell?: EditableAreaShellCreator,
 	) {
-		const viewNode = document.createElement('div');
-		super(`${type}-editable-area`, viewNode);
+		const shell = createShell
+			? createShell({ type, initialContent, stylesheets, classList })
+			: createDefaultEditableAreaShell(initialContent, classList);
+
+		super(`${type}-editable-area`, shell.viewNode);
 
 		this.type = type;
 
 		this.#engine = engine;
-		this.#engine.viewArea.append(viewNode);
+		this.#engine.viewArea.append(shell.viewNode);
 
-		this.#sourceTextarea = document.createElement('textarea');
-		this.#sourceTextarea.spellcheck = false;
-		viewNode.append(this.#sourceTextarea);
-
-		this.#frameElement = document.createElement('iframe');
-		this.#frameElement.setAttribute('width', '100%;');
-		this.#frameElement.setAttribute('scrolling', 'no');
-		viewNode.append(this.#frameElement);
+		this.#sourceTextarea = shell.sourceTextarea;
+		this.#frameElement = shell.frameElement;
+		this.#containerElement = shell.containerElement;
 
 		if (!this.#frameElement.contentWindow) {
 			throw new Error('Impossible error: The contentWindow of created iframe is null.');
 		}
 
-		this.#frameElement.contentWindow.document.open();
-		this.#frameElement.contentWindow.document.close();
+		const frameDoc = this.#frameElement.contentWindow.document;
+		frameDoc.open();
+		frameDoc.close();
 
 		for (const { path, id } of stylesheets) {
-			appendStylesheetTo(this.#frameElement.contentWindow.document, path, id);
+			appendStylesheetTo(frameDoc, path, id);
 		}
 
-		this.#frameElement.contentWindow.document.body.setAttribute(
-			'style',
-			'margin: 0; border: 0;',
-		);
+		frameDoc.body.setAttribute('style', 'margin: 0; border: 0;');
 
-		this.#containerElement =
-			this.#frameElement.contentWindow.document.createElement('div');
-		this.#containerElement.id = CONTENT_ID;
-		this.#containerElement.style.setProperty(
-			'padding',
-			`${CONTAINER_PADDING}px`,
-			'important',
-		);
-		this.#containerElement.style.setProperty('overflow', 'hidden', 'important');
-		this.#containerElement.style.setProperty('margin', '0', 'important');
-		this.#containerElement.style.setProperty('box-sizing', 'border-box', 'important');
-		this.#containerElement.classList.add(...classList);
-		this.#containerElement.innerHTML = initialContent;
-		this.#containerElement.dataset.bgeComponent = 'editable-area';
-
-		const blockMenuEl = this.#frameElement.contentWindow.document.createElement('div');
+		const blockMenuEl = frameDoc.createElement('div');
 		blockMenuEl.dataset.bgeComponent = 'block-menu';
 		const blockMenuStylesheetUrl = createStylesheet(
 			`[data-bge-component='block-menu'] {
@@ -117,11 +104,7 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 			}`,
 			CSS_LAYER.ui,
 		);
-		appendStylesheetTo(
-			this.#frameElement.contentWindow.document,
-			blockMenuStylesheetUrl,
-			`block-menu-${CSS_LAYER.ui}`,
-		);
+		appendStylesheetTo(frameDoc, blockMenuStylesheetUrl, `block-menu-${CSS_LAYER.ui}`);
 		const { hide: blockMenuHide } = createBlockMenu(blockMenuEl, engine);
 		this.blockMenu = {
 			el: blockMenuEl,
@@ -143,7 +126,7 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 		};
 
 		if (createInitialInsertionButton) {
-			const buttonEl = this.#frameElement.contentWindow.document.createElement('div');
+			const buttonEl = frameDoc.createElement('div');
 			buttonEl.dataset.bgeComponent = 'initial-insertion';
 			createInitialInsertionButton(buttonEl, onInsert);
 			this.#insertionButton = {
@@ -163,11 +146,11 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 			);
 		}
 
-		const els = this.#frameElement.contentWindow.document.createDocumentFragment();
+		const els = frameDoc.createDocumentFragment();
 		els.append(this.blockMenu.el);
 		els.append(this.#insertionButton.el);
 		els.append(this.#containerElement);
-		this.#frameElement.contentWindow.document.body.append(els);
+		frameDoc.body.append(els);
 
 		window.addEventListener('resize', this.#setHeightTrigger.bind(this), true);
 		// eslint-disable-next-line no-restricted-syntax
@@ -184,11 +167,7 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 			this.#setHeightTrigger.bind(this),
 			false,
 		);
-		this.#frameElement.contentWindow.document.addEventListener(
-			'load',
-			this.#setHeightTrigger.bind(this),
-			true,
-		);
+		frameDoc.addEventListener('load', this.#setHeightTrigger.bind(this), true);
 		this.#sourceTextarea.addEventListener('blur', this.#saveSource.bind(this), false);
 	}
 
@@ -317,6 +296,7 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 			readonly id: string;
 		}[],
 		classList?: readonly string[],
+		createShell?: EditableAreaShellCreator,
 	) {
 		const editableArea = new EditableArea(
 			type,
@@ -326,8 +306,47 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 			createInitialInsertionButton,
 			stylesheets,
 			classList,
+			createShell,
 		);
 		await editableArea.#init();
 		return editableArea;
 	}
+}
+
+/**
+ *
+ * @param initialContent
+ * @param classList
+ */
+function createDefaultEditableAreaShell(
+	initialContent: string,
+	classList: readonly string[],
+): EditableAreaShell {
+	const viewNode = document.createElement('div');
+
+	const sourceTextarea = document.createElement('textarea');
+	sourceTextarea.spellcheck = false;
+	viewNode.append(sourceTextarea);
+
+	const frameElement = document.createElement('iframe');
+	frameElement.setAttribute('width', '100%;');
+	frameElement.setAttribute('scrolling', 'no');
+	viewNode.append(frameElement);
+
+	const containerElement = document.createElement('div');
+	containerElement.id = CONTENT_ID;
+	containerElement.style.setProperty('padding', `${CONTAINER_PADDING}px`, 'important');
+	containerElement.style.setProperty('overflow', 'hidden', 'important');
+	containerElement.style.setProperty('margin', '0', 'important');
+	containerElement.style.setProperty('box-sizing', 'border-box', 'important');
+	containerElement.classList.add(...classList);
+	containerElement.innerHTML = initialContent;
+	containerElement.dataset.bgeComponent = 'editable-area';
+
+	return {
+		viewNode,
+		frameElement,
+		sourceTextarea,
+		containerElement,
+	};
 }

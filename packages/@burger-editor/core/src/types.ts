@@ -26,6 +26,7 @@ export interface BurgerEditorEngineOptions {
 	readonly blockMenu: BlockMenuCreator;
 	readonly initialInsertionButton?: InitialInsertionButtonCreator;
 	readonly dialogShell?: EditorDialogShellCreator;
+	readonly editableAreaShell?: EditableAreaShellCreator;
 	readonly storageKey?: {
 		readonly blockClipboard?: string;
 	};
@@ -97,6 +98,22 @@ export interface EditorDialogShellCreator {
 			readonly complete?: string;
 		};
 	}): EditorDialogShell;
+}
+
+export interface EditableAreaShell {
+	readonly viewNode: HTMLElement;
+	readonly frameElement: HTMLIFrameElement;
+	readonly sourceTextarea: HTMLTextAreaElement;
+	readonly containerElement: HTMLElement;
+}
+
+export interface EditableAreaShellCreator {
+	(options: {
+		readonly type: string;
+		readonly initialContent: string;
+		readonly stylesheets: readonly { readonly path: string; readonly id: string }[];
+		readonly classList: readonly string[];
+	}): EditableAreaShell;
 }
 
 export interface BlockCatalog {
