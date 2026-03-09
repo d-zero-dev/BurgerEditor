@@ -48,7 +48,7 @@ export function getCustomProperties(
 	const categories: CustomPropertyCategories = new Map();
 	const defaultValues = new Map<string, CustomProperty>();
 
-	searchCustomProperty(scope, (cssProperty, value, layers) => {
+	searchCustomProperty(scope, (cssProperty, value, layers, isNested) => {
 		if (!cssProperty.startsWith(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX)) {
 			return;
 		}
@@ -87,7 +87,10 @@ export function getCustomProperties(
 			);
 
 			categories.set(propName, currentMap);
-		} else {
+		} else if (!isNested) {
+			// Default value determination only uses direct [data-bge-container] selectors.
+			// Nested selectors (e.g. `.parent [data-bge-container]`) are context-specific
+			// overrides and should not affect the global default.
 			const newDefaultValue: CustomProperty = {
 				value,
 				isDefault: true,
@@ -341,7 +344,12 @@ function getStyleRules(
  */
 function searchCustomProperty(
 	scope: Document,
-	found: (property: string, value: string, layers: readonly LayerPriority[]) => void,
+	found: (
+		property: string,
+		value: string,
+		layers: readonly LayerPriority[],
+		isNested: boolean,
+	) => void,
 ) {
 	const globalLayerOrder = collectGlobalTopLevelLayerOrder(scope);
 
@@ -356,17 +364,20 @@ function searchCustomProperty(
 			);
 
 			for (const cssRule of styleRules) {
-				const selector = cssRule.rule.selectorText.trim().replace(/^&/, '').trim();
+				const rawSelector = cssRule.rule.selectorText.trim();
+				const selector = rawSelector.replace(/^&/, '').trim();
 				if (
 					selector === BLOCK_OPTION_SCOPE_SELECTOR ||
 					(selector === ':scope' && cssRule.scopeRoot === BLOCK_OPTION_SCOPE_SELECTOR)
 				) {
+					// Detect nested selectors: `& [data-bge-container]` has a parent context
+					const isNested = rawSelector !== selector;
 					for (const cssProperty of cssRule.rule.style) {
 						if (!cssProperty.startsWith('--')) {
 							continue;
 						}
 						const value = cssRule.rule.style.getPropertyValue(cssProperty);
-						found(cssProperty, value, cssRule.layers);
+						found(cssProperty, value, cssRule.layers, isNested);
 					}
 				}
 			}
