@@ -61,6 +61,7 @@ export async function createBurgerEditorClient(
 				target: container,
 				props: {
 					engine,
+					container,
 					onHide: () => engine.clearCurrentBlock(),
 				},
 			});

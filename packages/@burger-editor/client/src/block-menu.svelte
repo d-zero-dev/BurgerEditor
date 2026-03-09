@@ -15,7 +15,12 @@
 	import BlockMenuButton from './block-menu-button.svelte';
 	import { replaceElement } from './replace-element.js';
 
-	const { engine, onHide }: { engine: BurgerEditorEngine; onHide: () => void } = $props();
+	const {
+		engine,
+		container,
+		onHide,
+	}: { engine: BurgerEditorEngine; container: HTMLElement; onHide: () => void } =
+		$props();
 
 	let currentBlock = $state<BurgerBlock | null>(null);
 	let visible = $state(false);
@@ -50,7 +55,7 @@
 	 *
 	 */
 	function updatePosition() {
-		const doc = engine.content.containerElement.ownerDocument;
+		const doc = container.ownerDocument;
 		const selected = getBlockAtPosition(doc, mouseX, mouseY);
 
 		if (!selected) {
@@ -98,7 +103,6 @@
 	}
 
 	$effect(() => {
-		const container = engine.content.containerElement;
 		const doc = container.ownerDocument;
 		const body = doc.body;
 		const win = doc.defaultView;
