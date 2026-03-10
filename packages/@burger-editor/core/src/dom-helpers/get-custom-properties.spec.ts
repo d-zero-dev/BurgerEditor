@@ -2005,7 +2005,7 @@ describe('Nested selector default priority', () => {
 		expect(resultObj.color.properties.blue.isDefault).toBe(false);
 	});
 
-	test('@layer main-base direct default is not overridden by @layer main nested default', () => {
+	test('higher layer nested default overrides lower layer direct default', () => {
 		const style = document.createElement('style');
 		style.textContent = `
 			@layer main-base, main;
@@ -2031,10 +2031,66 @@ describe('Nested selector default priority', () => {
 		const result = getCustomProperties(document);
 		const resultObj = toObject(result);
 
-		// Direct selector default (main-base) wins over nested (main)
-		expect(resultObj['padding-inline'].properties['default-gutter'].isDefault).toBe(true);
-		expect(resultObj['padding-inline'].properties.none.isDefault).toBe(false);
+		// Higher priority layer (main) nested default wins over lower (main-base) direct default
+		expect(resultObj['padding-inline'].properties['default-gutter'].isDefault).toBe(
+			false,
+		);
+		expect(resultObj['padding-inline'].properties.none.isDefault).toBe(true);
 		expect(resultObj['padding-inline'].properties.small.isDefault).toBe(false);
+	});
+
+	test('higher layer nested default overrides lower layer direct default with empty value override', () => {
+		const style = document.createElement('style');
+		style.textContent = `
+			@layer main-base, main;
+
+			@layer main-base {
+				[data-bge-container] {
+					--bge-options-max-width--normal: 50rem;
+					--bge-options-max-width--small: 25rem;
+					--bge-options-max-width--medium: 37.5rem;
+					--bge-options-max-width--large: 75rem;
+					--bge-options-max-width--full: 100dvi;
+					--bge-options-max-width: var(--bge-options-max-width--normal);
+				}
+			}
+
+			@layer main {
+				.c-content-main {
+					[data-bge-container] {
+						--bge-options-max-width--normal: ;
+						--bge-options-max-width--small: ;
+						--bge-options-max-width--default: calc(1280 / 16 * 1rem);
+						--bge-options-max-width--large: calc(1600 / 16 * 1rem);
+						--bge-options-max-width--full: 100%;
+						--bge-options-max-width: var(--bge-options-max-width--default);
+					}
+				}
+			}
+		`;
+		document.head.append(style);
+
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		// normal, small are overridden with empty value in higher layer → filtered out
+		expect(resultObj['max-width'].properties).not.toHaveProperty('normal');
+		expect(resultObj['max-width'].properties).not.toHaveProperty('small');
+
+		// medium exists only in main-base
+		expect(resultObj['max-width'].properties['medium']).toMatchObject({
+			value: '37.5rem',
+			isDefault: false,
+		});
+
+		// Higher priority layer (main) redefines default to var(--bge-options-max-width--default)
+		expect(resultObj['max-width'].properties['default']).toMatchObject({
+			isDefault: true,
+			value: 'calc(1280 / 16 * 1rem)',
+		});
+
+		expect(resultObj['max-width'].properties['large'].isDefault).toBe(false);
+		expect(resultObj['max-width'].properties['full'].isDefault).toBe(false);
 	});
 });
 

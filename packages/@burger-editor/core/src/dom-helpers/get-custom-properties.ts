@@ -124,11 +124,16 @@ export function getCustomProperties(
 		}
 	}
 
-	// Merge nested defaults as fallback: use nested default only when
-	// no direct (non-nested) default exists for a category.
-	for (const [category, property] of nestedDefaultValues.entries()) {
-		if (!defaultValues.has(category)) {
-			defaultValues.set(category, property);
+	// Merge nested defaults: use nested default when no direct default exists,
+	// or when the nested default has higher cascade layer priority.
+	for (const [category, nestedProperty] of nestedDefaultValues.entries()) {
+		const directProperty = defaultValues.get(category);
+		if (directProperty) {
+			// Compare by layer priority; on equal priority, direct selector wins
+			const winner = compareCustomPropertyByLayerPriority(nestedProperty, directProperty);
+			defaultValues.set(category, winner);
+		} else {
+			defaultValues.set(category, nestedProperty);
 		}
 	}
 
