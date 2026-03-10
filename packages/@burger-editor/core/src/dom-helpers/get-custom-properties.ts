@@ -38,8 +38,9 @@ interface LayerPriority {
 
 /**
  * Get all custom properties from document
- * @param scope
- * @param containerType
+ * @param scope - Document to scan for CSS custom properties
+ * @param containerType - Container type to filter container-scoped properties (prefixed with `_`)
+ * @returns Categorized map of custom properties grouped by property name
  */
 export function getCustomProperties(
 	scope: Document,
@@ -152,9 +153,10 @@ export function getCustomProperties(
 }
 
 /**
- *
- * @param scope
- * @param property
+ * Get a single custom property value from document
+ * @param scope - Document to scan for CSS custom properties
+ * @param property - Property name or pattern to match against
+ * @returns The property value with the highest cascade priority, or `null` if not found
  */
 export function getCustomProperty(
 	scope: Document,
@@ -248,9 +250,9 @@ function collectGlobalTopLevelLayerOrder(scope: Document): readonly string[] {
 /**
  * Get all CSSStyleRule from CSSRule array recursively
  * @param rules - CSSRule array
- * @param layers
- * @param scope - Document
- * @param scopeRoot
+ * @param layers - Accumulated layer priority chain from parent rules
+ * @param scope - Document providing CSSOM constructors
+ * @param scopeRoot - Selector from enclosing `@scope` rule, if any
  * @param topLevelLayerOrder - Global layer order from collectGlobalTopLevelLayerOrder (top-level calls only)
  * @returns CSSStyleRule array
  */
@@ -348,9 +350,9 @@ function getStyleRules(
 }
 
 /**
- *
- * @param scope
- * @param found
+ * Search all stylesheets for custom properties on the block option scope selector
+ * @param scope - Document to scan
+ * @param found - Callback invoked for each custom property found
  */
 function searchCustomProperty(
 	scope: Document,
@@ -402,7 +404,8 @@ function searchCustomProperty(
 
 /**
  * Get repeat-min-inline-size variant definitions from document
- * @param scope
+ * @param scope - Document to scan for `--bge-repeat-min-inline-size` variants
+ * @returns Category containing variant properties, or `null` if no variants found
  */
 export function getRepeatMinInlineSizeVariants(
 	scope: Document,
@@ -461,8 +464,8 @@ export function getRepeatMinInlineSizeVariants(
  * - レイヤーの数が少ないほど優先度が高い
  * - レイヤーの数が同じ場合は、レイヤーの優先度の値が小さいほど優先度が高い
  * - 全てのレイヤーの優先度が同じ場合は、bを返す
- * @param a
- * @param b
+ * @param a - First candidate property
+ * @param b - Second candidate property (wins on equal priority)
  */
 function compareCustomPropertyByLayerPriority(
 	a: CustomProperty,
