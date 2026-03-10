@@ -47,6 +47,7 @@ export function getCustomProperties(
 ): CustomPropertyCategories {
 	const categories: CustomPropertyCategories = new Map();
 	const defaultValues = new Map<string, CustomProperty>();
+	const nestedDefaultValues = new Map<string, CustomProperty>();
 
 	searchCustomProperty(scope, (cssProperty, value, layers, isNested) => {
 		if (!cssProperty.startsWith(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX)) {
@@ -87,19 +88,20 @@ export function getCustomProperties(
 			);
 
 			categories.set(propName, currentMap);
-		} else if (!isNested) {
-			// Default value determination only uses direct [data-bge-container] selectors.
-			// Nested selectors (e.g. `.parent [data-bge-container]`) are context-specific
-			// overrides and should not affect the global default.
+		} else {
 			const newDefaultValue: CustomProperty = {
 				value,
 				isDefault: true,
 				priority: layers.map((layer) => layer.priority),
 			};
 
-			const currentDefaultValue = defaultValues.get(propName);
+			// Direct selectors take precedence over nested selectors for default.
+			// Nested selectors (e.g. `.parent [data-bge-container]`) are context-specific
+			// overrides; they are used as fallback when no direct selector defines a default.
+			const targetMap = isNested ? nestedDefaultValues : defaultValues;
+			const currentDefaultValue = targetMap.get(propName);
 
-			defaultValues.set(
+			targetMap.set(
 				propName,
 				currentDefaultValue
 					? compareCustomPropertyByLayerPriority(currentDefaultValue, newDefaultValue)
@@ -118,6 +120,14 @@ export function getCustomProperties(
 			if (customProperty.value.trim() === '') {
 				propList.properties.delete(key);
 			}
+		}
+	}
+
+	// Merge nested defaults as fallback: use nested default only when
+	// no direct (non-nested) default exists for a category.
+	for (const [category, property] of nestedDefaultValues.entries()) {
+		if (!defaultValues.has(category)) {
+			defaultValues.set(category, property);
 		}
 	}
 
