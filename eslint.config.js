@@ -7,6 +7,15 @@ import * as svelteParser from 'svelte-eslint-parser';
  * @type {import('eslint').Linter.Config[]}
  */
 export default [
+	{
+		ignores: [
+			'**/.*/**/*',
+			'**/dist/**',
+			'**/server/**/*',
+			'**/node_modules/**',
+			'**/*.d.ts',
+		],
+	},
 	...dz.configs.frontend,
 	...eslintPluginSvelte.configs['flat/recommended'],
 	{
@@ -21,6 +30,11 @@ export default [
 			parserOptions: {
 				parser: typescriptParser,
 				extraFileExtensions: ['.svelte'],
+			},
+		},
+		settings: {
+			'import-x/parsers': {
+				'@typescript-eslint/parser': ['.ts', '.js'],
 			},
 		},
 		rules: {
@@ -42,8 +56,5 @@ export default [
 	{
 		files: ['.textlintrc.js'],
 		...dz.configs.commonjs,
-	},
-	{
-		ignores: ['**/.*/**/*', '**/dist/**/*', '**/server/**/*', '**/*.d.ts'],
 	},
 ];
