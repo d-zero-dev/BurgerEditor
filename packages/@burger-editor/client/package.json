@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/client",
-	"version": "4.0.0-alpha.62",
+	"version": "4.0.0-alpha.63",
 	"description": "BurgerEditor client package",
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)",
@@ -30,10 +30,10 @@
 		"dev": "vite build --watch"
 	},
 	"dependencies": {
-		"@burger-editor/core": "4.0.0-alpha.62",
-		"@burger-editor/custom-element": "4.0.0-alpha.62",
-		"@burger-editor/migrator": "4.0.0-alpha.62",
-		"@burger-editor/utils": "4.0.0-alpha.62",
+		"@burger-editor/core": "4.0.0-alpha.63",
+		"@burger-editor/custom-element": "4.0.0-alpha.63",
+		"@burger-editor/migrator": "4.0.0-alpha.63",
+		"@burger-editor/utils": "4.0.0-alpha.63",
 		"@tabler/icons-svelte": "3.37.1",
 		"svelte": "5.53.6"
 	},

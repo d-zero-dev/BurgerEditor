@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.63](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.62...v4.0.0-alpha.63) (2026-03-10)
+
+### Bug Fixes
+
+- **core:** use cascade layer priority when merging nested default values in getCustomProperties ([3cb2133](https://github.com/d-zero-dev/BurgerEditor/commit/3cb2133579467d6a87f4829c29ad44a4e5253996))
+
 # [4.0.0-alpha.62](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.61...v4.0.0-alpha.62) (2026-03-10)
 
 ### Bug Fixes
