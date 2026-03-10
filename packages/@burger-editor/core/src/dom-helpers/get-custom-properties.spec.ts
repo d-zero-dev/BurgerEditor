@@ -857,6 +857,8 @@ describe('At-rule traversal: traversed rules', () => {
 		const result = getCustomProperties(document);
 		const resultObj = toObject(result);
 		expect(resultObj.width.properties.a.value).toBe('100%');
+		// Nested-only default is used as fallback
+		expect(resultObj.width.properties.a.isDefault).toBe(true);
 	});
 
 	test('Deep CSS nesting (3 levels) is traversed', () => {
@@ -875,6 +877,8 @@ describe('At-rule traversal: traversed rules', () => {
 		const result = getCustomProperties(document);
 		const resultObj = toObject(result);
 		expect(resultObj.width.properties.a.value).toBe('100%');
+		// Nested-only default is used as fallback
+		expect(resultObj.width.properties.a.isDefault).toBe(true);
 	});
 });
 
@@ -1950,6 +1954,87 @@ describe('Production reproduction: @layer main-base + @layer main nesting empty 
 		// large, full は残る
 		expect(resultObj['max-width'].properties).toHaveProperty('large');
 		expect(resultObj['max-width'].properties).toHaveProperty('full');
+	});
+});
+
+// ============================================================================
+// Nested selector default priority
+// Direct [data-bge-container] defaults take precedence over nested ones.
+// Nested defaults are used as fallback when no direct default exists.
+// ============================================================================
+
+describe('Nested selector default priority', () => {
+	test('direct selector default takes precedence over nested', () => {
+		const style = document.createElement('style');
+		style.textContent = `
+			[data-bge-container] {
+				--bge-options-width--a: 100%;
+				--bge-options-width--b: 200%;
+				--bge-options-width: var(--bge-options-width--a);
+			}
+			.parent {
+				[data-bge-container] {
+					--bge-options-width: var(--bge-options-width--b);
+				}
+			}
+		`;
+		document.head.append(style);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+		expect(resultObj.width.properties.a.isDefault).toBe(true);
+		expect(resultObj.width.properties.b.isDefault).toBe(false);
+	});
+
+	test('nested default is used as fallback when no direct default exists', () => {
+		const style = document.createElement('style');
+		style.textContent = `
+			[data-bge-container] {
+				--bge-options-color--red: #f00;
+				--bge-options-color--blue: #00f;
+			}
+			.parent {
+				[data-bge-container] {
+					--bge-options-color: var(--bge-options-color--red);
+				}
+			}
+		`;
+		document.head.append(style);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+		expect(resultObj.color.properties.red.isDefault).toBe(true);
+		expect(resultObj.color.properties.blue.isDefault).toBe(false);
+	});
+
+	test('@layer main-base direct default is not overridden by @layer main nested default', () => {
+		const style = document.createElement('style');
+		style.textContent = `
+			@layer main-base, main;
+
+			@layer main-base {
+				[data-bge-container] {
+					--bge-options-padding-inline--default-gutter: 2rem;
+					--bge-options-padding-inline--none: 0;
+					--bge-options-padding-inline--small: 1rem;
+					--bge-options-padding-inline: var(--bge-options-padding-inline--default-gutter);
+				}
+			}
+
+			@layer main {
+				.c-content-main {
+					[data-bge-container] {
+						--bge-options-padding-inline: var(--bge-options-padding-inline--none);
+					}
+				}
+			}
+		`;
+		document.head.append(style);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+
+		// Direct selector default (main-base) wins over nested (main)
+		expect(resultObj['padding-inline'].properties['default-gutter'].isDefault).toBe(true);
+		expect(resultObj['padding-inline'].properties.none.isDefault).toBe(false);
+		expect(resultObj['padding-inline'].properties.small.isDefault).toBe(false);
 	});
 });
 
