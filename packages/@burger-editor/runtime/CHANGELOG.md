@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.62](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.61...v4.0.0-alpha.62) (2026-03-10)
+
+**Note:** Version bump only for package @burger-editor/runtime
+
 # [4.0.0-alpha.61](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.60...v4.0.0-alpha.61) (2026-02-18)
 
 **Note:** Version bump only for package @burger-editor/runtime

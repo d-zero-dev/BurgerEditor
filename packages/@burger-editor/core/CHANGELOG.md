@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.62](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.61...v4.0.0-alpha.62) (2026-03-10)
+
+### Bug Fixes
+
+- **core:** exclude nested selectors from default value determination in getCustomProperties ([bbfa46a](https://github.com/d-zero-dev/BurgerEditor/commit/bbfa46acee859fcbca8e936ff55b92189ceff46d))
+- **core:** fall back to nested defaults when no direct default exists ([8331a63](https://github.com/d-zero-dev/BurgerEditor/commit/8331a639f314c26bbd98df62421189d85dfece31))
+
 # [4.0.0-alpha.61](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.60...v4.0.0-alpha.61) (2026-02-18)
 
 ### Bug Fixes

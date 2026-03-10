@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.62](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.61...v4.0.0-alpha.62) (2026-03-10)
+
+### Bug Fixes
+
+- **client:** resolve BlockMenu crash when engine.content is not yet initialized ([0a3957f](https://github.com/d-zero-dev/BurgerEditor/commit/0a3957f0bf91c73de46de2b90e262fa45ba41f20))
+- **core:** exclude nested selectors from default value determination in getCustomProperties ([bbfa46a](https://github.com/d-zero-dev/BurgerEditor/commit/bbfa46acee859fcbca8e936ff55b92189ceff46d))
+- **core:** fall back to nested defaults when no direct default exists ([8331a63](https://github.com/d-zero-dev/BurgerEditor/commit/8331a639f314c26bbd98df62421189d85dfece31))
+- **repo:** resolve svelte parser warning for non-svelte imports in eslint ([98ee228](https://github.com/d-zero-dev/BurgerEditor/commit/98ee22809d24641cff71536ce45cc08876e39e7f))
+
+### Features
+
+- **client:** add EngineState bridge for ComponentObserver reactivity ([cfdf25f](https://github.com/d-zero-dev/BurgerEditor/commit/cfdf25fb8e606008ae0cbe13c08ed5e4670527a9))
+
 # [4.0.0-alpha.61](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.60...v4.0.0-alpha.61) (2026-02-18)
 
 ### Bug Fixes

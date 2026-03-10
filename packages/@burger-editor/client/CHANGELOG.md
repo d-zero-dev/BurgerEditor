@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.62](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.61...v4.0.0-alpha.62) (2026-03-10)
+
+### Bug Fixes
+
+- **client:** resolve BlockMenu crash when engine.content is not yet initialized ([0a3957f](https://github.com/d-zero-dev/BurgerEditor/commit/0a3957f0bf91c73de46de2b90e262fa45ba41f20))
+
+### Features
+
+- **client:** add EngineState bridge for ComponentObserver reactivity ([cfdf25f](https://github.com/d-zero-dev/BurgerEditor/commit/cfdf25fb8e606008ae0cbe13c08ed5e4670527a9))
+
 # [4.0.0-alpha.61](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.60...v4.0.0-alpha.61) (2026-02-18)
 
 **Note:** Version bump only for package @burger-editor/client
