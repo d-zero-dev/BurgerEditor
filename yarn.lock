@@ -12600,7 +12600,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pixelmatch@npm:7.1.0":
+"pixelmatch@npm:7.1.0, pixelmatch@npm:^7.1.0":
   version: 7.1.0
   resolution: "pixelmatch@npm:7.1.0"
   dependencies:
@@ -13894,7 +13894,9 @@ __metadata:
     jsdom: "npm:28.1.0"
     lerna: "npm:9.0.4"
     npm-run-all2: "npm:8.0.4"
+    pixelmatch: "npm:^7.1.0"
     playwright: "npm:1.58.2"
+    pngjs: "npm:^7.0.0"
     postcss-html: "npm:1.8.1"
     prettier-plugin-svelte: "npm:3.5.0"
     stylelint-config-html: "npm:1.1.0"

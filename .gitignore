@@ -78,3 +78,7 @@ typings/
 
 # Playwright
 test-results
+
+# VR test diff/received images (only baseline snapshots are committed)
+*-diff.png
+*-received.png

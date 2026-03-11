@@ -46,7 +46,9 @@ jobs:
 
       - name: Install Playwright browsers
         if: steps.cache-playwright-browsers.outputs.cache-hit != 'true'
-        run: yarn playwright install chromium --with-deps
+        run: |
+          yarn playwright install chromium --with-deps
+          sudo apt-get install -y fonts-noto-cjk
 
       - name: Build
         run: yarn build
@@ -56,3 +58,10 @@ jobs:
 
       - name: Test
         run: yarn test
+
+      - name: Upload VR diff images on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vr-diff-images
+          path: packages/@burger-editor/client/src/__tests__/vr/__snapshots__/**/*-diff.png

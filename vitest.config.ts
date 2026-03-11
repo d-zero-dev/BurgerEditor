@@ -8,6 +8,8 @@ import { playwright } from '@vitest/browser-playwright';
 import { string } from 'rollup-plugin-string';
 import { defineConfig } from 'vitest/config';
 
+import { vrCommands } from './packages/@burger-editor/client/src/__tests__/vr/vr-commands.ts';
+
 const blocksPkg = JSON.parse(
 	fs.readFileSync('./packages/@burger-editor/blocks/package.json', 'utf8'),
 );
@@ -74,6 +76,7 @@ export default defineConfig({
 				test: {
 					name: 'client',
 					include: ['packages/@burger-editor/client/**/*.spec.ts'],
+					exclude: ['**/*.vr.spec.ts'],
 					...jsdomConfig,
 				},
 				define: {
@@ -124,6 +127,22 @@ export default defineConfig({
 					name: 'local/import',
 					include: ['packages/@burger-editor/local/src/import/**/*.spec.ts'],
 					...jsdomConfig,
+				},
+			},
+			{
+				test: {
+					name: 'vr',
+					include: ['packages/@burger-editor/client/src/__tests__/vr/**/*.vr.spec.ts'],
+					browser: {
+						enabled: true,
+						provider: playwright(),
+						instances: [{ browser: 'chromium' }],
+						headless: true,
+						viewport: { width: 1280, height: 720 },
+						screenshotFailures: false,
+						commands: vrCommands,
+					},
+					testTimeout: 15_000,
 				},
 			},
 		],
