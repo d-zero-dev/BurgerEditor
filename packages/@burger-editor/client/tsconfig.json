@@ -3,6 +3,7 @@
 	"compilerOptions": {
 		"noEmit": true
 	},
+	"exclude": ["src/__tests__/vr"],
 	"references": [
 		{
 			"path": "../migrator"
