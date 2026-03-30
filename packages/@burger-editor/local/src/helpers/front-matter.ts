@@ -44,7 +44,6 @@ export function parseFrontMatter(fileContent: string): ParsedFrontMatter {
 export function stringifyWithFrontMatter(
 	htmlContent: string,
 	frontMatterData: Record<string, unknown>,
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	_originalFrontMatter?: string,
 ): string {
 	// Return HTML as-is if no Front Matter
