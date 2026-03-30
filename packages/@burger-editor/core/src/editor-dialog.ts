@@ -82,11 +82,7 @@ export abstract class EditorDialog extends EditorUI {
 		this.#onClosed();
 	}
 
-	complete(
-		// @ts-ignore
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		formData: FormData,
-	) {
+	complete(_formData: FormData) {
 		this.close();
 	}
 
@@ -105,20 +101,9 @@ export abstract class EditorDialog extends EditorUI {
 			: elements;
 	}
 
-	onSubmit(
-		// @ts-ignore
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		e: SubmitEvent,
-		// @ts-ignore
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		submitter: Submitter,
-	): boolean | void {}
+	onSubmit(_e: SubmitEvent, _submitter: Submitter): boolean | void {}
 
-	open(
-		// @ts-ignore
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		...args: never[]
-	) {
+	open(..._args: never[]) {
 		const cancel = this.#onOpen();
 		if (cancel === true) {
 			return;

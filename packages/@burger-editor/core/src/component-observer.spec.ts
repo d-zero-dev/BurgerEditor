@@ -81,11 +81,7 @@ describe('ComponentObserver', () => {
 	});
 
 	describe('off', () => {
-		// NOTE: The current off() implementation has a bug — it stores the original
-		// listener in the map but addEventListener uses a wrapper closure, so
-		// removeEventListener cannot find the matching handler. Listeners continue
-		// to fire after off(). This will be fixed during the Svelte migration.
-		test('should call removeEventListener (even though wrapper mismatch prevents actual removal)', () => {
+		test('should call removeEventListener', () => {
 			const observer = new ComponentObserver();
 			const handler = vi.fn();
 
@@ -96,6 +92,69 @@ describe('ComponentObserver', () => {
 
 			expect(spy).toHaveBeenCalled();
 			spy.mockRestore();
+		});
+
+		test('should stop listeners from firing after off()', () => {
+			const observer = new ComponentObserver();
+			const handler = vi.fn();
+
+			observer.on('select-block', handler);
+			observer.off();
+
+			const payload = {
+				block: {} as unknown,
+				width: 100,
+				height: 50,
+				x: 0,
+				y: 0,
+				marginBlockEnd: 0,
+			};
+			observer.notify('select-block', payload);
+
+			expect(handler).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('duplicate registration', () => {
+		test('should fire handler twice if the same listener is registered twice', () => {
+			const observer = new ComponentObserver();
+			const handler = vi.fn();
+
+			observer.on('select-block', handler);
+			observer.on('select-block', handler);
+
+			const payload = {
+				block: {} as unknown,
+				width: 100,
+				height: 50,
+				x: 0,
+				y: 0,
+				marginBlockEnd: 0,
+			};
+			observer.notify('select-block', payload);
+
+			expect(handler).toHaveBeenCalledTimes(2);
+		});
+
+		test('off() should remove all registered wrappers including duplicates', () => {
+			const observer = new ComponentObserver();
+			const handler = vi.fn();
+
+			observer.on('select-block', handler);
+			observer.on('select-block', handler);
+			observer.off();
+
+			const payload = {
+				block: {} as unknown,
+				width: 100,
+				height: 50,
+				x: 0,
+				y: 0,
+				marginBlockEnd: 0,
+			};
+			observer.notify('select-block', payload);
+
+			expect(handler).not.toHaveBeenCalled();
 		});
 	});
 

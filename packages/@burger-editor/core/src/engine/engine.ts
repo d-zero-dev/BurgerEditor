@@ -58,10 +58,10 @@ export class BurgerEditorEngine {
 	#contentStylesheetCache: string | null = null;
 	#current!: EditableArea;
 	#currentBlock: BurgerBlock | null = null;
-	readonly #draft!: EditableArea<'draft'> | null;
+	#draft!: EditableArea<'draft'> | null;
 	readonly #healthMonitor: HealthMonitor;
 	#isProcessed: boolean = false;
-	readonly #main!: EditableArea<'main'>;
+	#main!: EditableArea<'main'>;
 	#migrationCheck: ((dom: HTMLElement) => void) | null = null;
 
 	get isProcessed() {
@@ -466,7 +466,6 @@ export class BurgerEditorEngine {
 				? options.initialContents
 				: options.initialContents.main;
 
-		// @ts-ignore force assign to readonly property
 		engine.#main =
 			//
 			await EditableArea.new(
@@ -483,7 +482,6 @@ export class BurgerEditorEngine {
 		const draftInitialContent =
 			typeof options.initialContents === 'string' ? null : options.initialContents.draft;
 
-		// @ts-ignore force assign to readonly property
 		engine.#draft =
 			draftInitialContent == null
 				? null

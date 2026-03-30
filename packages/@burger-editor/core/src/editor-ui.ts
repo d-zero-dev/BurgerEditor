@@ -37,6 +37,6 @@ export abstract class EditorUI {
 	}
 
 	visible() {
-		return !!this.#el.hidden;
+		return !this.#el.hidden;
 	}
 }

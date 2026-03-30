@@ -106,7 +106,9 @@ export class ItemEditorDialog<
 		runOnInit = true,
 	): void {
 		if (runOnInit) {
-			handler(this.get(name), null);
+			const initialValue: D = this.get(name);
+			this.#values.set(name, initialValue);
+			handler(initialValue, null);
 		}
 		for (const $ctrl of this.#findAll(name)) {
 			$ctrl.addEventListener('change', () => {
