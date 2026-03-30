@@ -721,3 +721,81 @@ test('switching from text-only to html should work', () => {
 	element.mode = 'html';
 	expect(element.mode).toBe('html');
 });
+
+test('text-only mode should prevent Enter key in editable elements', () => {
+	document.body.innerHTML = '<bge-wysiwyg><p>test</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+
+	element.mode = 'text-only';
+
+	const editableEl = element.shadowRoot?.querySelector<HTMLElement>(
+		'[contenteditable="plaintext-only"]',
+	);
+	expect(editableEl).toBeTruthy();
+
+	const enterEvent = new KeyboardEvent('keydown', {
+		key: 'Enter',
+		cancelable: true,
+	});
+	editableEl!.dispatchEvent(enterEvent);
+	expect(enterEvent.defaultPrevented).toBe(true);
+
+	// Non-Enter keys should not be prevented
+	const otherEvent = new KeyboardEvent('keydown', {
+		key: 'a',
+		cancelable: true,
+	});
+	editableEl!.dispatchEvent(otherEvent);
+	expect(otherEvent.defaultPrevented).toBe(false);
+});
+
+test('text-only mode should sync editable content to textarea on input', () => {
+	document.body.innerHTML = '<bge-wysiwyg><p>original</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+
+	element.mode = 'text-only';
+
+	const editableEl = element.shadowRoot?.querySelector<HTMLElement>(
+		'[contenteditable="plaintext-only"]',
+	);
+	expect(editableEl).toBeTruthy();
+
+	// Simulate editing content
+	editableEl!.textContent = 'modified';
+	editableEl!.dispatchEvent(new Event('input'));
+
+	// Value should reflect the edited content
+	const value = element.value;
+	expect(value).toContain('modified');
+	expect(value).not.toContain('contenteditable');
+});
+
+test('text-only mode setValue should update content', () => {
+	document.body.innerHTML = '<bge-wysiwyg><p>initial</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+
+	element.mode = 'text-only';
+	element.value = '<p>updated</p>';
+
+	const value = element.value;
+	expect(value).toContain('updated');
+	expect(value).not.toContain('contenteditable');
+});
+
+test('text-only mode should remove event listeners on deactivate', () => {
+	document.body.innerHTML = '<bge-wysiwyg><p>test</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+
+	element.mode = 'text-only';
+	element.mode = 'wysiwyg';
+
+	// Container should be cleared
+	const textOnlyContainer = element.shadowRoot?.querySelector('[data-text-only-editor]');
+	expect(textOnlyContainer?.innerHTML).toBe('');
+
+	// Verify no editable elements remain
+	const editableElements = textOnlyContainer?.querySelectorAll(
+		'[contenteditable="plaintext-only"]',
+	);
+	expect(editableElements?.length).toBe(0);
+});

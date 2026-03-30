@@ -10,6 +10,9 @@ import { BgeWysiwygEditorKit } from '../tiptap-extentions/index.js';
 import { createElement } from '../utils/create-element.js';
 import { getCurrentEditorState } from '../utils/get-current-editor-state.js';
 
+import { controlUIStyles, editorContentStyles } from './styles.js';
+import { TextOnlyModeController } from './text-only-mode.js';
+
 declare global {
 	interface HTMLElementEventMap {
 		transaction: CustomEvent<Transaction>;
@@ -53,31 +56,8 @@ export class BgeWysiwygElement extends HTMLElement {
 	#structureChangeMessage: HTMLDivElement | null = null;
 	#textarea: HTMLTextAreaElement | null = null;
 	#textareaDescriptor: PropertyDescriptor | null = null;
-	#textOnlyContainer: HTMLDivElement | null = null;
+	#textOnlyMode: TextOnlyModeController | null = null;
 
-	/**
-	 * Enter キーを防止するハンドラー
-	 * @param event
-	 */
-	#preventEnterKey = (event: KeyboardEvent): void => {
-		if (event.key === 'Enter') {
-			event.preventDefault();
-		}
-	};
-	/**
-	 * text-onlyコンテナからtextareaへ同期
-	 */
-	#syncTextOnlyToTextarea = (): void => {
-		if (this.mode !== 'text-only' || !this.#textOnlyContainer) {
-			return;
-		}
-
-		// contenteditable属性を削除したクリーンなHTMLを生成
-		const cleanHTML = this.#cleanTextOnlyHTML('');
-
-		// textareaに同期
-		this.#setToTextarea(cleanHTML);
-	};
 	get value() {
 		if (!this.#textarea) {
 			throw new ReferenceError('<bge-wysiwyg> is not connected');
@@ -85,7 +65,7 @@ export class BgeWysiwygElement extends HTMLElement {
 
 		// text-onlyモードの場合
 		if (this.mode === 'text-only') {
-			return this.#getTextOnlyValue();
+			return this.#textOnlyMode?.getValue(this.#textarea.value) ?? this.#textarea.value;
 		}
 
 		// Wysiwygモードの場合、Tiptapエディタから値を取得
@@ -109,7 +89,12 @@ export class BgeWysiwygElement extends HTMLElement {
 
 		// text-onlyモードの場合
 		if (this.mode === 'text-only') {
-			this.#setTextOnlyValue(value);
+			this.#textOnlyMode?.setValue(
+				value,
+				this.shadowRoot!,
+				this.#structureChangeMessage,
+				this.#previewStyle?.textContent ?? null,
+			);
 			return;
 		}
 
@@ -161,7 +146,7 @@ export class BgeWysiwygElement extends HTMLElement {
 
 		// text-onlyモードからの切り替え
 		if (this.mode === 'text-only') {
-			this.#deactivateTextOnlyMode();
+			this.#textOnlyMode?.deactivate();
 		}
 
 		// HTMLモードからWysiwygモードに切り替える場合、構造変更をチェック
@@ -172,7 +157,16 @@ export class BgeWysiwygElement extends HTMLElement {
 
 		// text-onlyモードに切り替える場合
 		if (mode === 'text-only') {
-			this.#activateTextOnlyMode();
+			const currentHTML =
+				this.mode === 'wysiwyg'
+					? this.#editor.getHTML().replaceAll('<p></p>', '')
+					: this.#textarea.value;
+			this.#textOnlyMode?.activate(
+				this.shadowRoot!,
+				currentHTML,
+				this.#structureChangeMessage,
+				this.#previewStyle?.textContent ?? null,
+			);
 			return;
 		}
 
@@ -240,87 +234,7 @@ export class BgeWysiwygElement extends HTMLElement {
 		const textarea = this.shadowRoot.querySelector('textarea');
 		const controlUIStyle = document.createElement('style');
 		this.shadowRoot.append(controlUIStyle);
-		controlUIStyle.textContent = `
-			:host {
-				display: block;
-			}
-
-			textarea,
-			iframe  {
-				block-size: 50svh;
-				inline-size: 100%;
-				resize: vertical;
-				overflow-y: auto;
-				background: var(--bge-lightest-color);
-				border: 1px solid var(--bge-border-color);
-				border-radius: var(--border-radius);
-			}
-
-			iframe[data-focus-within="true"],
-			textarea:focus-visible {
-				--bge-border-color: var(--bge-ui-primary-color);
-				--bge-outline-color: var(--bge-ui-primary-color);
-				outline: var(--bge-focus-outline-width) solid var(--bge-outline-color);
-			}
-
-			textarea {
-				font-family: var(--bge-font-family-monospace);
-			}
-
-			[data-bge-mode="wysiwyg"] textarea {
-				display: none;
-			}
-
-			[data-bge-mode="html"] iframe {
-				display: none;
-			}
-
-			[data-text-only-editor] {
-				block-size: 50svh;
-				inline-size: 100%;
-				resize: vertical;
-				overflow-y: auto;
-				background: var(--bge-lightest-color);
-				border: 1px solid var(--bge-border-color);
-				border-radius: var(--border-radius);
-				padding: 1rem;
-				box-sizing: border-box;
-			}
-
-			[data-bge-mode="wysiwyg"] [data-text-only-editor],
-			[data-bge-mode="html"] [data-text-only-editor] {
-				display: none;
-			}
-
-			[data-bge-mode="text-only"] iframe,
-			[data-bge-mode="text-only"] textarea {
-				display: none;
-			}
-
-			[contenteditable="plaintext-only"] {
-				outline: 1px dashed var(--bge-border-color);
-				cursor: text;
-			}
-
-			[contenteditable="plaintext-only"]:hover {
-				outline-color: var(--bge-ui-primary-color);
-			}
-
-			[contenteditable="plaintext-only"]:focus {
-				outline: 2px solid var(--bge-ui-primary-color);
-				outline-offset: 2px;
-			}
-
-			[role="alert"] {
-				margin-block-start: 0.5rem;
-				padding: 0.5rem;
-				background-color: var(--bge-error-color, #fee);
-				border: 1px solid var(--bge-error-border-color, #fcc);
-				border-radius: var(--border-radius);
-				color: var(--bge-error-text-color, #c00);
-				font-size: 0.875rem;
-			}
-		`;
+		controlUIStyle.textContent = controlUIStyles;
 
 		preview.contentDocument.body.addEventListener('focusin', () => {
 			preview.dataset.focusWithin = 'true';
@@ -391,6 +305,11 @@ export class BgeWysiwygElement extends HTMLElement {
 			'value',
 		)!;
 
+		// Initialize text-only mode controller
+		this.#textOnlyMode = new TextOnlyModeController((html) => {
+			this.#setToTextarea(html);
+		});
+
 		Object.defineProperty(this.#textarea, 'value', {
 			get: () => {
 				return this.#textareaDescriptor?.get?.call(this.#textarea) ?? '';
@@ -444,8 +363,6 @@ export class BgeWysiwygElement extends HTMLElement {
 	 * @returns 変換後のHTML文字列
 	 */
 	expectHTML(html: string): string {
-		// このチェックは到達不可能（すべての呼び出し元でthis.#editorの存在が保証されている）
-		// ただし、型安全性のために残している
 		if (!this.#editor) {
 			throw new ReferenceError('<bge-wysiwyg> is not connected');
 		}
@@ -458,6 +375,7 @@ export class BgeWysiwygElement extends HTMLElement {
 		this.#isExpectingHTML = false;
 		return result;
 	}
+
 	isActive(name: string) {
 		return this.editor.isActive(name) ?? false;
 	}
@@ -471,33 +389,7 @@ export class BgeWysiwygElement extends HTMLElement {
 			throw new ReferenceError('<bge-wysiwyg> is not connected');
 		}
 
-		this.#previewStyle.textContent = `
-			:where(html, body) {
-				margin: 0;
-				padding: 0;
-
-				:where(&, *) {
-					box-sizing: border-box;
-				}
-			}
-
-			iframe,
-			[contenteditable="true"] {
-				padding: 1rem;
-				block-size: 100%;
-				box-sizing: border-box;
-			}
-
-			[contenteditable="true"]:focus-visible {
-				outline: none;
-			}
-
-			${css}
-
-			a:any-link {
-				pointer-events: none !important;
-			}
-		`;
+		this.#previewStyle.textContent = editorContentStyles(css);
 	}
 
 	syncWysiwygToTextarea() {
@@ -519,6 +411,7 @@ export class BgeWysiwygElement extends HTMLElement {
 	toggleAlign(alignment: 'start' | 'center' | 'end') {
 		this.editor.chain().focus().toggleAlign(alignment).run();
 	}
+
 	toggleBlockquote() {
 		this.editor.chain().focus().toggleBlockquote().run();
 	}
@@ -579,68 +472,6 @@ export class BgeWysiwygElement extends HTMLElement {
 		this.editor.chain().focus().toggleUnderline().run();
 	}
 
-	/**
-	 * text-onlyモードを有効化
-	 */
-	#activateTextOnlyMode(): void {
-		// 1. 現在のHTMLを保存
-		const currentHTML =
-			this.mode === 'wysiwyg'
-				? this.#editor!.getHTML().replaceAll('<p></p>', '')
-				: this.#textarea!.value;
-
-		// 2. text-onlyコンテナを作成（未作成の場合）
-		if (!this.#textOnlyContainer) {
-			this.#textOnlyContainer = document.createElement('div');
-			this.#textOnlyContainer.dataset.textOnlyEditor = '';
-			// アラートメッセージの前に挿入（DOMの順番を正しく保つ）
-			const modeContainer = this.shadowRoot!.querySelector('[data-bge-mode]')!;
-			modeContainer.insertBefore(this.#textOnlyContainer, this.#structureChangeMessage);
-		}
-
-		// 3. スタイルタグを作成してwysiwygと同じCSSを適用
-		const textOnlyStyle = document.createElement('style');
-		textOnlyStyle.dataset.textOnlyStyle = '';
-		if (this.#previewStyle) {
-			textOnlyStyle.textContent = this.#previewStyle.textContent;
-		}
-
-		// 4. text-onlyコンテナに直接HTMLを設定
-		this.#textOnlyContainer.innerHTML = currentHTML;
-
-		// 5. スタイルタグを先頭に追加
-		this.#textOnlyContainer.prepend(textOnlyStyle);
-
-		// 6. 編集可能要素を特定してcontenteditable付与
-		this.#identifyEditableElements(this.#textOnlyContainer);
-
-		// 7. イベントリスナーを設定
-		this.#attachTextOnlyEventListeners();
-
-		// 8. data-bge-mode属性を更新
-		this.shadowRoot!.querySelector<HTMLDivElement>(`[data-bge-mode]`)!.dataset.bgeMode =
-			'text-only';
-	}
-	/**
-	 * text-onlyモード用のイベントリスナーを設定
-	 */
-	#attachTextOnlyEventListeners(): void {
-		if (!this.#textOnlyContainer) {
-			return;
-		}
-
-		const editableElements = this.#textOnlyContainer.querySelectorAll<HTMLElement>(
-			'[contenteditable="plaintext-only"]',
-		);
-
-		for (const el of editableElements) {
-			// Enterキー防止
-			el.addEventListener('keydown', this.#preventEnterKey);
-
-			// textareaへの同期
-			el.addEventListener('input', this.#syncTextOnlyToTextarea);
-		}
-	}
 	#checkStructureChange(): boolean {
 		if (!this.#editor || !this.#textarea || this.mode !== 'html') {
 			return false;
@@ -650,96 +481,6 @@ export class BgeWysiwygElement extends HTMLElement {
 		const isStructureSame = normalizeHtmlStructure(this.#textarea.value, expectedHTML);
 
 		return !isStructureSame;
-	}
-
-	/**
-	 * contenteditable属性を削除してクリーンなHTMLを返す
-	 * @param html
-	 */
-	#cleanTextOnlyHTML(html: string): string {
-		if (!this.#textOnlyContainer) {
-			return html;
-		}
-
-		// text-onlyコンテナのクローンを作成
-		const clone = this.#textOnlyContainer.cloneNode(true) as HTMLDivElement;
-
-		// contenteditable属性を削除
-		const editableElements = clone.querySelectorAll('[contenteditable="plaintext-only"]');
-		for (const el of editableElements) {
-			el.removeAttribute('contenteditable');
-		}
-
-		// data-text-only-style要素を削除
-		const styleElements = clone.querySelectorAll('[data-text-only-style]');
-		for (const el of styleElements) {
-			el.remove();
-		}
-
-		return clone.innerHTML;
-	}
-	/**
-	 * text-onlyモードを無効化
-	 */
-	#deactivateTextOnlyMode(): void {
-		if (!this.#textOnlyContainer) {
-			return;
-		}
-
-		// イベントリスナーを削除
-		const editableElements = this.#textOnlyContainer.querySelectorAll<HTMLElement>(
-			'[contenteditable="plaintext-only"]',
-		);
-
-		for (const el of editableElements) {
-			el.removeEventListener('keydown', this.#preventEnterKey);
-			el.removeEventListener('input', this.#syncTextOnlyToTextarea);
-		}
-
-		// コンテナをクリア
-		this.#textOnlyContainer.innerHTML = '';
-	}
-	/**
-	 * text-onlyモードの値を取得
-	 */
-	#getTextOnlyValue(): string {
-		if (!this.#textOnlyContainer) {
-			return this.#textarea?.value ?? '';
-		}
-
-		return this.#cleanTextOnlyHTML('');
-	}
-	/**
-	 * 編集可能要素を特定してcontenteditable="plaintext-only"を付与
-	 * @param container
-	 */
-	#identifyEditableElements(container: HTMLElement): void {
-		const walker = document.createTreeWalker(container, NodeFilter.SHOW_ELEMENT, {
-			acceptNode: (node) => {
-				const element = node as HTMLElement;
-
-				// 直接の子にtextNodeがあるかチェック
-				const hasDirectTextChild = [...element.childNodes].some(
-					(child) => child.nodeType === Node.TEXT_NODE && child.textContent?.trim(),
-				);
-
-				if (hasDirectTextChild) {
-					return NodeFilter.FILTER_ACCEPT;
-				}
-				return NodeFilter.FILTER_SKIP;
-			},
-		});
-
-		const editableElements: HTMLElement[] = [];
-		let currentNode: Node | null;
-		while ((currentNode = walker.nextNode())) {
-			editableElements.push(currentNode as HTMLElement);
-		}
-
-		// contenteditable="plaintext-only"属性を付与
-		for (const el of editableElements) {
-			el.setAttribute('contenteditable', 'plaintext-only');
-		}
 	}
 
 	#setStructureChange(hasChange: boolean): void {
@@ -757,20 +498,7 @@ export class BgeWysiwygElement extends HTMLElement {
 			}),
 		);
 	}
-	/**
-	 * text-onlyモードに値を設定
-	 * @param value
-	 */
-	#setTextOnlyValue(value: string): void {
-		// text-onlyモードを一旦非アクティブ化
-		this.#deactivateTextOnlyMode();
 
-		// textareaに値を設定
-		this.#setToTextarea(value);
-
-		// text-onlyモードを再アクティブ化
-		this.#activateTextOnlyMode();
-	}
 	#setToTextarea(html: string) {
 		if (!this.#textarea || !this.#textareaDescriptor) {
 			throw new ReferenceError('<bge-wysiwyg> is not connected');
@@ -779,7 +507,6 @@ export class BgeWysiwygElement extends HTMLElement {
 		this.#textareaDescriptor.set?.call(this.#textarea, html);
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	#transaction(_editor: Editor) {
 		const data: Transaction = {
 			state: getCurrentEditorState(this),
@@ -787,6 +514,7 @@ export class BgeWysiwygElement extends HTMLElement {
 
 		return data;
 	}
+
 	#updateStructureChangeMessage(): void {
 		if (!this.#structureChangeMessage) {
 			return;
