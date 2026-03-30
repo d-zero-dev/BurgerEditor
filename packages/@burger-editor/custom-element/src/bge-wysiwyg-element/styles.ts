@@ -1,3 +1,8 @@
+/**
+ * CSS for the shadow DOM control UI of `<bge-wysiwyg>`.
+ * Handles mode-based visibility toggling of textarea, iframe,
+ * and text-only editor containers.
+ */
 export const controlUIStyles = `
 	:host {
 		display: block;
@@ -80,6 +85,12 @@ export const controlUIStyles = `
 	}
 `;
 
+/**
+ * Generate CSS for the iframe content area of `<bge-wysiwyg>`.
+ * Wraps user-provided CSS with base layout and link safety rules.
+ * @param css - Additional CSS to inject into the editor content area
+ * @returns Complete CSS string for the editor iframe
+ */
 export const editorContentStyles = (css: string) => `
 	:where(html, body) {
 		margin: 0;

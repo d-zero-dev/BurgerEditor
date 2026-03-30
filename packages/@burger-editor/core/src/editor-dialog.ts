@@ -82,6 +82,10 @@ export abstract class EditorDialog extends EditorUI {
 		this.#onClosed();
 	}
 
+	/**
+	 * Handle form completion. Subclasses override to process form data before closing.
+	 * @param _formData - The submitted form data
+	 */
 	complete(_formData: FormData) {
 		this.close();
 	}
@@ -101,8 +105,18 @@ export abstract class EditorDialog extends EditorUI {
 			: elements;
 	}
 
+	/**
+	 * Handle form submission. Subclasses override to add custom behavior.
+	 * Return `false` to cancel submission.
+	 * @param _e - The submit event
+	 * @param _submitter - The element that triggered submission
+	 */
 	onSubmit(_e: SubmitEvent, _submitter: Submitter): boolean | void {}
 
+	/**
+	 * Open the dialog. Subclasses override to set up content before showing.
+	 * @param _args - Arguments passed by subclass overrides
+	 */
 	open(..._args: never[]) {
 		const cancel = this.#onOpen();
 		if (cancel === true) {

@@ -12,8 +12,9 @@ export class ComponentObserver {
 
 	/**
 	 * Dispatch a custom event on the window.
-	 * @param name
-	 * @param payload
+	 * @template A - The action type key
+	 * @param name - The action name to dispatch
+	 * @param payload - The event payload matching the action type
 	 */
 	notify<A extends keyof Actions>(name: A, payload: Actions[A]) {
 		window.dispatchEvent(
@@ -35,8 +36,9 @@ export class ComponentObserver {
 	 * Register an event listener. Each call creates a separate wrapper,
 	 * so calling with the same listener multiple times will fire it
 	 * multiple times per event.
-	 * @param name
-	 * @param listener
+	 * @template A - The action type key
+	 * @param name - The action name to listen for
+	 * @param listener - Callback receiving the typed payload
 	 */
 	on<A extends keyof Actions>(name: A, listener: (payload: Actions[A]) => void) {
 		const wrapper: EventListener = (e) => {

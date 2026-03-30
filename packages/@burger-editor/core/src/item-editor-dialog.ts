@@ -100,6 +100,16 @@ export class ItemEditorDialog<
 		}
 	}
 
+	/**
+	 * Register a change handler for a named form control.
+	 * When `runOnInit` is true, fires immediately with the current value
+	 * (oldValue is null) and stores the initial value for subsequent comparisons.
+	 * @template N - The item data property name
+	 * @template D - The data type for the property
+	 * @param name - The control name prefixed with `$`
+	 * @param handler - Callback receiving new value and previous value
+	 * @param runOnInit - Whether to invoke the handler immediately with the current value
+	 */
 	onChange<N extends keyof T & string = keyof T & string, D extends T[N] = T[N]>(
 		name: `$${N}`,
 		handler: (value: D, oldValue: D | null) => void,

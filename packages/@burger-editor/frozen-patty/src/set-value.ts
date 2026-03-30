@@ -588,11 +588,12 @@ function setIntegerAttrByName(
 }
 
 /**
- *
- * @param el
- * @param datum
- * @param asHtml
- * @param xssSanitize
+ * Set content value on a form element or general element.
+ * Handles checkbox/radio checked state, input values, and innerHTML/textContent.
+ * @param el - The target element
+ * @param datum - The value to set
+ * @param asHtml - Whether to set as innerHTML (true) or textContent (false)
+ * @param xssSanitize - Whether to sanitize HTML content for XSS protection
  */
 export function setContent(
 	el: Element,

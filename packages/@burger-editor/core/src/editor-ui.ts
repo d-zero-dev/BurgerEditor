@@ -36,6 +36,9 @@ export abstract class EditorUI {
 		this.#el.hidden = false;
 	}
 
+	/**
+	 * @returns Whether the UI element is currently visible (not hidden)
+	 */
 	visible() {
 		return !this.#el.hidden;
 	}

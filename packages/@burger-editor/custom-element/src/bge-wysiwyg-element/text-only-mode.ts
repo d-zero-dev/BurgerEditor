@@ -28,10 +28,16 @@ export class TextOnlyModeController {
 		this.#setToTextarea(cleanHTML);
 	};
 
+	/**
+	 * The text-only editing container element, or null if not yet activated.
+	 */
 	get container() {
 		return this.#container;
 	}
 
+	/**
+	 * @param setToTextarea - Callback to sync cleaned HTML back to the textarea
+	 */
 	constructor(setToTextarea: (html: string) => void) {
 		this.#setToTextarea = setToTextarea;
 	}
