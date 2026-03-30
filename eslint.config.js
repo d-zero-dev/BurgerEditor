@@ -21,6 +21,10 @@ export default [
 	{
 		rules: {
 			'@typescript-eslint/no-empty-object-type': 0,
+			'@typescript-eslint/no-unused-vars': [
+				2,
+				{ argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+			],
 		},
 	},
 	{
