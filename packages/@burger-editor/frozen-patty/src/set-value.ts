@@ -46,8 +46,6 @@ export function setValue(
 		datum = filter(datum);
 	}
 
-	// console.log({ name, field, fieldName, propName, datum, el: el.innerHTML });
-
 	if (!propName) {
 		setContent(el, datum, undefined, xssSanitize);
 		return;
@@ -101,6 +99,70 @@ export function setValue(
 	}
 
 	el.setAttribute(propName, `${datum}`);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ElementConstructor = abstract new (...args: any[]) => HTMLElement;
+
+/**
+ * Set a boolean attribute on an element via its DOM property.
+ * Empty string is treated as true (HTML boolean attribute convention).
+ * Falls back to setAttribute if the element doesn't match any of the expected types.
+ * @param el
+ * @param datum
+ * @param types
+ * @param prop
+ * @param emptyIsTrue
+ * @returns true if handled
+ */
+function setBooleanAttr(
+	el: HTMLElement,
+	datum: Exclude<PrimitiveDatum, null | undefined>,
+	types: ElementConstructor[],
+	prop: string,
+	emptyIsTrue = true,
+): boolean {
+	if (types.some((T) => el instanceof T)) {
+		// SAFETY: prop is always a hardcoded string literal from setBooleanAttrByName
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		(el as any)[prop] = emptyIsTrue ? (datum === '' ? true : !!datum) : !!datum;
+		return true;
+	}
+	return false;
+}
+
+/**
+ * Set an integer attribute on an element via its DOM property.
+ * Removes the attribute if the parsed value is NaN.
+ * Falls back to setAttribute if the element doesn't match any of the expected types.
+ * @param el
+ * @param name
+ * @param datum
+ * @param types
+ * @param prop
+ * @param floor
+ * @returns true if handled
+ */
+function setIntegerAttr(
+	el: HTMLElement,
+	name: string,
+	datum: Exclude<PrimitiveDatum, null | undefined>,
+	types: ElementConstructor[],
+	prop: string,
+	floor = false,
+): boolean {
+	if (types.some((T) => el instanceof T)) {
+		const val = toInt(datum);
+		if (Number.isNaN(val)) {
+			el.removeAttribute(name);
+		} else {
+			// SAFETY: prop is always a hardcoded string literal from setIntegerAttrByName
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			(el as any)[prop] = floor ? Math.floor(val) : val;
+		}
+		return true;
+	}
+	return false;
 }
 
 /**
@@ -177,6 +239,33 @@ function set(
 		return;
 	}
 
+	if (setSpecialAttr(el, name, datum)) {
+		return;
+	}
+
+	if (setBooleanAttrByName(el, name, datum)) {
+		return;
+	}
+
+	if (setIntegerAttrByName(el, name, datum)) {
+		return;
+	}
+
+	el.setAttribute(name, `${datum}`);
+}
+
+/**
+ * Handle attributes with unique logic that doesn't fit boolean/integer patterns.
+ * @param el
+ * @param name
+ * @param datum
+ * @returns true if handled
+ */
+function setSpecialAttr(
+	el: HTMLElement,
+	name: string,
+	datum: Exclude<PrimitiveDatum, null | undefined>,
+): boolean {
 	switch (name) {
 		case 'contenteditable': {
 			switch (datum) {
@@ -190,7 +279,7 @@ function set(
 					el.removeAttribute(name);
 				}
 			}
-			return;
+			return true;
 		}
 		case 'dir': {
 			switch (datum) {
@@ -199,45 +288,43 @@ function set(
 					el.dir = datum;
 					break;
 				}
-				// case 'auto':
 				default: {
 					el.removeAttribute(name);
 				}
 			}
-			return;
+			return true;
 		}
 		case 'draggable': {
 			if (typeof datum === 'boolean') {
 				el.draggable = datum;
-				break;
+			} else {
+				switch (datum) {
+					case 'true': {
+						el.draggable = true;
+						break;
+					}
+					case 'false': {
+						el.draggable = false;
+						break;
+					}
+					default: {
+						el.removeAttribute(name);
+					}
+				}
 			}
-			switch (datum) {
-				case 'true': {
-					el.draggable = true;
-					break;
-				}
-				case 'false': {
-					el.draggable = false;
-					break;
-				}
-				// case 'auto':
-				default: {
-					el.removeAttribute(name);
-				}
-			}
-			return;
+			return true;
 		}
 		case 'hidden': {
 			if (datum === 'until-found') {
 				el.setAttribute(name, datum);
-				return;
+			} else {
+				el.hidden = !!datum;
 			}
-			el.hidden = !!datum;
-			return;
+			return true;
 		}
 		case 'spellcheck': {
 			el.spellcheck = !!datum;
-			return;
+			return true;
 		}
 		case 'tabindex': {
 			let i: number;
@@ -246,122 +333,18 @@ function set(
 			} else if (typeof datum === 'string') {
 				i = Number.parseInt(datum, 10);
 			} else {
-				i = datum;
+				i = datum ?? -1;
 			}
 			el.tabIndex = Number.isNaN(i) ? -1 : Math.floor(i);
-			return;
-		}
-		case 'async': {
-			if (el instanceof HTMLScriptElement) {
-				el.async = !!datum;
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
+			return true;
 		}
 		case 'autocomplete': {
 			if (el instanceof HTMLInputElement || el instanceof HTMLFormElement) {
-				// @ts-ignore
-				el.autocomplete = datum ? `${datum}` : 'off';
+				el.setAttribute(name, datum ? `${datum}` : 'off');
 			} else {
 				el.setAttribute(name, `${datum}`);
 			}
-			return;
-		}
-		case 'autofocus': {
-			if (
-				el instanceof HTMLButtonElement ||
-				el instanceof HTMLInputElement ||
-				el instanceof HTMLSelectElement ||
-				el instanceof HTMLTextAreaElement
-			) {
-				el.autofocus = datum === '' ? true : !!datum;
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'autoplay': {
-			if (el instanceof HTMLAudioElement || el instanceof HTMLVideoElement) {
-				el.autoplay = datum === '' ? true : !!datum;
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'checked': {
-			if (el instanceof HTMLInputElement) {
-				el.checked = datum === '' ? true : !!datum;
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'cols': {
-			if (el instanceof HTMLTextAreaElement) {
-				const cols = toInt(datum);
-				if (Number.isNaN(cols)) {
-					el.removeAttribute(name);
-				} else {
-					el.cols = cols;
-				}
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'colspan': {
-			if (el instanceof HTMLTableCellElement) {
-				const colSpan = toInt(datum);
-				if (Number.isNaN(colSpan)) {
-					el.removeAttribute(name);
-				} else {
-					el.colSpan = colSpan;
-				}
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'controls': {
-			if (el instanceof HTMLAudioElement || el instanceof HTMLVideoElement) {
-				el.controls = datum === '' ? true : !!datum;
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'default': {
-			if (el instanceof HTMLTrackElement) {
-				el.default = datum === '' ? true : !!datum;
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'defer': {
-			if (el instanceof HTMLScriptElement) {
-				el.defer = !!datum;
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'disabled': {
-			if (
-				el instanceof HTMLButtonElement ||
-				el instanceof HTMLFieldSetElement ||
-				el instanceof HTMLInputElement ||
-				el instanceof HTMLOptGroupElement ||
-				el instanceof HTMLOptionElement ||
-				el instanceof HTMLSelectElement ||
-				el instanceof HTMLTextAreaElement
-			) {
-				el.disabled = datum === '' ? true : !!datum;
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
+			return true;
 		}
 		case 'download': {
 			if (el instanceof HTMLAnchorElement) {
@@ -373,129 +356,7 @@ function set(
 			} else {
 				el.setAttribute(name, `${datum}`);
 			}
-			return;
-		}
-		case 'high': {
-			if (el instanceof HTMLMeterElement) {
-				const high = toInt(datum);
-				if (Number.isNaN(high)) {
-					el.removeAttribute(name);
-				} else {
-					el.high = high;
-				}
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'ismap': {
-			if (el instanceof HTMLImageElement) {
-				el.isMap = datum === '' ? true : !!datum;
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'loop': {
-			if (el instanceof HTMLAudioElement || el instanceof HTMLVideoElement) {
-				el.loop = datum === '' ? true : !!datum;
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'low': {
-			if (el instanceof HTMLMeterElement) {
-				const low = toInt(datum);
-				if (Number.isNaN(low)) {
-					el.removeAttribute(name);
-				} else {
-					el.low = low;
-				}
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'max': {
-			if (
-				el instanceof HTMLInputElement ||
-				el instanceof HTMLMeterElement ||
-				el instanceof HTMLProgressElement
-			) {
-				const max = toInt(datum);
-				if (Number.isNaN(max)) {
-					el.removeAttribute(name);
-				} else {
-					el.max = max;
-				}
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'maxlength': {
-			if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
-				const maxLength = toInt(datum);
-				if (Number.isNaN(maxLength)) {
-					el.removeAttribute(name);
-				} else {
-					el.maxLength = Math.floor(maxLength);
-				}
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'min': {
-			if (el instanceof HTMLInputElement || el instanceof HTMLMeterElement) {
-				const min = toInt(datum);
-				if (Number.isNaN(min)) {
-					el.removeAttribute(name);
-				} else {
-					el.min = min;
-				}
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'multiple': {
-			if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) {
-				el.multiple = datum === '' ? true : !!datum;
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'novalidate': {
-			if (el instanceof HTMLFormElement) {
-				el.noValidate = datum === '' ? true : !!datum;
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'open': {
-			if (el instanceof HTMLDetailsElement) {
-				el.open = datum === '' ? true : !!datum;
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			break;
-		}
-		case 'optimum': {
-			if (el instanceof HTMLMeterElement) {
-				const optimum = toInt(datum);
-				if (Number.isNaN(optimum)) {
-					el.removeAttribute(name);
-				} else {
-					el.optimum = Math.floor(optimum);
-				}
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
+			return true;
 		}
 		case 'preload': {
 			if (el instanceof HTMLAudioElement || el instanceof HTMLVideoElement) {
@@ -513,117 +374,24 @@ function set(
 			} else {
 				el.setAttribute(name, `${datum}`);
 			}
-			return;
-		}
-		case 'readonly': {
-			if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
-				el.readOnly = datum === '' ? true : !!datum;
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'required': {
-			if (
-				el instanceof HTMLInputElement ||
-				el instanceof HTMLSelectElement ||
-				el instanceof HTMLTextAreaElement
-			) {
-				el.required = datum === '' ? true : !!datum;
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'reversed': {
-			if (el instanceof HTMLOListElement) {
-				el.reversed = datum === '' ? true : !!datum;
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'rows': {
-			if (el instanceof HTMLTextAreaElement) {
-				const rows = toInt(datum);
-				if (Number.isNaN(rows)) {
-					el.removeAttribute(name);
-				} else {
-					el.rows = Math.floor(rows);
-				}
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'rowspan': {
-			if (el instanceof HTMLTableCellElement) {
-				const rowSpan = toInt(datum);
-				if (Number.isNaN(rowSpan)) {
-					el.removeAttribute(name);
-				} else {
-					el.rowSpan = Math.floor(rowSpan);
-				}
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'size': {
-			if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) {
-				const size = toInt(datum);
-				if (Number.isNaN(size)) {
-					el.removeAttribute(name);
-				} else {
-					el.size = size;
-				}
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'span': {
-			if (el instanceof HTMLTableColElement) {
-				const span = toInt(datum);
-				if (Number.isNaN(span)) {
-					el.removeAttribute(name);
-				} else {
-					el.span = span;
-				}
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
-		}
-		case 'start': {
-			if (el instanceof HTMLOListElement) {
-				const start = toInt(datum);
-				if (Number.isNaN(start)) {
-					el.removeAttribute(name);
-				} else {
-					el.start = start;
-				}
-			} else {
-				el.setAttribute(name, `${datum}`);
-			}
-			return;
+			return true;
 		}
 		case 'step': {
 			if (el instanceof HTMLInputElement) {
 				if (datum === 'any') {
 					el.step = datum;
-					break;
-				}
-				const step = toNum(datum);
-				if (Number.isNaN(step)) {
-					el.removeAttribute(name);
 				} else {
-					el.step = step.toString(10);
+					const step = toNum(datum);
+					if (Number.isNaN(step)) {
+						el.removeAttribute(name);
+					} else {
+						el.step = step.toString(10);
+					}
 				}
 			} else {
 				el.setAttribute(name, `${datum}`);
 			}
-			return;
+			return true;
 		}
 		case 'target': {
 			if (
@@ -639,59 +407,182 @@ function set(
 			} else {
 				el.setAttribute(name, `${datum}`);
 			}
-			return;
+			return true;
 		}
-		// case 'accesskey':
-		// case 'class':
-		// case 'contextmenu':
-		// case 'dropzone': // breakable support
-		// case 'id':
-		// case 'itemid':
-		// case 'itemprop':
-		// case 'itemref':
-		// case 'itemscope':
-		// case 'itemtype':
-		// case 'lang':
-		// case 'slot': // breakable support
-		// case 'style':
-		// case 'title':
-		// case 'translate': // breakable support
-		// case 'accept':
-		// case 'accept-charset':
-		// case 'action':
-		// case 'align':
-		// case 'alt':
-		// case 'cite':
-		// case 'coords':
-		// case 'datetime':
-		// case 'enctype':
-		// case 'for':
-		// case 'headers':
-		// case 'href':
-		// case 'hreflang':
-		// case 'kind':
-		// case 'label':
-		// case 'list':
-		// case 'media':
-		// case 'method':
-		// case 'name':
-		// case 'pattern':
-		// case 'placeholder':
-		// case 'poster':
-		// case 'pubdate':
-		// case 'rel':
-		// case 'sandbox':
-		// case 'src':
-		// case 'srcdoc':
-		// case 'srclang':
-		// case 'summary':
-		// case 'type':
-		// case 'usemap':
-		// case 'value':
-		// case 'wrap':
-		// and Data-* attributes
 		default: {
-			el.setAttribute(name, `${datum}`);
+			return false;
+		}
+	}
+}
+
+/**
+ * Handle boolean HTML attributes via their DOM properties.
+ * @param el
+ * @param name
+ * @param datum
+ * @returns true if handled
+ */
+function setBooleanAttrByName(
+	el: HTMLElement,
+	name: string,
+	datum: Exclude<PrimitiveDatum, null | undefined>,
+): boolean {
+	switch (name) {
+		case 'async': {
+			return setBooleanAttr(el, datum, [HTMLScriptElement], 'async', false);
+		}
+		case 'autofocus': {
+			return setBooleanAttr(
+				el,
+				datum,
+				[HTMLButtonElement, HTMLInputElement, HTMLSelectElement, HTMLTextAreaElement],
+				'autofocus',
+			);
+		}
+		case 'autoplay': {
+			return setBooleanAttr(el, datum, [HTMLAudioElement, HTMLVideoElement], 'autoplay');
+		}
+		case 'checked': {
+			return setBooleanAttr(el, datum, [HTMLInputElement], 'checked');
+		}
+		case 'controls': {
+			return setBooleanAttr(el, datum, [HTMLAudioElement, HTMLVideoElement], 'controls');
+		}
+		case 'default': {
+			return setBooleanAttr(el, datum, [HTMLTrackElement], 'default');
+		}
+		case 'defer': {
+			return setBooleanAttr(el, datum, [HTMLScriptElement], 'defer', false);
+		}
+		case 'disabled': {
+			return setBooleanAttr(
+				el,
+				datum,
+				[
+					HTMLButtonElement,
+					HTMLFieldSetElement,
+					HTMLInputElement,
+					HTMLOptGroupElement,
+					HTMLOptionElement,
+					HTMLSelectElement,
+					HTMLTextAreaElement,
+				],
+				'disabled',
+			);
+		}
+		case 'ismap': {
+			return setBooleanAttr(el, datum, [HTMLImageElement], 'isMap');
+		}
+		case 'loop': {
+			return setBooleanAttr(el, datum, [HTMLAudioElement, HTMLVideoElement], 'loop');
+		}
+		case 'multiple': {
+			return setBooleanAttr(el, datum, [HTMLInputElement, HTMLSelectElement], 'multiple');
+		}
+		case 'novalidate': {
+			return setBooleanAttr(el, datum, [HTMLFormElement], 'noValidate');
+		}
+		case 'open': {
+			return setBooleanAttr(el, datum, [HTMLDetailsElement], 'open');
+		}
+		case 'readonly': {
+			return setBooleanAttr(
+				el,
+				datum,
+				[HTMLInputElement, HTMLTextAreaElement],
+				'readOnly',
+			);
+		}
+		case 'required': {
+			return setBooleanAttr(
+				el,
+				datum,
+				[HTMLInputElement, HTMLSelectElement, HTMLTextAreaElement],
+				'required',
+			);
+		}
+		case 'reversed': {
+			return setBooleanAttr(el, datum, [HTMLOListElement], 'reversed');
+		}
+		default: {
+			return false;
+		}
+	}
+}
+
+/**
+ * Handle integer HTML attributes via their DOM properties.
+ * @param el
+ * @param name
+ * @param datum
+ * @returns true if handled
+ */
+function setIntegerAttrByName(
+	el: HTMLElement,
+	name: string,
+	datum: Exclude<PrimitiveDatum, null | undefined>,
+): boolean {
+	switch (name) {
+		case 'cols': {
+			return setIntegerAttr(el, name, datum, [HTMLTextAreaElement], 'cols');
+		}
+		case 'colspan': {
+			return setIntegerAttr(el, name, datum, [HTMLTableCellElement], 'colSpan');
+		}
+		case 'high': {
+			return setIntegerAttr(el, name, datum, [HTMLMeterElement], 'high');
+		}
+		case 'low': {
+			return setIntegerAttr(el, name, datum, [HTMLMeterElement], 'low');
+		}
+		case 'max': {
+			return setIntegerAttr(
+				el,
+				name,
+				datum,
+				[HTMLInputElement, HTMLMeterElement, HTMLProgressElement],
+				'max',
+			);
+		}
+		case 'maxlength': {
+			return setIntegerAttr(
+				el,
+				name,
+				datum,
+				[HTMLInputElement, HTMLTextAreaElement],
+				'maxLength',
+				true,
+			);
+		}
+		case 'min': {
+			return setIntegerAttr(el, name, datum, [HTMLInputElement, HTMLMeterElement], 'min');
+		}
+		case 'optimum': {
+			return setIntegerAttr(el, name, datum, [HTMLMeterElement], 'optimum', true);
+		}
+		case 'rows': {
+			return setIntegerAttr(el, name, datum, [HTMLTextAreaElement], 'rows', true);
+		}
+		case 'rowspan': {
+			return setIntegerAttr(el, name, datum, [HTMLTableCellElement], 'rowSpan', true);
+		}
+		case 'size': {
+			return setIntegerAttr(
+				el,
+				name,
+				datum,
+				[HTMLInputElement, HTMLSelectElement],
+				'size',
+			);
+		}
+		case 'span': {
+			return setIntegerAttr(el, name, datum, [HTMLTableColElement], 'span');
+		}
+		case 'start': {
+			return setIntegerAttr(el, name, datum, [HTMLOListElement], 'start');
+		}
+		default: {
+			return false;
 		}
 	}
 }
