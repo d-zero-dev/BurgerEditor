@@ -584,6 +584,24 @@ HTML文字列に変換します。
 
 DOM要素に変換します。
 
+## サブモジュールエクスポート
+
+メインの`frozenPatty`関数以外に、個別の機能をサブモジュールとしてインポートできます。
+
+| エクスポートパス                        | 説明                                                           |
+| --------------------------------------- | -------------------------------------------------------------- |
+| `@burger-editor/frozen-patty`           | メインの `frozenPatty` 関数                                    |
+| `@burger-editor/frozen-patty/get-value` | HTML要素からフィールド値を取得する `getValue` 関数             |
+| `@burger-editor/frozen-patty/set-value` | HTML要素にフィールド値を設定する `setValue`, `setContent` 関数 |
+| `@burger-editor/frozen-patty/utils`     | HTML正規化、フィールドパースなどのユーティリティ               |
+| `@burger-editor/frozen-patty/types`     | TypeScript型定義                                               |
+
+```js
+// サブモジュールの個別インポート例
+import { setValue } from '@burger-editor/frozen-patty/set-value';
+import { getValue } from '@burger-editor/frozen-patty/get-value';
+```
+
 ## ライセンス
 
 MIT
