@@ -71,22 +71,20 @@ describe('EditorUI', () => {
 	});
 
 	describe('visible', () => {
-		// NOTE: The current implementation returns !!el.hidden, which is inverted
-		// from what the method name suggests. This documents the actual behavior.
-		test('should return true when element is hidden', () => {
+		test('should return false when element is hidden', () => {
 			const el = document.createElement('div');
 			const ui = new ConcreteEditorUI('test', el);
 
 			ui.hide();
 
-			expect(ui.visible()).toBe(true);
+			expect(ui.visible()).toBe(false);
 		});
 
-		test('should return false when element is visible', () => {
+		test('should return true when element is visible', () => {
 			const el = document.createElement('div');
 			const ui = new ConcreteEditorUI('test', el);
 
-			expect(ui.visible()).toBe(false);
+			expect(ui.visible()).toBe(true);
 		});
 	});
 });

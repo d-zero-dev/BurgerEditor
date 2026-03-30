@@ -221,9 +221,7 @@ describe('ItemEditorDialog', () => {
 			expect(handler).not.toHaveBeenCalled();
 		});
 
-		test('should call handler on change event with new value and null as old value on first change', () => {
-			// NOTE: #values map is not populated on init, so the first change
-			// event always has oldValue=null regardless of the initial input value.
+		test('should call handler on change event with initial value as old value after runOnInit', () => {
 			const settings = createMockSettings('<input name="bge-title" value="old">');
 			const dialog = new ItemEditorDialog(settings);
 
@@ -238,7 +236,7 @@ describe('ItemEditorDialog', () => {
 			input.value = 'new';
 			input.dispatchEvent(new Event('change'));
 
-			expect(handler).toHaveBeenCalledWith('new', null);
+			expect(handler).toHaveBeenCalledWith('new', 'old');
 		});
 
 		test('should track old values after first change event', () => {
