@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.64](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.63...v4.0.0-alpha.64) (2026-03-30)
+
+### Bug Fixes
+
+- **core:** fix ComponentObserver.off, EditorUI.visible, and onChange init ([0513e50](https://github.com/d-zero-dev/BurgerEditor/commit/0513e505603ed4a3f5837c8681e824105935ff00))
+
 # [4.0.0-alpha.63](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.62...v4.0.0-alpha.63) (2026-03-10)
 
 ### Bug Fixes
