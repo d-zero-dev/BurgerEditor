@@ -1,49 +1,30 @@
-import type { BurgerEditorEngine } from './engine/engine.js';
-import type { BlockCatalog, BlockTemplate, CatalogItem } from './types.js';
+import type { DialogSettings } from './editor-dialog.js';
+import type { BlockCatalog, CatalogItem, BlockData } from './types.js';
 
 import { EditorDialog } from './editor-dialog.js';
 
-export class BlockCatalogDialog extends EditorDialog {
-	readonly catalog: ReadonlyMap<string, ReadonlyMap<string, CatalogItem>>;
+export interface BlockCatalogDialogSettings extends DialogSettings {
+	addBlock: (blockData: BlockData) => Promise<void>;
+}
 
-	constructor(
-		engine: BurgerEditorEngine,
-		catalog: BlockCatalog,
-		blockTemplateMap: Record<string, BlockTemplate>,
-	) {
-		super('catalog', engine, document.createElement('div'), {
+export class BlockCatalogDialog extends EditorDialog {
+	readonly catalog: ReadonlyMap<string, readonly CatalogItem[]>;
+	#addBlock: (blockData: BlockData) => Promise<void>;
+
+	constructor(catalog: BlockCatalog, settings: BlockCatalogDialogSettings) {
+		super('catalog', settings, {
 			buttons: {
 				close: 'キャンセル',
 			},
 		});
 
-		this.catalog = new Map(
-			Object.entries(catalog).map(([category, blocks]) => {
-				const blockMap = new Map(
-					Object.entries(blocks).map(([name, block]) => {
-						const blockTemplace = blockTemplateMap[name];
-						if (!blockTemplace) {
-							throw new Error(`Block "${name}" is not found.`);
-						}
+		this.catalog = new Map(Object.entries(catalog));
+		this.#addBlock = settings.addBlock;
+	}
 
-						const blockInfo: CatalogItem =
-							typeof block === 'string'
-								? {
-										label: block || name,
-										svg: blockTemplace.icon,
-									}
-								: {
-										...blockTemplace,
-										svg: blockTemplace.icon,
-										...block,
-									};
-
-						return [name, blockInfo];
-					}),
-				);
-				return [category, blockMap];
-			}),
-		);
+	async addBlock(blockData: BlockData) {
+		await this.#addBlock(blockData);
+		this.close();
 	}
 
 	override open() {

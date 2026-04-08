@@ -19,6 +19,7 @@ export default defineConfig([
 				tsconfig: './tsconfig.rollup.json',
 				define: {
 					__VERSION__: JSON.stringify(pkg.version),
+					__DEBUG__: JSON.stringify(true),
 				},
 			}),
 		],

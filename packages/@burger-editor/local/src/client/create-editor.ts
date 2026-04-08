@@ -1,13 +1,43 @@
 import type { AppType } from '../route.js';
 
-import { blocks, generalCSS, items } from '@burger-editor/blocks';
+import { generalCSS, items } from '@burger-editor/blocks';
 import { createBurgerEditorClient } from '@burger-editor/client';
+import { CSS_LAYER, type BlockCatalog } from '@burger-editor/core';
 import '@burger-editor/client/style';
 import { hc } from 'hono/client';
 
 import { $upload } from '../helpers/$upload.js';
 
+import {
+	createFrontMatterEditor,
+	type FrontMatterEditor,
+} from './front-matter-editor.js';
+
 const client = hc<AppType>(location.origin);
+
+/** Default debounce delay for Front Matter save (ms) */
+const FRONT_MATTER_SAVE_DEBOUNCE_DELAY = 500;
+
+/**
+ * Create a debounced function
+ * @param fn - Function to debounce
+ * @param delay - Delay in milliseconds
+ */
+function debounce<T extends (...args: Parameters<T>) => void>(
+	fn: T,
+	delay: number,
+): (...args: Parameters<T>) => void {
+	let timeoutId: ReturnType<typeof setTimeout> | null = null;
+	return (...args: Parameters<T>) => {
+		if (timeoutId !== null) {
+			clearTimeout(timeoutId);
+		}
+		timeoutId = setTimeout(() => {
+			fn(...args);
+			timeoutId = null;
+		}, delay);
+	};
+}
 
 /**
  *
@@ -21,57 +51,144 @@ export async function createEditor() {
 		console.log('config', config);
 	}
 
-	const mainInput = document.getElementById('main') as HTMLInputElement;
+	const mainInput = document.getElementById('main') as HTMLInputElement | null;
+
+	if (mainInput === null) {
+		// eslint-disable-next-line no-console
+		console.warn('Editable area not found');
+		return;
+	}
+
+	// Initialize Front Matter editor
+	const frontMatterContainer =
+		document.querySelector<HTMLElement>('.front-matter-editor');
+	const frontMatterInput = document.getElementById(
+		'front-matter',
+	) as HTMLInputElement | null;
+	const hasFrontMatterInput = document.getElementById(
+		'has-front-matter',
+	) as HTMLInputElement | null;
+
+	let frontMatterEditor: FrontMatterEditor | null = null;
+
+	/**
+	 * Save content to server
+	 * @param content
+	 * @param frontMatterData
+	 * @param originalFrontMatter
+	 */
+	async function saveContent(
+		content: string,
+		frontMatterData?: Record<string, unknown>,
+		originalFrontMatter?: string,
+	) {
+		const res = await client.api.content.$post({
+			json: {
+				path: location.pathname,
+				content,
+				frontMatter: frontMatterData,
+				originalFrontMatter,
+			},
+		});
+
+		const json = await res.json();
+		if (!json.saved) {
+			// eslint-disable-next-line no-console
+			console.error(`Failed to save: ${json.path}`);
+			return;
+		}
+
+		// eslint-disable-next-line no-console
+		console.log(
+			`Saved: ${json.path}${json.hasFrontMatter ? ' (with Front Matter)' : ''}`,
+		);
+	}
+
+	/**
+	 * Debounced save for Front Matter changes
+	 */
+	const debouncedSaveFrontMatter = debounce(() => {
+		if (!frontMatterEditor) {
+			return;
+		}
+		const content = mainInput.value;
+		const frontMatterData = frontMatterEditor.getData();
+		const originalFrontMatter = frontMatterEditor.getOriginalFrontMatter();
+		void saveContent(content, frontMatterData, originalFrontMatter);
+	}, FRONT_MATTER_SAVE_DEBOUNCE_DELAY);
+
+	if (frontMatterContainer && frontMatterInput) {
+		const initialData = JSON.parse(frontMatterInput.value || '{}') as Record<
+			string,
+			unknown
+		>;
+		const hasFrontMatter = hasFrontMatterInput?.value === 'true';
+
+		frontMatterEditor = createFrontMatterEditor({
+			container: frontMatterContainer,
+			initialData,
+			hasFrontMatter,
+			onUpdated: debouncedSaveFrontMatter,
+		});
+
+		if (__DEBUG__) {
+			// eslint-disable-next-line no-console
+			console.log('Front Matter editor initialized:', {
+				initialData,
+				hasFrontMatter,
+			});
+		}
+	}
+
+	const catalog: BlockCatalog = config.enableImportBlock
+		? {
+				...config.catalog,
+				import: [
+					{
+						label: 'インポート',
+						definition: {
+							name: 'import',
+							containerProps: {
+								type: 'inline',
+								immutable: true,
+							},
+							items: [['import']],
+						},
+					},
+				],
+			}
+		: config.catalog;
 
 	await createBurgerEditorClient({
 		root: '.editor',
 		config: {
 			...config,
-			stylesheets: ['/client.css', ...config.stylesheets],
+			stylesheets: [
+				{
+					path: '/client.css',
+					layer: CSS_LAYER.ui,
+				},
+				...config.stylesheets.map((stylesheet) => ({
+					path: stylesheet,
+				})),
+			],
 		},
-		blocks,
 		items,
-		generalCSS,
-		catalog: {
-			'見出し / テキスト / テキスト+画像': {
-				title: '大見出し',
-				title2: '中見出し',
-				wysiwyg: '1カラムテキスト',
-				wysiwyg2: '2カラムテキスト',
-				'text-float-image1': '画像右寄せ: テキスト回り込み',
-				'text-float-image2': '画像左寄せ: テキスト回り込み',
-				'text-image1': '画像右寄せ: テキスト回り込み無し',
-				'text-image2': '画像左寄せ: テキスト回り込み無し',
-			},
-			画像: {
-				image: '画像1列',
-				image2: '画像2列',
-				image3: '画像3列',
-				image4: '画像4列',
-				image5: '画像5列',
-			},
-			'画像+テキスト': {
-				'image-text2': '画像2列: テキスト付',
-				'image-text3': '画像3列: テキスト付',
-				'image-text4': '画像4列: テキスト付',
-				'image-text5': '画像5列: テキスト付',
-			},
-			ボタン: {
-				button: 'ボタン',
-				button2: 'ボタン x2',
-				button3: 'ボタン x3',
-				'download-file': 'ファイルダウンロード',
-				'download-file2': 'ファイルダウンロード x2',
-				'download-file3': 'ファイルダウンロード x3',
-			},
-			その他: {
-				table: '2カラムテーブル',
-				'google-maps': 'Google Maps',
-				youtube: 'YouTube',
-				hr: '区切り線',
-			},
-		},
+		catalog,
 		initialContents: mainInput.value,
+		generalCSS,
+		healthCheck: config.healthCheck
+			? {
+					...config.healthCheck,
+					async checkHealth() {
+						const response = await client.api.health.$get().catch((error) => error);
+						if (response instanceof Error) {
+							return false;
+						}
+						return response.ok;
+					},
+				}
+			: undefined,
 		async onUpdated(content) {
 			if (mainInput.value === content) {
 				return;
@@ -79,22 +196,11 @@ export async function createEditor() {
 
 			mainInput.value = content;
 
-			const res = await client.api.content.$post({
-				json: {
-					path: location.pathname,
-					content,
-				},
-			});
+			// Prepare Front Matter data if editor exists
+			const frontMatterData = frontMatterEditor?.getData();
+			const originalFrontMatter = frontMatterEditor?.getOriginalFrontMatter();
 
-			const json = await res.json();
-			if (!json.saved) {
-				// eslint-disable-next-line no-console
-				console.error(`Failed to save: ${json.path}`);
-				return;
-			}
-
-			// eslint-disable-next-line no-console
-			console.log(`Saved: ${json.path}`);
+			await saveContent(content, frontMatterData, originalFrontMatter);
 		},
 		fileIO: {
 			async getFileList(fileType, options) {

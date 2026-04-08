@@ -1,6 +1,9 @@
 name: Test
 
 on:
+  push:
+    branches:
+      - dev
   pull_request:
     branches:
       - dev
@@ -11,29 +14,54 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
-          node-version: 22
+          node-version: 24
+
+      - name: Enable Corepack and setup Yarn v4
+        run: |
+          corepack enable
+          corepack prepare $(node -p "require('./package.json').packageManager") --activate
+          yarn --version
 
       - name: Cache dependencies
-        id: cache-depends
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
         with:
-          path: '**/node_modules'
-          key: cache-${{ hashFiles('yarn.lock') }}
+          path: .yarn/cache
+          key: yarn-cache-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-cache-
 
       - name: Install dependencies
-        if: steps.cache-depends.outputs.cache-hit != 'true'
-        run: yarn --frozen-lockfile --check-files
+        run: yarn install --immutable
+
+      - name: Cache Playwright browsers
+        id: cache-playwright-browsers
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ hashFiles('yarn.lock') }}
+
+      - name: Install Playwright browsers
+        if: steps.cache-playwright-browsers.outputs.cache-hit != 'true'
+        run: |
+          yarn playwright install chromium --with-deps
+          sudo apt-get install -y fonts-noto-cjk
 
       - name: Build
         run: yarn build
 
-      - name: List
-        run: yarn list
+      - name: Lint
+        run: yarn lint
 
       - name: Test
         run: yarn test
+
+      - name: Upload VR diff images on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vr-diff-images
+          path: packages/@burger-editor/client/src/__tests__/vr/__snapshots__/**/*-diff.png

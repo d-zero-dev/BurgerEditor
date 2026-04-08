@@ -18,8 +18,9 @@ export function Layout({ children, lang }: PropsWithChildren<Props>) {
 				<link rel="stylesheet" href="/client.css" />
 				<link rel="stylesheet" href="/app.css" />
 				<script
-					src="https://unpkg.com/invokers-polyfill@latest/invoker.min.js"
-					type="module"></script>
+					src="https://cdn.jsdelivr.net/npm/invokers-polyfill@0.5.2/index.min.js"
+					type="module"
+					async></script>
 				<script src="/client.js" type="module"></script>
 			</head>
 			<body>{children}</body>

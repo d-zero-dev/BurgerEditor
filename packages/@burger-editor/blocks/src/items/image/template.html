@@ -1,7 +1,9 @@
-<div data-bge=":style, :scale, :scale-type, :aspect-ratio" data-bge-scale="100" data-bge-scale-type="container" data-bge-aspect-ratio="unset" style="--css-width: 100cqi; --object-fit: cover; --aspect-ratio: unset">
+<div data-bge=":style, :scale, :scale-type, :aspect-ratio" data-bge-scale="100" data-bge-scale-type="container" data-bge-aspect-ratio="revert" style="--css-width: 100cqi; --object-fit: cover; --aspect-ratio: revert">
 	<figure>
 		<div data-bge=":node, :href, :target, :command">
-			<img src="%sampleImagePath%" alt="サンプル画像" data-bge="path:src, :srcset, :alt, :width, :height, :loading" width="400" height="300" loading="lazy" />
+			<picture data-bge-list>
+				<img src="%sampleImagePath%" alt="サンプル画像" data-bge="path:src, :alt, :width, :height, :loading, :media" width="400" height="300" loading="lazy" />
+			</picture>
 		</div>
 		<figcaption data-bge="caption"></figcaption>
 	</figure>

@@ -1,9 +1,12 @@
 import type { BurgerBlock } from './block/block.js';
+import type { ContainerProps } from './block/types.js';
 import type { BurgerEditorEngine } from './engine/engine.js';
+import type { HealthCheckFunction } from './health-monitor.js';
 import type { ItemEditorService } from './item/item-editor-service.js';
 import type { Item } from './item/item.js';
 import type { ItemData, ItemSeed } from './item/types.js';
 import type { ItemEditorDialog } from './item-editor-dialog.js';
+import type { Mergeable } from '@burger-editor/utils';
 
 export interface BurgerEditorEngineOptions {
 	readonly root: string;
@@ -15,17 +18,30 @@ export interface BurgerEditorEngineOptions {
 				readonly main: string;
 				readonly draft?: string;
 		  };
-	readonly blocks: Record<string, BlockTemplate>;
+	readonly blocks?: Record<string, BlockDefinition>;
 	readonly items: Record<string, ItemSeed>;
 	readonly catalog: BlockCatalog;
 	readonly generalCSS: string;
 	readonly ui: UIOptions;
-	readonly blockMenu: UICreator;
+	readonly blockMenu: BlockMenuCreator;
+	readonly initialInsertionButton?: InitialInsertionButtonCreator;
+	readonly dialogShell?: EditorDialogShellCreator;
+	readonly editableAreaShell?: EditableAreaShellCreator;
 	readonly storageKey?: {
 		readonly blockClipboard?: string;
 	};
+	readonly defineCustomElement?: (context: {
+		readonly className?: string;
+		readonly experimental?: Config['experimental'];
+	}) => void | Promise<void>;
 	readonly onUpdated?: (main: string, draft?: string) => void | Promise<void>;
 	readonly fileIO?: FileAPI;
+	readonly healthCheck?: {
+		readonly enabled?: boolean;
+		readonly interval?: number;
+		readonly retryCount?: number;
+		readonly checkHealth?: HealthCheckFunction;
+	};
 }
 
 export interface UIOptions {
@@ -36,6 +52,7 @@ export interface UIOptions {
 	readonly imageUploader?: UICreator;
 	readonly fileUploader?: UICreator;
 	readonly preview?: UICreator;
+	readonly tabs?: UICreator;
 	readonly tableEditor?: UICreator;
 }
 
@@ -48,23 +65,86 @@ export interface UICreator {
 	};
 }
 
-export interface BlockCatalog {
-	readonly [category: string]: {
-		readonly [block: string]: CatalogItem | string;
+export interface BlockMenuCreator {
+	(
+		container: HTMLElement,
+		engine: BurgerEditorEngine,
+	): {
+		hide(): void;
+		readonly cleanUp: () => void;
 	};
 }
 
+export interface InitialInsertionButtonCreator {
+	(
+		container: HTMLElement,
+		onInsert: () => void,
+	): {
+		readonly cleanUp: () => void;
+	};
+}
+
+export interface EditorDialogShell {
+	readonly dialogElement: HTMLDialogElement;
+	readonly containerElement: HTMLElement;
+	readonly formElement: HTMLFormElement;
+}
+
+export interface EditorDialogShellCreator {
+	(options: {
+		readonly name: string;
+		readonly buttons?: {
+			readonly close?: string;
+			readonly complete?: string;
+		};
+	}): EditorDialogShell;
+}
+
+export interface EditableAreaShell {
+	readonly viewNode: HTMLElement;
+	readonly frameElement: HTMLIFrameElement;
+	readonly sourceTextarea: HTMLTextAreaElement;
+	readonly containerElement: HTMLElement;
+}
+
+export interface EditableAreaShellCreator {
+	(options: {
+		readonly type: string;
+		readonly initialContent: string;
+		readonly stylesheets: readonly { readonly path: string; readonly id: string }[];
+		readonly classList: readonly string[];
+	}): EditableAreaShell;
+}
+
+export interface BlockCatalog {
+	readonly [category: string]: ReadonlyArray<CatalogItem>;
+}
 export interface CatalogItem {
 	readonly label: string;
-	readonly img?: string;
-	readonly svg?: string;
+	readonly definition: BlockDefinition;
 }
 
 export interface Config {
 	readonly classList: readonly string[];
-	readonly stylesheets: readonly string[];
+	readonly stylesheets: readonly {
+		readonly path: string;
+		readonly layer?: string;
+	}[];
 	readonly sampleImagePath: string;
+	readonly sampleFilePath: string;
 	readonly googleMapsApiKey: string | null;
+	readonly experimental?: {
+		readonly itemOptions?: {
+			readonly wysiwyg?: {
+				readonly enableTextOnlyMode?: boolean;
+			};
+			readonly button?: {
+				readonly kinds?: readonly Mergeable<SelectableValue>[];
+				readonly beforeIcons?: readonly Mergeable<SelectableValue>[];
+				readonly afterIcons?: readonly Mergeable<SelectableValue>[];
+			};
+		};
+	};
 }
 
 export interface Actions {
@@ -98,6 +178,13 @@ export interface Actions {
 		readonly x: number;
 		readonly y: number;
 		readonly marginBlockEnd: number;
+	};
+	'select-tab-in-item-editor': {
+		readonly index: number;
+	};
+	// Use on test
+	'update-css-width': {
+		readonly cssWidth: string;
 	};
 }
 
@@ -167,16 +254,43 @@ export interface ItemEditorCustomFunctions<
 	) => unknown;
 }
 
-export interface BlockTemplate {
+export interface BlockData {
 	readonly name: string;
-	readonly template: string;
-	readonly icon: string;
+	readonly containerProps: Partial<ContainerProps>;
+	readonly classList?: readonly string[];
+	readonly style?: Record<string, string>;
+	readonly id?: string | null;
+	readonly items: BlockItemStructure;
+}
+
+export interface BlockDefinition extends Omit<BlockData, 'id'> {
+	readonly img?: string;
+	readonly svg?: string;
+}
+
+export type BlockItemStructure = ReadonlyArray<ReadonlyArray<BlockItem>>;
+
+export type BlockItem =
+	| string // "xxx" - アイテム名のみ
+	| {
+			readonly name: string;
+			readonly data?: ItemData;
+	  }; // { name: "xxx", data?: ... } - アイテム名と初期データ
+
+/**
+ * 選択可能な値のベース型
+ */
+export interface SelectableValue extends Record<string, unknown> {
+	readonly value: string;
+	readonly label: string;
 }
 
 export interface BurgerEditorEventMap {
 	'bge:saved': { main: string; draft?: string };
 	'bge:switch-content': { content: 'main' | 'draft' };
 	'bge:block-change': { readonly block: BurgerBlock };
+	'bge:server-online': { timestamp: number };
+	'bge:server-offline': { timestamp: number };
 }
 
 declare global {
@@ -184,5 +298,7 @@ declare global {
 		'bge:saved': CustomEvent<BurgerEditorEventMap['bge:saved']>;
 		'bge:switch-content': CustomEvent<BurgerEditorEventMap['bge:switch-content']>;
 		'bge:block-change': CustomEvent<BurgerEditorEventMap['bge:block-change']>;
+		'bge:server-online': CustomEvent<BurgerEditorEventMap['bge:server-online']>;
+		'bge:server-offline': CustomEvent<BurgerEditorEventMap['bge:server-offline']>;
 	}
 }

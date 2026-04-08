@@ -8,5 +8,13 @@
 		"declarationMap": true
 	},
 	"include": ["./src/**/*"],
-	"exclude": ["node_modules", "dist", "server", "./src/**/*.spec.ts", "./src/client/**/*"]
+	"exclude": [
+		"node_modules",
+		"dist",
+		"import",
+		"server",
+		"./src/**/*.spec.ts",
+		"./src/client/**/*",
+		"./src/import/**/*"
+	]
 }

@@ -1,53 +1,226 @@
-import type { EditableArea } from '../editable-area.js';
+import type { ContainerType } from '../block/types.js';
 
-const PREFIX = '--bge-options-';
+import {
+	BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX,
+	BLOCK_OPTION_SCOPE_SELECTOR,
+} from '../const.js';
+import { comparePriority } from '../utils/compare-priority.js';
 
-type CustomPropertyCategories = Map<string, Map<string, CustomProperty>>;
+type CustomPropertyCategories = Map<string, CustomPropertyCategory>;
+
+type CustomPropertyCategory = {
+	readonly id: string;
+	readonly name: string;
+	readonly properties: CustomPropertyMap;
+};
 
 type CustomPropertyMap = Map<string, CustomProperty>;
 
 type CustomProperty = {
 	value: string;
+	priority: readonly number[];
 	isDefault: boolean;
 };
 
-/**
- *
- * @param editorArea
- */
-export function getCustomProperties(editorArea: EditableArea): CustomPropertyCategories {
-	const categories: CustomPropertyCategories = new Map();
-	const defaultValues = new Map<string, string>();
+interface CSSRuleWithLayerPriority {
+	readonly rule: CSSStyleRule;
+	readonly layers: readonly LayerPriority[];
+	readonly scopeRoot: string | null;
+}
 
-	// From iframe scope
-	const CSSStyleRule =
-		editorArea.containerElement.ownerDocument.defaultView?.CSSStyleRule;
-	if (CSSStyleRule === undefined) {
-		throw new Error('CSSStyleRule is not available');
+interface LayerPriority {
+	/** Layer declaration order list (diagnostic — not consumed by priority logic) */
+	readonly priorityList: readonly string[];
+	/** Layer name (diagnostic — not consumed by priority logic) */
+	readonly layerName: string | null;
+	readonly priority: number;
+}
+
+/**
+ * Get all custom properties from document
+ * @param scope - Document to scan for CSS custom properties
+ * @param containerType - Container type to filter container-scoped properties (prefixed with `_`)
+ * @returns Categorized map of custom properties grouped by property name
+ */
+export function getCustomProperties(
+	scope: Document,
+	containerType?: ContainerType,
+): CustomPropertyCategories {
+	const categories: CustomPropertyCategories = new Map();
+	const defaultValues = new Map<string, CustomProperty>();
+	const nestedDefaultValues = new Map<string, CustomProperty>();
+
+	searchCustomProperty(scope, (cssProperty, value, layers, isNested) => {
+		if (!cssProperty.startsWith(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX)) {
+			return;
+		}
+
+		const [propName, key] = cssProperty
+			.slice(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX.length)
+			.split('--');
+		if (!propName) {
+			return;
+		}
+
+		if (propName.startsWith('_') && !propName.startsWith(`_${containerType}_`)) {
+			return;
+		}
+
+		const currentMap = categories.get(propName) ?? {
+			id: propName,
+			name: propName.replace(/^_[a-z]+_/, ''),
+			properties: new Map() as CustomPropertyMap,
+		};
+
+		if (key) {
+			const newProperty: CustomProperty = {
+				value,
+				isDefault: false,
+				priority: layers.map((layer) => layer.priority),
+			};
+
+			const currentProperty = currentMap.properties.get(key);
+
+			currentMap.properties.set(
+				key,
+				currentProperty
+					? compareCustomPropertyByLayerPriority(currentProperty, newProperty)
+					: newProperty,
+			);
+
+			categories.set(propName, currentMap);
+		} else {
+			const newDefaultValue: CustomProperty = {
+				value,
+				isDefault: true,
+				priority: layers.map((layer) => layer.priority),
+			};
+
+			// Direct selectors take precedence over nested selectors for default.
+			// Nested selectors (e.g. `.parent [data-bge-container]`) are context-specific
+			// overrides; they are used as fallback when no direct selector defines a default.
+			const targetMap = isNested ? nestedDefaultValues : defaultValues;
+			const currentDefaultValue = targetMap.get(propName);
+
+			targetMap.set(
+				propName,
+				currentDefaultValue
+					? compareCustomPropertyByLayerPriority(currentDefaultValue, newDefaultValue)
+					: newDefaultValue,
+			);
+		}
+	});
+
+	// Filter out disabled properties declared with empty value (e.g. `--prop: ;`)
+	// CSSOM getPropertyValue() returns ' ' for `--prop: ;`, which becomes '' after trim().
+	// Note: `--prop:;` (no space) is dropped by current browsers (parse error).
+	// @see https://drafts.csswg.org/css-variables-2/#defining-variables
+	// @see https://github.com/w3c/csswg-drafts/issues/774
+	for (const propList of categories.values()) {
+		for (const [key, customProperty] of propList.properties.entries()) {
+			if (customProperty.value.trim() === '') {
+				propList.properties.delete(key);
+			}
+		}
 	}
 
-	for (const styleSheet of editorArea.containerElement.ownerDocument.styleSheets) {
+	// Merge nested defaults: use nested default when no direct default exists,
+	// or when the nested default has higher cascade layer priority.
+	for (const [category, nestedProperty] of nestedDefaultValues.entries()) {
+		const directProperty = defaultValues.get(category);
+		if (directProperty) {
+			// Compare by layer priority; on equal priority, direct selector wins
+			const winner = compareCustomPropertyByLayerPriority(nestedProperty, directProperty);
+			defaultValues.set(category, winner);
+		} else {
+			defaultValues.set(category, nestedProperty);
+		}
+	}
+
+	for (const [category, property] of defaultValues.entries()) {
+		const currentMap = categories.get(category);
+
+		if (!currentMap) {
+			continue;
+		}
+
+		for (const [key, customProperty] of currentMap.properties.entries()) {
+			if (
+				property.value.trim() ===
+				`var(${BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX}${category}--${key})`
+			) {
+				customProperty.isDefault = true;
+			}
+		}
+	}
+
+	return categories;
+}
+
+/**
+ * Get a single custom property value from document
+ * @param scope - Document to scan for CSS custom properties
+ * @param property - Property name or pattern to match against
+ * @returns The property value with the highest cascade priority, or `null` if not found
+ */
+export function getCustomProperty(
+	scope: Document,
+	property: string | RegExp,
+): string | null {
+	let resultValue: string | null = null;
+	let resultPriority: readonly number[] = [];
+
+	searchCustomProperty(scope, (cssProperty, value, layers) => {
+		const matches =
+			property instanceof RegExp ? property.test(cssProperty) : cssProperty === property;
+		if (!matches) {
+			return;
+		}
+
+		const newPriority = layers.map((l) => l.priority);
+		if (resultValue == null || comparePriority(resultPriority, newPriority) <= 0) {
+			resultValue = value;
+			resultPriority = newPriority;
+		}
+	});
+
+	return resultValue;
+}
+
+/**
+ * Collect the global top-level layer order across all stylesheets in the document.
+ *
+ * CSS cascade layers are ordered globally across the entire document, not per-stylesheet.
+ * This function mirrors the browser's layer ordering algorithm:
+ * - Pass 1: Collect layers declared in `@layer` statement rules (first-occurrence wins)
+ * - Pass 2: Append layers that appear only in `@layer` block rules
+ *
+ * Cross-origin stylesheets that throw `SecurityError` are silently skipped.
+ * @see {@link https://www.w3.org/TR/css-cascade-5/#layer-ordering CSS Cascading and Inheritance Level 5 §6.4.3 Layer Ordering}
+ * > "Cascade layers are sorted by the order in which they first are declared,
+ * > with nested layers grouped within their parent layers before any unlayered rules."
+ * @see {@link https://www.w3.org/TR/css-cascade-5/#layer-empty CSS Cascading and Inheritance Level 5 §6.4.4.2 Declaring Without Styles}
+ * @param scope - Document to scan
+ * @returns Ordered array of top-level layer names
+ */
+function collectGlobalTopLevelLayerOrder(scope: Document): readonly string[] {
+	const CSSLayerStatementRule = scope.defaultView?.CSSLayerStatementRule;
+	const CSSLayerBlockRule = scope.defaultView?.CSSLayerBlockRule;
+
+	if (CSSLayerStatementRule === undefined || CSSLayerBlockRule === undefined) {
+		return [];
+	}
+
+	const allLayerNames: string[] = [];
+
+	// Pass 1: Collect layers declared in @layer statements (explicit order takes precedence)
+	for (const styleSheet of scope.styleSheets) {
 		try {
-			for (const cssRule of styleSheet.cssRules) {
-				if (cssRule instanceof CSSStyleRule && cssRule.selectorText === ':root') {
-					for (const cssProperty of cssRule.style) {
-						if (cssProperty.startsWith(PREFIX)) {
-							const [type, key] = cssProperty.slice(PREFIX.length).split('-');
-							if (!type) {
-								continue;
-							}
-
-							const currentMap: CustomPropertyMap = categories.get(type) ?? new Map();
-
-							if (key) {
-								const value = cssRule.style.getPropertyValue(cssProperty);
-								currentMap.set(key, { value, isDefault: false });
-							} else {
-								const value = cssRule.style.getPropertyValue(cssProperty);
-								defaultValues.set(type, value);
-							}
-
-							categories.set(type, currentMap);
+			for (const rule of styleSheet.cssRules) {
+				if (rule instanceof CSSLayerStatementRule) {
+					for (const name of rule.nameList) {
+						if (!allLayerNames.includes(name)) {
+							allLayerNames.push(name);
 						}
 					}
 				}
@@ -60,19 +233,252 @@ export function getCustomProperties(editorArea: EditableArea): CustomPropertyCat
 		}
 	}
 
-	for (const [category, value] of defaultValues.entries()) {
-		const currentMap = categories.get(category);
+	// Pass 2: Append layers that appear only in @layer block rules (first-occurrence after statements)
+	for (const styleSheet of scope.styleSheets) {
+		try {
+			for (const rule of styleSheet.cssRules) {
+				if (rule instanceof CSSLayerBlockRule && !allLayerNames.includes(rule.name)) {
+					allLayerNames.push(rule.name);
+				}
+			}
+		} catch (error) {
+			if (error instanceof Error && error.name === 'SecurityError') {
+				continue;
+			}
+			throw error;
+		}
+	}
 
-		if (!currentMap) {
-			continue;
+	return allLayerNames;
+}
+
+/**
+ * Get all CSSStyleRule from CSSRule array recursively
+ * @param rules - CSSRule array
+ * @param layers - Accumulated layer priority chain from parent rules
+ * @param scope - Document providing CSSOM constructors
+ * @param scopeRoot - Selector from enclosing `@scope` rule, if any
+ * @param topLevelLayerOrder - Global layer order from collectGlobalTopLevelLayerOrder (top-level calls only)
+ * @returns CSSStyleRule array
+ */
+function getStyleRules(
+	rules: CSSRuleList,
+	layers: readonly LayerPriority[],
+	scope: Document,
+	scopeRoot: string | null = null,
+	topLevelLayerOrder?: readonly string[],
+): readonly CSSRuleWithLayerPriority[] {
+	const CSSStyleRule = scope.defaultView?.CSSStyleRule;
+	if (CSSStyleRule === undefined) {
+		throw new Error('CSSStyleRule is not available');
+	}
+
+	const CSSLayerBlockRule = scope.defaultView?.CSSLayerBlockRule;
+	if (CSSLayerBlockRule === undefined) {
+		throw new Error('CSSLayerBlockRule is not available');
+	}
+
+	const CSSLayerStatementRule = scope.defaultView?.CSSLayerStatementRule;
+	if (CSSLayerStatementRule === undefined) {
+		throw new Error('CSSLayerStatementRule is not available');
+	}
+
+	const CSSScopeRule = scope.defaultView?.CSSScopeRule;
+
+	// Build unified layer order:
+	// - When topLevelLayerOrder is provided (top-level call), use it as the base and append any local-only names
+	// - When not provided (recursive call for nested layers), compute locally from this rule list
+	const allLayerNames: string[] = topLevelLayerOrder ? [...topLevelLayerOrder] : [];
+	if (!topLevelLayerOrder) {
+		// Pass 1: Collect layers declared in @layer statements (explicit order takes precedence)
+		for (const rule of rules) {
+			if (rule instanceof CSSLayerStatementRule) {
+				for (const name of rule.nameList) {
+					if (!allLayerNames.includes(name)) {
+						allLayerNames.push(name);
+					}
+				}
+			}
+		}
+	}
+	// Pass 2: Append layers that appear only in @layer block rules (first-occurrence after statements)
+	for (const rule of rules) {
+		if (rule instanceof CSSLayerBlockRule && !allLayerNames.includes(rule.name)) {
+			allLayerNames.push(rule.name);
+		}
+	}
+	const reversedLayerNames = allLayerNames.toReversed();
+
+	const styleRules: CSSRuleWithLayerPriority[] = [];
+
+	for (const rule of rules) {
+		if (rule instanceof CSSStyleRule) {
+			styleRules.push(
+				{
+					rule,
+					layers,
+					scopeRoot,
+				},
+				...getStyleRules(rule.cssRules, layers, scope, scopeRoot),
+			);
 		}
 
-		for (const [key, customProperty] of currentMap.entries()) {
-			if (value === `var(--bge-options-${category}-${key})`) {
-				customProperty.isDefault = true;
+		if (rule instanceof CSSLayerBlockRule) {
+			const layerName = rule.name;
+			const reversedIndex = reversedLayerNames.indexOf(layerName);
+			const priority = Math.max(reversedIndex, 0);
+
+			styleRules.push(
+				...getStyleRules(
+					rule.cssRules,
+					[
+						...layers,
+						{
+							priorityList: allLayerNames,
+							layerName,
+							priority: 1 + priority,
+						},
+					],
+					scope,
+					scopeRoot,
+				),
+			);
+		}
+
+		if (CSSScopeRule && rule instanceof CSSScopeRule) {
+			const start = 'start' in rule && typeof rule.start === 'string' ? rule.start : null;
+			styleRules.push(...getStyleRules(rule.cssRules, layers, scope, start));
+		}
+	}
+
+	return styleRules;
+}
+
+/**
+ * Search all stylesheets for custom properties on the block option scope selector
+ * @param scope - Document to scan
+ * @param found - Callback invoked for each custom property found
+ */
+function searchCustomProperty(
+	scope: Document,
+	found: (
+		property: string,
+		value: string,
+		layers: readonly LayerPriority[],
+		isNested: boolean,
+	) => void,
+) {
+	const globalLayerOrder = collectGlobalTopLevelLayerOrder(scope);
+
+	for (const styleSheet of scope.styleSheets) {
+		try {
+			const styleRules = getStyleRules(
+				styleSheet.cssRules,
+				[],
+				scope,
+				null,
+				globalLayerOrder,
+			);
+
+			for (const cssRule of styleRules) {
+				const rawSelector = cssRule.rule.selectorText.trim();
+				const selector = rawSelector.replace(/^&/, '').trim();
+				if (
+					selector === BLOCK_OPTION_SCOPE_SELECTOR ||
+					(selector === ':scope' && cssRule.scopeRoot === BLOCK_OPTION_SCOPE_SELECTOR)
+				) {
+					// Detect nested selectors: `& [data-bge-container]` has a parent context
+					const isNested = rawSelector !== selector;
+					for (const cssProperty of cssRule.rule.style) {
+						if (!cssProperty.startsWith('--')) {
+							continue;
+						}
+						const value = cssRule.rule.style.getPropertyValue(cssProperty);
+						found(cssProperty, value, cssRule.layers, isNested);
+					}
+				}
+			}
+		} catch (error) {
+			if (error instanceof Error && error.name === 'SecurityError') {
+				continue;
+			}
+			throw error;
+		}
+	}
+}
+
+/**
+ * Get repeat-min-inline-size variant definitions from document
+ * @param scope - Document to scan for `--bge-repeat-min-inline-size` variants
+ * @returns Category containing variant properties, or `null` if no variants found
+ */
+export function getRepeatMinInlineSizeVariants(
+	scope: Document,
+): CustomPropertyCategory | null {
+	const PREFIX = '--bge-repeat-min-inline-size';
+	const properties: CustomPropertyMap = new Map();
+	const baseRef: { value: string | null; priority: readonly number[] } = {
+		value: null,
+		priority: [],
+	};
+
+	searchCustomProperty(scope, (cssProperty, value, layers) => {
+		if (cssProperty === PREFIX) {
+			const newPriority = layers.map((l) => l.priority);
+			if (!baseRef.value || comparePriority(baseRef.priority, newPriority) <= 0) {
+				baseRef.value = value;
+				baseRef.priority = newPriority;
+			}
+		} else if (cssProperty.startsWith(PREFIX + '--')) {
+			const key = cssProperty.slice((PREFIX + '--').length);
+			const newProperty: CustomProperty = {
+				value,
+				priority: layers.map((l) => l.priority),
+				isDefault: false,
+			};
+			const existing = properties.get(key);
+			properties.set(
+				key,
+				existing
+					? compareCustomPropertyByLayerPriority(existing, newProperty)
+					: newProperty,
+			);
+		}
+	});
+
+	if (properties.size === 0) return null;
+
+	// デフォルト判定: var(--bge-repeat-min-inline-size--{key}) を参照しているか
+	if (baseRef.value) {
+		const match = baseRef.value.match(/--bge-repeat-min-inline-size--([^)]+)/);
+		const defaultKey = match?.[1]?.trim();
+		if (defaultKey) {
+			const prop = properties.get(defaultKey);
+			if (prop) {
+				properties.set(defaultKey, { ...prop, isDefault: true });
 			}
 		}
 	}
 
-	return categories;
+	return { id: 'repeat-min-inline-size', name: 'repeat-min-inline-size', properties };
+}
+
+/**
+ * Compare custom property by layer priority
+ *
+ * - レイヤーの数が少ないほど優先度が高い
+ * - レイヤーの数が同じ場合は、レイヤーの優先度の値が小さいほど優先度が高い
+ * - 全てのレイヤーの優先度が同じ場合は、bを返す
+ * @param a - First candidate property
+ * @param b - Second candidate property (wins on equal priority)
+ */
+function compareCustomPropertyByLayerPriority(
+	a: CustomProperty,
+	b: CustomProperty,
+): CustomProperty {
+	const result = comparePriority(a.priority, b.priority);
+	if (result === 1) {
+		return a;
+	}
+	return b;
 }

@@ -8,8 +8,10 @@ import path from 'node:path';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 
+import { HEALTH_CHECK_END_POINT } from './constants.js';
 import { log } from './helpers/debug.js';
 import { loadContent, saveContent } from './helpers/edit-content.js';
+import { NoEditableAreaError } from './helpers/no-editable-area-error.js';
 import { defaultConfig } from './model/default-config.js';
 import { FileListManager } from './model/file-list-manager.js';
 import { App } from './view/app.js';
@@ -19,6 +21,8 @@ const clientFileDir = path.resolve(import.meta.dirname, '..', 'dist');
 const apiSchema = z.object({
 	path: z.string(),
 	content: z.string(),
+	frontMatter: z.record(z.string(), z.unknown()).optional(),
+	originalFrontMatter: z.string().optional(),
 });
 
 /**
@@ -31,22 +35,27 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 		image: new FileListManager(
 			userConfig.filesDir.image.serverPath,
 			userConfig.filesDir.image.clientPath,
+			userConfig.sampleImagePath,
 		),
 		pdf: new FileListManager(
 			userConfig.filesDir.pdf.serverPath,
 			userConfig.filesDir.pdf.clientPath,
+			userConfig.sampleFilePath,
 		),
 		video: new FileListManager(
 			userConfig.filesDir.video.serverPath,
 			userConfig.filesDir.video.clientPath,
+			userConfig.sampleFilePath,
 		),
 		audio: new FileListManager(
 			userConfig.filesDir.audio.serverPath,
 			userConfig.filesDir.audio.clientPath,
+			userConfig.sampleFilePath,
 		),
 		other: new FileListManager(
 			userConfig.filesDir.other.serverPath,
 			userConfig.filesDir.other.clientPath,
+			userConfig.sampleFilePath,
 		),
 	} as const;
 
@@ -143,14 +152,33 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 		// API
 		//
 		// ------------------------------------------------------------------------------------------
+		.get(HEALTH_CHECK_END_POINT, (c) => {
+			return c.json({
+				status: 'ok',
+				timestamp: Date.now(),
+			});
+		})
 		.post('/api/content', zValidator('json', apiSchema), async (c) => {
 			const data = c.req.valid('json');
-			const targetFilePath = path.join(userConfig.documentRoot, data.path);
-			await saveContent(targetFilePath, data.content, userConfig.editableArea);
-			log('Saved: %s', targetFilePath);
+			let normalizedPath = data.path;
+			if (normalizedPath.endsWith('/')) {
+				normalizedPath += userConfig.indexFileName;
+			}
+			const targetFilePath = path.join(userConfig.documentRoot, normalizedPath);
+
+			await saveContent(
+				targetFilePath,
+				data.content,
+				userConfig.editableArea,
+				data.frontMatter,
+				data.originalFrontMatter,
+			);
+
+			log('Saved: %s (with Front Matter: %s)', targetFilePath, !!data.frontMatter);
 			return c.json({
 				saved: true,
 				path: targetFilePath,
+				hasFrontMatter: !!data.frontMatter,
 			});
 		})
 		.post(
@@ -230,17 +258,39 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 			let targetFilePath = path.join(userConfig.documentRoot, page);
 
 			if (targetFilePath.endsWith('/')) {
-				targetFilePath += 'index.html';
+				targetFilePath += userConfig.indexFileName;
 			}
 
-			const content = await loadContent(targetFilePath, userConfig.editableArea);
+			const loadResult = await loadContent(
+				targetFilePath,
+				userConfig.editableArea,
+				userConfig.newFileContent,
+			);
+
+			if (loadResult instanceof NoEditableAreaError) {
+				return c.html(
+					<App
+						path={page}
+						content={loadResult}
+						rootDir={userConfig.documentRoot}
+						lang={userConfig.lang}
+					/>,
+				);
+			}
+			log(
+				'Loaded page with Front Matter: %s (keys: %o)',
+				loadResult.hasFrontMatter,
+				Object.keys(loadResult.frontMatter),
+			);
 
 			return c.html(
 				<App
 					path={page}
-					content={content}
+					content={loadResult.editableContent}
 					rootDir={userConfig.documentRoot}
 					lang={userConfig.lang}
+					frontMatter={loadResult.frontMatter}
+					hasFrontMatter={loadResult.hasFrontMatter}
 				/>,
 			);
 		})
@@ -251,7 +301,7 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 		// ------------------------------------------------------------------------------------------
 		.get('/:file{.+$}', async (c) => {
 			const file = c.req.param('file');
-			const targetFilePath = path.resolve(userConfig.documentRoot, file);
+			const targetFilePath = path.resolve(userConfig.assetsRoot, file);
 			const buf = await readFile(targetFilePath).catch(() => null);
 			log('Access(/:file): %s => ', file, buf ? targetFilePath : 'Not found');
 			if (!buf) {
@@ -295,7 +345,7 @@ async function readFile(filePath: string): Promise<ArrayBuffer | null> {
 		buffer.buffer
 			.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
 			// eslint-disable-next-line unicorn/prefer-spread
-			.slice(0) as ArrayBuffer
+			.slice(0)
 	);
 }
 

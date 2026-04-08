@@ -144,6 +144,14 @@ test('toJSON optional attribute field - stringify number - type conversion', () 
 	expect(fp.toJSON()).toStrictEqual({ fieldName: 0.1 });
 });
 
+test('toJSON optional attribute field - stringify number - type conversion with custom attr name', () => {
+	const fp = new FrozenPatty('<div data-foo-num="25" data-foo=":num" ></div>', {
+		attr: 'foo',
+		typeConvert: true,
+	});
+	expect(fp.toJSON()).toStrictEqual({ num: 25 });
+});
+
 test('toJSON custom attr name', () => {
 	const fp = new FrozenPatty('<div data-bge="text">value</div>', { attr: 'bge' });
 	expect(fp.toJSON()).toStrictEqual({ text: 'value' });
@@ -250,12 +258,9 @@ test('Full data merge', () => {
 	expect(fp.toDOM().querySelector('[data-field="prop03"]')?.innerHTML).toBe(
 		'prop03-rewrite',
 	);
-	expect(
-		fp
-			.toDOM()
-			.querySelector('[data-field*="prop04:data-attr"]')
-			?.getAttribute('data-attr'),
-	).toBe('prop04-data-attr-rewrite');
+	expect(fp.toDOM().querySelector('[data-field*="prop04:data-attr"]')?.dataset.attr).toBe(
+		'prop04-data-attr-rewrite',
+	);
 	expect(fp.toDOM().querySelector('[data-field*="prop05"]')?.innerHTML).toBe(
 		'prop05-text-write',
 	);
@@ -795,6 +800,133 @@ test('attr: style', () => {
 	).toStrictEqual({ path: '/path/to/image.webp' });
 });
 
+test('picture (Specific case)', () => {
+	const fp = new FrozenPatty(
+		[
+			'<picture data-field-list>',
+			'<img src="/path/to/4" alt="" width="100" height="100" data-field="path:src, :alt, :width, :height, :media">',
+			'</picture>',
+		].join(''),
+		{
+			typeConvert: true,
+		},
+	);
+	fp.merge({
+		path: ['/path/to/1', '/path/to/2', '/path/to/3', '/path/to/4'],
+		width: [100, 200, 300, 400],
+		height: [10, 20, 30, 40],
+		media: [
+			'(min-width: 1000px)',
+			'(min-width: 2000px)',
+			'(min-width: 3000px)',
+			'(min-width: 4000px)',
+		],
+		alt: ['alternative text'],
+	});
+
+	const elements = [...fp.toDOM().firstChild.children];
+
+	// 各要素が期待される属性を持っているか確認
+	expect(elements.length).toBe(4);
+
+	// source要素の確認
+	expect(elements[0].localName).toBe('source');
+	expect(elements[0].getAttribute('srcset')).toBe('/path/to/4');
+	expect(elements[0].getAttribute('width')).toBe('400');
+	expect(elements[0].getAttribute('height')).toBe('40');
+	expect(elements[0].getAttribute('media')).toBe('(min-width: 4000px)');
+	expect(elements[0].dataset.field).toBe('path:srcset, :width, :height, :media');
+
+	expect(elements[1].localName).toBe('source');
+	expect(elements[1].getAttribute('srcset')).toBe('/path/to/3');
+	expect(elements[1].getAttribute('width')).toBe('300');
+	expect(elements[1].getAttribute('height')).toBe('30');
+	expect(elements[1].getAttribute('media')).toBe('(min-width: 3000px)');
+	expect(elements[1].dataset.field).toBe('path:srcset, :width, :height, :media');
+
+	expect(elements[2].localName).toBe('source');
+	expect(elements[2].getAttribute('srcset')).toBe('/path/to/2');
+	expect(elements[2].getAttribute('width')).toBe('200');
+	expect(elements[2].getAttribute('height')).toBe('20');
+	expect(elements[2].getAttribute('media')).toBe('(min-width: 2000px)');
+	expect(elements[2].dataset.field).toBe('path:srcset, :width, :height, :media');
+
+	// img要素の確認
+	expect(elements[3].localName).toBe('img');
+	expect(elements[3].getAttribute('src')).toBe('/path/to/1');
+	expect(elements[3].getAttribute('alt')).toBe('alternative text');
+	expect(elements[3].getAttribute('width')).toBe('100');
+	expect(elements[3].getAttribute('height')).toBe('10');
+	expect(elements[3].dataset.field).toBe('path:src, :alt, :width, :height, :media');
+
+	expect(fp.toJSON()).toStrictEqual({
+		alt: ['alternative text'],
+		path: ['/path/to/1', '/path/to/2', '/path/to/3', '/path/to/4'],
+		width: [100, 200, 300, 400],
+		height: [10, 20, 30, 40],
+		media: [null, '(min-width: 2000px)', '(min-width: 3000px)', '(min-width: 4000px)'],
+	});
+});
+
+test('picture with duplicate paths - duplicates are removed', () => {
+	const fp = new FrozenPatty(
+		[
+			'<picture data-field-list>',
+			'<img src="/path/to/1" alt="" width="100" height="100" data-field="path:src, :alt, :width, :height, :media">',
+			'</picture>',
+		].join(''),
+		{
+			typeConvert: true,
+		},
+	);
+	fp.merge({
+		path: ['/path/to/1', '/path/to/2', '/path/to/1', '/path/to/3', '/path/to/2'], // Duplicates: /path/to/1 appears at index 0 and 2, /path/to/2 appears at index 1 and 4
+		width: [100, 200, 300, 400, 500],
+		height: [10, 20, 30, 40, 50],
+		media: [
+			null,
+			'(min-width: 1000px)',
+			'(min-width: 2000px)',
+			'(min-width: 3000px)',
+			'(min-width: 4000px)',
+		],
+		alt: ['alternative text'],
+	});
+
+	const elements = [...fp.toDOM().firstChild.children];
+
+	// Only 3 elements should be created (unique paths: /path/to/1, /path/to/2, /path/to/3)
+	expect(elements.length).toBe(3);
+
+	// source要素の確認 (reversed order)
+	expect(elements[0].localName).toBe('source');
+	expect(elements[0].getAttribute('srcset')).toBe('/path/to/3');
+	expect(elements[0].getAttribute('width')).toBe('400');
+	expect(elements[0].getAttribute('height')).toBe('40');
+	expect(elements[0].getAttribute('media')).toBe('(min-width: 3000px)');
+
+	expect(elements[1].localName).toBe('source');
+	expect(elements[1].getAttribute('srcset')).toBe('/path/to/2');
+	expect(elements[1].getAttribute('width')).toBe('200');
+	expect(elements[1].getAttribute('height')).toBe('20');
+	expect(elements[1].getAttribute('media')).toBe('(min-width: 1000px)');
+
+	// img要素の確認
+	expect(elements[2].localName).toBe('img');
+	expect(elements[2].getAttribute('src')).toBe('/path/to/1');
+	expect(elements[2].getAttribute('alt')).toBe('alternative text');
+	expect(elements[2].getAttribute('width')).toBe('100');
+	expect(elements[2].getAttribute('height')).toBe('10');
+
+	expect(fp.toJSON()).toStrictEqual({
+		alt: ['alternative text'],
+		path: ['/path/to/1', '/path/to/2', '/path/to/3'],
+		width: [100, 200, 400],
+		height: [10, 20, 40],
+		media: [null, '(min-width: 1000px)', '(min-width: 3000px)'],
+	});
+});
+
 test('toHTML()', () => {
 	const fp = new FrozenPatty('<div data-foo="bar" data-field="foo:data-foo"></div>');
 	expect(fp.toHTML()).toBe('<div data-foo="bar" data-field="foo:data-foo"></div>');
@@ -805,4 +937,168 @@ test('toHTML()', () => {
 	expect(fp.merge({ foo: 'bar' }).toHTML()).toBe(
 		'<div data-foo="bar" data-field="foo:data-foo"></div>',
 	);
+});
+
+test('XSS protection - script tags are removed by default', () => {
+	const fp = new FrozenPatty('<div data-field="content"></div>');
+	fp.merge({ content: '<script>alert("XSS")</script>' });
+
+	expect(fp.toHTML()).not.toContain('<script>');
+});
+
+test('XSS protection - script tags are removed when explicitly enabled', () => {
+	const fp = new FrozenPatty('<div data-field="content"></div>', { xssSanitize: true });
+	fp.merge({ content: '<script>alert("XSS")</script>' });
+
+	expect(fp.toHTML()).not.toContain('<script>');
+});
+
+test('XSS protection - script tags are preserved when disabled', () => {
+	const fp = new FrozenPatty('<div data-field="content"></div>', { xssSanitize: false });
+	fp.merge({ content: '<script>alert("XSS")</script>' });
+
+	expect(fp.toHTML()).toContain('<script>');
+});
+
+test('XSS protection - iframe elements are sanitized', () => {
+	const fp = new FrozenPatty('<div data-field="content"></div>');
+	fp.merge({ content: '<iframe src="javascript:alert(\'XSS\')"></iframe>' });
+
+	expect(fp.toHTML()).not.toContain('<iframe');
+});
+
+test('XSS protection - object elements are sanitized', () => {
+	const fp = new FrozenPatty('<div data-field="content"></div>');
+	fp.merge({ content: '<object data="javascript:alert(\'XSS\')"></object>' });
+
+	expect(fp.toHTML()).not.toContain('<object');
+});
+
+test('XSS protection - embed elements are sanitized', () => {
+	const fp = new FrozenPatty('<div data-field="content"></div>');
+	fp.merge({ content: '<embed src="javascript:alert(\'XSS\')"></embed>' });
+
+	expect(fp.toHTML()).not.toContain('<embed');
+});
+
+test('XSS protection - onclick attribute is blocked from being set', () => {
+	const fp = new FrozenPatty('<button data-field="button:onclick"></button>');
+	fp.merge({ button: 'alert("XSS")' });
+
+	expect(fp.toDOM().querySelector('button').hasAttribute('onclick')).toBe(false);
+});
+
+test('XSS protection - onmouseover attribute is blocked from being set', () => {
+	const fp = new FrozenPatty('<div data-field="handler:onmouseover"></div>');
+	fp.merge({ handler: 'alert("XSS")' });
+
+	expect(fp.toDOM().querySelector('div').hasAttribute('onmouseover')).toBe(false);
+});
+
+test('XSS protection - onerror attribute is blocked from being set', () => {
+	const fp = new FrozenPatty('<div data-field="handler:onerror"></div>');
+	fp.merge({ handler: 'alert("XSS")' });
+
+	expect(fp.toDOM().querySelector('div').hasAttribute('onerror')).toBe(false);
+});
+
+test('XSS protection - onload attribute is blocked from being set', () => {
+	const fp = new FrozenPatty('<div data-field="handler:onload"></div>');
+	fp.merge({ handler: 'alert("XSS")' });
+
+	expect(fp.toDOM().querySelector('div').hasAttribute('onload')).toBe(false);
+});
+
+test('XSS protection - javascript protocol in href attribute is blocked', () => {
+	const fp = new FrozenPatty('<a data-field="link:href"></a>');
+	fp.merge({ link: 'javascript:alert("XSS")' });
+	const el = fp.toDOM().querySelector('a');
+
+	expect(el.getAttribute('href')).toBeFalsy();
+});
+
+test('XSS protection - regular URLs in href are preserved correctly', () => {
+	const fp = new FrozenPatty('<a data-field="link:href"></a>');
+	fp.merge({ link: '/safe/path' });
+	const href = fp.toDOM().querySelector('a').getAttribute('href');
+
+	expect(href).toBe('/safe/path');
+});
+
+test('XSS protection - javascript protocol in src attribute is blocked', () => {
+	const fp = new FrozenPatty('<img data-field="image:src">');
+	fp.merge({ image: 'javascript:alert("XSS")' });
+	const el = fp.toDOM().querySelector('img');
+
+	expect(el.getAttribute('src')).toBeFalsy();
+});
+
+test('XSS protection - regular URLs in src are preserved correctly', () => {
+	const fp = new FrozenPatty('<img data-field="image:src">');
+	fp.merge({ image: '/path/to/image.png' });
+	const src = fp.toDOM().querySelector('img').getAttribute('src');
+
+	expect(src).toBe('/path/to/image.png');
+});
+
+test('XSS protection - data:text/html scheme in src attribute is blocked', () => {
+	const fp = new FrozenPatty('<img data-field="image:src">');
+	fp.merge({ image: 'data:text/html,<script>alert("XSS")</script>' });
+	const el = fp.toDOM().querySelector('img');
+
+	expect(el.getAttribute('src')).toBeFalsy();
+});
+
+test('XSS protection - even safe data:image/png URLs are blocked for security', () => {
+	const fp = new FrozenPatty('<img data-field="image:src">');
+	const safeDataUrl =
+		'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+	fp.merge({ image: safeDataUrl });
+	const el = fp.toDOM().querySelector('img');
+
+	expect(el.getAttribute('src')).toBeFalsy();
+});
+
+test('XSS protection - https URLs are allowed and preserved', () => {
+	const fp = new FrozenPatty('<img data-field="image:src">');
+	fp.merge({ image: 'https://example.com/image.png' });
+	const src = fp.toDOM().querySelector('img').getAttribute('src');
+
+	expect(src).toBe('https://example.com/image.png');
+});
+
+test('XSS protection - http URLs are allowed and preserved', () => {
+	const fp = new FrozenPatty('<img data-field="image:src">');
+	fp.merge({ image: 'http://example.com/image.png' });
+	const src = fp.toDOM().querySelector('img').getAttribute('src');
+
+	expect(src).toBe('http://example.com/image.png');
+});
+
+test('XSS protection - changing node type to script element is prevented', () => {
+	const fp = new FrozenPatty('<div data-field="element:node"></div>');
+	fp.merge({ element: 'script' });
+
+	expect(fp.toHTML()).not.toContain('<script');
+});
+
+test('XSS protection - changing node type to safe elements like span is allowed', () => {
+	const fp = new FrozenPatty('<div data-field="element:node"></div>');
+	fp.merge({ element: 'span' });
+
+	expect(fp.toHTML()).toContain('<span');
+});
+
+test('XSS protection - initial HTML content is sanitized by default', () => {
+	const fp = new FrozenPatty('<div><script>alert("XSS")</script></div>');
+
+	expect(fp.toHTML()).not.toContain('<script>');
+});
+
+test('XSS protection - initial HTML sanitization can be disabled with option', () => {
+	const fp = new FrozenPatty('<div><script>alert("XSS")</script></div>', {
+		xssSanitize: false,
+	});
+
+	expect(fp.toHTML()).toContain('<script>');
 });

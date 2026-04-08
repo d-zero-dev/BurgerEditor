@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { BurgerBlock, BurgerEditorEngine } from '@burger-editor/core';
 
+	import { getBlockAtPosition } from '@burger-editor/core';
 	import IconArrowBigDownLine from '@tabler/icons-svelte/icons/arrow-big-down-line';
 	import IconArrowBigUpLine from '@tabler/icons-svelte/icons/arrow-big-up-line';
 	import IconClipboardPlus from '@tabler/icons-svelte/icons/clipboard-plus';
@@ -13,37 +14,142 @@
 
 	import BlockMenuButton from './block-menu-button.svelte';
 	import { replaceElement } from './replace-element.js';
-	export let engine: BurgerEditorEngine;
 
-	let currentBlock: BurgerBlock | null = null;
+	const {
+		engine,
+		container,
+		onHide,
+	}: { engine: BurgerEditorEngine; container: HTMLElement; onHide: () => void } =
+		$props();
 
-	$: isMutable = currentBlock?.isMutable();
+	let currentBlock = $state<BurgerBlock | null>(null);
+	let visible = $state(false);
 
-	let _width = 0;
-	let _height = 0;
-	let _x = 0;
-	let _y = 0;
-	let _marginBlockEnd = 0;
-	let marginBlockEndValue = '0px';
+	const isMutable = $derived(currentBlock?.isMutable());
+
+	let _width = $state(0);
+	let _height = $state(0);
+	let _x = $state(0);
+	let _y = $state(0);
+	let _marginBlockEnd = $state(0);
+	let marginBlockEndValue = $state('0px');
 
 	engine.blockOptionsDialog.onChangeBlock((block) => {
 		currentBlock = block;
 	});
 
-	engine.componentObserver.on(
-		'select-block',
-		({ block, width, height, x, y, marginBlockEnd }) => {
-			currentBlock = block;
-			_width = width;
-			_height = height;
-			_x = x;
-			_y = y;
-			_marginBlockEnd = marginBlockEnd;
-			marginBlockEndValue = window
-				.getComputedStyle(block.el)
-				.getPropertyValue('--bge-block-margin');
-		},
-	);
+	/**
+	 *
+	 */
+	function hide() {
+		visible = false;
+		currentBlock = null;
+		onHide();
+	}
+
+	let mouseX = 0;
+	let mouseY = 0;
+	let raf = 0;
+
+	/**
+	 *
+	 */
+	function updatePosition() {
+		const doc = container.ownerDocument;
+		const selected = getBlockAtPosition(doc, mouseX, mouseY);
+
+		if (!selected) {
+			hide();
+			return;
+		}
+
+		visible = true;
+
+		const { block, rect, marginBlockEnd } = selected;
+		currentBlock = block;
+		_width = rect.width;
+		_height = rect.height;
+		_x = rect.left;
+		_y = rect.top;
+		_marginBlockEnd = marginBlockEnd;
+		marginBlockEndValue = window
+			.getComputedStyle(block.el)
+			.getPropertyValue('--bge-block-margin');
+
+		engine.componentObserver.notify('select-block', {
+			block,
+			width: rect.width,
+			height: rect.height,
+			x: rect.left,
+			y: rect.top,
+			marginBlockEnd,
+		});
+	}
+
+	/**
+	 *
+	 */
+	function scheduleUpdate() {
+		cancelAnimationFrame(raf);
+
+		if (engine.isProcessed) {
+			hide();
+			return;
+		}
+
+		raf = requestAnimationFrame(() => {
+			updatePosition();
+		});
+	}
+
+	$effect(() => {
+		const doc = container.ownerDocument;
+		const body = doc.body;
+		const win = doc.defaultView;
+
+		const onMouseMove = (e: MouseEvent) => {
+			mouseX = e.pageX;
+			mouseY = e.pageY;
+			scheduleUpdate();
+		};
+
+		const onHideEvent = () => hide();
+
+		body.addEventListener('mousemove', onMouseMove);
+		body.addEventListener('mouseleave', onHideEvent);
+		doc.addEventListener('mouseleave', onHideEvent);
+		win?.addEventListener('mouseleave', onHideEvent);
+		globalThis.addEventListener('resize', onHideEvent);
+		engine.el.addEventListener('bge:saved', scheduleUpdate);
+
+		const observer = new MutationObserver((mutations) => {
+			for (const mutation of mutations) {
+				for (const node of mutation.addedNodes) {
+					if (!(node instanceof HTMLElement)) {
+						continue;
+					}
+					const images = node.querySelectorAll('img');
+					for (const img of images) {
+						img.addEventListener('load', scheduleUpdate, { once: true });
+						img.addEventListener('error', scheduleUpdate, { once: true });
+						img.addEventListener('abort', scheduleUpdate, { once: true });
+					}
+				}
+			}
+		});
+		observer.observe(doc, { childList: true, subtree: true });
+
+		return () => {
+			body.removeEventListener('mousemove', onMouseMove);
+			body.removeEventListener('mouseleave', onHideEvent);
+			doc.removeEventListener('mouseleave', onHideEvent);
+			win?.removeEventListener('mouseleave', onHideEvent);
+			globalThis.removeEventListener('resize', onHideEvent);
+			engine.el.removeEventListener('bge:saved', scheduleUpdate);
+			observer.disconnect();
+			cancelAnimationFrame(raf);
+		};
+	});
 
 	/**
 	 *
@@ -73,23 +179,23 @@
 			return;
 		}
 
-		let $from: HTMLElement | null;
-		let $to: HTMLElement | null;
+		let fromEl: HTMLElement | null;
+		let toEl: HTMLElement | null;
 		if (toTop) {
-			$from = currentBlock.el.previousElementSibling as HTMLElement;
-			$to = currentBlock.el;
+			fromEl = currentBlock.el.previousElementSibling as HTMLElement;
+			toEl = currentBlock.el;
 		} else {
-			$from = currentBlock.el;
-			$to = currentBlock.el.nextElementSibling as HTMLElement;
+			fromEl = currentBlock.el;
+			toEl = currentBlock.el.nextElementSibling as HTMLElement;
 		}
 
-		if (!$from || !$to) {
+		if (!fromEl || !toEl) {
 			return;
 		}
 
 		engine.isProcessed = true;
 
-		await replaceElement($from, $to);
+		await replaceElement(fromEl, toEl);
 
 		engine.isProcessed = false;
 		engine.save();
@@ -140,7 +246,7 @@
 			return;
 		}
 
-		currentBlock.updateGridItems(addOrRemove);
+		currentBlock.updateGridItems(addOrRemove, engine);
 
 		engine.save();
 	}
@@ -160,9 +266,9 @@
 		// 	return;
 		// }
 
-		const html = currentBlock.getHTMLStringify();
+		const json = currentBlock.toJSONStringify();
 
-		sessionStorage.setItem(engine.storageKey.blockClipboard, html);
+		sessionStorage.setItem(engine.storageKey.blockClipboard, json);
 
 		alert(
 			'ブロックをコピーしました。\nブロックの追加ボタンからペースト（貼り付け）することができます。',
@@ -170,57 +276,59 @@
 	}
 </script>
 
-<div
-	class="bge-menu-base"
-	style={`
+{#if visible}
+	<div
+		class="bge-menu-base"
+		style={`
 	--width:${_width}px;
 	--height:${_height}px;
 	--x:${_x}px;
 	--y:${_y}px;
 	--margin-block-end:${_marginBlockEnd ?? '0'}px`}>
-	<div class="bge-menu">
-		<div class="bge-move-group">
-			<BlockMenuButton label="ひとつ上へ移動" action={() => move(true)}>
-				<IconArrowBigUpLine />
-			</BlockMenuButton>
-			<BlockMenuButton label="ひとつ下へ移動" action={() => move(false)}>
-				<IconArrowBigDownLine />
-			</BlockMenuButton>
+		<div class="bge-menu">
+			<div class="bge-move-group">
+				<BlockMenuButton label="ひとつ上へ移動" action={() => move(true)}>
+					<IconArrowBigUpLine />
+				</BlockMenuButton>
+				<BlockMenuButton label="ひとつ下へ移動" action={() => move(false)}>
+					<IconArrowBigDownLine />
+				</BlockMenuButton>
+			</div>
+			<div class="bge-standard-group">
+				<BlockMenuButton label="上にブロックを追加" action={() => insert(true)}>
+					<IconRowInsertTop />
+				</BlockMenuButton>
+				<BlockMenuButton label="下にブロックを追加" action={() => insert(false)}>
+					<IconRowInsertBottom />
+				</BlockMenuButton>
+				{#if isMutable}
+					<BlockMenuButton
+						label="ブロック内に要素を追加"
+						action={() => updateGridItems(+1)}>
+						<IconLayoutGridAdd />
+					</BlockMenuButton>
+					<BlockMenuButton
+						label="ブロック内の要素を削除"
+						action={() => updateGridItems(-1)}>
+						<IconLayoutGridRemove />
+					</BlockMenuButton>
+				{/if}
+				<BlockMenuButton label="オプション設定" action={() => openConfig()}>
+					<IconSettings />
+				</BlockMenuButton>
+				<BlockMenuButton label="ブロックをコピー" action={() => copy()}>
+					<IconClipboardPlus />
+				</BlockMenuButton>
+				<BlockMenuButton label="ブロックを削除" action={() => remove()}>
+					<IconTrash />
+				</BlockMenuButton>
+			</div>
 		</div>
-		<div class="bge-standard-group">
-			<BlockMenuButton label="上にブロックを追加" action={() => insert(true)}>
-				<IconRowInsertTop />
-			</BlockMenuButton>
-			<BlockMenuButton label="下にブロックを追加" action={() => insert(false)}>
-				<IconRowInsertBottom />
-			</BlockMenuButton>
-			{#if isMutable}
-				<BlockMenuButton
-					label="ブロック内に要素を追加"
-					action={() => updateGridItems(+1)}>
-					<IconLayoutGridAdd />
-				</BlockMenuButton>
-				<BlockMenuButton
-					label="ブロック内の要素を削除"
-					action={() => updateGridItems(-1)}>
-					<IconLayoutGridRemove />
-				</BlockMenuButton>
-			{/if}
-			<BlockMenuButton label="オプション設定" action={() => openConfig()}>
-				<IconSettings />
-			</BlockMenuButton>
-			<BlockMenuButton label="ブロックをコピー" action={() => copy()}>
-				<IconClipboardPlus />
-			</BlockMenuButton>
-			<BlockMenuButton label="ブロックを削除" action={() => remove()}>
-				<IconTrash />
-			</BlockMenuButton>
+		<div class="bge-menu-margin">
+			<span>余白: {marginBlockEndValue} ({_marginBlockEnd}px)</span>
 		</div>
 	</div>
-	<div class="bge-menu-margin">
-		<span>余白: {marginBlockEndValue} ({_marginBlockEnd}px)</span>
-	</div>
-</div>
+{/if}
 
 <style>
 	.bge-menu-base {
@@ -234,7 +342,6 @@
 
 	.bge-menu-margin {
 		--_line-color: rgb(from var(--bge-ui-primary-color) r g b / 10%);
-		container: margin-view / size;
 		position: absolute;
 		inset-block-end: 0;
 		inset-inline-start: 0;
@@ -244,6 +351,7 @@
 		justify-content: center;
 		inline-size: 100%;
 		block-size: var(--margin-block-end);
+		container: margin-view / size;
 		font-size: 0.8em;
 		font-weight: bold;
 		color: var(--bge-ui-primary-color);
@@ -260,7 +368,8 @@
 	@container margin-view (height < 1em) {
 		.bge-menu-margin {
 			span {
-				padding: 0.2em 0.4em;
+				padding-block: 0.2em;
+				padding-inline: 0.4em;
 				color: var(--bge-lightest-color);
 				background: var(--bge-ui-primary-color);
 				border-radius: 0.2em;

@@ -1,0 +1,49 @@
+import type { ElementSeed } from '../utils/types.js';
+import type { Extensions } from '@tiptap/core';
+
+export interface BgeWysiwygElementOptions {
+	extensions?: Extensions;
+	wrapperElement?: ElementSeed;
+	experimental?: {
+		textOnlyMode?: boolean;
+	};
+}
+
+export interface Transaction {
+	state: EditorState;
+}
+
+export type EditorState = Record<EditorNode, NodeState>;
+
+type EditorNode =
+	| 'bold'
+	| 'italic'
+	| 'underline'
+	| 'strike'
+	| 'subscript'
+	| 'superscript'
+	| 'code'
+	| 'link'
+	| 'buttonLikeLink'
+	| 'blockquote'
+	| 'bulletList'
+	| 'orderedList'
+	| 'note'
+	| 'h1'
+	| 'h2'
+	| 'h3'
+	| 'h4'
+	| 'h5'
+	| 'h6'
+	| 'flexBox'
+	| 'image'
+	| 'alignStart'
+	| 'alignCenter'
+	| 'alignEnd';
+
+export type NodeState = {
+	disabled: boolean;
+	active: boolean;
+};
+
+export type BgeMode = 'wysiwyg' | 'html' | 'text-only';

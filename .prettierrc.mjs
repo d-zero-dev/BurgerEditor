@@ -1,11 +1,11 @@
-import config from '@d-zero/prettier-config';
+import config from '@d-zero/prettier-config/base';
 
 /**
  * @type {import('prettier').Options}
  */
 export default {
 	...config,
-	plugins: [...config.plugins, 'prettier-plugin-svelte'],
+	plugins: [...(config.plugins ?? []), 'prettier-plugin-svelte'],
 	overrides: [
 		...config.overrides,
 		{

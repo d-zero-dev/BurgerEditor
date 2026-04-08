@@ -29,7 +29,10 @@ lerna-debug.log*
 
 # tests
 .test
+.public
 
 # Dist
 dist/
 server/
+import/
+!src/import/

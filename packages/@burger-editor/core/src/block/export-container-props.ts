@@ -11,6 +11,7 @@ import { findValuePatternFromArray } from '../utils/find-value-pattern-from-arra
  * コンテナ特性の文字列をコロン区切りで解析し、以下のプロパティを設定:
  * - type: 'grid' | 'inline' | 'float'（デフォルト: 'inline'）
  * - immutable: オプションに'immutable'が含まれるかどうか
+ * - autoRepeat: 自動調整の種類（fixed, auto-fill, auto-fit）
  * - justify: inlineタイプの場合の水平方向の配置（center, start, end, between, around, evenly）
  * - align: inlineタイプの場合の垂直方向の配置（align-center, align-start, align-end, align-stretch, align-baseline）
  * - wrap: inlineタイプの場合の折り返し設定（wrap, nowrap）
@@ -24,6 +25,8 @@ export function exportContainerProps(containerPropsQuery?: string): ContainerPro
 	return {
 		type: findValueFromArray([type ?? 'inline'], ['grid', 'inline', 'float']) ?? 'inline',
 		immutable: options.includes('immutable'),
+		autoRepeat:
+			findValueFromArray(options, ['fixed', 'auto-fill', 'auto-fit']) ?? 'fixed',
 		justify:
 			type === 'inline'
 				? findValueFromArray(options, [
@@ -48,8 +51,11 @@ export function exportContainerProps(containerPropsQuery?: string): ContainerPro
 		wrap: type === 'inline' ? findValueFromArray(options, ['wrap', 'nowrap']) : null,
 		columns:
 			type === 'grid'
-				? (Number.parseInt(findValuePatternFromArray(options, /[1-9]\d*/) ?? '', 10) ?? 1)
+				? Number.parseInt(findValuePatternFromArray(options, /[1-9]\d*/) ?? '', 10) || 1
 				: null,
 		float: type === 'float' ? findValueFromArray(options, ['start', 'end']) : null,
+		frameSemantics: findValueFromArray(options, ['div', 'ul', 'ol']) ?? 'div',
+		linkarea: false,
+		repeatMinInlineSize: findValuePatternFromArray(options, /^--(.+)$/)?.slice(2) ?? null,
 	};
 }

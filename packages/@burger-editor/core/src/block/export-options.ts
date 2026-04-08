@@ -1,35 +1,31 @@
-import type { BlockOptions } from './types.js';
+import type { BlockData } from '../types.js';
 
 import { exportContainerProps } from './export-container-props.js';
+import { exportStyleOptions } from './export-style-options.js';
 
 /**
  *
  * @param el
  */
-export function exportOptions(el: HTMLElement): BlockOptions {
-	const props = exportContainerProps(el.dataset.bgeContainer);
+export function exportOptions(
+	el: HTMLElement,
+): Pick<BlockData, 'containerProps' | 'classList' | 'id' | 'style'> {
+	const containerProps = exportContainerProps(el.dataset.bgeContainer);
 	const classList = [...el.classList];
 	const id = el.id.replace(/^bge-/, '').trim() || null;
+	const style = exportStyleOptions(el);
 
-	const style: Record<string, string> = {};
-	for (const property of el.style) {
-		if (!property.startsWith('--bge-options-')) {
-			continue;
-		}
-		const category = property.replace('--bge-options-', '');
-		const propValue = el.style.getPropertyValue(property);
-		const [, _category, propName] =
-			propValue.match(/^var\(--bge-options-([a-z]+)-([a-z]+(?:-[a-z]+)*)\)$/) ?? [];
-
-		if (category !== _category || !propName) {
-			continue;
-		}
-
-		style[category] = propName;
-	}
+	// linkarea状態の取得（グループ要素の属性から）
+	const groups = el.querySelectorAll<HTMLDivElement>('[data-bge-group]');
+	const hasLinkarea = [...groups].some((group) =>
+		Object.hasOwn(group.dataset, 'bgeLinkarea'),
+	);
 
 	return {
-		props,
+		containerProps: {
+			...containerProps,
+			linkarea: hasLinkarea,
+		},
 		classList,
 		id,
 		style,

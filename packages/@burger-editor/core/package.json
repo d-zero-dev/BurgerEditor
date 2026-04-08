@@ -1,13 +1,14 @@
 {
 	"name": "@burger-editor/core",
-	"version": "4.0.0-alpha.0",
+	"version": "4.0.0-alpha.64",
 	"description": "BurgerEditor Editor Core",
 	"author": "D-ZERO",
-	"license": "MIT",
+	"license": "(MIT OR Apache-2.0)",
 	"repository": {
-		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
+		"type": "git",
+		"url": "https://github.com/d-zero-dev/BurgerEditor.git",
+		"directory": "packages/@burger-editor/core"
 	},
-	"private": false,
 	"publishConfig": {
 		"access": "public"
 	},
@@ -16,6 +17,10 @@
 		".": {
 			"import": "./dist/index.js",
 			"types": "./dist/index.d.ts"
+		},
+		"./health": {
+			"import": "./dist/health-monitor.js",
+			"types": "./dist/health-monitor.d.ts"
 		}
 	},
 	"files": [
@@ -27,12 +32,12 @@
 		"clean": "tsc --build --clean"
 	},
 	"dependencies": {
-		"@burger-editor/frozen-patty": "0.11.0",
-		"@burger-editor/utils": "4.0.0-alpha.0",
-		"jaco": "4.0.0",
-		"semver": "7.7.1"
+		"@burger-editor/frozen-patty": "4.0.0-alpha.64",
+		"@burger-editor/utils": "4.0.0-alpha.64",
+		"jaco": "5.0.0",
+		"semver": "7.7.4"
 	},
 	"devDependencies": {
-		"@types/semver": "7.7.0"
+		"@types/semver": "7.7.1"
 	}
 }

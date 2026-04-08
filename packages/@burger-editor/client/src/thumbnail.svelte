@@ -9,8 +9,8 @@
 
 	import { getExt } from './get-ext.js';
 
-	export let src: string;
-	let isLoaded = false;
+	const { src }: { src: string } = $props();
+	let isLoaded = $state(false);
 
 	const file = getExt(src);
 </script>

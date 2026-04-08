@@ -16,4 +16,12 @@ describe('getValues', () => {
 		el.dataset.fieldFoo = 'bar';
 		expect(getValues(el)).toStrictEqual([['foo', 'bar', false]]);
 	});
+
+	test('URL', () => {
+		const el = document.createElement('img');
+		el.dataset.field = 'foo:src';
+		el.setAttribute('src', 'path/to/file.png');
+		expect(getValues(el)).toStrictEqual([['foo', 'path/to/file.png', false]]);
+		expect(el.src).toBe('https://www.d-zero.co.jp/path/to/file.png');
+	});
 });

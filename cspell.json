@@ -1,14 +1,26 @@
 {
 	"import": ["@d-zero/cspell-config"],
-	"ignorePaths": [".vscode"],
+	"ignorePaths": [".vscode", ".claude"],
 	"words": [
+		// CSS terminology
+		"CSSWG",
+		"unlayered",
+
 		// Lowercased
+		"closedby",
 		"nocheck",
+		"vbscript",
+		"xlarge",
 
 		// Dependencies
 		"hono",
+		"pixelmatch",
+		"pngjs",
 		"jaco",
 		"tabler",
-		"trix"
+		"trix",
+
+		// Project specific
+		"bgeconfig"
 	]
 }

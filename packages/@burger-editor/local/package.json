@@ -1,40 +1,84 @@
 {
 	"name": "@burger-editor/local",
-	"version": "0.1.0-alpha.0",
+	"version": "4.0.0-alpha.64",
 	"type": "module",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/d-zero-dev/BurgerEditor.git",
+		"directory": "packages/@burger-editor/local"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"exports": {
+		".": {
+			"types": "./server/types.d.ts"
+		},
+		"./import": {
+			"import": "./import/index.js",
+			"types": "./import/index.d.ts"
+		},
+		"./get-user-config": {
+			"import": "./server/model/get-user-config.js",
+			"types": "./server/model/get-user-config.d.ts"
+		},
+		"./create-health-checker": {
+			"import": "./server/create-health-checker.js",
+			"types": "./server/create-health-checker.d.ts"
+		},
+		"./get-candidate-name": {
+			"import": "./server/helpers/get-candidate-name.js",
+			"types": "./server/helpers/get-candidate-name.d.ts"
+		},
+		"./upload": {
+			"import": "./server/helpers/upload.js",
+			"types": "./server/helpers/upload.d.ts"
+		}
+	},
 	"bin": {
 		"bge": "./server/index.js"
 	},
+	"files": [
+		"dist",
+		"import",
+		"server",
+		"style"
+	],
 	"scripts": {
-		"build": "run-p build:client build:server",
+		"build": "npx run-p build:check build:client build:import build:server",
 		"build:client": "vite build",
-		"build:server": "tsc -p tsconfig.build.json",
-		"prebuild": "tsc",
-		"dev": "run-p dev:client dev:server",
+		"build:import": "npx tsc -p tsconfig.import.build.json",
+		"build:server": "npx tsc -p tsconfig.build.json",
+		"build:check": "npx tsc",
+		"dev": "npx run-p dev:client dev:server",
 		"dev:client": "vite build --watch",
-		"dev:server": "DEV_MODE=true DEBUG=@bge:* tsx watch src/index.ts"
+		"dev:server": "DEV_MODE=true DEBUG=\"@bge:*\" tsx watch src/index.ts"
 	},
 	"dependencies": {
-		"@burger-editor/blocks": "4.0.0-alpha.0",
-		"@burger-editor/client": "4.0.0-alpha.0",
-		"@hono/node-server": "1.14.0",
-		"@hono/zod-validator": "0.4.3",
+		"@burger-editor/blocks": "4.0.0-alpha.64",
+		"@burger-editor/inspector": "4.0.0-alpha.64",
+		"@hono/node-server": "1.19.9",
+		"@hono/zod-validator": "0.7.6",
 		"ansi-colors": "4.1.3",
 		"cosmiconfig": "9.0.0",
-		"debug": "4.4.0",
-		"hono": "4.7.5",
-		"jsdom": "26.0.0",
-		"open": "10.1.0",
-		"zod": "3.24.2"
+		"debug": "4.4.3",
+		"gray-matter": "^4.0.3",
+		"hono": "4.12.3",
+		"jsdom": "28.1.0",
+		"open": "11.0.0",
+		"prettier": "3.8.1",
+		"zod": "4.3.6"
 	},
 	"devDependencies": {
-		"@burger-editor/core": "4.0.0-alpha.0",
+		"@burger-editor/client": "4.0.0-alpha.64",
+		"@burger-editor/core": "4.0.0-alpha.64",
 		"@types/debug": "4.1.12",
-		"@types/jsdom": "21.1.7",
-		"@types/node": "22.14.0",
-		"dotenv": "16.4.7",
-		"npm-run-all2": "7.0.2",
-		"tsx": "4.19.3",
-		"vite": "6.2.4"
-	}
+		"@types/jsdom": "28.0.1",
+		"@types/node": "24.11.0",
+		"dotenv": "17.3.1",
+		"tsx": "4.21.0",
+		"vite": "7.3.1"
+	},
+	"author": "D-ZERO",
+	"license": "(MIT OR Apache-2.0)"
 }

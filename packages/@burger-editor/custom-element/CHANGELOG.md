@@ -1,0 +1,239 @@
+# Change Log
+
+All notable changes to this project will be documented in this file.
+See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
+
+# [4.0.0-alpha.64](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.63...v4.0.0-alpha.64) (2026-03-30)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.63](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.62...v4.0.0-alpha.63) (2026-03-10)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.62](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.61...v4.0.0-alpha.62) (2026-03-10)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.61](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.60...v4.0.0-alpha.61) (2026-02-18)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.60](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.59...v4.0.0-alpha.60) (2026-02-16)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.59](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.58...v4.0.0-alpha.59) (2026-02-12)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.58](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.57...v4.0.0-alpha.58) (2026-02-05)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.57](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.56...v4.0.0-alpha.57) (2026-02-03)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.56](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.55...v4.0.0-alpha.56) (2026-01-23)
+
+### Bug Fixes
+
+- **custom-element:** insert text-only container before alert message ([14bf8c7](https://github.com/d-zero-dev/BurgerEditor/commit/14bf8c78b96f63014a367a1872384a10a0f62bc7))
+- **custom-element:** sync UI state on dialog open and mode changes ([7f26621](https://github.com/d-zero-dev/BurgerEditor/commit/7f266217ca0fbf0de3ace7e3e73ee76d182a67e8))
+
+# [4.0.0-alpha.55](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.54...v4.0.0-alpha.55) (2026-01-23)
+
+### Bug Fixes
+
+- **custom-element:** adapt structure change warning message based on experimental flag ([7740886](https://github.com/d-zero-dev/BurgerEditor/commit/7740886eb5fe3483debf050568a8043ffe05c1a8))
+
+### Features
+
+- **custom-element:** add experimental.textOnlyMode option for conditional UI ([1f7fda8](https://github.com/d-zero-dev/BurgerEditor/commit/1f7fda80a5fd6adfac5122855e7e82f545486b54))
+- **custom-element:** disable WYSIWYG buttons in HTML and text-only modes ([06714c9](https://github.com/d-zero-dev/BurgerEditor/commit/06714c9a88613d0f07f3340b86ed2de4e3f1f63e))
+
+# [4.0.0-alpha.54](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.53...v4.0.0-alpha.54) (2026-01-22)
+
+### Features
+
+- **custom-element:** add subscript, superscript, and paragraph alignment ([4eb0ca6](https://github.com/d-zero-dev/BurgerEditor/commit/4eb0ca6d33fcbc18a3654afb8c4860764886d094))
+
+# [4.0.0-alpha.53](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.52...v4.0.0-alpha.53) (2026-01-22)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.52](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.51...v4.0.0-alpha.52) (2026-01-21)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.51](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.50...v4.0.0-alpha.51) (2026-01-16)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.50](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.49...v4.0.0-alpha.50) (2026-01-15)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.49](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.48...v4.0.0-alpha.49) (2026-01-15)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.48](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.47...v4.0.0-alpha.48) (2026-01-08)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.47](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.46...v4.0.0-alpha.47) (2026-01-06)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.46](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.45...v4.0.0-alpha.46) (2026-01-06)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.45](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.44...v4.0.0-alpha.45) (2025-12-26)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.44](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.43...v4.0.0-alpha.44) (2025-12-25)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.43](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.42...v4.0.0-alpha.43) (2025-12-24)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.42](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.41...v4.0.0-alpha.42) (2025-12-11)
+
+### Features
+
+- **custom-element:** add mode switch lock on structure change ([641d2a8](https://github.com/d-zero-dev/BurgerEditor/commit/641d2a80d320691f9ea47f16af0981d567793a3a))
+
+# [4.0.0-alpha.34](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.33...v4.0.0-alpha.34) (2025-12-01)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.33](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.32...v4.0.0-alpha.33) (2025-12-01)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.32](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.31...v4.0.0-alpha.32) (2025-12-01)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.31](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.30...v4.0.0-alpha.31) (2025-11-26)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.30](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.29...v4.0.0-alpha.30) (2025-11-13)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.29](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.28...v4.0.0-alpha.29) (2025-10-22)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.28](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.27...v4.0.0-alpha.28) (2025-10-22)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.27](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.26...v4.0.0-alpha.27) (2025-10-08)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.26](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.25...v4.0.0-alpha.26) (2025-10-08)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.25](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.24...v4.0.0-alpha.25) (2025-09-19)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.24](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.23...v4.0.0-alpha.24) (2025-09-19)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.23](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.22...v4.0.0-alpha.23) (2025-09-19)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.22](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.21...v4.0.0-alpha.22) (2025-09-19)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.21](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.20...v4.0.0-alpha.21) (2025-09-19)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.20](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.19...v4.0.0-alpha.20) (2025-09-11)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.19](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.18...v4.0.0-alpha.19) (2025-09-11)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.18](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.17...v4.0.0-alpha.18) (2025-09-11)
+
+### Bug Fixes
+
+- **custom-element:** use exact versions for TipTap packages ([ee95203](https://github.com/d-zero-dev/BurgerEditor/commit/ee952030a10823ede36eb84ca4da01032283c788))
+
+### Features
+
+- **custom-element:** add image support to WYSIWYG editor ([88e1f6b](https://github.com/d-zero-dev/BurgerEditor/commit/88e1f6b5331d7521e5811ff1cf9b40888f4b3908))
+
+# [4.0.0-alpha.17](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.16...v4.0.0-alpha.17) (2025-08-25)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.16](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.15...v4.0.0-alpha.16) (2025-08-22)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.15](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.14...v4.0.0-alpha.15) (2025-08-22)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.14](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.13...v4.0.0-alpha.14) (2025-08-14)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.13](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.12...v4.0.0-alpha.13) (2025-08-13)
+
+**Note:** Version bump only for package @burger-editor/custom-element
+
+# [4.0.0-alpha.12](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.11...v4.0.0-alpha.12) (2025-08-08)
+
+### Bug Fixes
+
+- **custom-element:** update button-like-link content structure from inline to paragraph ([49a750c](https://github.com/d-zero-dev/BurgerEditor/commit/49a750cbdcaaa12c4d873d296f53cd077b3b590c))
+
+# [4.0.0-alpha.11](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.10...v4.0.0-alpha.11) (2025-08-01)
+
+### Features
+
+- **custom-element:** add wrapper element support for wysiwyg editor ([33bc035](https://github.com/d-zero-dev/BurgerEditor/commit/33bc03545019a4a79b011933c3fb062481940d32))
+- **custom-element:** support multiple extensions in bge-wysiwyg-editor-element ([db4891a](https://github.com/d-zero-dev/BurgerEditor/commit/db4891aa9c0a9fcb97c76248d56e8d93ff51f746))
+
+# [4.0.0-alpha.10](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.9...v4.0.0-alpha.10) (2025-08-01)
+
+### Bug Fixes
+
+- **custom-element:** add defining property to descriptionList schema ([ac80688](https://github.com/d-zero-dev/BurgerEditor/commit/ac80688e91bb774d16023c7734255f39d77f8036))
+- **custom-element:** reorder BgeWysiwygEditorKit extension loading ([b109d7d](https://github.com/d-zero-dev/BurgerEditor/commit/b109d7df9c4fbc11b085229a9c123e3dd74360a7))
+
+### Features
+
+- **custom-element:** add BgeWysiwygEditorElement custom element package ([7a2bd8a](https://github.com/d-zero-dev/BurgerEditor/commit/7a2bd8a3439d6e6efa944519ca210cd241ab481b))
+- **custom-element:** add button-like link extension to WYSIWYG editor ([ac322ab](https://github.com/d-zero-dev/BurgerEditor/commit/ac322ab0615ff029e9a7cd7692b6ab6b2fb1e64f))
+- **custom-element:** add class name configuration for links and update HTML attributes ([1d4d198](https://github.com/d-zero-dev/BurgerEditor/commit/1d4d1983f1b63a7f81ee43b0ddd87144fad55eb9))
+- **custom-element:** add custom extension support to wysiwyg editor ([d7fae4c](https://github.com/d-zero-dev/BurgerEditor/commit/d7fae4c8491892e1e995ed5774f632718b3c589f))
+- **custom-element:** add custom table extensions for wysiwyg editor ([ea1ff1f](https://github.com/d-zero-dev/BurgerEditor/commit/ea1ff1f8929dec857af5730ebf824c758ebb5a97))
+- **custom-element:** add description list support ([3fc98ae](https://github.com/d-zero-dev/BurgerEditor/commit/3fc98ae49cf027080cbaa9a7c5c6ed4829a34c69))
+- **custom-element:** add flex-box extension to wysiwyg editor ([1872892](https://github.com/d-zero-dev/BurgerEditor/commit/18728920599ed9a0f51b8acdad02c149ab4ff9c3))
+- **custom-element:** add general-block node and improve description list parsing ([d49d7fd](https://github.com/d-zero-dev/BurgerEditor/commit/d49d7fd20ac3b4332c4d840451a99b791d63b21d))
+- **custom-element:** add note block functionality ([1f1566d](https://github.com/d-zero-dev/BurgerEditor/commit/1f1566d617c8484a9304921e144887d40d8b6688))
+- **custom-element:** add syncWysiwygToTextarea method ([10b1a0a](https://github.com/d-zero-dev/BurgerEditor/commit/10b1a0a57df0124ac80d907b712946df90acdc08))
+- **custom-element:** improve button-like-link toggle behavior and add validation ([7383212](https://github.com/d-zero-dev/BurgerEditor/commit/73832122e508522865cbb2de4e32e53871d24d80))
+- **custom-element:** support initial value from innerHTML in bge-wysiwyg-editor-element ([7e269a0](https://github.com/d-zero-dev/BurgerEditor/commit/7e269a0765a9dc91672458e684ab7439e1ce6a5f))

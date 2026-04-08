@@ -1,0 +1,12 @@
+BurgerEditor
+Copyright 2017-2024 D-ZERO Co., Ltd.
+
+This product includes software developed by
+D-ZERO Co., Ltd. (https://d-zero.co.jp/).
+
+The BurgerEditor is designed to work as part of baserCMS
+(https://basercms.net/) and as a standalone editor.
+
+Some features may be based on or inspired by open source projects
+and libraries. See the individual package dependencies for their
+respective licensing terms.

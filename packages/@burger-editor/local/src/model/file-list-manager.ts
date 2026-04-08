@@ -7,43 +7,69 @@ import type {
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { encode, parseName } from '../helpers/file-name.js';
+import { validateClientPath } from '../helpers/client-path-validation.js';
+import { getCandidateName } from '../helpers/get-candidate-name.js';
 import { pagination } from '../helpers/pagination.js';
+import { scanDirectory } from '../helpers/scan-directory.js';
+import { upload } from '../helpers/upload.js';
 
 export class FileListManager {
 	#allFileListCache: FileListItem[] | null = null;
 	#clientDir: string;
 	#paginationNumber: number;
+	#samplePath: {
+		server: string;
+		client: string;
+	} | null;
 	#serverDir: string;
 
-	constructor(serverDir: string, clientDir: string, paginationNumber = 10) {
+	constructor(
+		serverDir: string,
+		clientDir: string,
+		samplePath: string | null = null,
+		paginationNumber = 10,
+	) {
+		if (!validateClientPath(samplePath)) {
+			throw new TypeError(
+				`Invalid Sample Path: "${samplePath}". Must start with "/", "https://", or "base64:".`,
+			);
+		}
+
 		this.#serverDir = serverDir;
 		this.#clientDir = clientDir;
 		this.#paginationNumber = paginationNumber;
+		this.#samplePath = samplePath
+			? {
+					server: this.#getServerPath(samplePath),
+					client: samplePath,
+				}
+			: null;
 	}
 
 	async add(file: File): Promise<{
 		readonly uploaded: FileListItem;
 		readonly result: FileListResult;
 	}> {
-		const buffer = await file.arrayBuffer();
-		const ext = path.extname(file.name);
-		const fileBaseName = path.basename(file.name, ext);
-		const fileId = this.maxFileId() + 1;
-		const name = encode(fileBaseName);
-		const fileName = `${fileId}__${name}${ext}`;
-		const filePath = path.join(this.#serverDir, fileName);
-		await fs.writeFile(filePath, Buffer.from(buffer));
-		const stats = await fs.stat(filePath);
+		// Get candidate file name
+		const fileName = await getCandidateName(file.name, this.#serverDir);
+
+		// Upload with the candidate name
+		const uploadResult = await upload(fileName, this.#serverDir, file);
+
+		// Clear cache after upload
 		this.#allFileListCache = null;
+
+		// Get updated list
 		const result = await this.getList();
+
+		// Convert UploadResult to FileListItem with URL
 		return {
 			uploaded: {
-				fileId: fileId.toString(),
-				name: fileBaseName,
-				url: `${this.#clientDir}/${fileName}`,
-				size: stats.size,
-				timestamp: stats.mtime.valueOf(),
+				fileId: uploadResult.fileId.toString(),
+				name: uploadResult.name,
+				url: `${this.#clientDir}/${uploadResult.fileName}`,
+				size: uploadResult.size,
+				timestamp: uploadResult.timestamp,
 				sizes: {},
 			},
 			result,
@@ -95,22 +121,24 @@ export class FileListManager {
 	}
 
 	async #getAllList(): Promise<FileListItem[]> {
-		const filePaths = await fs.readdir(this.#serverDir).catch(() => []);
+		// Use shared scanDirectory function
+		const excludePaths = this.#samplePath ? [this.#samplePath.server] : [];
+		const scannedFiles = await scanDirectory(this.#serverDir, excludePaths);
 
 		type FileData = Omit<FileListItem, 'sizes'> & { __size: string };
 
 		const allFiles = await Promise.all(
-			filePaths.map<Promise<FileData | null>>(async (file) => {
-				const { fileId, name, size } = parseName(file);
-				const stat = await fs.stat(path.join(this.#serverDir, file));
+			scannedFiles.map<Promise<FileData | null>>(async (file) => {
+				const stat = await fs.stat(file.serverPath);
+				const clientUrl = path.join(this.#clientDir, path.basename(file.serverPath));
 
 				return {
-					fileId: fileId ?? 'N/A',
-					name,
-					url: `${this.#clientDir}/${file}`,
+					fileId: file.fileId,
+					name: file.name,
+					url: clientUrl,
 					size: stat.size,
 					timestamp: stat.mtime.valueOf(),
-					__size: size,
+					__size: file.size,
 				};
 			}),
 		);
@@ -164,8 +192,26 @@ export class FileListManager {
 			.toSorted((a, b) => Number.parseInt(a.fileId) - Number.parseInt(b.fileId))
 			.toReversed();
 
+		if (this.#samplePath) {
+			const stat = await fs.stat(this.#samplePath.server).catch(() => null);
+			if (stat) {
+				list.unshift({
+					fileId: 'sample',
+					name: 'sample',
+					url: this.#samplePath.client,
+					size: stat.size,
+					timestamp: stat.mtime.valueOf(),
+					sizes: {},
+				});
+			}
+		}
+
 		this.#allFileListCache = list;
 
 		return list;
+	}
+
+	#getServerPath(clientPath: string): string {
+		return path.resolve(this.#serverDir, path.relative(this.#clientDir, clientPath));
 	}
 }

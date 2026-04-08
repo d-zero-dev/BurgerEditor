@@ -4,20 +4,21 @@
 	import { formatByteSize, formatDate } from '@burger-editor/utils';
 
 	import Thumbnail from './thumbnail.svelte';
-	export let engine: BurgerEditorEngine;
-	export let fileType: FileType;
+
+	const { engine, fileType }: { engine: BurgerEditorEngine; fileType: FileType } =
+		$props();
 
 	const getFileList = engine.serverAPI.getFileList;
 	const deleteFile = engine.serverAPI.deleteFile;
 
-	let fileList: readonly FileListItem[] = [];
-	let selectedPath = '';
-	let searchWord = '';
-	let currentPage = 0;
-	let totalPage = 1;
+	let fileList: readonly FileListItem[] = $state([]);
+	let selectedPath = $state('');
+	let searchWord = $state('');
+	let currentPage = $state(0);
+	let totalPage = $state(1);
 
-	let uploaded = 0;
-	let total = 100;
+	let uploaded = $state(0);
+	let total = $state(100);
 
 	let requestDebounce: number = -1;
 
@@ -81,6 +82,7 @@
 	 * @param page
 	 */
 	async function paginate(page: number) {
+		page = Number.isNaN(page) ? 0 : Math.max(0, page);
 		if (currentPage === page) {
 			return;
 		}
@@ -157,7 +159,7 @@
 		<button
 			type="button"
 			disabled={currentPage === 0}
-			on:click={() => paginate(currentPage - 1)}>
+			onclick={() => paginate(currentPage - 1)}>
 			前へ
 		</button>
 		<div class="page">
@@ -167,7 +169,7 @@
 					value={currentPage + 1}
 					min="1"
 					max={totalPage}
-					on:change={(e) => paginate(e.currentTarget.valueAsNumber - 1)}
+					onchange={(e) => paginate(e.currentTarget.valueAsNumber - 1)}
 					aria-label="ページ番号" /></span>
 			<span>/</span>
 			<span>{totalPage}</span>
@@ -175,7 +177,7 @@
 		<button
 			type="button"
 			disabled={currentPage === totalPage - 1}
-			on:click={() => paginate(currentPage + 1)}>
+			onclick={() => paginate(currentPage + 1)}>
 			次へ
 		</button>
 	</div>
@@ -183,7 +185,7 @@
 		type="search"
 		placeholder="検索"
 		value={searchWord}
-		on:input={(e) => search(e.currentTarget.value)} />
+		oninput={(e) => search(e.currentTarget.value)} />
 </div>
 
 <ul class="list">
@@ -193,7 +195,7 @@
 				class="file"
 				type="button"
 				aria-pressed={file.url === selectedPath}
-				on:click={() => selectFile(file.url, file.size)}>
+				onclick={() => selectFile(file.url, file.size)}>
 				<span class="thumbnail"><Thumbnail src={file.url} /></span>
 				{#if file.url.startsWith('blob:')}
 					<span
@@ -209,10 +211,8 @@
 				{/if}
 			</button>
 			{#if !file.url.startsWith('blob:') && deleteFile}
-				<button
-					class="delete"
-					type="button"
-					on:click={() => deleteFile('image', file.url)}>削除</button>
+				<button class="delete" type="button" onclick={() => deleteFile('image', file.url)}
+					>削除</button>
 			{/if}
 		</li>
 	{/each}

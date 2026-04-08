@@ -1,13 +1,14 @@
 {
 	"name": "@burger-editor/migrator",
-	"version": "4.0.0-alpha.0",
+	"version": "4.0.0-alpha.64",
 	"description": "BurgerEditor Content Migration Tool",
 	"author": "D-ZERO",
-	"license": "MIT",
+	"license": "(MIT OR Apache-2.0)",
 	"repository": {
-		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
+		"type": "git",
+		"url": "https://github.com/d-zero-dev/BurgerEditor.git",
+		"directory": "packages/@burger-editor/migrator"
 	},
-	"private": false,
 	"publishConfig": {
 		"access": "public"
 	},
@@ -16,6 +17,10 @@
 		".": {
 			"import": "./dist/index.js",
 			"types": "./dist/index.d.ts"
+		},
+		"./v3": {
+			"import": "./dist/v3/index.js",
+			"types": "./dist/v3/index.d.ts"
 		}
 	},
 	"files": [
@@ -27,9 +32,10 @@
 		"clean": "tsc --build --clean"
 	},
 	"dependencies": {
-		"@burger-editor/blocks": "4.0.0-alpha.0",
-		"@burger-editor/core": "4.0.0-alpha.0",
-		"@burger-editor/utils": "4.0.0-alpha.0",
-		"semver": "7.7.1"
+		"@burger-editor/blocks": "4.0.0-alpha.64",
+		"@burger-editor/core": "4.0.0-alpha.64",
+		"@burger-editor/legacy": "4.0.0-alpha.64",
+		"@burger-editor/utils": "4.0.0-alpha.64",
+		"semver": "7.7.4"
 	}
 }

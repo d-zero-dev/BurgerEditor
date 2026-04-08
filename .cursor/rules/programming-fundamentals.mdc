@@ -1,0 +1,711 @@
+---
+alwaysApply: true
+description: Programming fundamentals and testing strategy
+---
+
+# Programming Fundamentals
+
+## Function-First Development
+
+**Principle**: Prioritize function-based implementation and develop with test-driven approach.
+
+**Problem Pattern**: Unnecessary class creation increases complexity and makes testing difficult.
+
+```typescript
+// Anti-pattern: Creating class for simple processing
+class DataProcessor {
+	process(data: string): string {
+		return data.toUpperCase();
+	}
+}
+```
+
+**Solution Pattern**: Prioritize pure function implementation and create testable designs.
+
+### Early Return Pattern
+
+**Principle**: Write with early returns as much as possible to keep nesting shallow.
+
+**Problem Pattern**: Deep nesting reduces readability and increases complexity.
+
+```typescript
+// Anti-pattern: Deep nesting
+function processUser(user: User | null): string | null {
+	if (user) {
+		if (user.isActive) {
+			if (user.permissions.includes('read')) {
+				if (user.profile) {
+					return user.profile.displayName;
+				} else {
+					return null;
+				}
+			} else {
+				return null;
+			}
+		} else {
+			return null;
+		}
+	} else {
+		return null;
+	}
+}
+```
+
+**Solution Pattern**: Create flat structure with early returns.
+
+```typescript
+// Pattern: Early return
+function processUser(user: User | null): string | null {
+	if (!user) return null;
+	if (!user.isActive) return null;
+	if (!user.permissions.includes('read')) return null;
+	if (!user.profile) return null;
+
+	return user.profile.displayName;
+}
+```
+
+```typescript
+// Pattern: Function-based implementation
+function processData(data: string): string {
+	return data.toUpperCase();
+}
+
+// Module-level caching example
+const cache = new Map<string, ProcessedResult>();
+
+function processWithCache(data: string): ProcessedResult {
+	if (cache.has(data)) {
+		return cache.get(data)!;
+	}
+
+	const result = expensiveProcess(data);
+	cache.set(data, result);
+	return result;
+}
+
+// Easy to test
+test('processData should convert to uppercase', () => {
+	expect(processData('hello')).toBe('HELLO');
+});
+```
+
+## Strategic Class Usage
+
+**Principle**: Use classes only for truly important concepts, clearly distinguishing between singletons and mass-produced instances.
+
+**Class Usage Guidelines**:
+
+- **Important concepts only**: Core concepts like engines, editors, managers
+- **State management required**: When there's state shared across multiple methods
+- **Lifecycle management**: When initialization and cleanup processes are needed
+
+### Singleton Pattern
+
+**Application Target**: Things that should have only one existence system-wide
+
+```typescript
+// Pattern: System-wide engine
+class BurgerEditorEngine {
+	private static instance?: BurgerEditorEngine;
+
+	static getInstance(): BurgerEditorEngine {
+		if (!this.instance) {
+			this.instance = new BurgerEditorEngine();
+		}
+		return this.instance;
+	}
+}
+```
+
+### Instance Pattern
+
+**Application Target**: Things that may be created multiple times
+
+```typescript
+// Pattern: Mass-produced items like blocks and items
+class BurgerBlock {
+	constructor(
+		public readonly id: string,
+		public readonly type: string,
+	) {}
+}
+```
+
+## Test-Driven Development
+
+**Principle**: Base development on test-driven development, ideally practicing TDD.
+
+**Testing Strategy**:
+
+1. **Unit Tests**: vitest + JSDOM for component logic
+2. **Integration Tests**: Playwright for user interactions
+3. **Test First**: Write tests before implementation (TDD)
+
+### Unit Testing Pattern
+
+```typescript
+// Pattern: Test-first development
+describe('formatContent', () => {
+	test('should format HTML content', () => {
+		// Arrange
+		const input = '<p>test</p>';
+		const expected = '<p>test</p>';
+
+		// Act
+		const result = formatContent(input);
+
+		// Assert
+		expect(result).toBe(expected);
+	});
+});
+
+// Implementation after tests
+function formatContent(content: string): string {
+	// Implement according to tests
+	return content;
+}
+```
+
+### Integration Testing Pattern
+
+```typescript
+// Pattern: User interaction testing with Playwright
+test('should create new block', async ({ page }) => {
+	await page.goto('/editor');
+	await page.click('[data-testid="add-block"]');
+	await page.click('[data-testid="text-block"]');
+
+	const block = page.locator('[data-bge-name="text"]');
+	await expect(block).toBeVisible();
+});
+```
+
+## Testing Environment Guidelines
+
+**Available Tools**:
+
+- **vitest**: Unit testing framework
+- **JSDOM**: DOM environment for component testing
+- **Playwright**: End-to-end browser testing
+
+**Testing Scope**:
+
+- **Functions**: Always unit test
+- **Classes**: Test public methods and state transitions
+- **Integration**: Test user workflows with Playwright
+
+### Test Organization
+
+```typescript
+// Pattern: Test file structure
+// src/utils/format.ts
+export function formatText(text: string): string {
+	/* */
+}
+
+// src/utils/format.test.ts
+import { formatText } from './format.js';
+
+describe('formatText', () => {
+	test('should handle empty string', () => {
+		expect(formatText('')).toBe('');
+	});
+});
+```
+
+### vitest/browser Testing Pattern
+
+**Principle**: Whether to use vitest/browser and Playwright depends on the `vitest.config.ts` configuration. Only available in projects where `browser.enabled: true` is set.
+
+**Pattern**: In vitest/browser environment, use vitest DOM's DOM API to get elements, then wrap them with `page.elementLocator()` before operating. BurgerEditorEngine's editor area is an iframe, so use `page.frameLocator()` to access its contents.
+
+**Important Notes**:
+
+- The `page` object from vitest/browser is different from Playwright's `page` object
+- Use vitest DOM's DOM API (e.g., `document.querySelector`) to get DOM elements
+- Wrap retrieved DOM elements with `page.elementLocator()` before operating
+- Use `page.frameLocator()` to access elements inside iframes
+
+```typescript
+// Pattern: Element operations in vitest/browser
+import { page } from 'vitest/browser';
+
+// 1. Get element using vitest DOM's DOM API
+const dialogElement = document.querySelector('dialog:has(#item-editor-dialog-form)');
+
+// 2. Wrap with elementLocator and operate
+const dialogLocator = page.elementLocator(dialogElement);
+expect(dialogLocator).toBeVisible();
+
+// 3. Access elements inside iframe
+const iframe = page.elementLocator(engine.el.querySelector('iframe'));
+const $iframe = page.frameLocator(iframe);
+const itemClickableArea = $iframe.getByAltText('Picture: Test Image');
+await itemClickableArea.click();
+```
+
+## State Management Strategy
+
+**Principle**: Choose state management methods appropriately based on the nature and usage patterns of the state.
+
+### Instance State
+
+**Application Target**: State tightly coupled with complex logic
+
+```typescript
+// Pattern: Engine internal state
+class BurgerEditorEngine {
+	#isEditing: boolean = false;
+	#selectedBlock: BurgerBlock | null = null;
+
+	setEditMode(editing: boolean) {
+		this.#isEditing = editing;
+		// Complex state coordination logic
+		this.#updateUI();
+		this.#handlePermissions();
+	}
+}
+```
+
+### DOM State
+
+**Application Target**: Display state and UI state
+
+```typescript
+// Pattern: State management with DOM attributes
+function setBlockEditMode(element: HTMLElement, editing: boolean) {
+	if (editing) {
+		element.dataset.editing = 'true';
+		element.classList.add('editing');
+	} else {
+		delete element.dataset.editing;
+		element.classList.remove('editing');
+	}
+}
+
+// CSS styling based on state
+// .block[data-editing="true"] { border: 2px solid blue; }
+```
+
+### Event State
+
+**Application Target**: Temporary notifications and state change propagation
+
+```typescript
+// Pattern: State propagation with events
+function notifyBlockChange(block: BurgerBlock) {
+	document.dispatchEvent(
+		new CustomEvent('bge:block-change', {
+			detail: { block },
+		}),
+	);
+}
+
+// Receiver side doesn't hold state, processes as needed
+document.addEventListener('bge:block-change', (event) => {
+	updateToolbar(event.detail.block);
+	saveToHistory(event.detail.block);
+});
+```
+
+### State Management Decision Tree
+
+**When to choose Instance State**:
+
+- ✅ State that coordinates with complex business logic
+- ✅ State referenced and updated by multiple methods
+- ✅ State requiring lifecycle management
+- ✅ State requiring object-specific context
+
+**When to choose DOM State**:
+
+- ✅ Display/visibility state
+- ✅ State requiring CSS integration
+- ✅ State that should be persisted in HTML
+- ✅ State that can be retrieved via DOM queries
+
+**When to choose Event State**:
+
+- ✅ Temporary notifications
+- ✅ Loose coupling between components
+- ✅ State change propagation
+- ✅ Logging and history recording
+
+## Design Decision Framework
+
+**When to Use Functions**:
+
+- ✅ Pure computations
+- ✅ Data transformations
+- ✅ Utility operations
+- ✅ Stateless operations
+- ✅ Module-level caching (Map, WeakMap, Set, WeakSet)
+
+**When to Use Classes**:
+
+- ✅ Core domain concepts (Engine, Block, Item)
+- ✅ State management with multiple methods
+- ✅ Lifecycle management (init, cleanup)
+- ✅ Plugin/Extension systems
+
+**When to Use Singletons**:
+
+- ✅ Application engine
+- ✅ Global configuration
+- ✅ Event system
+- ❌ Data storage (use instances)
+
+**When to Use Instances**:
+
+- ✅ Content entities (blocks, items)
+- ✅ User interface components
+- ✅ Temporary workers
+- ✅ Data models
+
+## Null vs Undefined Usage
+
+**Principle**: Use `null` for explicit "no value" and `undefined` only in limited scenarios.
+
+**Problem Pattern**: Returning `undefined` in union with other types creates unintended implicit value absence.
+
+```typescript
+// Anti-pattern: Returning undefined as a value
+function findUser(id: string): User | undefined {
+	return users.find((u) => u.id === id); // undefined is implicit
+}
+
+function getConfig(key: string): string | undefined {
+	return config[key]; // undefined is unintentional
+}
+```
+
+**Solution Pattern**: Use `null` for explicit "no value".
+
+```typescript
+// Pattern: Explicit null
+function findUser(id: string): User | null {
+	const user = users.find((u) => u.id === id);
+	return user ?? null; // Intentional null
+}
+
+function getConfig(key: string): string | null {
+	return config[key] ?? null; // Explicit no value
+}
+```
+
+### Undefined Usage Guidelines
+
+**When undefined/void usage is acceptable**:
+
+- Standalone undefined not in union with other types
+- Functions without explicit type definition (return type inferred as undefined)
+- `Promise<void>` (expressing only async operation completion)
+
+```typescript
+// ✅ Acceptable usage examples
+function logMessage(message: string) {
+	// No type definition, returns only undefined
+	console.log(message);
+}
+
+function processData(data: string) {
+	// No return value, side effects only
+	someGlobalState.push(data);
+}
+
+async function saveData(data: Data): Promise<void> {
+	// Promise<void> is acceptable
+	await api.save(data);
+}
+
+// ❌ Usage to avoid
+function parseNumber(input: string): number | undefined {
+	// Should be number | null
+}
+```
+
+## Code Quality Enforcement
+
+**Principle**: Never suppress linting errors or TypeScript errors without explicit user permission.
+
+**Forbidden Actions**:
+
+- ❌ Adding `// eslint-disable` comments
+- ❌ Adding `// @ts-ignore` comments
+- ❌ Adding `// @ts-expect-error` comments
+- ❌ Modifying ESLint configuration to suppress errors
+
+**Solution Pattern**: Always fix the root cause of linting and TypeScript errors.
+
+```typescript
+// ❌ Anti-pattern: Suppressing errors
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function badExample(_unused: string) {
+	// @ts-ignore
+	return undefinedVariable;
+}
+
+// ✅ Pattern: Fix the actual issue
+function goodExample(input: string): string {
+	return input.toUpperCase();
+}
+```
+
+**Exception**: Only suppress errors when explicitly requested by the user with clear justification.
+
+## Error Handling Pattern
+
+**Principle**: Avoid deep nesting with try/catch, use `Promise.catch` and early returns for proper error handling.
+
+**Problem Pattern**: Deep nesting with try/catch complicates code.
+
+```typescript
+// Anti-pattern: Deep try/catch nesting
+async function processData(data: Data): Promise<Result | null> {
+	try {
+		const validated = validateData(data);
+		try {
+			const processed = await processValidData(validated);
+			try {
+				const saved = await saveData(processed);
+				return saved;
+			} catch (saveError) {
+				console.error('Save failed:', saveError);
+				return null;
+			}
+		} catch (processError) {
+			console.error('Process failed:', processError);
+			return null;
+		}
+	} catch (validationError) {
+		console.error('Validation failed:', validationError);
+		return null;
+	}
+}
+```
+
+**Solution Pattern**: Use `Promise.catch` with early returns and `instanceof` for error determination.
+
+```typescript
+// Pattern: Promise.catch with early returns
+async function processData(data: Data): Promise<Result | null> {
+	const validated = await validateData(data).catch((error) => error);
+	if (validated instanceof Error) {
+		console.error('Validation failed:', validated);
+		return null;
+	}
+
+	const processed = await processValidData(validated).catch((error) => error);
+	if (processed instanceof Error) {
+		console.error('Process failed:', processed);
+		return null;
+	}
+
+	const saved = await saveData(processed).catch((error) => error);
+	if (saved instanceof Error) {
+		console.error('Save failed:', saved);
+		return null;
+	}
+
+	return saved;
+}
+
+// Pattern: No catch method needed when throwing errors directly
+async function processDataStrict(data: Data): Promise<Result> {
+	const validated = validateData(data); // Errors thrown as-is
+	const processed = await processValidData(validated);
+	const saved = await saveData(processed);
+	return saved;
+}
+
+// Pattern: Handling specific error types
+async function handleSpecificErrors(data: Data): Promise<Result | null> {
+	const result = await processData(data).catch((error) => error);
+
+	if (result instanceof ValidationError) {
+		// Ignore validation errors
+		return null;
+	}
+
+	if (result instanceof NetworkError) {
+		// Network errors as retryable errors
+		throw new RetryableError('Network issue, please retry');
+	}
+
+	if (result instanceof Error) {
+		// Other errors as unexpected errors
+		throw result;
+	}
+
+	return result;
+}
+```
+
+### Error Handling Layers
+
+**Principle**: Don't suppress exceptions at low layers or pure functions, catch at higher layers. Create identifiable Error subclasses.
+
+**Error Hierarchy Design**:
+
+```typescript
+// Pattern: Custom Error class definitions
+class ValidationError extends Error {
+	constructor(
+		message: string,
+		public field: string,
+	) {
+		super(message);
+		this.name = 'ValidationError';
+	}
+}
+
+class NetworkError extends Error {
+	constructor(
+		message: string,
+		public statusCode?: number,
+	) {
+		super(message);
+		this.name = 'NetworkError';
+	}
+}
+
+class ProcessingError extends Error {
+	constructor(
+		message: string,
+		public data?: unknown,
+	) {
+		super(message);
+		this.name = 'ProcessingError';
+	}
+}
+```
+
+**Layer-based Error Handling**:
+
+```typescript
+// Low-level: Pure functions throw exceptions as-is
+function validateEmail(email: string): string {
+	if (!email.includes('@')) {
+		throw new ValidationError('Invalid email format', 'email');
+	}
+	return email.trim().toLowerCase();
+}
+
+function parseUserData(json: string): UserData {
+	try {
+		return JSON.parse(json);
+	} catch {
+		throw new ProcessingError('Invalid JSON format');
+	}
+}
+
+// Mid-level: Business logic also basically throws
+async function fetchUserProfile(id: string): Promise<UserProfile> {
+	const response = await fetch(`/api/users/${id}`);
+
+	if (!response.ok) {
+		throw new NetworkError(`Failed to fetch user: ${response.status}`, response.status);
+	}
+
+	const json = await response.text();
+	return parseUserData(json); // Errors propagate as-is
+}
+
+// High-level: Catch at public API or class level
+class UserService {
+	async getUser(id: string): Promise<UserProfile | null> {
+		try {
+			const profile = await fetchUserProfile(id);
+			const validatedEmail = validateEmail(profile.email);
+			return { ...profile, email: validatedEmail };
+		} catch (error) {
+			if (error instanceof ValidationError) {
+				console.warn(`Validation failed for user ${id}:`, error.field);
+				return null;
+			}
+
+			if (error instanceof NetworkError && error.statusCode === 404) {
+				return null; // User not found
+			}
+
+			// Other errors re-thrown (unexpected errors)
+			throw error;
+		}
+	}
+}
+```
+
+**Error Boundaries**:
+
+```typescript
+// Pattern: Error handling at appropriate layers
+// 1. Utility Layer: Throw exceptions
+function formatDate(date: Date): string {
+	if (!(date instanceof Date) || isNaN(date.getTime())) {
+		throw new ValidationError('Invalid date object', 'date');
+	}
+	return date.toISOString();
+}
+
+// 2. Service Layer: Business logic error transformation
+async function createUser(userData: CreateUserRequest): Promise<User> {
+	const validatedEmail = validateEmail(userData.email); // Throw as-is
+	const formattedDate = formatDate(userData.birthDate); // Throw as-is
+
+	// Service-specific error handling
+	const response = await fetch('/api/users', {
+		method: 'POST',
+		body: JSON.stringify({
+			...userData,
+			email: validatedEmail,
+			birthDate: formattedDate,
+		}),
+	});
+
+	if (!response.ok) {
+		throw new NetworkError(`User creation failed: ${response.status}`, response.status);
+	}
+
+	return response.json();
+}
+
+// 3. API Layer: User-facing error responses
+export async function handleCreateUser(req: Request): Promise<Response> {
+	try {
+		const user = await createUser(req.body);
+		return Response.json({ success: true, user });
+	} catch (error) {
+		if (error instanceof ValidationError) {
+			return Response.json(
+				{
+					success: false,
+					error: 'Validation failed',
+					field: error.field,
+				},
+				{ status: 400 },
+			);
+		}
+
+		if (error instanceof NetworkError) {
+			return Response.json(
+				{
+					success: false,
+					error: 'Service unavailable',
+				},
+				{ status: 503 },
+			);
+		}
+
+		// Log unexpected errors then return 500
+		console.error('Unexpected error:', error);
+		return Response.json(
+			{
+				success: false,
+				error: 'Internal server error',
+			},
+			{ status: 500 },
+		);
+	}
+}
+```

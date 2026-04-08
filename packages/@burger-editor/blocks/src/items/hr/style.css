@@ -1,7 +1,16 @@
 [data-bgi='hr'] {
+	--inline-size: 100%;
 	--border-color: #000;
 	--border-width: 1px;
-	inline-size: 100%;
-	block-size: var(--border-width);
-	border: none;
+	--border-kind: solid;
+
+	> div {
+		display: flex;
+		justify-content: center;
+	}
+
+	hr {
+		inline-size: var(--inline-size);
+		border: var(--border-color) var(--border-kind) var(--border-width);
+	}
 }

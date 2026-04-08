@@ -1,44 +1,22 @@
 #!/usr/bin/env node
 
-import path from 'node:path';
+import { runSearchCommand } from './commands/search.js';
+import { runServerCommand } from './commands/server.js';
 
-import { serve } from '@hono/node-server';
-import c from 'ansi-colors';
-import { Hono } from 'hono';
-import open from 'open';
+const args = process.argv.slice(2);
+const command = args[0];
 
-import { log } from './helpers/debug.js';
-import { getUserConfig } from './model/get-user-config.js';
-import { setRoute } from './route.js';
+if (command === 'search') {
+	// Extract queries (exclude flags)
+	const queries = args.slice(1).filter((arg) => !arg.startsWith('--') && arg !== '-h');
 
-const app = new Hono();
-const userConfig = await getUserConfig();
+	const flags = {
+		url: args.includes('--url'),
+		help: args.includes('--help') || args.includes('-h'),
+	};
 
-const isWatchMode = process.env.DEV_MODE === 'true';
-
-setRoute(app, userConfig);
-
-serve({
-	fetch: app.fetch,
-	hostname: userConfig.host,
-	port: userConfig.port,
-});
-
-const location = `http://${userConfig.host}:${userConfig.port}`;
-const relDocumentRoot =
-	'.' + path.sep + path.relative(process.cwd(), userConfig.documentRoot);
-
-if (userConfig.open && !isWatchMode) {
-	await open(location);
+	await runSearchCommand(queries, flags);
+} else {
+	// Default: start server (backward compatible)
+	await runServerCommand();
 }
-
-process.stdout.write(`
-🍔 ${c.bold.greenBright('BurgerEditor Local App')} 🍔
-
-   ${c.blue('Location')}: ${c.bold(location)}
-   ${c.blue('DocumentRoot')}: ${c.bold.gray(relDocumentRoot)}
-
-   ${c.yellow('Enjoy Developing! 🎉')}
-`);
-
-log('Config: %O', userConfig);

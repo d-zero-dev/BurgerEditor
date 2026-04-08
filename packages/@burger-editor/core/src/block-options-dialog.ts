@@ -1,19 +1,29 @@
 import type { BurgerBlock } from './block/block.js';
-import type { BlockOptions } from './block/types.js';
-import type { BurgerEditorEngine } from './engine/engine.js';
+import type { DialogSettings } from './editor-dialog.js';
+import type { BlockData } from './types.js';
 
 import { EditorDialog } from './editor-dialog.js';
 
+export interface BlockOptionsDialogSettings extends DialogSettings {
+	onChangeBlock: (callback: (block: BurgerBlock) => void) => void;
+	getCurrentBlock: () => BurgerBlock | null;
+}
+
 export class BlockOptionsDialog extends EditorDialog {
 	#currentBlock: BurgerBlock | null = null;
+	#getCurrentBlock: () => BurgerBlock | null;
+	#onChangeBlock: (callback: (block: BurgerBlock) => void) => void;
 
-	constructor(engine: BurgerEditorEngine) {
-		super('options', engine, document.createElement('div'), {
+	constructor(settings: BlockOptionsDialogSettings) {
+		super('options', settings, {
 			buttons: {
 				close: 'キャンセル',
 				complete: '決定',
 			},
 		});
+
+		this.#onChangeBlock = settings.onChangeBlock;
+		this.#getCurrentBlock = settings.getCurrentBlock;
 	}
 
 	/**
@@ -22,9 +32,7 @@ export class BlockOptionsDialog extends EditorDialog {
 	 * @deprecated
 	 */
 	onChangeBlock(callback: (block: BurgerBlock) => void) {
-		this.engine.el.addEventListener('bge:block-change', (e) => {
-			callback(e.detail.block);
-		});
+		this.#onChangeBlock(callback);
 	}
 
 	setContainerProps(formData: FormData) {
@@ -32,12 +40,18 @@ export class BlockOptionsDialog extends EditorDialog {
 			return;
 		}
 
+		const containerType = formData.get('bge-options-container-type');
 		const columns = formData.get('bge-options-columns');
+		const autoRepeat = formData.get('bge-options-auto-repeat');
 		const justify = formData.get('bge-options-justify');
 		const align = formData.get('bge-options-align');
 		const float = formData.get('bge-options-float');
 		const classes = formData.get('bge-options-classes');
 		const id = formData.get('bge-options-id');
+		const linkarea = formData.get('bge-options-linkarea');
+		const repeatMinInlineSize = formData.get('bge-options-repeat-min-inline-size') as
+			| string
+			| null;
 
 		const styles = formData
 			.keys()
@@ -51,10 +65,14 @@ export class BlockOptionsDialog extends EditorDialog {
 
 		const currentOptions = this.#currentBlock.exportOptions();
 
-		const newOptions: BlockOptions = {
-			props: {
-				...currentOptions.props,
+		const newOptions: Partial<BlockData> = {
+			containerProps: {
+				...currentOptions.containerProps,
+				type:
+					(containerType as 'grid' | 'inline' | 'float') ??
+					currentOptions.containerProps.type,
 				columns: columns ? Number(columns) : null,
+				autoRepeat: (autoRepeat as 'fixed' | 'auto-fill' | 'auto-fit') ?? 'fixed',
 				justify: justify as
 					| 'center'
 					| 'start'
@@ -71,9 +89,16 @@ export class BlockOptionsDialog extends EditorDialog {
 					| 'align-baseline'
 					| null,
 				float: float as 'start' | 'end' | null,
+				linkarea: linkarea === 'true',
+				repeatMinInlineSize: repeatMinInlineSize || null,
 			},
-			classList: classes ? classes.toString().split(/\s+/) : currentOptions.classList,
-			id: id ? id.toString() : currentOptions.id,
+			classList:
+				classes
+					?.toString()
+					.split(/\s+/)
+					.map((cls) => cls.trim())
+					.filter((cls) => !!cls) ?? [],
+			id: id?.toString().trim() || null,
 			style: Object.fromEntries(styles),
 		};
 
@@ -93,7 +118,7 @@ export class BlockOptionsDialog extends EditorDialog {
 		super.open();
 		this.reset();
 
-		const currentBlock = this.engine.getCurrentBlock();
+		const currentBlock = this.#getCurrentBlock();
 		if (currentBlock) {
 			this.#currentBlock = currentBlock;
 		}

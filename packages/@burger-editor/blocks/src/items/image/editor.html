@@ -1,25 +1,28 @@
 <div data-bge-dialog="2col">
 	<div data-bge-dialog-ui="sticky">
-		<input type="hidden" name="bge-width" />
-		<input type="hidden" name="bge-height" />
-		<input type="hidden" name="bge-srcset" />
-		<input type="hidden" name="bge-style" />
+		<div>
+			<div data-bge-editor-ui="tabs" data-bge-editor-ui-for="bgi-image__tabs-content"></div>
 
-		<div data-bge-editor-ui="preview"></div>
-		<input type="hidden" name="bge-path" />
-		<input type="hidden" name="bge-empty" />
-		<input type="hidden" name="bge-file-size" />
+			<div id="bgi-image__tabs-content" role="tabpanel" aria-label="画像">
+				<div data-bge-editor-ui="preview"></div>
+				<input type="hidden" name="bge-path[]" />
+				<input type="hidden" name="bge-alt[]" />
+				<input type="hidden" name="bge-width[]" />
+				<input type="hidden" name="bge-height[]" />
+				<input type="hidden" name="bge-media[]" />
+
+				<input type="hidden" name="bge-file-size" />
+				<div>
+					<label>
+						<span>メディアクエリー</span>
+						<input type="text" name="bge-media-input" />
+					</label>
+				</div>
+			</div>
+		</div>
 
 		<div>
-			<label>
-				<span>画像の代替テキスト(alt)</span>
-				<input type="text" name="bge-alt" />
-			</label>
-			<label>
-				<span>キャプション</span>
-				<input type="text" name="bge-caption" />
-			</label>
-			<fieldset>
+			<fieldset id="bge-image-size-fieldset">
 				<legend>画像のサイズ</legend>
 				<div role="radiogroup" aria-labelledby="bgi-image__radio-group1">
 					<div id="bgi-image__radio-group1">基準</div>
@@ -28,20 +31,29 @@
 				</div>
 				<div>
 					<span>
-						<label for="bgi-image__range">幅</label>
-						<output name="bge-css-width"></output>
+						<label for="bgi-image__range-number">幅</label>
+						<input type="number" id="bgi-image__range-number" name="bge-css-width-number" min="1" step="1" value="100" />
+						<output name="bge-css-width-unit">px</output>
 					</span>
-					<input id="bgi-image__range" type="range" name="bge-scale" min="1" max="100" step="1" value="100" />
+					<input aria-label="幅" type="range" name="bge-scale" min="1" max="100" step="1" value="100" />
 				</div>
-				<hr />
 				<div role="radiogroup" aria-labelledby="bgi-image__radio-group2">
 					<div id="bgi-image__radio-group2">縦横比</div>
-					<label><input type="radio" name="bge-aspect-ratio" value="unset" checked />オリジナル</label>
+					<label><input type="radio" name="bge-aspect-ratio" value="revert" checked />オリジナル</label>
 					<label><input type="radio" name="bge-aspect-ratio" value="1/1" />1 : 1</label>
 					<label><input type="radio" name="bge-aspect-ratio" value="4/3" />4 : 3</label>
 					<label><input type="radio" name="bge-aspect-ratio" value="16/9" />16 : 9</label>
 				</div>
+				<input type="hidden" name="bge-css-width" />
 			</fieldset>
+			<label>
+				<span>画像の代替テキスト(alt)</span>
+				<input type="text" name="bge-alt-editable" />
+			</label>
+			<label>
+				<span>キャプション</span>
+				<input type="text" name="bge-caption" />
+			</label>
 			<fieldset>
 				<legend>リンク</legend>
 				<label><input type="checkbox" name="bge-popup" />ポップアップで画像を開く</label>

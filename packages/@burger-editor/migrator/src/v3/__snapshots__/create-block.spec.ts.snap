@@ -1,0 +1,60 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`createBlock > should create block with multiple items 1`] = `
+"<div data-bgb="image-text3" class="bgb-image-text3">
+	<div class="bgt-grid bgt-grid--first">
+		<div data-bgt="image" data-bgt-ver="2.11.0" class="bgt-container bgt-image-container">
+	<div class="bgt-image" data-bge-popup="false" data-bge-empty="0" data-bge-hr="false" data-bge="popup:data-bge-popup, empty:data-bge-empty, hr:data-bge-hr">
+		<a class="bgt-image__link" href="/path/to/img/sample1.jpg" data-bge="path:href">
+			<figure class="bgt-link__box">
+				<div class="bgt-box__image-container">
+					<img src="/path/to/img/sample1.jpg" data-bge="path:src, srcset:srcset, alt:alt, width:width, height:height" alt="画像1" width="" height="" srcset="">
+				</div>
+				<figcaption class="bgt-box__caption" data-bge="caption"></figcaption>
+			</figure>
+		</a>
+	</div>
+</div>
+		<div data-bgt="ckeditor" data-bgt-ver="2.1.0" class="bgt-container bgt-ckeditor-container">
+	<div class="bge-ckeditor" data-bge="ckeditor">テキスト1
+**"サンプル1"**</div>
+</div>
+	</div>
+	<div class="bgt-grid">
+		<div data-bgt="image" data-bgt-ver="2.11.0" class="bgt-container bgt-image-container">
+	<div class="bgt-image" data-bge-popup="false" data-bge-empty="0" data-bge-hr="false" data-bge="popup:data-bge-popup, empty:data-bge-empty, hr:data-bge-hr">
+		<a class="bgt-image__link" href="/path/to/img/sample2.jpg" data-bge="path:href">
+			<figure class="bgt-link__box">
+				<div class="bgt-box__image-container">
+					<img src="/path/to/img/sample2.jpg" data-bge="path:src, srcset:srcset, alt:alt, width:width, height:height" alt="画像2" width="" height="" srcset="">
+				</div>
+				<figcaption class="bgt-box__caption" data-bge="caption"></figcaption>
+			</figure>
+		</a>
+	</div>
+</div>
+		<div data-bgt="ckeditor" data-bgt-ver="2.1.0" class="bgt-container bgt-ckeditor-container">
+	<div class="bge-ckeditor" data-bge="ckeditor">テキスト2
+**"サンプル2"**</div>
+</div>
+	</div>
+	<div class="bgt-grid bgt-grid--last">
+		<div data-bgt="image" data-bgt-ver="2.11.0" class="bgt-container bgt-image-container">
+	<div class="bgt-image" data-bge-popup="false" data-bge-empty="0" data-bge-hr="false" data-bge="popup:data-bge-popup, empty:data-bge-empty, hr:data-bge-hr">
+		<a class="bgt-image__link" href="/path/to/img/sample3.jpg" data-bge="path:href">
+			<figure class="bgt-link__box">
+				<div class="bgt-box__image-container">
+					<img src="/path/to/img/sample3.jpg" data-bge="path:src, srcset:srcset, alt:alt, width:width, height:height" alt="画像3" width="" height="" srcset="">
+				</div>
+				<figcaption class="bgt-box__caption" data-bge="caption"></figcaption>
+			</figure>
+		</a>
+	</div>
+</div>
+		<div data-bgt="ckeditor" data-bgt-ver="2.1.0" class="bgt-container bgt-ckeditor-container">
+	<div class="bge-ckeditor" data-bge="ckeditor">テキスト3
+**"サンプル3"**</div>
+</div>
+	</div>
+</div>"
+`;

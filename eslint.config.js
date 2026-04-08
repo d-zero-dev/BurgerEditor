@@ -7,11 +7,24 @@ import * as svelteParser from 'svelte-eslint-parser';
  * @type {import('eslint').Linter.Config[]}
  */
 export default [
+	{
+		ignores: [
+			'**/.*/**/*',
+			'**/dist/**',
+			'**/server/**/*',
+			'**/node_modules/**',
+			'**/*.d.ts',
+		],
+	},
 	...dz.configs.frontend,
 	...eslintPluginSvelte.configs['flat/recommended'],
 	{
 		rules: {
 			'@typescript-eslint/no-empty-object-type': 0,
+			'@typescript-eslint/no-unused-vars': [
+				2,
+				{ argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+			],
 		},
 	},
 	{
@@ -23,21 +36,29 @@ export default [
 				extraFileExtensions: ['.svelte'],
 			},
 		},
+		settings: {
+			'import-x/parsers': {
+				'@typescript-eslint/parser': ['.ts', '.js'],
+			},
+		},
 		rules: {
 			'svelte/no-at-html-tags': 0,
 		},
 	},
 	{
-		files: ['*.mjs', '**/*.spec.{js,mjs,ts}'],
+		files: ['**/*.svelte.ts'],
+		languageOptions: {
+			parser: typescriptParser,
+		},
+	},
+	{
+		files: ['*.mjs', '**/*.spec.{js,mjs,ts}', '**/*.config.ts'],
 		rules: {
-			'import/no-extraneous-dependencies': 0,
+			'import-x/no-extraneous-dependencies': 0,
 		},
 	},
 	{
 		files: ['.textlintrc.js'],
 		...dz.configs.commonjs,
-	},
-	{
-		ignores: ['**/.*/**/*', '**/dist/**/*', '**/server/**/*', '**/*.d.ts'],
 	},
 ];

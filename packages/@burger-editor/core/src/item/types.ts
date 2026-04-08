@@ -104,7 +104,7 @@ export interface ItemEditorOptions<
 	C extends { [key: string]: unknown } = {},
 > {
 	customData?: C;
-	open?(data: Readonly<T>, editor: ItemEditorDialog<T, C>): void;
+	open?(data: Readonly<T>, editor: ItemEditorDialog<T, C>): Promise<void> | void;
 	beforeChange?(newData: Readonly<T>, editor: ItemEditorDialog<T, C>): Promise<T> | T;
 	beforeOpen?(data: Readonly<T>, editor: ItemEditorDialog<T, C>): T;
 	isDisable?(item: Item<T, C>): string;

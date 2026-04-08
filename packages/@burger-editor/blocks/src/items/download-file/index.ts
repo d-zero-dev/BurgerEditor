@@ -1,6 +1,5 @@
+import { createItem } from '@burger-editor/core';
 import { formatByteSize } from '@burger-editor/utils';
-
-import { createItem } from '../../create-item.js';
 
 import editor from './editor.html';
 import style from './style.css';
@@ -21,13 +20,13 @@ export default createItem<{
 	editor,
 	editorOptions: {
 		open(data, editor) {
-			editor.engine.componentObserver.notify('file-select', {
+			editor.componentObserver.notify('file-select', {
 				path: data.path,
 				fileSize: Number.parseFloat(data.size ?? '0'),
 				isEmpty: data.path === '',
 				isMounted: false,
 			});
-			editor.engine.componentObserver.on('file-select', ({ path, fileSize, isEmpty }) => {
+			editor.componentObserver.on('file-select', ({ path, fileSize, isEmpty }) => {
 				if (isEmpty) {
 					return;
 				}

@@ -1,0 +1,296 @@
+# Change Log
+
+All notable changes to this project will be documented in this file.
+See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
+
+# [4.0.0-alpha.64](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.63...v4.0.0-alpha.64) (2026-03-30)
+
+### Bug Fixes
+
+- **client:** exclude VR test directory from build dts generation ([e006695](https://github.com/d-zero-dev/BurgerEditor/commit/e006695c6448091ceb0b9b6fa5e1d8992068d550))
+- **client:** exclude VR test directory from svelte-check ([bc0b1b9](https://github.com/d-zero-dev/BurgerEditor/commit/bc0b1b9f6bbc265c21dfeace4352c8828ccd1c5b))
+
+# [4.0.0-alpha.63](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.62...v4.0.0-alpha.63) (2026-03-10)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.62](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.61...v4.0.0-alpha.62) (2026-03-10)
+
+### Bug Fixes
+
+- **client:** resolve BlockMenu crash when engine.content is not yet initialized ([0a3957f](https://github.com/d-zero-dev/BurgerEditor/commit/0a3957f0bf91c73de46de2b90e262fa45ba41f20))
+
+### Features
+
+- **client:** add EngineState bridge for ComponentObserver reactivity ([cfdf25f](https://github.com/d-zero-dev/BurgerEditor/commit/cfdf25fb8e606008ae0cbe13c08ed5e4670527a9))
+
+# [4.0.0-alpha.61](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.60...v4.0.0-alpha.61) (2026-02-18)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.60](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.59...v4.0.0-alpha.60) (2026-02-16)
+
+### Features
+
+- **client:** add repeat-min-inline-size preset selector to block options UI ([a60077a](https://github.com/d-zero-dev/BurgerEditor/commit/a60077a29d20bc8819559eca73b9686d114a1cf6))
+
+# [4.0.0-alpha.59](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.58...v4.0.0-alpha.59) (2026-02-12)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.58](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.57...v4.0.0-alpha.58) (2026-02-05)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.57](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.56...v4.0.0-alpha.57) (2026-02-03)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.56](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.55...v4.0.0-alpha.56) (2026-01-23)
+
+### Features
+
+- **client:** add container query support to fieldset elements ([acbe312](https://github.com/d-zero-dev/BurgerEditor/commit/acbe312865289e725e541698a452a9e7f73e9322))
+
+# [4.0.0-alpha.55](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.54...v4.0.0-alpha.55) (2026-01-23)
+
+### Bug Fixes
+
+- **client:** adjust select element padding for experimental mode selector ([a86bf75](https://github.com/d-zero-dev/BurgerEditor/commit/a86bf75a7ca1d47ebc825b95e2c3cfa35d86bf04))
+
+### Features
+
+- **client:** pass experimental.itemOptions.wysiwyg.enableTextOnlyMode to custom element ([1101db6](https://github.com/d-zero-dev/BurgerEditor/commit/1101db656215c37e873b8af1e14140021d5a2451))
+
+# [4.0.0-alpha.54](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.53...v4.0.0-alpha.54) (2026-01-22)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.53](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.52...v4.0.0-alpha.53) (2026-01-22)
+
+### Features
+
+- **client:** add paste functionality to block catalog dialog ([3512478](https://github.com/d-zero-dev/BurgerEditor/commit/35124780830703e462c203c6c401db492f46a1ae))
+
+# [4.0.0-alpha.52](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.51...v4.0.0-alpha.52) (2026-01-21)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.51](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.50...v4.0.0-alpha.51) (2026-01-16)
+
+### Features
+
+- **client:** add linkarea checkbox to block options ([c6ee2ee](https://github.com/d-zero-dev/BurgerEditor/commit/c6ee2ee23bb7c81a6285c5ade863925038e437ee))
+
+# [4.0.0-alpha.50](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.49...v4.0.0-alpha.50) (2026-01-15)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.49](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.48...v4.0.0-alpha.49) (2026-01-15)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.48](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.47...v4.0.0-alpha.48) (2026-01-08)
+
+### Bug Fixes
+
+- **client:** fix style extension select showing wrong value when before default ([700eae2](https://github.com/d-zero-dev/BurgerEditor/commit/700eae280d1709c005368c3b67376dae96c83993))
+
+# [4.0.0-alpha.47](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.46...v4.0.0-alpha.47) (2026-01-06)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.46](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.45...v4.0.0-alpha.46) (2026-01-06)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.45](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.44...v4.0.0-alpha.45) (2025-12-26)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.44](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.43...v4.0.0-alpha.44) (2025-12-25)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.43](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.42...v4.0.0-alpha.43) (2025-12-24)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.42](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.41...v4.0.0-alpha.42) (2025-12-11)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.34](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.33...v4.0.0-alpha.34) (2025-12-01)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.33](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.32...v4.0.0-alpha.33) (2025-12-01)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.32](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.31...v4.0.0-alpha.32) (2025-12-01)
+
+### Bug Fixes
+
+- **client:** set width for number input in label-output span ([0a6e626](https://github.com/d-zero-dev/BurgerEditor/commit/0a6e626534161287fe48b566070a94abf0d23c5c))
+
+# [4.0.0-alpha.31](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.30...v4.0.0-alpha.31) (2025-11-26)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.30](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.29...v4.0.0-alpha.30) (2025-11-13)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.29](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.28...v4.0.0-alpha.29) (2025-10-22)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.28](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.27...v4.0.0-alpha.28) (2025-10-22)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.27](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.26...v4.0.0-alpha.27) (2025-10-08)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.26](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.25...v4.0.0-alpha.26) (2025-10-08)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.25](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.24...v4.0.0-alpha.25) (2025-09-19)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.24](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.23...v4.0.0-alpha.24) (2025-09-19)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.23](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.22...v4.0.0-alpha.23) (2025-09-19)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.22](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.21...v4.0.0-alpha.22) (2025-09-19)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.21](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.20...v4.0.0-alpha.21) (2025-09-19)
+
+### Bug Fixes
+
+- **client:** pass engine parameter to updateGridItems ([f821e3c](https://github.com/d-zero-dev/BurgerEditor/commit/f821e3ccf4ff5abd960d5f8ff009cf90ebf5a941))
+- **client:** preserve element styles during replace animation ([c489d73](https://github.com/d-zero-dev/BurgerEditor/commit/c489d731ec3f0f0105df004df2f0e3631b5a4569))
+
+# [4.0.0-alpha.20](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.19...v4.0.0-alpha.20) (2025-09-11)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.19](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.18...v4.0.0-alpha.19) (2025-09-11)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.18](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.17...v4.0.0-alpha.18) (2025-09-11)
+
+### Bug Fixes
+
+- **client:** exclude float container type from semantic frame selection ([11f3eee](https://github.com/d-zero-dev/BurgerEditor/commit/11f3eee5ebeda27d02f376b377e8111428368c2b))
+
+### Features
+
+- **client,blocks:** add semantic container frame UI and styles ([f8a10d4](https://github.com/d-zero-dev/BurgerEditor/commit/f8a10d4902c5895cd07de5d2461039e20bb0f34f))
+- **client,core:** add container type selection to block options ([2f766f6](https://github.com/d-zero-dev/BurgerEditor/commit/2f766f6038dfd431edc8aafc9fc6df95ed6bd302))
+- **client:** hide inline layout options for immutable single-item blocks ([de71f00](https://github.com/d-zero-dev/BurgerEditor/commit/de71f00937da23834c039c8f8111d3ffda9c5307))
+- **client:** update UI to select box for autoRepeat options ([768de75](https://github.com/d-zero-dev/BurgerEditor/commit/768de758dce03339c618da5fa2bad6c5b2944b26))
+
+# [4.0.0-alpha.17](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.16...v4.0.0-alpha.17) (2025-08-25)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.16](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.15...v4.0.0-alpha.16) (2025-08-22)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.15](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.14...v4.0.0-alpha.15) (2025-08-22)
+
+### Features
+
+- **client:** update block options to match new specs ([097a505](https://github.com/d-zero-dev/BurgerEditor/commit/097a505bc6057f58582eca7628a3ec2850cc8a89))
+
+# [4.0.0-alpha.14](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.13...v4.0.0-alpha.14) (2025-08-14)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.13](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.12...v4.0.0-alpha.13) (2025-08-13)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.12](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.11...v4.0.0-alpha.12) (2025-08-08)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.11](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.10...v4.0.0-alpha.11) (2025-08-01)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.10](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.9...v4.0.0-alpha.10) (2025-08-01)
+
+### Bug Fixes
+
+- **client:** adjust font size in UI styles ([7976056](https://github.com/d-zero-dev/BurgerEditor/commit/7976056f40ac058ba9d264bb90ddf47c2e06761f))
+- **client:** correct tab border radius properties ([7b4dab0](https://github.com/d-zero-dev/BurgerEditor/commit/7b4dab067c46317d1f1762f0c1f33c29a664995b))
+- **client:** validate page number in paginate function ([bc050dc](https://github.com/d-zero-dev/BurgerEditor/commit/bc050dcb645292c2740fc00d102bc9ea54aa48de))
+
+### Features
+
+- **client:** improve wysiwyg editor spacing and configure stylelint for custom elements ([ff47f4b](https://github.com/d-zero-dev/BurgerEditor/commit/ff47f4b08a0b36cc13559761bfbd7ecbe0e8a531))
+- **core:** add auto-fit grid layout functionality ([09afd9f](https://github.com/d-zero-dev/BurgerEditor/commit/09afd9f8cdd548f00532b79776b104e2b6ddb1ce))
+
+# [4.0.0-alpha.9](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.8...v4.0.0-alpha.9) (2025-07-11)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.8](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.7...v4.0.0-alpha.8) (2025-07-11)
+
+### Bug Fixes
+
+- **client:** change outline display condition to hover only ([4f82950](https://github.com/d-zero-dev/BurgerEditor/commit/4f82950ff0761b5c7bdaaa93c217ab42c511468f))
+
+### Features
+
+- **blocks:** migrate wysiwyg editor from trix to lexical ([9bf448b](https://github.com/d-zero-dev/BurgerEditor/commit/9bf448bd6e341db08d257fef8315f057699e5637))
+
+# [4.0.0-alpha.7](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.6...v4.0.0-alpha.7) (2025-07-03)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.6](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.5...v4.0.0-alpha.6) (2025-06-26)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.5](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.4...v4.0.0-alpha.5) (2025-06-26)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.4](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.3...v4.0.0-alpha.4) (2025-04-07)
+
+### Features
+
+- **client:** add tabs UI ([8518ed2](https://github.com/d-zero-dev/BurgerEditor/commit/8518ed2cf1ef2e6201d28a19cc71128c7edfbdfd))
+
+# [4.0.0-alpha.3](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.2...v4.0.0-alpha.3) (2025-04-03)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.2](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.1...v4.0.0-alpha.2) (2025-04-03)
+
+**Note:** Version bump only for package @burger-editor/client
+
+# [4.0.0-alpha.1](https://github.com/d-zero-dev/BurgerEditor/compare/v0.10.0...v4.0.0-alpha.1) (2025-04-03)
+
+### Features
+
+- **repo:** create v4 ([1efcf18](https://github.com/d-zero-dev/BurgerEditor/commit/1efcf18e2f59567a87c5589ae057195c31dbc0e8))
+
+### BREAKING CHANGES
+
+- **repo:** created v4

@@ -1,28 +1,47 @@
 <div>
-	<label>
-		<span>ボタンの種類</span>
-		<select name="bge-kind">
-			<option value="link">リンク</option>
-			<option value="em">強調リンク</option>
-			<option value="external">外部リンク</option>
-			<option value="back">戻る</option>
-		</select>
-	</label>
+	<fieldset>
+		<legend>リンク</legend>
+		<label>
+			<span>URL</span>
+			<input type="text" name="bge-link" />
+		</label>
+		<label>
+			<span>ターゲット</span>
+			<select name="bge-target">
+				<option value="">指定なし</option>
+				<option value="_blank">新しいウィンドウ(_blank)</option>
+				<option value="_top">最上部ウィンドウ(_top)</option>
+				<option value="_self">同じウィンドウ(_self)</option>
+			</select>
+		</label>
+	</fieldset>
 	<label>
 		<span>テキスト</span>
 		<input type="text" name="bge-text" />
 	</label>
 	<label>
-		<span>リンク</span>
-		<input type="text" name="bge-link" />
+		<span>サブテキスト</span>
+		<input type="text" name="bge-subtext" />
 	</label>
 	<label>
-		<span>ターゲット</span>
-		<select name="bge-target">
-			<option value="">指定なし</option>
-			<option value="_blank">新しいウィンドウ(_blank)</option>
-			<option value="_top">最上部ウィンドウ(_top)</option>
-			<option value="_self">同じウィンドウ(_self)</option>
+		<span>ボタンのスタイル</span>
+		<select name="bge-kind">
+			<!-- 選択肢はJavaScriptで動的に生成されます -->
 		</select>
 	</label>
+	<fieldset>
+		<legend>アイコン</legend>
+		<label>
+			<span>前</span>
+			<select name="bge-before-icon">
+				<!-- 選択肢はJavaScriptで動的に生成されます -->
+			</select>
+		</label>
+		<label>
+			<span>後</span>
+			<select name="bge-after-icon">
+				<!-- 選択肢はJavaScriptで動的に生成されます -->
+			</select>
+		</label>
+	</fieldset>
 </div>

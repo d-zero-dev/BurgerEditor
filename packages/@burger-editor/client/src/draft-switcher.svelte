@@ -1,13 +1,10 @@
 <script lang="ts">
 	import type { BurgerEditorEngine } from '@burger-editor/core';
 
-	import { onMount } from 'svelte';
-	export let engine: BurgerEditorEngine;
+	const { engine }: { engine: BurgerEditorEngine } = $props();
 
-	let isMain: boolean;
-	let isVisualMode: boolean;
-
-	onMount(update);
+	let isMain = $state(engine.content.type === 'main');
+	let isVisualMode = $state(engine.content.isVisualMode);
 
 	/**
 	 *
@@ -97,8 +94,8 @@
 		<button
 			type="button"
 			aria-pressed={isMain}
-			on:click={onClickMain}
-			on:dblclick={onDblClickMain}
+			onclick={onClickMain}
+			ondblclick={onDblClickMain}
 			>本稿モード
 			{#if isMain && !isVisualMode}
 				<span>ソース表示</span>
@@ -107,8 +104,8 @@
 		<button
 			type="button"
 			aria-pressed={!isMain}
-			on:click={onClickDraft}
-			on:dblclick={onDblClickDraft}
+			onclick={onClickDraft}
+			ondblclick={onDblClickDraft}
 			>下書きモード
 			{#if !isMain && !isVisualMode}
 				<span>ソース表示</span>
@@ -116,9 +113,9 @@
 	</div>
 	<div class="draft-copy-btn">
 		{#if isMain}
-			<button type="button" on:click={onClickMainToDraft}>本稿を下書きにコピー</button>
+			<button type="button" onclick={onClickMainToDraft}>本稿を下書きにコピー</button>
 		{:else}
-			<button type="button" on:click={onClickDraftToMain}>下書きを本稿にコピー</button>
+			<button type="button" onclick={onClickDraftToMain}>下書きを本稿にコピー</button>
 		{/if}
 	</div>
 </div>
@@ -131,7 +128,8 @@
 
 	button {
 		display: block;
-		padding: 3px 5px;
+		padding-block: 3px;
+		padding-inline: 5px;
 		color: #333;
 		text-decoration: none;
 		background-color: var(--bge-background-color01);
@@ -148,6 +146,7 @@
 		background-color: var(--bge-background-color02) !important;
 		border-color: var(--bge-background-color02) !important;
 	}
+
 	/* stylelint-enable declaration-no-important */
 
 	.draft-tab-btn button:hover {

@@ -1,18 +1,35 @@
-import type { ItemData, ItemSeed } from '../item/types.js';
-import type { BurgerEditorEngineOptions, UIOptions, Config, FileAPI } from '../types.js';
+import type { ContainerType } from '../block/types.js';
+import type { DialogSettings } from '../editor-dialog.js';
+import type { ItemSeed } from '../item/types.js';
+import type {
+	BurgerEditorEngineOptions,
+	UIOptions,
+	Config,
+	FileAPI,
+	BlockItem,
+	BlockData,
+} from '../types.js';
 
 import { BurgerBlock } from '../block/block.js';
 import { BlockCatalogDialog } from '../block-catalog-dialog.js';
 import { BlockOptionsDialog } from '../block-options-dialog.js';
 import { ComponentObserver } from '../component-observer.js';
+import { CSS_LAYER } from '../const.js';
 import { createComponentStylesheet } from '../dom-helpers/create-component-stylesheet.js';
-import { getCustomProperties } from '../dom-helpers/get-custom-properties.js';
+import { createStylesheetFromUrl } from '../dom-helpers/create-stylesheet-from-url.js';
+import { createStylesheet } from '../dom-helpers/create-stylesheet.js';
+import {
+	getCustomProperties,
+	getCustomProperty,
+	getRepeatMinInlineSizeVariants,
+} from '../dom-helpers/get-custom-properties.js';
 import { getElement } from '../dom-helpers/get-element.js';
 import { EditableArea } from '../editable-area.js';
 import { createBgeEvent } from '../event/create-bge-event.js';
+import { HealthMonitor } from '../health-monitor.js';
+import { getItemEditorTemplate } from '../item/get-item-editor-template.js';
+import { Item } from '../item/item.js';
 import { ItemEditorDialog } from '../item-editor-dialog.js';
-
-import { getBlockTemplate } from './get-block-template.js';
 
 type ConfirmCallback = () => Promise<boolean> | boolean;
 
@@ -22,11 +39,13 @@ export class BurgerEditorEngine {
 	readonly componentObserver = new ComponentObserver();
 	readonly config: Config;
 	readonly css: {
-		readonly stylesheets: readonly string[];
+		readonly stylesheets: readonly {
+			readonly path: string;
+			readonly layer?: string;
+		}[];
 		readonly classList: readonly string[];
 		readonly generalCSS: string;
 	};
-	readonly defaultBlocks: ReadonlyMap<string, string>;
 	readonly el: HTMLElement;
 	readonly itemEditorDialog: ItemEditorDialog<{}, {}>;
 	readonly items: Map<string, ItemSeed>;
@@ -36,11 +55,13 @@ export class BurgerEditorEngine {
 	};
 	readonly ui: UIOptions;
 	readonly viewArea: HTMLElement;
+	#contentStylesheetCache: string | null = null;
 	#current!: EditableArea;
 	#currentBlock: BurgerBlock | null = null;
-	readonly #draft!: EditableArea<'draft'> | null;
+	#draft!: EditableArea<'draft'> | null;
+	readonly #healthMonitor: HealthMonitor;
 	#isProcessed: boolean = false;
-	readonly #main!: EditableArea<'main'>;
+	#main!: EditableArea<'main'>;
 	#migrationCheck: ((dom: HTMLElement) => void) | null = null;
 
 	get isProcessed() {
@@ -67,20 +88,24 @@ export class BurgerEditorEngine {
 			...options.storageKey,
 		};
 
+		// Health monitor setup
+		this.#healthMonitor = new HealthMonitor({
+			...options.healthCheck,
+			onOffline: (timestamp) => {
+				const event = createBgeEvent('bge:server-offline', { timestamp });
+				this.el.dispatchEvent(event);
+			},
+			onOnline: (timestamp) => {
+				const event = createBgeEvent('bge:server-online', { timestamp });
+				this.el.dispatchEvent(event);
+			},
+		});
+
 		this.css = {
 			stylesheets: options.config.stylesheets ?? [],
 			classList: options.config.classList ?? [],
 			generalCSS: options.generalCSS,
 		};
-
-		this.defaultBlocks = new Map(
-			Object.entries(options.blocks).map(([name, templateBlock]) => {
-				const templateCode = templateBlock.template
-					.replaceAll('%sampleImagePath%', options.config.sampleImagePath)
-					.replaceAll('%googleMapsApiKey%', options.config.googleMapsApiKey ?? '');
-				return [name, templateCode];
-			}),
-		);
 
 		if (
 			this.config.googleMapsApiKey &&
@@ -91,21 +116,82 @@ export class BurgerEditorEngine {
 			document.head.append(script);
 		}
 
-		this.blockCatalogDialog = new BlockCatalogDialog(
-			this,
-			options.catalog,
-			options.blocks,
-		);
+		const dialogSettings: DialogSettings = {
+			onClosed: () => {
+				this.componentObserver.off();
+				this.save();
+			},
+			onOpen: () => {
+				return this.isProcessed;
+			},
+			createEditorComponent: (el) => {
+				const editorComponentSubClassName = el.dataset.bgeEditorUi;
+				if (editorComponentSubClassName && this.#isUIName(editorComponentSubClassName)) {
+					const cleanUpHook = this.ui[editorComponentSubClassName]?.(el, this);
+					return cleanUpHook?.cleanUp;
+				}
+				return;
+			},
+			createDialogShell: options.dialogShell,
+		};
 
-		this.blockOptionsDialog = new BlockOptionsDialog(this);
+		this.blockCatalogDialog = new BlockCatalogDialog(options.catalog, {
+			...dialogSettings,
+			addBlock: (blockData) => {
+				return this.addBlock(blockData);
+			},
+		});
 
-		this.itemEditorDialog = new ItemEditorDialog(this);
+		this.blockOptionsDialog = new BlockOptionsDialog({
+			...dialogSettings,
+			onChangeBlock: (callback) => {
+				this.el.addEventListener('bge:block-change', (e) => {
+					callback(e.detail.block);
+				});
+			},
+			getCurrentBlock: () => {
+				return this.getCurrentBlock();
+			},
+		});
+
+		this.itemEditorDialog = new ItemEditorDialog({
+			...dialogSettings,
+			config: this.config,
+			onOpened: (data, editor) => {
+				this.componentObserver.notify('open-editor', {
+					data,
+					editor,
+				});
+			},
+			getComponentObserver: () => {
+				return this.componentObserver;
+			},
+			getTemplate: (itemName: string) => {
+				return getItemEditorTemplate(this, itemName);
+			},
+			getContentStylesheet: async () => {
+				if (this.#contentStylesheetCache) {
+					return this.#contentStylesheetCache;
+				}
+				const css = await Promise.all(
+					this.css.stylesheets
+						.filter((sheet) => sheet.layer == null)
+						.map(async (sheet) => {
+							const res = await fetch(sheet.path);
+							return res.text();
+						}),
+				);
+				// generalCSSを含める
+				const stylesheets = [this.css.generalCSS, ...css];
+				this.#contentStylesheetCache = stylesheets.join('\n');
+				return this.#contentStylesheetCache;
+			},
+		});
 
 		this.items = new Map();
 		if (options.items) {
 			for (const [name, seed] of Object.entries(options.items)) {
 				this.items.set(name, seed);
-				BurgerEditorEngine.#addItem(seed);
 			}
 		}
 
@@ -124,8 +210,8 @@ export class BurgerEditorEngine {
 		});
 	}
 
-	async addBlock(blockName: string) {
-		const block = await BurgerBlock.new(this, blockName);
+	async addBlock(data: BlockData) {
+		const block = await BurgerBlock.create(data, this.#createItemElement.bind(this));
 		const message = block.isDisable();
 		if (message) {
 			alert(message);
@@ -133,6 +219,13 @@ export class BurgerEditorEngine {
 		}
 		await this.content.insertionPoint.insert(block);
 		this.save();
+	}
+
+	/**
+	 * Clean up resources and stop monitoring
+	 */
+	cleanUp() {
+		this.#healthMonitor.stop();
 	}
 
 	clearCurrentBlock() {
@@ -156,10 +249,6 @@ export class BurgerEditorEngine {
 		return false;
 	}
 
-	getBlockTemplate(name: string) {
-		return getBlockTemplate(this.defaultBlocks, name);
-	}
-
 	getCurrentBlock() {
 		if (!this.#currentBlock) {
 			// eslint-disable-next-line no-console
@@ -168,8 +257,19 @@ export class BurgerEditorEngine {
 		return this.#currentBlock;
 	}
 
-	getCustomProperties() {
-		return getCustomProperties(this.#current);
+	getCustomProperties(containerType?: ContainerType) {
+		return getCustomProperties(
+			this.#current.containerElement.ownerDocument,
+			containerType,
+		);
+	}
+
+	getCustomProperty(property: string | RegExp) {
+		return getCustomProperty(this.#current.containerElement.ownerDocument, property);
+	}
+
+	getRepeatMinInlineSizeVariants() {
+		return getRepeatMinInlineSizeVariants(this.#current.containerElement.ownerDocument);
 	}
 
 	hasDraft() {
@@ -206,6 +306,16 @@ export class BurgerEditorEngine {
 		this.migrationCheck(this.#current.containerElement);
 	}
 
+	/**
+	 * HTML要素からブロックを復元する
+	 * HTML要素から完全にBlockDefinitionを解析してブロック作成
+	 * @param element HTML要素
+	 * @returns 復元されたBurgerBlock
+	 */
+	restoreBlockFromElement(element: HTMLElement) {
+		return BurgerBlock.rebind(element, this.#createItemElement.bind(this));
+	}
+
 	save() {
 		this.#main.save();
 		if (this.#draft) {
@@ -235,6 +345,21 @@ export class BurgerEditorEngine {
 		return isChanged;
 	}
 
+	/**
+	 * Set editor read-only state
+	 * @param readOnly
+	 */
+	setReadOnly(readOnly: boolean) {
+		if (readOnly) {
+			this.el.inert = true;
+			this.el.dataset.readonly = 'true';
+			return;
+		}
+
+		this.el.inert = false;
+		delete this.el.dataset.readonly;
+	}
+
 	showDraft() {
 		if (!this.#draft) {
 			return;
@@ -244,6 +369,39 @@ export class BurgerEditorEngine {
 
 	showMain() {
 		this.#show(this.#main);
+	}
+
+	async #createItemElement(itemData: BlockItem | HTMLElement) {
+		if (typeof itemData !== 'string' && 'localName' in itemData) {
+			const item = Item.rebind(itemData, this.items, this.itemEditorDialog);
+			return item.el;
+		}
+
+		const name = typeof itemData === 'string' ? itemData : itemData.name;
+		const item = await Item.create(
+			name,
+			this.items,
+			this.itemEditorDialog,
+			typeof itemData === 'string' ? undefined : itemData.data,
+		);
+		return item.el;
+	}
+
+	#isUIName(name: string): name is keyof UIOptions {
+		return name in this.ui;
+	}
+
+	/**
+	 * Setup health event listeners for automatic read-only mode
+	 */
+	#setupHealthEventListeners() {
+		this.el.addEventListener('bge:server-offline', () => {
+			this.setReadOnly(true);
+		});
+
+		this.el.addEventListener('bge:server-online', () => {
+			this.setReadOnly(false);
+		});
 	}
 
 	#show(to: EditableArea) {
@@ -266,24 +424,48 @@ export class BurgerEditorEngine {
 	static readonly BLOCK_ID_PREFIX = 'bge-';
 	static readonly STORAGE_KEY_OF_COPIED_BLOCK = 'bge-copied-block';
 
-	static readonly #itemSeeds = new Map<string, ItemSeed>();
-
 	static async new(options: BurgerEditorEngineOptions) {
 		const engine = new BurgerEditorEngine(options);
 
-		const componentStylesheet = createComponentStylesheet(
-			options.items,
-			options.generalCSS,
+		const layers = createStylesheet(
+			`@layer ${CSS_LAYER.base}, ${CSS_LAYER.components}, ${CSS_LAYER.ui};`,
 		);
 
-		const stylesheets = [componentStylesheet, ...(options.config.stylesheets ?? [])];
+		const baseStylesheet = createComponentStylesheet(
+			options.items,
+			options.generalCSS,
+			CSS_LAYER.base,
+		);
+
+		const componentStylesheets = await Promise.all(
+			options.config.stylesheets.map(async (stylesheet) => {
+				return createStylesheetFromUrl(
+					stylesheet.path,
+					stylesheet.layer ?? CSS_LAYER.components,
+				);
+			}),
+		);
+
+		const stylesheets = [
+			{
+				path: layers,
+				id: 'layers',
+			},
+			{
+				path: baseStylesheet,
+				id: 'base-stylesheet',
+			},
+			...componentStylesheets.map(({ blob, originalUrl }) => ({
+				path: blob,
+				id: originalUrl,
+			})),
+		];
 
 		const mainInitialContent =
 			typeof options.initialContents === 'string'
 				? options.initialContents
 				: options.initialContents.main;
 
-		// @ts-ignore force assign to readonly property
 		engine.#main =
 			//
 			await EditableArea.new(
@@ -291,14 +473,15 @@ export class BurgerEditorEngine {
 				mainInitialContent,
 				engine,
 				options.blockMenu,
+				options.initialInsertionButton,
 				stylesheets,
 				options.config.classList,
+				options.editableAreaShell,
 			);
 
 		const draftInitialContent =
 			typeof options.initialContents === 'string' ? null : options.initialContents.draft;
 
-		// @ts-ignore force assign to readonly property
 		engine.#draft =
 			draftInitialContent == null
 				? null
@@ -307,33 +490,27 @@ export class BurgerEditorEngine {
 						draftInitialContent,
 						engine,
 						options.blockMenu,
+						options.initialInsertionButton,
 						stylesheets,
 						options.config.classList,
+						options.editableAreaShell,
 					);
 
 		engine.#current = engine.#main;
 		engine.showMain();
 		engine.save();
 
-		return engine;
-	}
-
-	static #addItem(seed: ItemSeed) {
-		if (this.#itemSeeds.has(seed.name)) {
-			// eslint-disable-next-line no-console
-			console.warn(`"${seed.name}" is already exists.`);
-			return;
+		if (options.defineCustomElement) {
+			await options.defineCustomElement({
+				className: options.config.classList.join(' '),
+				experimental: options.config.experimental,
+			});
 		}
 
-		this.#itemSeeds.set(seed.name, seed);
-	}
+		// Start health monitoring
+		engine.#healthMonitor.start();
+		engine.#setupHealthEventListeners();
 
-	static getItemSeed<
-		T extends ItemData,
-		C extends { [key: string]: unknown },
-		N extends keyof T & string = keyof T & string,
-	>(name: string) {
-		const editor = this.#itemSeeds.get(name);
-		return (editor ?? null) as ItemSeed<N, T, C> | null;
+		return engine;
 	}
 }

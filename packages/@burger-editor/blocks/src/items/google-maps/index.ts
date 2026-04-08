@@ -1,4 +1,4 @@
-import { createItem } from '../../create-item.js';
+import { createItem } from '@burger-editor/core';
 
 import editor from './editor.html';
 import style from './style.css';
@@ -131,7 +131,7 @@ export default createItem<
 				scale: '2',
 				size: `${640}x${400}`,
 				markers: `color:red|color:red|${newData.lat},${newData.lng}`,
-				key: editor.engine.config.googleMapsApiKey ?? '',
+				key: editor.config.googleMapsApiKey ?? '',
 			});
 			const img = `${BASE_URL}?${param}`;
 
@@ -150,7 +150,7 @@ export default createItem<
 			return data;
 		},
 		isDisable(item) {
-			if (item.editor.engine.config.googleMapsApiKey) {
+			if (item.editor.config.googleMapsApiKey) {
 				return '';
 			}
 			return 'Google Maps APIキーが登録されていないため、利用できません。\n「システム設定」からAPIキーを登録することができます。';

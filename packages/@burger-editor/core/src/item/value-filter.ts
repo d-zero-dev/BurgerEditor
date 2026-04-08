@@ -1,4 +1,4 @@
-import * as combinateSoundMarks from 'jaco/fn/combinateSoundMarks.js';
+import combinateSoundMarks from 'jaco/combineSoundMarks';
 
 /**
  *
@@ -10,8 +10,7 @@ export function valueFilter<T>(datum: T): T {
 	}
 	let str: string = datum;
 
-	// @ts-ignore
-	str = combinateSoundMarks.default(str);
+	str = combinateSoundMarks(str);
 
 	// Remove data-bgb/data-bgi/data-bge-* attributes
 	if (str.trim().startsWith('<')) {

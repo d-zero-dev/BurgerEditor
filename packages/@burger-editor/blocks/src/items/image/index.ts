@@ -1,33 +1,49 @@
-import { createItem } from '../../create-item.js';
+import { createItem } from '@burger-editor/core';
 
 import editor from './editor.html';
 import style from './style.css';
 import template from './template.html';
+import { createWidthState } from './width.js';
 
 const ORIGIN = '__org';
 
 export default createItem<{
-	path: string;
-	srcset: string;
-	alt: string;
-	width: number;
-	height: number;
-	cssWidth: `${number}px` | `${number}cqi`;
+	// Images (Multiple)
+	path: string[];
+	alt: string[];
+	width: number[];
+	height: number[];
+	media: string[];
+	loading: ('eager' | 'lazy')[];
+
+	// Use in editor
+	fileSize: string;
+	mediaInput: string;
+	// Styles
 	style: string;
+	cssWidth: `${number}px` | `${number}cqi`;
 	scaleType: 'container' | 'original';
 	scale: number;
-	aspectRatio: `${number}/${number}` | 'unset';
+	aspectRatio: `${number}/${number}` | 'revert';
+
+	// Editor Display
+	cssWidthNumber: number;
+	cssWidthUnit: 'px' | 'cqi';
+
+	// Attributes
 	lazy: boolean;
-	loading: 'eager' | 'lazy';
-	decoding: 'sync' | 'async' | 'auto';
+
+	// Additional Data
 	caption: string;
-	popup: boolean;
+	altEditable: string;
+
+	// Behavior
 	node: 'div' | 'button' | 'a';
 	href: string;
+	popup: boolean;
 	target: '_blank' | null;
 	targetBlank: boolean;
 	command: 'show-modal' | null;
-	fileSize: string;
 }>({
 	version: __VERSION__,
 	name: 'image',
@@ -36,8 +52,8 @@ export default createItem<{
 	editor,
 	editorOptions: {
 		beforeOpen(data) {
-			const path = data.path.replace(ORIGIN, '');
-			const lazy = data.loading === 'lazy';
+			const path = (data.path ?? []).map((p) => p.replace(ORIGIN, ''));
+			const lazy = (data.loading ?? []).includes('lazy');
 			const popup = data.node === 'button' && data.command === 'show-modal';
 			const targetBlank = data.node === 'a' && data.target === '_blank';
 			return {
@@ -46,70 +62,182 @@ export default createItem<{
 				lazy,
 				popup,
 				targetBlank,
+				altEditable: data.alt?.[0] ?? '',
 			};
 		},
-		open(data, editor) {
-			editor.engine.componentObserver.notify('file-select', {
-				path: data.path,
-				fileSize: Number.parseFloat(data.fileSize ?? '0'),
-				isEmpty: data.path === '',
-				isMounted: false,
-			});
+		open(initData, editor) {
+			let currentIndex = 0;
+			const widthState = createWidthState();
+			const $fieldset = editor.find<HTMLFieldSetElement>('#bge-image-size-fieldset')!;
 
-			editor.engine.componentObserver.on('file-select', ({ path, isEmpty }) => {
+			// Initialize width state
+			widthState.setScaleType(initData.scaleType);
+			widthState.setScale(initData.scale);
+			widthState.setMaxNumber(initData.width[0] ?? 400);
+			updateCSSWidth();
+
+			selectTab(currentIndex);
+
+			/**
+			 *
+			 */
+			function fileSelect() {
+				const $path = editor.get('$path');
+				const currentPath = $path[currentIndex] ?? $path[0];
+
+				if (!currentPath) {
+					throw new Error('currentPath is not found');
+				}
+
+				editor.componentObserver.notify('file-select', {
+					path: currentPath,
+					fileSize: Number.parseFloat(editor.get('$fileSize') ?? '0'),
+					isEmpty: currentPath === '',
+					isMounted: false,
+				});
+			}
+
+			/**
+			 *
+			 * @param index
+			 */
+			function selectTab(index: number) {
+				currentIndex = index;
+				fileSelect();
+				void _updateImage(editor.get('$path')[currentIndex]!);
+
+				editor.disable('$mediaInput', currentIndex === 0);
+
+				const media = editor.get('$media')[currentIndex] ?? '';
+				editor.update('$mediaInput', media);
+			}
+
+			editor.componentObserver.on('file-select', ({ path, isEmpty }) => {
 				if (isEmpty) {
 					return;
 				}
 
-				const { src, origin } = originImage(path);
-				void Promise.all([loadImage(src), origin ? loadImage(origin) : null]).then(
-					([$src, $origin]) => {
-						if (!$src) {
-							editor.update('$path', src);
-							return;
-						}
-
-						if ($origin) {
-							editor.update('$path', $origin.src);
-							editor.update('$srcset', `${$src.src}, ${$origin.src} 2x`);
-							editor.update('$width', $origin.width);
-							editor.update('$height', $origin.height);
-							updateCSSWidth();
-							return;
-						}
-
-						editor.update('$path', $src.src);
-						editor.update('$width', $src.width);
-						editor.update('$height', $src.height);
-						updateCSSWidth();
-					},
-				);
+				void _updateImage(path);
 			});
 
-			editor.onChange('$scale', updateCSSWidth);
-			editor.onChange('$scaleType', updateCSSWidth);
+			/**
+			 *
+			 * @param path
+			 */
+			async function _updateImage(path: string) {
+				if (!path) {
+					return;
+				}
+
+				$fieldset.disabled = true;
+				const $src = await loadImage(path);
+
+				updateImage($src);
+
+				$fieldset.disabled = false;
+			}
+
+			editor.componentObserver.on('select-tab-in-item-editor', ({ index }) => {
+				selectTab(index);
+			});
+
+			/**
+			 *
+			 * @param $src
+			 */
+			function updateImage($src: ImageData) {
+				if (!$src) {
+					if (__DEBUG__) {
+						// eslint-disable-next-line no-console
+						console.error('画像の読み込みに失敗しました');
+					}
+					return;
+				}
+
+				const path = [...editor.get('$path')];
+				path[currentIndex] = $src.src;
+				editor.update('$path', path);
+
+				const width = [...editor.get('$width')];
+				width[currentIndex] = $src.width;
+				editor.update('$width', width);
+
+				const height = [...editor.get('$height')];
+				height[currentIndex] = $src.height;
+				editor.update('$height', height);
+
+				const media = [...editor.get('$media')];
+				media[currentIndex] = editor.get('$mediaInput');
+				editor.update('$media', media);
+
+				// Update max number
+				widthState.setMaxNumber($src.width);
+
+				updateCSSWidth();
+			}
+			editor.onChange(
+				'$cssWidthNumber',
+				(widthNumber) => {
+					widthState.setNumber(widthNumber);
+					updateCSSWidth();
+				},
+				false,
+			);
+
+			editor.onChange(
+				'$scaleType',
+				(scaleType) => {
+					widthState.setScaleType(scaleType);
+					updateCSSWidth();
+				},
+				false,
+			);
+
+			editor.onChange(
+				'$scale',
+				(scale) => {
+					widthState.setScale(scale);
+					updateCSSWidth();
+				},
+				false,
+			);
+
+			editor.onChange('$mediaInput', (value) => {
+				const media = [...editor.get('$media')];
+				media[currentIndex] = value;
+				editor.update('$media', media);
+			});
+
 			/**
 			 *
 			 */
 			function updateCSSWidth() {
-				const scale = editor.get('$scale');
-				const width = editor.get('$width');
-				const scaleType = editor.get('$scaleType');
-				editor.update(
-					'$cssWidth',
-					scaleType === 'container'
-						? `${scale}cqi`
-						: `${Math.round((width * scale) / 100)}px`,
-				);
+				// console.log(widthState.debug());
+				editor.max('$cssWidthNumber', widthState.getCSSWidthMaxNumber());
+				editor.update('$cssWidthUnit', widthState.getCSSWidthUnit());
+				editor.update('$cssWidthNumber', widthState.getCSSWidthNumber());
+				editor.update('$scaleType', widthState.getScaleType());
+				editor.update('$scale', widthState.getScale());
+				editor.update('$cssWidth', widthState.getCSSWidth());
+
+				editor.componentObserver.notify('update-css-width', {
+					cssWidth: widthState.getCSSWidth(),
+				});
 			}
 
 			editor.onChange('$popup', (disable) => {
 				editor.disable('$href', disable);
 				editor.disable('$targetBlank', disable);
 			});
+
+			editor.onChange('$altEditable', (value) => {
+				const alt = [...editor.get('$alt')];
+				alt[currentIndex] = value;
+				editor.update('$alt', alt);
+			});
 		},
 		beforeChange(newData) {
-			const loading = newData.lazy ? 'lazy' : 'eager';
+			const loading: ('eager' | 'lazy')[] = [newData.lazy ? 'lazy' : 'eager'];
 			const node = newData.popup ? 'button' : newData.href ? 'a' : 'div';
 			const target = node === 'a' && newData.targetBlank ? '_blank' : null;
 			const command = node === 'button' ? 'show-modal' : null;
@@ -140,16 +268,18 @@ export default createItem<{
 	},
 });
 
+type ImageData = {
+	width: number;
+	height: number;
+	src: string;
+} | null;
+
 /**
  *
  * @param src
  */
 async function loadImage(src: string) {
-	return new Promise<{
-		width: number;
-		height: number;
-		src: string;
-	} | null>((resolve, reject) => {
+	return new Promise<ImageData>((resolve, reject) => {
 		const img = new Image();
 		img.src = src;
 		img.addEventListener('load', () =>
@@ -168,22 +298,22 @@ async function loadImage(src: string) {
 	});
 }
 
-/**
- *
- * @param src
- */
-function originImage(src: string) {
-	const filePath = src.match(/^(.*)(\.(?:jpe?g|gif|png|webp))$/i);
+// /**
+//  *
+//  * @param src
+//  */
+// function originImage(src: string) {
+// 	const filePath = src.match(/^(.*)(\.(?:jpe?g|gif|png|webp))$/i);
 
-	if (filePath) {
-		const [, name, ext] = filePath;
-		return {
-			src,
-			origin: `${name}${ORIGIN}${ext}`,
-		};
-	}
-	return {
-		src,
-		origin: null,
-	};
-}
+// 	if (filePath) {
+// 		const [, name, ext] = filePath;
+// 		return {
+// 			src,
+// 			origin: `${name}${ORIGIN}${ext}`,
+// 		};
+// 	}
+// 	return {
+// 		src,
+// 		origin: null,
+// 	};
+// }

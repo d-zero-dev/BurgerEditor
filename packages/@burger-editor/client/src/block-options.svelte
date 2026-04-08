@@ -14,149 +14,278 @@
 	} as const;
 
 	const currentBlock = engine.getCurrentBlock();
-	const cssProps = engine.getCustomProperties();
 
 	if (!currentBlock) {
 		throw new Error('currentBlock is null');
 	}
 
 	const options = currentBlock.exportOptions();
+	const cssProps = engine.getCustomProperties(options.containerProps.type);
 
-	let currentColumns = $state(options.props.columns ?? 1);
+	const repeatMinInlineSizeVariants = engine.getRepeatMinInlineSizeVariants();
+
+	let currentColumns = $state(options.containerProps.columns ?? 1);
+	let currentContainerType = $state(options.containerProps.type);
+	let currentFrameSemantics = $state(options.containerProps.frameSemantics);
+	let currentAutoRepeat = $state(options.containerProps.autoRepeat ?? 'fixed');
+
+	// アイテム数をリアクティブに管理
+	const itemCount = $derived(currentBlock.items.length);
+
+	// floatタイプは変更不可なので、元のタイプを使用
+	const effectiveContainerType = $derived(
+		options.containerProps.type === 'float'
+			? options.containerProps.type
+			: currentContainerType,
+	);
+
+	/**
+	 * コンテナタイプ変更時の処理
+	 * @param e - change イベント
+	 */
+	function handleContainerTypeChange(e: Event) {
+		const target = e.currentTarget as HTMLSelectElement;
+		currentContainerType = target.value as 'grid' | 'inline' | 'float';
+	}
+
+	/**
+	 * 列の自動調整変更時の処理
+	 * @param e - change イベント
+	 */
+	function handleAutoRepeatChange(e: Event) {
+		const target = e.currentTarget as HTMLSelectElement;
+		currentAutoRepeat = target.value as 'fixed' | 'auto-fill' | 'auto-fit';
+	}
+
+	/**
+	 * フレームセマンティクス変更時の処理
+	 * @param e - change イベント
+	 */
+	function handleFrameSemanticsChange(e: Event) {
+		const target = e.currentTarget as HTMLSelectElement;
+		const newSemantics = target.value as 'div' | 'ul' | 'ol';
+
+		if (!currentBlock) {
+			return;
+		}
+
+		currentBlock.changeFrameSemantics(newSemantics);
+		currentFrameSemantics = newSemantics;
+	}
 </script>
 
 {#if options}
 	<fieldset>
 		<legend>コンテナ特性</legend>
-		<label>
-			<span>コンテナタイプ</span>
-			<output>{containerTypeLabel[options.props.type]} ({options.props.type})</output>
-		</label>
-		{#if options.props.immutable}
-			<p>このブロックはコンテナタイプを変更できません。</p>
+		{#if options.containerProps.immutable || options.containerProps.type === 'float'}
+			<label>
+				<span>コンテナタイプ</span>
+				<output
+					>{containerTypeLabel[options.containerProps.type ?? 'inline']} ({options
+						.containerProps.type ?? 'inline'})</output>
+			</label>
 		{:else}
-			{#if options.props.type === 'inline'}
-				<div role="radiogroup" aria-labelledby="justify-group">
-					<div id="justify-group">横方向配置</div>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-justify"
-							value="center"
-							defaultChecked={options.props.justify === 'center'} /><span>中央寄せ</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-justify"
-							value="start"
-							defaultChecked={options.props.justify === 'start'} /><span>左寄せ</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-justify"
-							value="end"
-							defaultChecked={options.props.justify === 'end'} /><span>右寄せ</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-justify"
-							value="between"
-							defaultChecked={options.props.justify === 'between'} /><span>両端寄せ</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-justify"
-							value="around"
-							defaultChecked={options.props.justify === 'around'} /><span
-							>要素間余白均等</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-justify"
-							value="evenly"
-							defaultChecked={options.props.justify === 'evenly'} /><span
-							>要素間均等</span>
-					</label>
-				</div>
-				<div role="radiogroup" aria-labelledby="align-group">
-					<div id="align-group">縦向配置</div>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-align"
-							value="align-center"
-							defaultChecked={options.props.align === 'align-center'} /><span
-							>垂直中央寄せ</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-align"
-							value="align-start"
-							defaultChecked={options.props.align === 'align-start'} /><span>上寄せ</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-align"
-							value="align-end"
-							defaultChecked={options.props.align === 'align-end'} /><span>下寄せ</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-align"
-							value="align-stretch"
-							defaultChecked={options.props.align === 'align-stretch'} /><span>伸縮</span>
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="bge-options-align"
-							value="align-baseline"
-							defaultChecked={options.props.align === 'align-baseline'} /><span
-							>ベースライン</span>
-					</label>
-				</div>
-			{/if}
-			{#if options.props.type === 'grid'}
+			<label>
+				<span>コンテナタイプ</span>
+				<select name="bge-options-container-type" onchange={handleContainerTypeChange}>
+					<option value="grid" selected={currentContainerType === 'grid'}
+						>{containerTypeLabel.grid}</option>
+					<option value="inline" selected={currentContainerType === 'inline'}
+						>{containerTypeLabel.inline}</option>
+				</select>
+			</label>
+		{/if}
+		{#if !options.containerProps.immutable && options.containerProps.type !== 'float'}
+			<label>
+				<span>セマンティック要素</span>
+				<select name="bge-options-frame-semantics" onchange={handleFrameSemanticsChange}>
+					<option value="div" selected={currentFrameSemantics === 'div'}
+						>div（汎用）</option>
+					<option value="ul" selected={currentFrameSemantics === 'ul'}
+						>ul（順序なしリスト）</option>
+					<option value="ol" selected={currentFrameSemantics === 'ol'}
+						>ol（順序ありリスト）</option>
+				</select>
+			</label>
+		{/if}
+		{#if effectiveContainerType === 'inline' && !(options.containerProps.immutable && itemCount === 1)}
+			<div role="radiogroup" aria-labelledby="justify-group">
+				<div id="justify-group">横方向配置</div>
 				<label>
-					<span>列数</span>
-					<output>{currentColumns}</output>
 					<input
-						name="bge-options-columns"
-						type="range"
-						bind:value={currentColumns}
-						defaultValue={options.props.columns ?? 1}
-						min="1"
-						max="5" />
+						type="radio"
+						name="bge-options-justify"
+						value="center"
+						defaultChecked={options.containerProps.justify === 'center'} /><span
+						>中央寄せ</span>
 				</label>
-			{/if}
-			{#if options.props.type === 'float'}
-				<div role="radiogroup" aria-labelledby="float-group">
-					<div id="float-group">回り込み</div>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-justify"
+						value="start"
+						defaultChecked={options.containerProps.justify === 'start'} /><span
+						>左寄せ</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-justify"
+						value="end"
+						defaultChecked={options.containerProps.justify === 'end'} /><span
+						>右寄せ</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-justify"
+						value="between"
+						defaultChecked={options.containerProps.justify === 'between'} /><span
+						>両端寄せ</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-justify"
+						value="around"
+						defaultChecked={options.containerProps.justify === 'around'} /><span
+						>要素間余白均等</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-justify"
+						value="evenly"
+						defaultChecked={options.containerProps.justify === 'evenly'} /><span
+						>要素間均等</span>
+				</label>
+			</div>
+			<div role="radiogroup" aria-labelledby="align-group">
+				<div id="align-group">縦向配置</div>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-align"
+						value="align-center"
+						defaultChecked={options.containerProps.align === 'align-center'} /><span
+						>垂直中央寄せ</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-align"
+						value="align-start"
+						defaultChecked={options.containerProps.align === 'align-start'} /><span
+						>上寄せ</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-align"
+						value="align-end"
+						defaultChecked={options.containerProps.align === 'align-end'} /><span
+						>下寄せ</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-align"
+						value="align-stretch"
+						defaultChecked={options.containerProps.align === 'align-stretch'} /><span
+						>伸縮</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-align"
+						value="align-baseline"
+						defaultChecked={options.containerProps.align === 'align-baseline'} /><span
+						>ベースライン</span>
+				</label>
+			</div>
+		{/if}
+		{#if effectiveContainerType === 'grid'}
+			{#if options.containerProps.immutable || options.containerProps.type === 'float'}
+				<p>このブロックはコンテナタイプを変更できません。</p>
+			{:else}
+				<label>
+					<span>列の自動調整</span>
+					<select name="bge-options-auto-repeat" onchange={handleAutoRepeatChange}>
+						<option
+							value="fixed"
+							selected={(options.containerProps.autoRepeat ?? 'fixed') === 'fixed'}>
+							固定列数
+						</option>
+						<option
+							value="auto-fill"
+							selected={options.containerProps.autoRepeat === 'auto-fill'}>
+							auto-fill（空白保持）
+						</option>
+						<option
+							value="auto-fit"
+							selected={options.containerProps.autoRepeat === 'auto-fit'}>
+							auto-fit（空白最小）
+						</option>
+					</select>
+				</label>
+				{#if currentAutoRepeat === 'fixed'}
 					<label>
+						<span>基準列数</span>
+						<output>{currentColumns}</output>
 						<input
-							type="radio"
-							name="bge-options-float"
-							value="start"
-							defaultChecked={options.props.float === 'start'} /><span>左寄せ</span>
+							name="bge-options-columns"
+							type="range"
+							bind:value={currentColumns}
+							defaultValue={options.containerProps.columns ?? 1}
+							min="1"
+							max="5" />
 					</label>
+				{/if}
+				{#if currentAutoRepeat !== 'fixed' && repeatMinInlineSizeVariants}
 					<label>
-						<input
-							type="radio"
-							name="bge-options-float"
-							value="end"
-							defaultChecked={options.props.float === 'end'} /><span>右寄せ</span>
+						<span>折り返し基準幅</span>
+						<select name="bge-options-repeat-min-inline-size">
+							{#each repeatMinInlineSizeVariants.properties as [variantName, data] (variantName)}
+								<option
+									value={variantName}
+									selected={options.containerProps.repeatMinInlineSize == null
+										? data.isDefault
+										: options.containerProps.repeatMinInlineSize === variantName}
+									>{`${variantName} (${data.value})`}</option>
+							{/each}
+						</select>
 					</label>
-				</div>
+				{/if}
 			{/if}
 		{/if}
+		{#if effectiveContainerType === 'float'}
+			<div role="radiogroup" aria-labelledby="float-group">
+				<div id="float-group">回り込み</div>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-float"
+						value="start"
+						defaultChecked={options.containerProps.float === 'start'} /><span
+						>左寄せ</span>
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="bge-options-float"
+						value="end"
+						defaultChecked={options.containerProps.float === 'end'} /><span>右寄せ</span>
+				</label>
+			</div>
+		{/if}
+		<label>
+			<input
+				type="checkbox"
+				name="bge-options-linkarea"
+				value="true"
+				defaultChecked={options.containerProps.linkarea ?? false} />
+			<span>リンクエリア機能を有効にする</span>
+		</label>
 	</fieldset>
 {/if}
 
@@ -164,14 +293,16 @@
 	<fieldset>
 		<legend>ブロックのスタイル拡張</legend>
 
-		{#each cssProps as [category, props] (`bge-options-style-${category}`)}
+		{#each cssProps as [, category] (`bge-options-style-${category.id}`)}
 			<label>
-				<span>{category}</span>
-				<select name={`bge-options-style-${category}`}>
-					{#each props as [propName, data] (propName)}
+				<span>{category.name}</span>
+				<select name={`bge-options-style-${category.id}`}>
+					{#each category.properties as [propName, data] (propName)}
 						<option
 							value={data.isDefault ? '@@default' : propName}
-							selected={options.style[category] === propName || data.isDefault}
+							selected={options.style?.[category.id] == null
+								? data.isDefault
+								: options.style[category.id] === propName}
 							>{`${propName} (${data.value})`}</option>
 					{/each}
 				</select>
@@ -185,7 +316,7 @@
 	<input
 		type="text"
 		name="bge-options-classes"
-		defaultValue={options.classList.join(' ') ?? ''}
+		defaultValue={options.classList?.join(' ') ?? ''}
 		aria-describedby="block-option-classes-desc" />
 </label>
 <small id="block-option-classes-desc"

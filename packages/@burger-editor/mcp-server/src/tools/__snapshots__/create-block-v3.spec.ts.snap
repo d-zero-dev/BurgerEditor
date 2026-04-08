@@ -1,0 +1,68 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`create-block-v3 > should create a block 1`] = `
+{
+  "content": [
+    {
+      "text": "<div data-bgb="title" class="bgb-title">
+	<div data-bgt="title-h2" data-bgt-ver="2.1.0" class="bgt-container bgt-title-h2-container"><h2 class="bge-title-h2" data-bge="title-h2">タイトル</h2></div>
+</div>",
+      "type": "text",
+    },
+  ],
+}
+`;
+
+exports[`create-block-v3 > should create a block with multiple items 1`] = `
+{
+  "content": [
+    {
+      "text": "<div data-bgb="image3" class="bgb-image3">
+	<div class="bgt-grid bgt-grid--first">
+		<div data-bgt="image" data-bgt-ver="2.11.0" class="bgt-container bgt-image-container">
+	<div class="bgt-image" data-bge-popup="false" data-bge-empty="0" data-bge-hr="false" data-bge="popup:data-bge-popup, empty:data-bge-empty, hr:data-bge-hr">
+		<a class="bgt-image__link" href="/path/to/img/sample1.jpg" data-bge="path:href">
+			<figure class="bgt-link__box">
+				<div class="bgt-box__image-container">
+					<img src="/path/to/img/sample1.jpg" data-bge="path:src, srcset:srcset, alt:alt, width:width, height:height" alt="画像1" width="" height="" srcset="">
+				</div>
+				<figcaption class="bgt-box__caption" data-bge="caption"></figcaption>
+			</figure>
+		</a>
+	</div>
+</div>
+	</div>
+	<div class="bgt-grid">
+		<div data-bgt="image" data-bgt-ver="2.11.0" class="bgt-container bgt-image-container">
+	<div class="bgt-image" data-bge-popup="1" data-bge-empty="0" data-bge-hr="" data-bge="popup:data-bge-popup, empty:data-bge-empty, hr:data-bge-hr">
+		<a class="bgt-image__link" href="/path/to/image.png" data-bge="path:href">
+			<figure class="bgt-link__box">
+				<div class="bgt-box__image-container">
+					<img src="/path/to/image.png" data-bge="path:src, srcset:srcset, alt:alt, width:width, height:height" alt="" width="1920" height="1080" srcset="">
+				</div>
+				<figcaption class="bgt-box__caption" data-bge="caption"></figcaption>
+			</figure>
+		</a>
+	</div>
+</div>
+	</div>
+	<div class="bgt-grid bgt-grid--last">
+		<div data-bgt="image" data-bgt-ver="2.11.0" class="bgt-container bgt-image-container">
+	<div class="bgt-image" data-bge-popup="false" data-bge-empty="0" data-bge-hr="false" data-bge="popup:data-bge-popup, empty:data-bge-empty, hr:data-bge-hr">
+		<a class="bgt-image__link" href="/path/to/img/sample2.jpg" data-bge="path:href">
+			<figure class="bgt-link__box">
+				<div class="bgt-box__image-container">
+					<img src="/path/to/img/sample2.jpg" data-bge="path:src, srcset:srcset, alt:alt, width:width, height:height" alt="画像2" width="" height="" srcset="">
+				</div>
+				<figcaption class="bgt-box__caption" data-bge="caption"></figcaption>
+			</figure>
+		</a>
+	</div>
+</div>
+	</div>
+</div>",
+      "type": "text",
+    },
+  ],
+}
+`;

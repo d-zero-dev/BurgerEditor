@@ -21,10 +21,6 @@ export class BlockMenu extends EditorUI {
 					position: absolute;
 					z-index: 2147483647;
 					pointer-events: none;
-
-					> * {
-						pointer-events: auto;
-					}
 				}
 			`,
 		});

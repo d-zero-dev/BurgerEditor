@@ -1,23 +1,24 @@
-import type { BlockOptions } from './types.js';
+import type { BlockData } from '../types.js';
 
 import { sanitizeAttrs } from '../dom-helpers/sanitize-attrs.js';
 
 import { importContainerProps } from './import-container-props.js';
+import { importStyleOptions } from './import-style-options.js';
 
 /**
  *
  * @param el
  * @param options
  */
-export function importOptions(el: HTMLElement, options: BlockOptions) {
-	const { props, classList, id, style } = options;
+export function importOptions(el: HTMLElement, options: Partial<BlockData>) {
+	const { containerProps, classList, id, style } = options;
 
 	sanitizeAttrs(el);
 
-	el.dataset.bgeContainer = importContainerProps(props);
+	el.dataset.bgeContainer = importContainerProps(containerProps);
+	el.removeAttribute('class');
 
-	el.classList.remove(...el.classList);
-	if (classList.length > 0) {
+	if (classList && classList.length > 0) {
 		el.classList.add(...classList);
 	} else {
 		el.removeAttribute('class');
@@ -30,12 +31,18 @@ export function importOptions(el: HTMLElement, options: BlockOptions) {
 	}
 
 	el.removeAttribute('style');
-	for (const [key, value] of Object.entries(style)) {
-		if (value === '@@default') {
-			continue;
+
+	if (style) {
+		importStyleOptions(el, style);
+	}
+
+	// linkarea属性の処理
+	const groups = el.querySelectorAll<HTMLElement>('[data-bge-group]');
+	for (const group of groups) {
+		if (containerProps?.linkarea) {
+			group.dataset.bgeLinkarea = '';
+		} else {
+			delete group.dataset.bgeLinkarea;
 		}
-		const name = `--bge-options-${key}`;
-		const variable = `var(${name}-${value})`;
-		el.style.setProperty(name, variable);
 	}
 }

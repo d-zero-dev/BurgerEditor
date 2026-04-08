@@ -1,6 +1,8 @@
 [data-bgi='youtube'] {
 	> div {
 		position: relative;
+		display: grid;
+		grid-template-areas: 'one';
 		inline-size: 100%;
 		aspect-ratio: 16 / 9;
 		overflow: hidden;
@@ -8,9 +10,10 @@
 
 	iframe {
 		display: block;
+		grid-area: one;
 		inline-size: 100%;
 		block-size: 100%;
-		margin: 0 auto;
+		margin: 0;
 		border: none;
 	}
 
@@ -18,6 +21,7 @@
 		position: relative;
 		z-index: 0;
 		display: block;
+		grid-area: one;
 		inline-size: 100%;
 		block-size: 100%;
 		padding: 0;
@@ -26,11 +30,12 @@
 	}
 
 	svg {
-		position: absolute;
-		inset: 0;
+		position: relative;
 		z-index: 1;
+		display: block;
+		grid-area: one;
+		place-self: center;
 		inline-size: 10%;
 		block-size: auto;
-		margin: auto;
 	}
 }

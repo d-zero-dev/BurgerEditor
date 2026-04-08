@@ -1,3 +1,5 @@
+import { BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX } from '../const.js';
+
 const removeAttrNameIgnoreList = new Set([
 	'data-bge-container',
 	'data-bge-name',
@@ -29,8 +31,12 @@ function sanitizeStyle(el: HTMLElement) {
 	const customProperties: [string, string][] = [];
 
 	const style = el.style;
-	for (const property of style) {
-		if (property.startsWith('--bge-options-')) {
+
+	// JSDOM's CSSStyleDeclaration does not have Symbol.iterator
+	const properties =
+		typeof el.style[Symbol.iterator] === 'function' ? style : Object.keys(style);
+	for (const property of properties) {
+		if (property.startsWith(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX)) {
 			customProperties.push([property, style.getPropertyValue(property)]);
 		}
 	}

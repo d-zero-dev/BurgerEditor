@@ -21,8 +21,8 @@
   - Propagate errors to higher-level handlers when necessary
 - You must follow functional programming principles and avoid using classes
 - All properties in defined interfaces or types must be declared as `readonly` by default
-- When a function takes an array argument, an object with array properties, or returns an array, you must use `readonly T[]` syntax
 - All top-level definitions must use function declarations instead of function expressions
+- When a function takes an array argument, an object with array properties, or returns an array, you must use `readonly T[]` syntax
 
 ## TypeScript Rules
 
@@ -36,7 +36,6 @@
 ### Execution Requirements
 
 - You must use vitest as the testing framework
-- `npx vitest run <`
 
 ### Test Code Requirements
 
@@ -48,6 +47,21 @@
 - You must not write conditional logic or exception handling in test code
 - You must not use `console.log` and stdout in test code
 - You must use `toThrow` for testing exceptions
+
+### Test Code Writing Process
+
+- You must not attempt to write all test cases at once
+- You must ask the user to confirm the test strategy and structure before writing test cases
+- You must proceed step by step and request user confirmation after each group of test cases
+- You must prefer writing one or two representative test cases first and confirm them with the user before expanding to edge cases or large test patterns
+- You must not consume excessive context window by writing unnecessary or unconfirmed test cases
+
+### Test Specification Requirements
+
+- YOU MUST WRITE TESTS FOR BOTH SUCCESS AND FAILURE CASES
+- FAILURE CASE TESTS MUST EXPLICITLY VERIFY THE BEHAVIOR WHEN INPUTS ARE INVALID, UNEXPECTED, OR WHEN THE OPERATION IS EXPECTED TO FAIL
+- YOU MUST NOT OMIT TESTS FOR FAILURE CASES WITH THE REASON "BECAUSE IT FAILS"
+- FAILURE CASE TESTS ARE MANDATORY TO PROVE THE SPECIFICATION AND MUST NOT BE SKIPPED FOR ANY REASON
 
 ## Git Rules
 
@@ -64,7 +78,7 @@
     - `test`
     - `chore`
   - You must use the following scopes:
-    - Each package name
+    - Each package name (without namespace)
     - `repo`
     - `deps`
     - `github`
