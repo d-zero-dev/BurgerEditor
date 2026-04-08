@@ -3,6 +3,7 @@
 	"type": "module",
 	"license": "(MIT OR Apache-2.0)",
 	"repository": {
+		"type": "git",
 		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
 	},
 	"scripts": {
@@ -22,8 +23,10 @@
 		"lint:markuplint": "npx markuplint \"./packages/@burger-editor/**/*.{html,svelte}\"",
 		"lint:textlint:fix": "npx textlint --fix \"{*,**/*}.md\"",
 		"lint:textlint:check": "npx textlint \"{*,**/*}.md\"",
-		"release": "lerna publish --exact --conventional-commits --conventional-graduate",
-		"release:next": "lerna publish --dist-tag next --exact --force-publish --conventional-commits --conventional-prerelease --preid alpha",
+		"release": "lerna version --exact --conventional-commits --conventional-graduate --no-push",
+		"release:alpha": "lerna version --exact --force-publish --conventional-commits --conventional-prerelease --preid alpha --no-push",
+		"release:beta": "lerna version --exact --force-publish --conventional-commits --conventional-prerelease --preid beta --no-push",
+		"release:rc": "lerna version --exact --force-publish --conventional-commits --conventional-prerelease --preid rc --no-push",
 		"prerelease": "yarn build; yarn test",
 		"prepare": "husky",
 		"commit": "npx cz",

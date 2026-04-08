@@ -5,7 +5,9 @@
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)",
 	"repository": {
-		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
+		"type": "git",
+		"url": "https://github.com/d-zero-dev/BurgerEditor.git",
+		"directory": "packages/@burger-editor/legacy"
 	},
 	"publishConfig": {
 		"access": "public"
