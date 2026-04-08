@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/blocks",
-	"version": "4.0.0-alpha.64",
+	"version": "4.0.0-alpha.65",
 	"description": "BurgerEditor Blocks",
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)",
@@ -30,12 +30,12 @@
 		"dev": "rollup -c -w"
 	},
 	"dependencies": {
-		"@burger-editor/core": "4.0.0-alpha.64",
-		"@burger-editor/utils": "4.0.0-alpha.64",
+		"@burger-editor/core": "4.0.0-alpha.65",
+		"@burger-editor/utils": "4.0.0-alpha.65",
 		"@d-zero/shared": "0.21.1"
 	},
 	"devDependencies": {
-		"@burger-editor/custom-element": "4.0.0-alpha.64",
+		"@burger-editor/custom-element": "4.0.0-alpha.65",
 		"@types/google.maps": "3.58.1",
 		"rollup": "4.59.0",
 		"rollup-plugin-esbuild": "6.2.1",
