@@ -91,10 +91,19 @@ export async function createEditor() {
 			},
 		});
 
-		const json = await res.json();
-		if (!json.saved) {
+		if (!res.ok) {
+			const errorBody = (await res.json().catch(() => ({}))) as {
+				error?: string;
+			};
 			// eslint-disable-next-line no-console
-			console.error(`Failed to save: ${json.path}`);
+			console.error(`Failed to save: ${errorBody.error ?? res.statusText}`);
+			return;
+		}
+
+		const json = await res.json();
+		if (!('saved' in json) || !json.saved) {
+			// eslint-disable-next-line no-console
+			console.error('Save did not complete');
 			return;
 		}
 

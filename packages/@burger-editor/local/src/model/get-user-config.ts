@@ -14,7 +14,10 @@ import { cosmiconfig } from 'cosmiconfig';
 const explorer = cosmiconfig('burgereditor');
 
 /**
- *
+ * Locate and parse the user's BurgerEditor config (via cosmiconfig) and merge
+ * it with the package defaults. Missing fields are filled in with the values
+ * documented in `packages/@burger-editor/local/README.md`.
+ * @returns A fully resolved {@link LocalServerConfig} ready to feed into `setRoute`.
  */
 export async function getUserConfig(): Promise<LocalServerConfig> {
 	const res = await explorer.search();
@@ -56,6 +59,10 @@ export async function getUserConfig(): Promise<LocalServerConfig> {
 			...config.healthCheck,
 		},
 		experimental: config.experimental,
+		virtualTree: {
+			enabled: config.virtualTree?.enabled ?? false,
+			pathKey: config.virtualTree?.pathKey ?? 'path',
+		},
 	};
 }
 

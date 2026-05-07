@@ -1,14 +1,16 @@
-import { generateFileTree } from '../model/file-tree.js';
-
-import { NavTree } from './nav-tree.js';
+type Props = {
+	virtualTreeEnabled: boolean;
+};
 
 /**
- *
- * @param root0
- * @param root0.rootPath
+ * Renders the nav skeleton. The file tree is hydrated client-side via GET /api/tree
+ * so this view layer stays agnostic to virtualTree mode for tree data, but it does
+ * expand the new-file dialog to require an `id` field when the server is configured
+ * to use virtual paths.
+ * @param props
+ * @param props.virtualTreeEnabled
  */
-export async function Nav({ rootPath }: { rootPath: string }) {
-	const tree = await generateFileTree(rootPath);
+export function Nav({ virtualTreeEnabled }: Props) {
 	return (
 		<nav class="nav">
 			<div>
@@ -19,8 +21,16 @@ export async function Nav({ rootPath }: { rootPath: string }) {
 			<dialog id="new-file-dialog">
 				<div>
 					<form id="new-file-form" method="dialog">
-						<label>File path</label>
-						<input type="text" name="path" />
+						<label>
+							<span>File path</span>
+							<input type="text" name="path" required />
+						</label>
+						{virtualTreeEnabled ? (
+							<label>
+								<span>File ID</span>
+								<input type="text" name="id" required />
+							</label>
+						) : null}
 					</form>
 				</div>
 				<footer>
@@ -32,9 +42,7 @@ export async function Nav({ rootPath }: { rootPath: string }) {
 					</button>
 				</footer>
 			</dialog>
-			<div>
-				<NavTree items={tree} />
-			</div>
+			<div id="nav-tree-mount"></div>
 		</nav>
 	);
 }

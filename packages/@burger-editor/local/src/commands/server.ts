@@ -7,10 +7,20 @@ import open from 'open';
 
 import { log } from '../helpers/debug.js';
 import { getUserConfig } from '../model/get-user-config.js';
+import { loadResolverState } from '../model/virtual-path-resolver.js';
 import { setRoute } from '../route.js';
 
 /**
+ * Boot the local BurgerEditor server. Reads the user config via cosmiconfig,
+ * pre-loads the virtualTree resolver state if enabled, mounts the Hono routes,
+ * and prints a banner.
  *
+ * If `virtualTree.enabled` is true and the documentRoot contains files that
+ * violate the virtualTree contract (missing `pathKey`, non-string value, or
+ * conflicting logical paths), this throws synchronously before the HTTP server
+ * binds, so process startup fails loudly instead of serving a broken state.
+ * @returns A promise that resolves once the banner has been printed. The HTTP
+ *          server keeps running afterwards and is not awaited here.
  */
 export async function runServerCommand(): Promise<void> {
 	const app = new Hono();
@@ -18,7 +28,11 @@ export async function runServerCommand(): Promise<void> {
 
 	const isWatchMode = process.env.DEV_MODE === 'true';
 
-	setRoute(app, userConfig);
+	const resolverState = userConfig.virtualTree.enabled
+		? await loadResolverState(userConfig.documentRoot, userConfig.virtualTree.pathKey)
+		: null;
+
+	setRoute(app, userConfig, resolverState);
 
 	serve({
 		fetch: app.fetch,

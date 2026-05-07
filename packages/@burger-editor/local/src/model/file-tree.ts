@@ -1,23 +1,28 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+/** A single file entry in a navigation tree. `path` is rooted with a leading slash. */
 export type FileInfo = {
 	readonly name: string;
 	readonly path: string;
 };
 
+/** A directory entry containing a recursive subtree. */
 export type DirInfo = {
 	readonly name: string;
 	readonly path: string;
 	readonly files: Tree;
 };
 
+/** Ordered list of file or directory entries forming a navigation tree. */
 export type Tree = readonly (FileInfo | DirInfo)[];
 
 /**
- *
- * @param dirPath
- * @param rootPath
+ * Walk a directory recursively and build a navigation tree of `*.html` files.
+ * Used in non-virtualTree mode to mirror the on-disk layout into the editor UI.
+ * @param dirPath the directory to scan
+ * @param rootPath the root used to compute each entry's `path` field; defaults to `dirPath` for top-level calls
+ * @returns a tree describing the directory structure
  */
 export async function generateFileTree(
 	dirPath: string,
@@ -53,4 +58,67 @@ export async function generateFileTree(
 	}
 
 	return tree;
+}
+
+type MutableDir = {
+	name: string;
+	path: string;
+	files: (FileInfo | MutableDir)[];
+};
+
+/**
+ * Recursively convert a mutable working node into the readonly `DirInfo`
+ * shape exposed by this module.
+ * @param dir the in-progress mutable directory built up by `buildFileTreeFromLogicalPaths`
+ * @returns a frozen `DirInfo` mirroring `dir`
+ */
+function freezeDir(dir: MutableDir): DirInfo {
+	return {
+		name: dir.name,
+		path: dir.path,
+		files: dir.files.map((entry) => ('files' in entry ? freezeDir(entry) : entry)),
+	};
+}
+
+/**
+ * Build a navigation tree from an unordered list of logical paths (e.g.
+ * `['about.html', 'foo/bar.html']`). Used in virtualTree mode where the disk
+ * is flat and the tree is reconstructed from Front Matter values.
+ *
+ * Leading slashes are tolerated; empty segments are skipped. Sibling order
+ * follows the input order of `logicalPaths`.
+ * @param logicalPaths logical paths to assemble into a tree
+ * @returns a tree mirroring the same shape as `generateFileTree` so the SSR/client view code can render it identically
+ */
+export function buildFileTreeFromLogicalPaths(logicalPaths: readonly string[]): Tree {
+	const root: MutableDir = { name: '', path: '/', files: [] };
+
+	for (const raw of logicalPaths) {
+		const segments = raw.split('/').filter((s) => s.length > 0);
+		if (segments.length === 0) {
+			continue;
+		}
+
+		let cursor = root;
+		for (let i = 0; i < segments.length - 1; i++) {
+			const segment = segments[i]!;
+			const dirPath = '/' + segments.slice(0, i + 1).join('/');
+			let next = cursor.files.find(
+				(entry): entry is MutableDir => 'files' in entry && entry.name === segment,
+			);
+			if (!next) {
+				next = { name: segment, path: dirPath, files: [] };
+				cursor.files.push(next);
+			}
+			cursor = next;
+		}
+
+		const fileName = segments.at(-1)!;
+		cursor.files.push({
+			name: fileName,
+			path: '/' + segments.join('/'),
+		});
+	}
+
+	return root.files.map((entry) => ('files' in entry ? freezeDir(entry) : entry));
 }

@@ -14,6 +14,16 @@ import { loadContent, saveContent } from './helpers/edit-content.js';
 import { NoEditableAreaError } from './helpers/no-editable-area-error.js';
 import { defaultConfig } from './model/default-config.js';
 import { FileListManager } from './model/file-list-manager.js';
+import { buildFileTreeFromLogicalPaths, generateFileTree } from './model/file-tree.js';
+import {
+	IdAlreadyExistsError,
+	PathConflictError,
+	listLogicalPaths,
+	registerEntry,
+	setLogicalPath,
+	toDiskPath,
+	type ResolverState,
+} from './model/virtual-path-resolver.js';
 import { App } from './view/app.js';
 
 const clientFileDir = path.resolve(import.meta.dirname, '..', 'dist');
@@ -25,12 +35,58 @@ const apiSchema = z.object({
 	originalFrontMatter: z.string().optional(),
 });
 
+// `id` becomes part of the on-disk filename, so we forbid anything that could
+// break out of documentRoot. The handler additionally re-checks the resolved
+// path as a defense in depth.
+const createApiSchema = z.object({
+	id: z
+		.string()
+		.min(1)
+		.refine(
+			(v) =>
+				!/[/\\]/.test(v) &&
+				v !== '.' &&
+				v !== '..' &&
+				!v.startsWith('.') &&
+				!v.includes('\0'),
+			{
+				message:
+					'id must not contain path separators, NUL bytes, or be "." / ".." / a dotfile',
+			},
+		),
+	path: z.string().min(1),
+	content: z.string().optional(),
+	frontMatter: z.record(z.string(), z.unknown()).optional(),
+});
+
 /**
  *
  * @param app
  * @param userConfig
+ * @param initialResolverState Pre-loaded resolver state (null when virtualTree is disabled)
  */
-export function setRoute(app: Hono, userConfig: LocalServerConfig) {
+export function setRoute(
+	app: Hono,
+	userConfig: LocalServerConfig,
+	initialResolverState: ResolverState | null = null,
+) {
+	const virtualTreeEnabled = userConfig.virtualTree.enabled;
+	const pathKey = userConfig.virtualTree.pathKey;
+	let resolverState: ResolverState | null = initialResolverState;
+
+	// Serialize all resolverState read-modify-write operations to avoid races
+	// where two concurrent saves both observe the same starting state and the
+	// later write clobbers the earlier one.
+	let stateLock: Promise<unknown> = Promise.resolve();
+	/**
+	 *
+	 * @param work
+	 */
+	function withStateLock<T>(work: () => Promise<T>): Promise<T> {
+		const next = stateLock.then(work, work);
+		stateLock = next.catch(() => {});
+		return next;
+	}
 	const fileListManger = {
 		image: new FileListManager(
 			userConfig.filesDir.image.serverPath,
@@ -164,22 +220,137 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 			if (normalizedPath.endsWith('/')) {
 				normalizedPath += userConfig.indexFileName;
 			}
-			const targetFilePath = path.join(userConfig.documentRoot, normalizedPath);
 
-			await saveContent(
-				targetFilePath,
-				data.content,
-				userConfig.editableArea,
-				data.frontMatter,
-				data.originalFrontMatter,
-			);
+			return withStateLock(async () => {
+				let targetFilePath: string;
+				let nextResolverState: ResolverState | null = resolverState;
+				if (virtualTreeEnabled && resolverState) {
+					const diskFile = toDiskPath(resolverState, normalizedPath);
+					if (!diskFile) {
+						return c.json({ error: `Unknown logical path: ${normalizedPath}` }, 404);
+					}
+					if (data.frontMatter && pathKey in data.frontMatter) {
+						const newLogical = data.frontMatter[pathKey];
+						if (typeof newLogical !== 'string' || newLogical.length === 0) {
+							return c.json(
+								{
+									error: `Front matter "${pathKey}" must be a non-empty string`,
+								},
+								400,
+							);
+						}
+						try {
+							nextResolverState = setLogicalPath(resolverState, diskFile, newLogical);
+						} catch (error) {
+							if (error instanceof PathConflictError) {
+								return c.json({ error: error.message }, 409);
+							}
+							throw error;
+						}
+					}
+					targetFilePath = path.join(userConfig.documentRoot, diskFile);
+				} else {
+					targetFilePath = path.join(userConfig.documentRoot, normalizedPath);
+				}
 
-			log('Saved: %s (with Front Matter: %s)', targetFilePath, !!data.frontMatter);
-			return c.json({
-				saved: true,
-				path: targetFilePath,
-				hasFrontMatter: !!data.frontMatter,
+				// Defense in depth against path traversal via data.path / resolverState.
+				const resolvedRoot = path.resolve(userConfig.documentRoot);
+				const resolvedTarget = path.resolve(targetFilePath);
+				if (
+					resolvedTarget !== resolvedRoot &&
+					!resolvedTarget.startsWith(resolvedRoot + path.sep)
+				) {
+					return c.json(
+						{ error: `Resolved path escapes documentRoot: ${normalizedPath}` },
+						400,
+					);
+				}
+
+				await saveContent(
+					targetFilePath,
+					data.content,
+					userConfig.editableArea,
+					data.frontMatter,
+					data.originalFrontMatter,
+				);
+
+				// 2-phase commit: only advance resolverState after the file write succeeds.
+				resolverState = nextResolverState;
+
+				log('Saved: %s (with Front Matter: %s)', targetFilePath, !!data.frontMatter);
+				return c.json({
+					saved: true,
+					path: targetFilePath,
+					hasFrontMatter: !!data.frontMatter,
+				});
 			});
+		})
+		.post('/api/content/create', zValidator('json', createApiSchema), async (c) => {
+			const data = c.req.valid('json');
+			if (!virtualTreeEnabled) {
+				return c.json(
+					{ error: 'virtualTree mode is disabled; this endpoint is unavailable' },
+					400,
+				);
+			}
+
+			return withStateLock(async () => {
+				if (!resolverState) {
+					return c.json({ error: 'virtualTree resolver state is not initialized' }, 500);
+				}
+				const diskFile = data.id.endsWith('.html') ? data.id : `${data.id}.html`;
+				const targetFilePath = path.join(userConfig.documentRoot, diskFile);
+				// Defense in depth: even if the id schema misses something, refuse
+				// any resolved path that escapes documentRoot.
+				const resolvedRoot = path.resolve(userConfig.documentRoot);
+				const resolvedTarget = path.resolve(targetFilePath);
+				if (
+					resolvedTarget !== resolvedRoot &&
+					!resolvedTarget.startsWith(resolvedRoot + path.sep)
+				) {
+					return c.json(
+						{ error: `Resolved path escapes documentRoot: ${diskFile}` },
+						400,
+					);
+				}
+
+				let nextResolverState: ResolverState;
+				try {
+					nextResolverState = registerEntry(resolverState, diskFile, data.path);
+				} catch (error) {
+					if (
+						error instanceof PathConflictError ||
+						error instanceof IdAlreadyExistsError
+					) {
+						return c.json({ error: error.message }, 409);
+					}
+					throw error;
+				}
+
+				const frontMatter = { ...data.frontMatter, [pathKey]: data.path };
+				const initialContent = data.content ?? userConfig.newFileContent;
+				// New files bypass editableArea: saveContent's editableArea path reads the
+				// existing file first, which would ENOENT for a fresh create.
+				await saveContent(targetFilePath, initialContent, null, frontMatter);
+
+				// 2-phase commit: only advance resolverState after the file write succeeds.
+				resolverState = nextResolverState;
+
+				log('Created: %s -> %s', diskFile, data.path);
+				return c.json({
+					created: true,
+					id: diskFile,
+					path: data.path,
+				});
+			});
+		})
+		.get('/api/tree', async (c) => {
+			if (virtualTreeEnabled && resolverState) {
+				const tree = buildFileTreeFromLogicalPaths(listLogicalPaths(resolverState));
+				return c.json({ tree });
+			}
+			const tree = await generateFileTree(userConfig.documentRoot);
+			return c.json({ tree });
 		})
 		.post(
 			'/api/file/list',
@@ -247,18 +418,28 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 				<App
 					path={'/'}
 					content={''}
-					rootDir={userConfig.documentRoot}
 					lang={userConfig.lang}
+					virtualTreeEnabled={virtualTreeEnabled}
 				/>,
 			);
 		})
 		.get('/:page{.+\\.html$|.+\\/$}', async (c) => {
 			const page = c.req.param('page');
 
-			let targetFilePath = path.join(userConfig.documentRoot, page);
+			let logicalPath = page;
+			if (logicalPath.endsWith('/')) {
+				logicalPath += userConfig.indexFileName;
+			}
 
-			if (targetFilePath.endsWith('/')) {
-				targetFilePath += userConfig.indexFileName;
+			let targetFilePath: string;
+			if (virtualTreeEnabled && resolverState) {
+				const diskFile = toDiskPath(resolverState, logicalPath);
+				if (!diskFile) {
+					return c.text('Not Found', 404);
+				}
+				targetFilePath = path.join(userConfig.documentRoot, diskFile);
+			} else {
+				targetFilePath = path.join(userConfig.documentRoot, logicalPath);
 			}
 
 			const loadResult = await loadContent(
@@ -272,8 +453,8 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 					<App
 						path={page}
 						content={loadResult}
-						rootDir={userConfig.documentRoot}
 						lang={userConfig.lang}
+						virtualTreeEnabled={virtualTreeEnabled}
 					/>,
 				);
 			}
@@ -287,8 +468,8 @@ export function setRoute(app: Hono, userConfig: LocalServerConfig) {
 				<App
 					path={page}
 					content={loadResult.editableContent}
-					rootDir={userConfig.documentRoot}
 					lang={userConfig.lang}
+					virtualTreeEnabled={virtualTreeEnabled}
 					frontMatter={loadResult.frontMatter}
 					hasFrontMatter={loadResult.hasFrontMatter}
 				/>,
@@ -349,4 +530,9 @@ async function readFile(filePath: string): Promise<ArrayBuffer | null> {
 	);
 }
 
+/**
+ * Strongly-typed route schema produced by {@link setRoute}. Used by the client
+ * via `hc<AppType>(origin)` so that endpoint paths, request bodies, and
+ * response shapes stay in sync between server and browser.
+ */
 export type AppType = ReturnType<typeof setRoute>;
