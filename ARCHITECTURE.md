@@ -154,6 +154,22 @@ graph TD
   - `helpers/get-candidate-name.ts` - 候補ファイル名生成（EncodedFileName型エクスポート）
   - `helpers/upload.ts` - ファイルアップロード実装
   - `model/FileListManager` - 上記helpers関数を使用してアップロード処理を実装
+- **Virtual File Tree（仮想ファイルツリー）**:
+  - **何のための機能か**: `documentRoot` 配下を不透明な ID 名のフラットファイル群（`<id>.html`）として運用するプロジェクト向けに、Front Matter `path` から論理ツリーを再構築するオプトイン機能。外部 CMS 連携で命名権が無いケースを想定
+  - **既定挙動**: `virtualTree.enabled = false`。完全に従来の「ディスク階層 = エディタツリー」モード
+  - **設計判断**:
+    1. **disk と論理を完全分離** — disk は触らない。Front Matter の値だけが論理ツリーの真実。これにより「いつでもオプトアウトできる」可逆性を担保
+    2. **state の単一所有権** — モード分岐と `ResolverState` の保持は `route.tsx` 1 ファイルに閉じる。view / client は `virtualTreeEnabled` boolean しか知らない（疎結合）
+    3. **`withStateLock` でシリアライズ** — `let resolverState = ...` の read-modify-write を mutex で囲む。シングルユーザー編集前提だが、tab 二枚での並行更新で state 損失が起きないようにする保険
+    4. **2-phase commit** — `saveContent` 成功後にだけ state を進める。書き込み失敗時に state がディスクと乖離しない
+  - **構成ファイル**:
+    - `model/virtual-path-resolver.ts` - `ResolverState` 型と純関数群（`createEmptyState` / `loadResolverState` / `toDiskPath` / `toLogicalPath` / `listLogicalPaths` / `registerEntry` / `setLogicalPath` / `deleteEntry`）。`PathConflictError` と `IdAlreadyExistsError` のエラー語彙
+    - `model/file-tree.ts::buildFileTreeFromLogicalPaths` - 論理パス配列からツリー構造を組む純関数
+    - `route.tsx` - mode フラグの評価点。`GET /api/tree` / `POST /api/content/create` / `POST /api/content` の 3 エンドポイントが state を read-modify-write
+    - `view/app.tsx` / `view/nav.tsx` - SSR 時に `virtualTreeEnabled` prop を hidden input + Nav の入力欄出し分けで埋め込む
+    - `client/nav-tree.ts` - `/api/tree` を fetch して `#nav-tree-mount` をハイドレート
+    - `client/new-file.ts` - hidden input で flag を読み、有効時のみ ID 入力を必須化して `/api/content/create` を叩く
+  - **詳細ドキュメント**: [`packages/@burger-editor/local/docs/virtual-tree.md`](packages/@burger-editor/local/docs/virtual-tree.md)
 
 #### Support Layer（サポート層）
 
