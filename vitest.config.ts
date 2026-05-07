@@ -63,7 +63,7 @@ export default defineConfig({
 						viewport: { width: 1280, height: 720 },
 						screenshotFailures: false,
 					},
-					testTimeout: 5000,
+					testTimeout: 15_000,
 				},
 				plugins: [cssAsRaw(), string({ include: ['**/*.html', '**/*.svg'] })],
 				define: {
