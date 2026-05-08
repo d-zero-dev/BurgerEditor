@@ -31,12 +31,15 @@ export async function hydrateNavTree() {
 }
 
 /**
- * Build a `<ul>` DOM subtree mirroring the SSR output of `view/nav-tree.tsx`.
+ * Build a `<ul>` DOM subtree from `GET /api/tree` data. The nav is fully
+ * client-rendered (SSR only emits the `#nav-tree-mount` placeholder).
  *
  * In virtualTree mode each leaf carries an `id` (the on-disk filename).
  * The label is rendered as `${name} (${id-without-html})` so editors can see
- * which physical file a logical path maps to. In directory mode `id` is
- * absent and only the bare name is shown.
+ * which physical file a logical path maps to. The id label is skipped when
+ * `id` is absent (directory mode) or an empty string (defensive — server
+ * shouldn't emit empty ids, but the guard keeps `()` from leaking into the UI
+ * if a future payload regresses).
  * @param items the tree returned by `GET /api/tree`
  * @returns a `<ul>` element ready to be appended into the DOM
  */
