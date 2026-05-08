@@ -5,10 +5,12 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import {
+	EmptyLogicalPathError,
 	IdAlreadyExistsError,
 	PathConflictError,
 	createEmptyState,
 	deleteEntry,
+	listEntries,
 	listLogicalPaths,
 	loadResolverState,
 	registerEntry,
@@ -72,6 +74,24 @@ describe('listLogicalPaths', () => {
 	});
 });
 
+describe('listEntries', () => {
+	test('returns id+logicalPath pairs for every registered file', () => {
+		const state = makeState([
+			{ id: '1.html', logicalPath: 'about.html' },
+			{ id: '2.html', logicalPath: 'foo/bar.html' },
+		]);
+		const entries = [...listEntries(state)].toSorted((a, b) => a.id.localeCompare(b.id));
+		expect(entries).toEqual([
+			{ id: '1.html', logicalPath: 'about.html' },
+			{ id: '2.html', logicalPath: 'foo/bar.html' },
+		]);
+	});
+
+	test('returns empty for empty state', () => {
+		expect(listEntries(makeState([]))).toEqual([]);
+	});
+});
+
 describe('registerEntry', () => {
 	test('adds a new entry and returns new state', () => {
 		const state = makeState([{ id: '1.html', logicalPath: 'about.html' }]);
@@ -111,6 +131,33 @@ describe('registerEntry', () => {
 			expect(e.message).toContain('about.html');
 		}
 	});
+
+	test('stores the canonical (slash-less) form when given a leading slash', () => {
+		const state = registerEntry(createEmptyState(), '1.html', '/foo.html');
+		expect(toDiskPath(state, 'foo.html')).toBe('1.html');
+		expect(toDiskPath(state, '/foo.html')).toBe('1.html');
+		expect(listLogicalPaths(state)).toEqual(['foo.html']);
+	});
+
+	test.each([
+		{ label: 'two leading slashes', input: '//foo.html' },
+		{ label: 'three leading slashes', input: '///foo.html' },
+	])('strips multiple leading slashes ($label)', ({ input }) => {
+		const state = registerEntry(createEmptyState(), '1.html', input);
+		expect(toDiskPath(state, 'foo.html')).toBe('1.html');
+	});
+
+	test.each([
+		{ label: 'single slash', input: '/' },
+		{ label: 'multiple slashes', input: '////' },
+	])(
+		'throws EmptyLogicalPathError when input normalizes to empty ($label)',
+		({ input }) => {
+			expect(() => registerEntry(createEmptyState(), '1.html', input)).toThrow(
+				EmptyLogicalPathError,
+			);
+		},
+	);
 });
 
 describe('setLogicalPath', () => {
@@ -154,6 +201,25 @@ describe('setLogicalPath', () => {
 			PathConflictError,
 		);
 	});
+
+	test('stores the canonical (slash-less) form when given a leading slash', () => {
+		let state = registerEntry(createEmptyState(), '1.html', 'old.html');
+		state = setLogicalPath(state, '1.html', '/new.html');
+		expect(toDiskPath(state, 'new.html')).toBe('1.html');
+		expect(toDiskPath(state, '/new.html')).toBe('1.html');
+		expect(toLogicalPath(state, '1.html')).toBe('new.html');
+	});
+
+	test.each([
+		{ label: 'single slash', input: '/' },
+		{ label: 'multiple slashes', input: '///' },
+	])(
+		'throws EmptyLogicalPathError when newLogicalPath normalizes to empty ($label)',
+		({ input }) => {
+			const state = makeState([{ id: '1.html', logicalPath: 'about.html' }]);
+			expect(() => setLogicalPath(state, '1.html', input)).toThrow(EmptyLogicalPathError);
+		},
+	);
 });
 
 describe('deleteEntry', () => {
@@ -270,5 +336,31 @@ describe('loadResolverState', () => {
 	test('rejects with ENOENT-style error when documentRoot does not exist', async () => {
 		const missing = path.join(tmpDir, 'missing-dir');
 		await expect(loadResolverState(missing, 'path')).rejects.toThrow();
+	});
+
+	test('normalizes leading slashes in frontmatter path so /foo.html and foo.html resolve to the same entry', async () => {
+		// Regression: production data sets often write `path: /foo.html` while
+		// Hono's `c.req.param('page')` strips the leading slash. Without
+		// normalization, every link click on the editor 404'd.
+		await writeFile('1.html', '---\npath: /maintenance.html\n---\n<h1>m</h1>\n');
+
+		const state = await loadResolverState(tmpDir, 'path');
+
+		expect(toDiskPath(state, '/maintenance.html')).toBe('1.html');
+		expect(toDiskPath(state, 'maintenance.html')).toBe('1.html');
+		expect(listLogicalPaths(state)).toEqual(['maintenance.html']);
+	});
+
+	test('rejects when frontmatter path is just a slash (normalizes to empty string)', async () => {
+		await writeFile('1.html', '---\npath: /\n---\n<h1>x</h1>\n');
+		await expect(loadResolverState(tmpDir, 'path')).rejects.toThrow(/1\.html/);
+	});
+
+	test('detects conflicts after normalization (/foo.html vs foo.html on different ids)', async () => {
+		await writeFile('1.html', '---\npath: /shared.html\n---\n<h1>a</h1>\n');
+		await writeFile('2.html', '---\npath: shared.html\n---\n<h1>b</h1>\n');
+		await expect(loadResolverState(tmpDir, 'path')).rejects.toBeInstanceOf(
+			PathConflictError,
+		);
 	});
 });

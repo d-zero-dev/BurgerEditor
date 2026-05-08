@@ -58,6 +58,90 @@ describe('hydrateNavTree', () => {
 		expect(mount?.childNodes.length ?? 0).toBe(0);
 	});
 
+	test('renders "${name} (${id-without-html})" suffix when leaf has id (virtualTree mode)', async () => {
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+			Response.json(
+				{
+					tree: [{ name: 'maintenance.html', path: '/maintenance.html', id: '10.html' }],
+				},
+				{ status: 200, headers: { 'content-type': 'application/json' } },
+			),
+		);
+
+		await hydrateNavTree();
+
+		const link = document.querySelector('a.file')!;
+		expect(link.textContent).toBe('maintenance.html (10)');
+		// Name and id are separate spans so styling can target either.
+		expect(link.querySelector('.file-id')?.textContent).toBe(' (10)');
+	});
+
+	test('omits the id suffix when leaf has no id (directory mode)', async () => {
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+			Response.json(
+				{
+					tree: [{ name: 'about.html', path: '/about.html' }],
+				},
+				{ status: 200, headers: { 'content-type': 'application/json' } },
+			),
+		);
+
+		await hydrateNavTree();
+
+		const link = document.querySelector('a.file')!;
+		expect(link.textContent).toBe('about.html');
+		expect(link.querySelector('.file-id')).toBeNull();
+	});
+
+	test('keeps the id suffix verbatim when id has no .html extension', async () => {
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+			Response.json(
+				{
+					tree: [{ name: 'about.html', path: '/about.html', id: 'opaque-id' }],
+				},
+				{ status: 200, headers: { 'content-type': 'application/json' } },
+			),
+		);
+
+		await hydrateNavTree();
+
+		const link = document.querySelector('a.file')!;
+		expect(link.textContent).toBe('about.html (opaque-id)');
+	});
+
+	test('only strips a trailing .html, leaving any middle .html occurrences intact', async () => {
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+			Response.json(
+				{
+					tree: [{ name: 'about.html', path: '/about.html', id: '10.html.bak' }],
+				},
+				{ status: 200, headers: { 'content-type': 'application/json' } },
+			),
+		);
+
+		await hydrateNavTree();
+
+		const link = document.querySelector('a.file')!;
+		expect(link.textContent).toBe('about.html (10.html.bak)');
+	});
+
+	test('does not render an empty "()" suffix when id is an empty string', async () => {
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+			Response.json(
+				{
+					tree: [{ name: 'about.html', path: '/about.html', id: '' }],
+				},
+				{ status: 200, headers: { 'content-type': 'application/json' } },
+			),
+		);
+
+		await hydrateNavTree();
+
+		const link = document.querySelector('a.file')!;
+		expect(link.textContent).toBe('about.html');
+		expect(link.querySelector('.file-id')).toBeNull();
+	});
+
 	test('replaces previous children on re-hydrate (idempotent)', async () => {
 		const mount = document.getElementById('nav-tree-mount')!;
 		mount.append(document.createElement('p'));

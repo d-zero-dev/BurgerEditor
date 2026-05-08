@@ -31,6 +31,9 @@
 
 1. Front Matter を持っている（`---` で囲まれた YAML ブロック）
 2. Front Matter に `pathKey`（既定 `path`）を **空でない文字列値** として持っている
+   - 値の先頭スラッシュは内部で除去されて正規化される。`path: foo.html` と `path: /foo.html` は同じ論理パスとして扱われる
+   - 連続スラッシュ（`//foo.html`、`///foo.html` 等）も同様に除去される
+   - 正規化後に空文字列になる値（`'/'` のみ、`'////'` のみ等）は受け付けない
 3. `pathKey` の値がプロジェクト内で **一意**（衝突したら起動拒否）
 
 例：
@@ -122,6 +125,12 @@ path: some/logical/path.html
 実際のメッセージには末尾に `(currently mapped to "<logical-path>")` が付き、その ID が現在どの論理パスで運用されているかを示す。重複していたファイルの所在をそこから辿れる。
 
 **対処**: 新規作成ダイアログで重複しない ID を再入力する。
+
+### `400 Logical path normalizes to empty string` (`EmptyLogicalPathError`)
+
+`POST /api/content/create` や `POST /api/content` で送信した `path` / `frontMatter.path` が `'/'` や `'///'` のように、先頭スラッシュ除去後に空文字列になる値の場合に返る。state を空キーで汚染しないよう全境界で拒否する。
+
+**対処**: パスの末尾にファイル名を必ず含める。例: `'/about.html'` は `'about.html'` として登録される。
 
 ### `400 Resolved path escapes documentRoot`
 

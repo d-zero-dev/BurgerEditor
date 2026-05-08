@@ -16,9 +16,10 @@ import { defaultConfig } from './model/default-config.js';
 import { FileListManager } from './model/file-list-manager.js';
 import { buildFileTreeFromLogicalPaths, generateFileTree } from './model/file-tree.js';
 import {
+	EmptyLogicalPathError,
 	IdAlreadyExistsError,
 	PathConflictError,
-	listLogicalPaths,
+	listEntries,
 	registerEntry,
 	setLogicalPath,
 	toDiskPath,
@@ -245,6 +246,9 @@ export function setRoute(
 							if (error instanceof PathConflictError) {
 								return c.json({ error: error.message }, 409);
 							}
+							if (error instanceof EmptyLogicalPathError) {
+								return c.json({ error: error.message }, 400);
+							}
 							throw error;
 						}
 					}
@@ -324,6 +328,9 @@ export function setRoute(
 					) {
 						return c.json({ error: error.message }, 409);
 					}
+					if (error instanceof EmptyLogicalPathError) {
+						return c.json({ error: error.message }, 400);
+					}
 					throw error;
 				}
 
@@ -346,7 +353,7 @@ export function setRoute(
 		})
 		.get('/api/tree', async (c) => {
 			if (virtualTreeEnabled && resolverState) {
-				const tree = buildFileTreeFromLogicalPaths(listLogicalPaths(resolverState));
+				const tree = buildFileTreeFromLogicalPaths(listEntries(resolverState));
 				return c.json({ tree });
 			}
 			const tree = await generateFileTree(userConfig.documentRoot);

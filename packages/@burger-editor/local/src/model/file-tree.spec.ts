@@ -62,4 +62,37 @@ describe('buildFileTreeFromLogicalPaths', () => {
 		expect(foo.name).toBe('foo');
 		expect(foo.files[0]?.name).toBe('a.html');
 	});
+
+	test('propagates id to FileInfo when given LogicalEntry objects', () => {
+		const tree = buildFileTreeFromLogicalPaths([
+			{ logicalPath: 'foo/a.html', id: '42.html' },
+			{ logicalPath: 'b.html', id: '7.html' },
+		]);
+		const foo = tree[0] as DirInfo;
+		expect((foo.files[0] as FileInfo).id).toBe('42.html');
+		const b = tree[1] as FileInfo;
+		expect(b.id).toBe('7.html');
+	});
+
+	test('omits id on leaves when input is a bare string', () => {
+		const tree = buildFileTreeFromLogicalPaths(['about.html']);
+		const file = tree[0] as FileInfo;
+		expect(file.id).toBeUndefined();
+	});
+
+	test('accepts a mix of bare strings and LogicalEntry objects in the same call', () => {
+		const tree = buildFileTreeFromLogicalPaths([
+			'a.html',
+			{ logicalPath: 'foo/b.html', id: '7.html' },
+			'foo/c.html',
+			{ logicalPath: 'd.html', id: '99.html' },
+		]);
+		const map = Object.fromEntries(tree.map((node) => [node.name, node]));
+		expect((map['a.html'] as FileInfo).id).toBeUndefined();
+		expect((map['d.html'] as FileInfo).id).toBe('99.html');
+		const fooDir = map.foo as DirInfo;
+		const fooFiles = Object.fromEntries(fooDir.files.map((node) => [node.name, node]));
+		expect((fooFiles['b.html'] as FileInfo).id).toBe('7.html');
+		expect((fooFiles['c.html'] as FileInfo).id).toBeUndefined();
+	});
 });

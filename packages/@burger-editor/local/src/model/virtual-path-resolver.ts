@@ -61,6 +61,22 @@ export function createEmptyState(): ResolverState {
 	};
 }
 
+/**
+ * Canonical form for logical paths used as map keys. Strips any leading
+ * slashes so that `'foo.html'` and `'/foo.html'` resolve to the same entry.
+ *
+ * Front Matter conventions vary (some pipelines store `path: foo.html`,
+ * others `path: /foo.html`); the resolver normalizes both into the
+ * slash-less form internally and `buildFileTreeFromLogicalPaths` re-attaches
+ * the leading slash when rendering each `href` value.
+ * @param logicalPath the raw path string (typically from Front Matter or a
+ *                    request param)
+ * @returns the canonical, slash-less form
+ */
+function normalizeLogicalPath(logicalPath: string): string {
+	return logicalPath.replace(/^\/+/, '');
+}
+
 export type PathConflict = {
 	readonly logicalPath: string;
 	readonly diskFiles: readonly string[];
@@ -97,13 +113,28 @@ export class IdAlreadyExistsError extends Error {
 }
 
 /**
+ * Thrown when a logical path canonicalizes to an empty string (e.g. inputs
+ * like `'/'`, `'//'` after stripping leading slashes). Reserved as a 4xx
+ * trigger at route boundaries.
+ */
+export class EmptyLogicalPathError extends Error {
+	readonly input: string;
+
+	constructor(input: string) {
+		super(`Logical path normalizes to empty string: ${JSON.stringify(input)}`);
+		this.name = 'EmptyLogicalPathError';
+		this.input = input;
+	}
+}
+
+/**
  * Resolve the disk filename (`<id>.html`) for a given logical path.
  * @param state
  * @param logicalPath logical path from the virtual tree (e.g. `foo/bar/about.html`)
  * @returns the disk filename, or `null` if the logical path is not registered
  */
 export function toDiskPath(state: ResolverState, logicalPath: string): string | null {
-	return state.logicalToDisk.get(logicalPath) ?? null;
+	return state.logicalToDisk.get(normalizeLogicalPath(logicalPath)) ?? null;
 }
 
 /**
@@ -126,12 +157,31 @@ export function listLogicalPaths(state: ResolverState): readonly string[] {
 	return [...state.logicalToDisk.keys()];
 }
 
+/** A registered (id ↔ logical path) pair, surfaced for tree builders. */
+export type ResolverEntry = {
+	readonly id: string;
+	readonly logicalPath: string;
+};
+
+/**
+ * Snapshot of all entries with both halves of the mapping. Used by the tree
+ * builder so that the rendered nav can label each leaf with its disk id.
+ * @param state
+ */
+export function listEntries(state: ResolverState): readonly ResolverEntry[] {
+	return [...state.diskToLogical.entries()].map(([id, logicalPath]) => ({
+		id,
+		logicalPath,
+	}));
+}
+
 /**
  * Register a new (id → logical path) pair and return the next state.
  * @param state
  * @param id disk filename, must be unused in `state`
  * @param logicalPath must be unused in `state`
  * @returns a new state with the entry added; the original `state` is not mutated
+ * @throws {EmptyLogicalPathError} if `logicalPath` normalizes to an empty string (e.g. `'/'`)
  * @throws {IdAlreadyExistsError} if `id` is already registered (reports its current logical path)
  * @throws {PathConflictError} if `logicalPath` is already taken by another id
  */
@@ -140,22 +190,28 @@ export function registerEntry(
 	id: string,
 	logicalPath: string,
 ): ResolverState {
+	const canonical = normalizeLogicalPath(logicalPath);
+	if (canonical.length === 0) {
+		// "/" / "//" / etc. canonicalize to empty and would corrupt the state map
+		// with an empty key. Reject at every entry point, mirroring loadResolverState.
+		throw new EmptyLogicalPathError(logicalPath);
+	}
 	const existingLogical = state.diskToLogical.get(id);
 	if (existingLogical !== undefined) {
 		throw new IdAlreadyExistsError(id, existingLogical);
 	}
-	if (state.logicalToDisk.has(logicalPath)) {
+	if (state.logicalToDisk.has(canonical)) {
 		throw new PathConflictError([
 			{
-				logicalPath,
-				diskFiles: [state.logicalToDisk.get(logicalPath)!, id],
+				logicalPath: canonical,
+				diskFiles: [state.logicalToDisk.get(canonical)!, id],
 			},
 		]);
 	}
 	const diskToLogical = new Map(state.diskToLogical);
 	const logicalToDisk = new Map(state.logicalToDisk);
-	diskToLogical.set(id, logicalPath);
-	logicalToDisk.set(logicalPath, id);
+	diskToLogical.set(id, canonical);
+	logicalToDisk.set(canonical, id);
 	return { diskToLogical, logicalToDisk };
 }
 
@@ -171,6 +227,7 @@ export function registerEntry(
  * @param newLogicalPath the new logical path; must not be taken by another id
  * @returns a new state with the entry remapped, or the original `state` if no-op
  * @throws {Error} if `id` is not registered (programming error — callers should resolve via `toDiskPath` first)
+ * @throws {EmptyLogicalPathError} if `newLogicalPath` normalizes to an empty string (e.g. `'/'`)
  * @throws {PathConflictError} if `newLogicalPath` is already taken by another id
  */
 export function setLogicalPath(
@@ -178,27 +235,29 @@ export function setLogicalPath(
 	id: string,
 	newLogicalPath: string,
 ): ResolverState {
+	const canonical = normalizeLogicalPath(newLogicalPath);
+	if (canonical.length === 0) {
+		throw new EmptyLogicalPathError(newLogicalPath);
+	}
 	const current = state.diskToLogical.get(id);
 	if (current === undefined) {
 		throw new Error(`Unknown disk id: ${id}`);
 	}
-	if (current === newLogicalPath) {
+	if (current === canonical) {
 		// Same path → identity return so callers can detect a no-op via reference equality.
 		return state;
 	}
-	// Past this point `current !== newLogicalPath` and the maps are bidirectionally
-	// consistent, so any occupant of newLogicalPath is by definition another id.
-	const occupant = state.logicalToDisk.get(newLogicalPath);
+	// Past this point `current !== canonical` and the maps are bidirectionally
+	// consistent, so any occupant of `canonical` is by definition another id.
+	const occupant = state.logicalToDisk.get(canonical);
 	if (occupant !== undefined) {
-		throw new PathConflictError([
-			{ logicalPath: newLogicalPath, diskFiles: [occupant, id] },
-		]);
+		throw new PathConflictError([{ logicalPath: canonical, diskFiles: [occupant, id] }]);
 	}
 	const diskToLogical = new Map(state.diskToLogical);
 	const logicalToDisk = new Map(state.logicalToDisk);
 	logicalToDisk.delete(current);
-	diskToLogical.set(id, newLogicalPath);
-	logicalToDisk.set(newLogicalPath, id);
+	diskToLogical.set(id, canonical);
+	logicalToDisk.set(canonical, id);
 	return { diskToLogical, logicalToDisk };
 }
 
@@ -257,7 +316,12 @@ export async function loadResolverState(
 			);
 		}
 
-		const logicalPath = raw;
+		const logicalPath = normalizeLogicalPath(raw);
+		if (logicalPath.length === 0) {
+			throw new Error(
+				`Front matter "${pathKey}" normalizes to empty string in ${entry.name}`,
+			);
+		}
 		diskToLogical.set(entry.name, logicalPath);
 		const list = claims.get(logicalPath) ?? [];
 		list.push(entry.name);

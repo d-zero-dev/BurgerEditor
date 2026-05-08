@@ -31,7 +31,15 @@ export async function hydrateNavTree() {
 }
 
 /**
- * Build a `<ul>` DOM subtree mirroring the SSR output of `view/nav-tree.tsx`.
+ * Build a `<ul>` DOM subtree from `GET /api/tree` data. The nav is fully
+ * client-rendered (SSR only emits the `#nav-tree-mount` placeholder).
+ *
+ * In virtualTree mode each leaf carries an `id` (the on-disk filename).
+ * The label is rendered as `${name} (${id-without-html})` so editors can see
+ * which physical file a logical path maps to. The id label is skipped when
+ * `id` is absent (directory mode) or an empty string (defensive — server
+ * shouldn't emit empty ids, but the guard keeps `()` from leaking into the UI
+ * if a future payload regresses).
  * @param items the tree returned by `GET /api/tree`
  * @returns a `<ul>` element ready to be appended into the DOM
  */
@@ -43,9 +51,15 @@ function buildList(items: Tree): HTMLUListElement {
 			const a = document.createElement('a');
 			a.className = 'file';
 			a.href = item.path;
-			const span = document.createElement('span');
-			span.textContent = item.name;
-			a.append(span);
+			const nameSpan = document.createElement('span');
+			nameSpan.textContent = item.name;
+			a.append(nameSpan);
+			if ('id' in item && typeof item.id === 'string' && item.id.length > 0) {
+				const idSpan = document.createElement('span');
+				idSpan.className = 'file-id';
+				idSpan.textContent = ` (${item.id.replace(/\.html$/, '')})`;
+				a.append(idSpan);
+			}
 			li.append(a);
 		} else {
 			const span = document.createElement('span');
