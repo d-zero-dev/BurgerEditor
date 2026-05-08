@@ -184,7 +184,6 @@ Fix the conflicting front matter "path" values in the listed files and retry.
 ## 参考リンク
 
 - [README.md の Virtual File Tree セクション](../README.md#virtual-file-tree仮想ファイルツリー) — API リファレンス
-- [#753](https://github.com/d-zero-dev/BurgerEditor/issues/753) — `client/create-editor.ts` のテスト整備
 - [gray-matter](https://github.com/jonschlinkert/gray-matter) — 内部で使っている Front Matter パーサ
 - 検索キーワード: `BurgerEditor virtualTree` / `PathConflictError` / `IdAlreadyExistsError` / `@burger-editor/local frontmatter path`
 

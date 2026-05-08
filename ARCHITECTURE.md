@@ -170,6 +170,7 @@ graph TD
     - `view/app.tsx` / `view/nav.tsx` - SSR 時に `virtualTreeEnabled` prop を hidden input + Nav の入力欄出し分けで埋め込む
     - `client/nav-tree.ts` - `/api/tree` を fetch して `#nav-tree-mount` をハイドレート。仮想モードで `FileInfo.id` が乗っている葉は `<論理ファイル名> (<id>)` 形式（末尾 `.html` は除去）でラベル化し、id 部分は `.file-id` クラスの `<span>` として独立させてテーマ側でスタイル可能にする
     - `client/new-file.ts` - hidden input で flag を読み、有効時のみ ID 入力を必須化して `/api/content/create` を叩く
+    - `client/save-content-request.ts` - `/api/content` POST 後のレスポンス分岐（成功 / `{error}` / `saved: false` / 不正 JSON）を純関数として隔離。`create-editor.ts` 全体の DOM 配線を立ち上げずにレスポンス分岐の回帰を検証できる
   - **詳細ドキュメント**: [`packages/@burger-editor/local/docs/virtual-tree.md`](packages/@burger-editor/local/docs/virtual-tree.md)
 
 #### Support Layer（サポート層）
