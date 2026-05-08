@@ -1,3 +1,5 @@
+import type { SaveContentParams } from './save-content-request.js';
+
 import { describe, expect, test, vi } from 'vitest';
 
 import { saveContentRequest } from './save-content-request.js';
@@ -27,16 +29,25 @@ function makeLog() {
 	};
 }
 
-// `saveContentRequest`'s `post` parameter is typed against the Hono client's
-// $post; the test feeds it a structurally compatible mock and casts at the
-// call site. The cast is narrowed inside the function via runtime checks, so
-// the test still exercises the real branching logic.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyPost = any;
+/**
+ * Minimal structural shape of `client.api.content.$post` used by
+ * {@link saveContentRequest}. Typing the test mock against this — instead of
+ * widening to `any` — keeps the JSON body shape checked at test-write time so
+ * a future schema change to `apiSchema` would surface in `vi.fn<FakePost>()`.
+ */
+type FakePost = (args: { json: SaveContentParams }) => Promise<Response>;
+
+/**
+ * Cast back to the helper's first-parameter type. We cross through `unknown`
+ * because Hono's $post carries route-type baggage (`ClientResponse<...>`,
+ * status codes, header phantom types) that the runtime doesn't care about
+ * but the TS structural check does.
+ */
+type SaveContentPost = Parameters<typeof saveContentRequest>[0];
 
 describe('saveContentRequest', () => {
 	test('on 200 + { saved: true } it calls log.info with the saved path', async () => {
-		const post = vi.fn().mockResolvedValue(
+		const post = vi.fn<FakePost>().mockResolvedValue(
 			jsonResponse({
 				saved: true,
 				path: '/tmp/docs/about.html',
@@ -46,7 +57,7 @@ describe('saveContentRequest', () => {
 		const log = makeLog();
 
 		await saveContentRequest(
-			post as AnyPost,
+			post as unknown as SaveContentPost,
 			{ path: '/about.html', content: '<h1>About</h1>' },
 			log,
 		);
@@ -57,7 +68,7 @@ describe('saveContentRequest', () => {
 	});
 
 	test('on 200 + { saved: true, hasFrontMatter: true } the info message includes the FM marker', async () => {
-		const post = vi.fn().mockResolvedValue(
+		const post = vi.fn<FakePost>().mockResolvedValue(
 			jsonResponse({
 				saved: true,
 				path: '/tmp/docs/about.html',
@@ -67,7 +78,7 @@ describe('saveContentRequest', () => {
 		const log = makeLog();
 
 		await saveContentRequest(
-			post as AnyPost,
+			post as unknown as SaveContentPost,
 			{ path: '/about.html', content: '<h1>About</h1>' },
 			log,
 		);
@@ -79,14 +90,14 @@ describe('saveContentRequest', () => {
 
 	test('on 4xx + { error } it calls log.error with the structured server message (regression: #753)', async () => {
 		const post = vi
-			.fn()
+			.fn<FakePost>()
 			.mockResolvedValue(
 				jsonResponse({ error: 'Unknown logical path: /missing.html' }, { status: 404 }),
 			);
 		const log = makeLog();
 
 		await saveContentRequest(
-			post as AnyPost,
+			post as unknown as SaveContentPost,
 			{ path: '/missing.html', content: '<h1/>' },
 			log,
 		);
@@ -104,10 +115,14 @@ describe('saveContentRequest', () => {
 			statusText: 'Internal Server Error',
 			headers: { 'content-type': 'application/json' },
 		});
-		const post = vi.fn().mockResolvedValue(broken);
+		const post = vi.fn<FakePost>().mockResolvedValue(broken);
 		const log = makeLog();
 
-		await saveContentRequest(post as AnyPost, { path: '/x.html', content: '<h1/>' }, log);
+		await saveContentRequest(
+			post as unknown as SaveContentPost,
+			{ path: '/x.html', content: '<h1/>' },
+			log,
+		);
 
 		expect(log.error).toHaveBeenCalledOnce();
 		expect(log.error.mock.calls[0]?.[0]).toBe('Failed to save: Internal Server Error');
@@ -116,28 +131,38 @@ describe('saveContentRequest', () => {
 
 	test('on 200 + { saved: false } it calls log.error with "Save did not complete"', async () => {
 		const post = vi
-			.fn()
+			.fn<FakePost>()
 			.mockResolvedValue(jsonResponse({ saved: false, path: '/x.html' }));
 		const log = makeLog();
 
-		await saveContentRequest(post as AnyPost, { path: '/x.html', content: '<h1/>' }, log);
+		await saveContentRequest(
+			post as unknown as SaveContentPost,
+			{ path: '/x.html', content: '<h1/>' },
+			log,
+		);
 
 		expect(log.error).toHaveBeenCalledWith('Save did not complete');
 		expect(log.info).not.toHaveBeenCalled();
 	});
 
 	test('on 200 + body missing the `saved` field it calls log.error with "Save did not complete"', async () => {
-		const post = vi.fn().mockResolvedValue(jsonResponse({ message: 'unexpected shape' }));
+		const post = vi
+			.fn<FakePost>()
+			.mockResolvedValue(jsonResponse({ message: 'unexpected shape' }));
 		const log = makeLog();
 
-		await saveContentRequest(post as AnyPost, { path: '/x.html', content: '<h1/>' }, log);
+		await saveContentRequest(
+			post as unknown as SaveContentPost,
+			{ path: '/x.html', content: '<h1/>' },
+			log,
+		);
 
 		expect(log.error).toHaveBeenCalledWith('Save did not complete');
 		expect(log.info).not.toHaveBeenCalled();
 	});
 
 	test('forwards path / content / frontMatter / originalFrontMatter unchanged to the post body', async () => {
-		const post = vi.fn().mockResolvedValue(
+		const post = vi.fn<FakePost>().mockResolvedValue(
 			jsonResponse({
 				saved: true,
 				path: '/tmp/docs/x.html',
@@ -147,7 +172,7 @@ describe('saveContentRequest', () => {
 		const log = makeLog();
 
 		await saveContentRequest(
-			post as AnyPost,
+			post as unknown as SaveContentPost,
 			{
 				path: '/x.html',
 				content: '<h1>X</h1>',
