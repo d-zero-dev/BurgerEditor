@@ -165,7 +165,7 @@ graph TD
   - **構成ファイル**:
     - `model/virtual-path-resolver.ts` - `ResolverState` 型と純関数群（`createEmptyState` / `loadResolverState` / `toDiskPath` / `toLogicalPath` / `listLogicalPaths` / `listEntries` / `registerEntry` / `setLogicalPath` / `deleteEntry`）。論理パスは内部で先頭スラッシュが除去されて正規化される。エラー語彙は `PathConflictError`（論理パス衝突）/ `IdAlreadyExistsError`（id 既使用）/ `EmptyLogicalPathError`（正規化後に空）の 3 種で、route 層がそれぞれ 409 / 409 / 400 にマップする
     - `model/file-tree.ts::buildFileTreeFromLogicalPaths` - 論理パス配列からツリー構造を組む純関数
-    - `route.tsx` - mode フラグの評価点。`GET /api/tree` / `POST /api/content/create` / `POST /api/content` の 3 エンドポイントが state を read-modify-write
+    - `route.tsx` - mode フラグの評価点。`GET /api/tree` / `POST /api/content/create` / `POST /api/content` の 3 エンドポイントが state を read-modify-write。論理パス入力は `isSafeLogicalPath` で `..` / `.` セグメントと NUL 文字を 400 で拒否し、ブラウザ正規化により孤児ファイル化する事故を API 境界で防ぐ
     - `view/app.tsx` / `view/nav.tsx` - SSR 時に `virtualTreeEnabled` prop を hidden input + Nav の入力欄出し分けで埋め込む
     - `client/nav-tree.ts` - `/api/tree` を fetch して `#nav-tree-mount` をハイドレート。仮想モードで `FileInfo.id` が乗っている葉は `<論理ファイル名> (<id>)` 形式（末尾 `.html` は除去）でラベル化し、id 部分は `.file-id` クラスの `<span>` として独立させてテーマ側でスタイル可能にする
     - `client/new-file.ts` - hidden input で flag を読み、有効時のみ ID 入力を必須化して `/api/content/create` を叩く
