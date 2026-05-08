@@ -122,9 +122,24 @@ describe('GET /api/tree', () => {
 		const app = await buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: true });
 		const res = await app.request('/api/tree');
 		expect(res.status).toBe(200);
-		const body = (await res.json()) as { tree: { name: string; path: string }[] };
+		const body = (await res.json()) as {
+			tree: { name: string; path: string; id?: string; files?: unknown[] }[];
+		};
 		const names = body.tree.map((n) => n.name).toSorted();
 		expect(names).toEqual(['about.html', 'foo']);
+		// File leaves at the top level carry the disk id so the client can
+		// render `name (id)` labels in virtualTree mode.
+		const aboutLeaf = body.tree.find((n) => n.name === 'about.html');
+		expect(aboutLeaf?.id).toBe('1.html');
+	});
+
+	test('directory mode tree leaves do not include an id field', async () => {
+		await fs.writeFile(path.join(documentRoot, 'home.html'), '<h1>Home</h1>', 'utf8');
+		const app = await buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: false });
+		const res = await app.request('/api/tree');
+		const body = (await res.json()) as { tree: { name: string; id?: string }[] };
+		expect(body.tree[0]?.name).toBe('home.html');
+		expect(body.tree[0]?.id).toBeUndefined();
 	});
 
 	test('returns directory-based tree when virtualTree is disabled', async () => {

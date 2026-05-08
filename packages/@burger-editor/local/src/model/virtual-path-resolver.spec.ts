@@ -9,6 +9,7 @@ import {
 	PathConflictError,
 	createEmptyState,
 	deleteEntry,
+	listEntries,
 	listLogicalPaths,
 	loadResolverState,
 	registerEntry,
@@ -69,6 +70,24 @@ describe('listLogicalPaths', () => {
 
 	test('returns empty for empty state', () => {
 		expect(listLogicalPaths(makeState([]))).toEqual([]);
+	});
+});
+
+describe('listEntries', () => {
+	test('returns id+logicalPath pairs for every registered file', () => {
+		const state = makeState([
+			{ id: '1.html', logicalPath: 'about.html' },
+			{ id: '2.html', logicalPath: 'foo/bar.html' },
+		]);
+		const entries = [...listEntries(state)].toSorted((a, b) => a.id.localeCompare(b.id));
+		expect(entries).toEqual([
+			{ id: '1.html', logicalPath: 'about.html' },
+			{ id: '2.html', logicalPath: 'foo/bar.html' },
+		]);
+	});
+
+	test('returns empty for empty state', () => {
+		expect(listEntries(makeState([]))).toEqual([]);
 	});
 });
 
@@ -270,5 +289,31 @@ describe('loadResolverState', () => {
 	test('rejects with ENOENT-style error when documentRoot does not exist', async () => {
 		const missing = path.join(tmpDir, 'missing-dir');
 		await expect(loadResolverState(missing, 'path')).rejects.toThrow();
+	});
+
+	test('normalizes leading slashes in frontmatter path so /foo.html and foo.html resolve to the same entry', async () => {
+		// Regression: production data sets often write `path: /foo.html` while
+		// Hono's `c.req.param('page')` strips the leading slash. Without
+		// normalization, every link click on the editor 404'd.
+		await writeFile('1.html', '---\npath: /maintenance.html\n---\n<h1>m</h1>\n');
+
+		const state = await loadResolverState(tmpDir, 'path');
+
+		expect(toDiskPath(state, '/maintenance.html')).toBe('1.html');
+		expect(toDiskPath(state, 'maintenance.html')).toBe('1.html');
+		expect(listLogicalPaths(state)).toEqual(['maintenance.html']);
+	});
+
+	test('rejects when frontmatter path is just a slash (normalizes to empty string)', async () => {
+		await writeFile('1.html', '---\npath: /\n---\n<h1>x</h1>\n');
+		await expect(loadResolverState(tmpDir, 'path')).rejects.toThrow(/1\.html/);
+	});
+
+	test('detects conflicts after normalization (/foo.html vs foo.html on different ids)', async () => {
+		await writeFile('1.html', '---\npath: /shared.html\n---\n<h1>a</h1>\n');
+		await writeFile('2.html', '---\npath: shared.html\n---\n<h1>b</h1>\n');
+		await expect(loadResolverState(tmpDir, 'path')).rejects.toBeInstanceOf(
+			PathConflictError,
+		);
 	});
 });

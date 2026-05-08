@@ -5,6 +5,11 @@ import path from 'node:path';
 export type FileInfo = {
 	readonly name: string;
 	readonly path: string;
+	/**
+	 * On-disk id for this entry. Set only in virtualTree mode where the disk
+	 * filename differs from the logical path; absent in directory mode.
+	 */
+	readonly id?: string;
 };
 
 /** A directory entry containing a recursive subtree. */
@@ -80,21 +85,35 @@ function freezeDir(dir: MutableDir): DirInfo {
 	};
 }
 
+/** Input shape for {@link buildFileTreeFromLogicalPaths}. */
+export type LogicalEntry = {
+	readonly logicalPath: string;
+	/** Optional on-disk id, surfaced as `FileInfo.id` for the leaf entry. */
+	readonly id?: string;
+};
+
 /**
  * Build a navigation tree from an unordered list of logical paths (e.g.
  * `['about.html', 'foo/bar.html']`). Used in virtualTree mode where the disk
  * is flat and the tree is reconstructed from Front Matter values.
  *
+ * Accepts either bare strings or `{ logicalPath, id }` entries. When entries
+ * carry an `id`, it is propagated to the resulting leaf `FileInfo.id` so the
+ * client can render `name (id)` style labels.
+ *
  * Leading slashes are tolerated; empty segments are skipped. Sibling order
- * follows the input order of `logicalPaths`.
- * @param logicalPaths logical paths to assemble into a tree
+ * follows the input order.
+ * @param input logical paths or entries to assemble into a tree
  * @returns a tree mirroring the same shape as `generateFileTree` so the SSR/client view code can render it identically
  */
-export function buildFileTreeFromLogicalPaths(logicalPaths: readonly string[]): Tree {
+export function buildFileTreeFromLogicalPaths(
+	input: readonly (string | LogicalEntry)[],
+): Tree {
 	const root: MutableDir = { name: '', path: '/', files: [] };
 
-	for (const raw of logicalPaths) {
-		const segments = raw.split('/').filter((s) => s.length > 0);
+	for (const item of input) {
+		const entry: LogicalEntry = typeof item === 'string' ? { logicalPath: item } : item;
+		const segments = entry.logicalPath.split('/').filter((s) => s.length > 0);
 		if (segments.length === 0) {
 			continue;
 		}
@@ -104,7 +123,7 @@ export function buildFileTreeFromLogicalPaths(logicalPaths: readonly string[]): 
 			const segment = segments[i]!;
 			const dirPath = '/' + segments.slice(0, i + 1).join('/');
 			let next = cursor.files.find(
-				(entry): entry is MutableDir => 'files' in entry && entry.name === segment,
+				(node): node is MutableDir => 'files' in node && node.name === segment,
 			);
 			if (!next) {
 				next = { name: segment, path: dirPath, files: [] };
@@ -114,10 +133,11 @@ export function buildFileTreeFromLogicalPaths(logicalPaths: readonly string[]): 
 		}
 
 		const fileName = segments.at(-1)!;
-		cursor.files.push({
-			name: fileName,
-			path: '/' + segments.join('/'),
-		});
+		const leaf: FileInfo =
+			entry.id === undefined
+				? { name: fileName, path: '/' + segments.join('/') }
+				: { name: fileName, path: '/' + segments.join('/'), id: entry.id };
+		cursor.files.push(leaf);
 	}
 
 	return root.files.map((entry) => ('files' in entry ? freezeDir(entry) : entry));

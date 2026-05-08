@@ -61,6 +61,22 @@ export function createEmptyState(): ResolverState {
 	};
 }
 
+/**
+ * Canonical form for logical paths used as map keys. Strips any leading
+ * slashes so that `'foo.html'` and `'/foo.html'` resolve to the same entry.
+ *
+ * Front Matter conventions vary (some pipelines store `path: foo.html`,
+ * others `path: /foo.html`); the resolver normalizes both into the
+ * slash-less form internally and `buildFileTreeFromLogicalPaths` re-attaches
+ * the leading slash when rendering each `href` value.
+ * @param logicalPath the raw path string (typically from Front Matter or a
+ *                    request param)
+ * @returns the canonical, slash-less form
+ */
+function normalizeLogicalPath(logicalPath: string): string {
+	return logicalPath.replace(/^\/+/, '');
+}
+
 export type PathConflict = {
 	readonly logicalPath: string;
 	readonly diskFiles: readonly string[];
@@ -103,7 +119,7 @@ export class IdAlreadyExistsError extends Error {
  * @returns the disk filename, or `null` if the logical path is not registered
  */
 export function toDiskPath(state: ResolverState, logicalPath: string): string | null {
-	return state.logicalToDisk.get(logicalPath) ?? null;
+	return state.logicalToDisk.get(normalizeLogicalPath(logicalPath)) ?? null;
 }
 
 /**
@@ -126,6 +142,24 @@ export function listLogicalPaths(state: ResolverState): readonly string[] {
 	return [...state.logicalToDisk.keys()];
 }
 
+/** A registered (id ↔ logical path) pair, surfaced for tree builders. */
+export type ResolverEntry = {
+	readonly id: string;
+	readonly logicalPath: string;
+};
+
+/**
+ * Snapshot of all entries with both halves of the mapping. Used by the tree
+ * builder so that the rendered nav can label each leaf with its disk id.
+ * @param state
+ */
+export function listEntries(state: ResolverState): readonly ResolverEntry[] {
+	return [...state.diskToLogical.entries()].map(([id, logicalPath]) => ({
+		id,
+		logicalPath,
+	}));
+}
+
 /**
  * Register a new (id → logical path) pair and return the next state.
  * @param state
@@ -140,22 +174,23 @@ export function registerEntry(
 	id: string,
 	logicalPath: string,
 ): ResolverState {
+	const canonical = normalizeLogicalPath(logicalPath);
 	const existingLogical = state.diskToLogical.get(id);
 	if (existingLogical !== undefined) {
 		throw new IdAlreadyExistsError(id, existingLogical);
 	}
-	if (state.logicalToDisk.has(logicalPath)) {
+	if (state.logicalToDisk.has(canonical)) {
 		throw new PathConflictError([
 			{
-				logicalPath,
-				diskFiles: [state.logicalToDisk.get(logicalPath)!, id],
+				logicalPath: canonical,
+				diskFiles: [state.logicalToDisk.get(canonical)!, id],
 			},
 		]);
 	}
 	const diskToLogical = new Map(state.diskToLogical);
 	const logicalToDisk = new Map(state.logicalToDisk);
-	diskToLogical.set(id, logicalPath);
-	logicalToDisk.set(logicalPath, id);
+	diskToLogical.set(id, canonical);
+	logicalToDisk.set(canonical, id);
 	return { diskToLogical, logicalToDisk };
 }
 
@@ -178,27 +213,26 @@ export function setLogicalPath(
 	id: string,
 	newLogicalPath: string,
 ): ResolverState {
+	const canonical = normalizeLogicalPath(newLogicalPath);
 	const current = state.diskToLogical.get(id);
 	if (current === undefined) {
 		throw new Error(`Unknown disk id: ${id}`);
 	}
-	if (current === newLogicalPath) {
+	if (current === canonical) {
 		// Same path → identity return so callers can detect a no-op via reference equality.
 		return state;
 	}
-	// Past this point `current !== newLogicalPath` and the maps are bidirectionally
-	// consistent, so any occupant of newLogicalPath is by definition another id.
-	const occupant = state.logicalToDisk.get(newLogicalPath);
+	// Past this point `current !== canonical` and the maps are bidirectionally
+	// consistent, so any occupant of `canonical` is by definition another id.
+	const occupant = state.logicalToDisk.get(canonical);
 	if (occupant !== undefined) {
-		throw new PathConflictError([
-			{ logicalPath: newLogicalPath, diskFiles: [occupant, id] },
-		]);
+		throw new PathConflictError([{ logicalPath: canonical, diskFiles: [occupant, id] }]);
 	}
 	const diskToLogical = new Map(state.diskToLogical);
 	const logicalToDisk = new Map(state.logicalToDisk);
 	logicalToDisk.delete(current);
-	diskToLogical.set(id, newLogicalPath);
-	logicalToDisk.set(newLogicalPath, id);
+	diskToLogical.set(id, canonical);
+	logicalToDisk.set(canonical, id);
 	return { diskToLogical, logicalToDisk };
 }
 
@@ -257,7 +291,12 @@ export async function loadResolverState(
 			);
 		}
 
-		const logicalPath = raw;
+		const logicalPath = normalizeLogicalPath(raw);
+		if (logicalPath.length === 0) {
+			throw new Error(
+				`Front matter "${pathKey}" normalizes to empty string in ${entry.name}`,
+			);
+		}
 		diskToLogical.set(entry.name, logicalPath);
 		const list = claims.get(logicalPath) ?? [];
 		list.push(entry.name);

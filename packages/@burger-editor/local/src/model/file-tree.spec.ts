@@ -62,4 +62,21 @@ describe('buildFileTreeFromLogicalPaths', () => {
 		expect(foo.name).toBe('foo');
 		expect(foo.files[0]?.name).toBe('a.html');
 	});
+
+	test('propagates id to FileInfo when given LogicalEntry objects', () => {
+		const tree = buildFileTreeFromLogicalPaths([
+			{ logicalPath: 'foo/a.html', id: '42.html' },
+			{ logicalPath: 'b.html', id: '7.html' },
+		]);
+		const foo = tree[0] as DirInfo;
+		expect((foo.files[0] as FileInfo).id).toBe('42.html');
+		const b = tree[1] as FileInfo;
+		expect(b.id).toBe('7.html');
+	});
+
+	test('omits id on leaves when input is a bare string', () => {
+		const tree = buildFileTreeFromLogicalPaths(['about.html']);
+		const file = tree[0] as FileInfo;
+		expect(file.id).toBeUndefined();
+	});
 });

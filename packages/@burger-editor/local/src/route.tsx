@@ -18,7 +18,7 @@ import { buildFileTreeFromLogicalPaths, generateFileTree } from './model/file-tr
 import {
 	IdAlreadyExistsError,
 	PathConflictError,
-	listLogicalPaths,
+	listEntries,
 	registerEntry,
 	setLogicalPath,
 	toDiskPath,
@@ -346,7 +346,7 @@ export function setRoute(
 		})
 		.get('/api/tree', async (c) => {
 			if (virtualTreeEnabled && resolverState) {
-				const tree = buildFileTreeFromLogicalPaths(listLogicalPaths(resolverState));
+				const tree = buildFileTreeFromLogicalPaths(listEntries(resolverState));
 				return c.json({ tree });
 			}
 			const tree = await generateFileTree(userConfig.documentRoot);
