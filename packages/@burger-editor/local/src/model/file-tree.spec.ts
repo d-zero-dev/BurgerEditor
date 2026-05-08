@@ -79,4 +79,20 @@ describe('buildFileTreeFromLogicalPaths', () => {
 		const file = tree[0] as FileInfo;
 		expect(file.id).toBeUndefined();
 	});
+
+	test('accepts a mix of bare strings and LogicalEntry objects in the same call', () => {
+		const tree = buildFileTreeFromLogicalPaths([
+			'a.html',
+			{ logicalPath: 'foo/b.html', id: '7.html' },
+			'foo/c.html',
+			{ logicalPath: 'd.html', id: '99.html' },
+		]);
+		const map = Object.fromEntries(tree.map((node) => [node.name, node]));
+		expect((map['a.html'] as FileInfo).id).toBeUndefined();
+		expect((map['d.html'] as FileInfo).id).toBe('99.html');
+		const fooDir = map.foo as DirInfo;
+		const fooFiles = Object.fromEntries(fooDir.files.map((node) => [node.name, node]));
+		expect((fooFiles['b.html'] as FileInfo).id).toBe('7.html');
+		expect((fooFiles['c.html'] as FileInfo).id).toBeUndefined();
+	});
 });

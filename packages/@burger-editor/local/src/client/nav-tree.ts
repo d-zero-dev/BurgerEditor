@@ -51,7 +51,7 @@ function buildList(items: Tree): HTMLUListElement {
 			const nameSpan = document.createElement('span');
 			nameSpan.textContent = item.name;
 			a.append(nameSpan);
-			if ('id' in item && typeof item.id === 'string') {
+			if ('id' in item && typeof item.id === 'string' && item.id.length > 0) {
 				const idSpan = document.createElement('span');
 				idSpan.className = 'file-id';
 				idSpan.textContent = ` (${item.id.replace(/\.html$/, '')})`;

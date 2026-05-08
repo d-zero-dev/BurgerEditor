@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import {
+	EmptyLogicalPathError,
 	IdAlreadyExistsError,
 	PathConflictError,
 	createEmptyState,
@@ -130,6 +131,33 @@ describe('registerEntry', () => {
 			expect(e.message).toContain('about.html');
 		}
 	});
+
+	test('stores the canonical (slash-less) form when given a leading slash', () => {
+		const state = registerEntry(createEmptyState(), '1.html', '/foo.html');
+		expect(toDiskPath(state, 'foo.html')).toBe('1.html');
+		expect(toDiskPath(state, '/foo.html')).toBe('1.html');
+		expect(listLogicalPaths(state)).toEqual(['foo.html']);
+	});
+
+	test.each([
+		{ label: 'two leading slashes', input: '//foo.html' },
+		{ label: 'three leading slashes', input: '///foo.html' },
+	])('strips multiple leading slashes ($label)', ({ input }) => {
+		const state = registerEntry(createEmptyState(), '1.html', input);
+		expect(toDiskPath(state, 'foo.html')).toBe('1.html');
+	});
+
+	test.each([
+		{ label: 'single slash', input: '/' },
+		{ label: 'multiple slashes', input: '////' },
+	])(
+		'throws EmptyLogicalPathError when input normalizes to empty ($label)',
+		({ input }) => {
+			expect(() => registerEntry(createEmptyState(), '1.html', input)).toThrow(
+				EmptyLogicalPathError,
+			);
+		},
+	);
 });
 
 describe('setLogicalPath', () => {
@@ -173,6 +201,25 @@ describe('setLogicalPath', () => {
 			PathConflictError,
 		);
 	});
+
+	test('stores the canonical (slash-less) form when given a leading slash', () => {
+		let state = registerEntry(createEmptyState(), '1.html', 'old.html');
+		state = setLogicalPath(state, '1.html', '/new.html');
+		expect(toDiskPath(state, 'new.html')).toBe('1.html');
+		expect(toDiskPath(state, '/new.html')).toBe('1.html');
+		expect(toLogicalPath(state, '1.html')).toBe('new.html');
+	});
+
+	test.each([
+		{ label: 'single slash', input: '/' },
+		{ label: 'multiple slashes', input: '///' },
+	])(
+		'throws EmptyLogicalPathError when newLogicalPath normalizes to empty ($label)',
+		({ input }) => {
+			const state = makeState([{ id: '1.html', logicalPath: 'about.html' }]);
+			expect(() => setLogicalPath(state, '1.html', input)).toThrow(EmptyLogicalPathError);
+		},
+	);
 });
 
 describe('deleteEntry', () => {

@@ -16,6 +16,7 @@ import { defaultConfig } from './model/default-config.js';
 import { FileListManager } from './model/file-list-manager.js';
 import { buildFileTreeFromLogicalPaths, generateFileTree } from './model/file-tree.js';
 import {
+	EmptyLogicalPathError,
 	IdAlreadyExistsError,
 	PathConflictError,
 	listEntries,
@@ -245,6 +246,9 @@ export function setRoute(
 							if (error instanceof PathConflictError) {
 								return c.json({ error: error.message }, 409);
 							}
+							if (error instanceof EmptyLogicalPathError) {
+								return c.json({ error: error.message }, 400);
+							}
 							throw error;
 						}
 					}
@@ -323,6 +327,9 @@ export function setRoute(
 						error instanceof IdAlreadyExistsError
 					) {
 						return c.json({ error: error.message }, 409);
+					}
+					if (error instanceof EmptyLogicalPathError) {
+						return c.json({ error: error.message }, 400);
 					}
 					throw error;
 				}

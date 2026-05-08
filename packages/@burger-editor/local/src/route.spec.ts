@@ -133,6 +133,31 @@ describe('GET /api/tree', () => {
 		expect(aboutLeaf?.id).toBe('1.html');
 	});
 
+	test('virtual mode propagates id to nested leaves under DirInfo, not just the top level', async () => {
+		await fs.writeFile(
+			path.join(documentRoot, '7.html'),
+			'---\npath: foo/bar/deep.html\n---\n<h1>Deep</h1>\n',
+			'utf8',
+		);
+		const app = await buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: true });
+		const res = await app.request('/api/tree');
+		const body = (await res.json()) as {
+			tree: {
+				name: string;
+				path: string;
+				id?: string;
+				files?: { name: string; id?: string; files?: unknown[] }[];
+			}[];
+		};
+		const fooDir = body.tree.find((n) => n.name === 'foo');
+		expect(fooDir?.id).toBeUndefined(); // dirs themselves carry no id
+		const barDir = fooDir?.files?.find((n) => n.name === 'bar') as
+			| { name: string; id?: string; files?: { name: string; id?: string }[] }
+			| undefined;
+		const deepLeaf = barDir?.files?.find((n) => n.name === 'deep.html');
+		expect(deepLeaf?.id).toBe('7.html');
+	});
+
 	test('directory mode tree leaves do not include an id field', async () => {
 		await fs.writeFile(path.join(documentRoot, 'home.html'), '<h1>Home</h1>', 'utf8');
 		const app = await buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: false });
@@ -226,6 +251,40 @@ describe('POST /api/content/create (virtual mode)', () => {
 		const treeRes = await app.request('/api/tree');
 		const body = (await treeRes.json()) as { tree: { name: string }[] };
 		expect(body.tree.map((n) => n.name)).toContain('foo');
+	});
+
+	test('accepts a leading-slash logical path and stores it in canonical form (regression)', async () => {
+		// Real-world Front Matter pipelines often write `path: /foo.html`.
+		// Without normalization, GET /:page lookups fail because Hono path
+		// params arrive slash-less.
+		const app = await buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: true });
+		const res = await app.request('/api/content/create', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ id: '42.html', path: '/foo/bar.html' }),
+		});
+		expect(res.status).toBe(200);
+
+		const treeRes = await app.request('/api/tree');
+		const body = (await treeRes.json()) as { tree: { name: string }[] };
+		expect(body.tree.map((n) => n.name)).toContain('foo');
+
+		// The same logical file is reachable via the slashless lookup too.
+		const pageRes = await app.request('/foo/bar.html');
+		expect(pageRes.status).toBe(200);
+	});
+
+	test('rejects with 400 when path normalizes to empty (e.g. "/")', async () => {
+		const app = await buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: true });
+		const res = await app.request('/api/content/create', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ id: '42.html', path: '/' }),
+		});
+		expect(res.status).toBe(400);
+		const before = await fs.readdir(documentRoot);
+		// And no disk file was created for the rejected entry.
+		expect(before).not.toContain('42.html');
 	});
 
 	test('appends .html to the id when the caller omits the extension', async () => {
@@ -420,6 +479,50 @@ describe('POST /api/content (virtual mode, path change)', () => {
 		const treeRes = await app.request('/api/tree');
 		const body = (await treeRes.json()) as { tree: { name: string }[] };
 		expect(body.tree.map((n) => n.name)).toEqual(['about.html']);
+	});
+
+	test('updates frontmatter path with a leading slash and reflects in tree (regression)', async () => {
+		await fs.writeFile(
+			path.join(documentRoot, '1.html'),
+			'---\npath: about.html\n---\n<h1>About</h1>\n',
+			'utf8',
+		);
+		const app = await buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: true });
+
+		const saveRes = await app.request('/api/content', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({
+				path: 'about.html',
+				content: '<h1>About</h1>',
+				frontMatter: { path: '/company/about.html' },
+			}),
+		});
+		expect(saveRes.status).toBe(200);
+
+		const treeRes = await app.request('/api/tree');
+		const body = (await treeRes.json()) as { tree: { name: string }[] };
+		expect(body.tree.map((n) => n.name)).toContain('company');
+	});
+
+	test('rejects with 400 when frontmatter pathKey normalizes to empty (e.g. "/")', async () => {
+		await fs.writeFile(
+			path.join(documentRoot, '1.html'),
+			'---\npath: about.html\n---\n<h1>About</h1>\n',
+			'utf8',
+		);
+		const app = await buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: true });
+
+		const res = await app.request('/api/content', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({
+				path: 'about.html',
+				content: '<h1>About</h1>',
+				frontMatter: { path: '/' },
+			}),
+		});
+		expect(res.status).toBe(400);
 	});
 
 	test.each([

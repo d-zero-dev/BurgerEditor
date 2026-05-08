@@ -113,6 +113,21 @@ export class IdAlreadyExistsError extends Error {
 }
 
 /**
+ * Thrown when a logical path canonicalizes to an empty string (e.g. inputs
+ * like `'/'`, `'//'` after stripping leading slashes). Reserved as a 4xx
+ * trigger at route boundaries.
+ */
+export class EmptyLogicalPathError extends Error {
+	readonly input: string;
+
+	constructor(input: string) {
+		super(`Logical path normalizes to empty string: ${JSON.stringify(input)}`);
+		this.name = 'EmptyLogicalPathError';
+		this.input = input;
+	}
+}
+
+/**
  * Resolve the disk filename (`<id>.html`) for a given logical path.
  * @param state
  * @param logicalPath logical path from the virtual tree (e.g. `foo/bar/about.html`)
@@ -166,6 +181,7 @@ export function listEntries(state: ResolverState): readonly ResolverEntry[] {
  * @param id disk filename, must be unused in `state`
  * @param logicalPath must be unused in `state`
  * @returns a new state with the entry added; the original `state` is not mutated
+ * @throws {EmptyLogicalPathError} if `logicalPath` normalizes to an empty string (e.g. `'/'`)
  * @throws {IdAlreadyExistsError} if `id` is already registered (reports its current logical path)
  * @throws {PathConflictError} if `logicalPath` is already taken by another id
  */
@@ -175,6 +191,11 @@ export function registerEntry(
 	logicalPath: string,
 ): ResolverState {
 	const canonical = normalizeLogicalPath(logicalPath);
+	if (canonical.length === 0) {
+		// "/" / "//" / etc. canonicalize to empty and would corrupt the state map
+		// with an empty key. Reject at every entry point, mirroring loadResolverState.
+		throw new EmptyLogicalPathError(logicalPath);
+	}
 	const existingLogical = state.diskToLogical.get(id);
 	if (existingLogical !== undefined) {
 		throw new IdAlreadyExistsError(id, existingLogical);
@@ -206,6 +227,7 @@ export function registerEntry(
  * @param newLogicalPath the new logical path; must not be taken by another id
  * @returns a new state with the entry remapped, or the original `state` if no-op
  * @throws {Error} if `id` is not registered (programming error — callers should resolve via `toDiskPath` first)
+ * @throws {EmptyLogicalPathError} if `newLogicalPath` normalizes to an empty string (e.g. `'/'`)
  * @throws {PathConflictError} if `newLogicalPath` is already taken by another id
  */
 export function setLogicalPath(
@@ -214,6 +236,9 @@ export function setLogicalPath(
 	newLogicalPath: string,
 ): ResolverState {
 	const canonical = normalizeLogicalPath(newLogicalPath);
+	if (canonical.length === 0) {
+		throw new EmptyLogicalPathError(newLogicalPath);
+	}
 	const current = state.diskToLogical.get(id);
 	if (current === undefined) {
 		throw new Error(`Unknown disk id: ${id}`);
