@@ -33,9 +33,12 @@ export async function loadResolverStateOrExit(
 			console.error(
 				`\nFix the conflicting front matter "${pathKey}" values in the listed files and retry.`,
 			);
+		} else if (error instanceof Error) {
+			console.error(`\nFailed to load virtualTree resolver state:\n  ${error.message}`);
 		} else {
-			const detail = error instanceof Error ? error.message : String(error);
-			console.error(`\nFailed to load virtualTree resolver state:\n  ${detail}`);
+			// loadResolverState only throws Error subclasses; re-raise non-Error
+			// values so a future regression is surfaced instead of swallowed.
+			throw error;
 		}
 		process.exit(1);
 	}
