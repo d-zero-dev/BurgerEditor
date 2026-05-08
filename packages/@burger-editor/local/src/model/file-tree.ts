@@ -8,6 +8,12 @@ export type FileInfo = {
 	/**
 	 * On-disk id for this entry. Set only in virtualTree mode where the disk
 	 * filename differs from the logical path; absent in directory mode.
+	 *
+	 * Display contract: clients render `${name} (${id})` with a trailing
+	 * `.html` stripped from the id (so `10.html` shows as `(10)` while
+	 * `10.html.bak` is preserved). The id label is wrapped in a separate
+	 * `<span class="file-id">` so it can be styled or hidden via CSS without
+	 * touching the name. See `client/nav-tree.ts`.
 	 */
 	readonly id?: string;
 };
