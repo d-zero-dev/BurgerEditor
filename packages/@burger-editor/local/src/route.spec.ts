@@ -405,6 +405,37 @@ describe('POST /api/content/create (virtual mode)', () => {
 		},
 	);
 
+	test.each([
+		{ label: 'leading "../"', logicalPath: '../foo.html' },
+		{ label: 'interior ".."', logicalPath: 'foo/../bar.html' },
+		{ label: 'leading "./"', logicalPath: './foo.html' },
+		{ label: 'interior "."', logicalPath: 'foo/./bar.html' },
+		{ label: 'just ".."', logicalPath: '..' },
+		{ label: 'just "."', logicalPath: '.' },
+		{ label: 'NUL byte', logicalPath: 'foo\0bar.html' },
+	])(
+		'rejects with 400 when logical path contains $label (regression: #755)',
+		async ({ logicalPath }) => {
+			// Without this guard the resolver registers e.g. "../foo.html" as a
+			// logical key, but the browser silently normalizes the corresponding
+			// `<a href>` away to "/foo.html", orphaning the disk file from the
+			// editor UI.
+			const app = await buildApp(documentRoot, assetsRoot, {
+				virtualTreeEnabled: true,
+			});
+			const res = await app.request('/api/content/create', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ id: '42.html', path: logicalPath }),
+			});
+			expect(res.status).toBe(400);
+
+			// And no disk file was created for the rejected entry.
+			const inside = await fs.readdir(documentRoot);
+			expect(inside).not.toContain('42.html');
+		},
+	);
+
 	test('returns 400 when virtualTree mode is disabled', async () => {
 		const app = await buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: false });
 		const res = await app.request('/api/content/create', {
@@ -520,6 +551,58 @@ describe('POST /api/content (virtual mode, path change)', () => {
 				path: 'about.html',
 				content: '<h1>About</h1>',
 				frontMatter: { path: '/' },
+			}),
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test.each([
+		{ label: 'leading "../"', value: '../foo.html' },
+		{ label: 'interior ".."', value: 'foo/../bar.html' },
+		{ label: 'leading "./"', value: './foo.html' },
+		{ label: 'NUL byte', value: 'foo\0bar.html' },
+	])(
+		'rejects with 400 when frontmatter pathKey contains $label (regression: #755)',
+		async ({ value }) => {
+			await fs.writeFile(
+				path.join(documentRoot, '1.html'),
+				'---\npath: about.html\n---\n<h1>About</h1>\n',
+				'utf8',
+			);
+			const app = await buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: true });
+
+			const res = await app.request('/api/content', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					path: 'about.html',
+					content: '<h1>About</h1>',
+					frontMatter: { path: value },
+				}),
+			});
+			expect(res.status).toBe(400);
+
+			// Tree must not have advanced to the rejected path.
+			const treeRes = await app.request('/api/tree');
+			const body = (await treeRes.json()) as { tree: { name: string }[] };
+			expect(body.tree.map((n) => n.name)).toEqual(['about.html']);
+		},
+	);
+
+	test('rejects with 400 when the lookup path itself contains ".." (regression: #755)', async () => {
+		await fs.writeFile(
+			path.join(documentRoot, '1.html'),
+			'---\npath: about.html\n---\n<h1>About</h1>\n',
+			'utf8',
+		);
+		const app = await buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: true });
+
+		const res = await app.request('/api/content', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({
+				path: '../escape.html',
+				content: '<h1>Evil</h1>',
 			}),
 		});
 		expect(res.status).toBe(400);

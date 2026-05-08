@@ -29,8 +29,31 @@ import { App } from './view/app.js';
 
 const clientFileDir = path.resolve(import.meta.dirname, '..', 'dist');
 
+const LOGICAL_PATH_INVALID_MESSAGE =
+	'logical path must not contain "." or ".." segments or NUL bytes';
+
+/**
+ * Reject logical paths that would canonicalize to a key the browser silently
+ * normalizes away (e.g. `../foo.html` → `/foo.html` in `<a href>` clicks),
+ * orphaning the disk file from the editor UI. See issue #755.
+ *
+ * Empty strings and "/"-only inputs are still accepted here; they are caught
+ * downstream by `EmptyLogicalPathError` to keep error surfaces consistent.
+ * @param input
+ */
+function isSafeLogicalPath(input: string): boolean {
+	if (input.includes('\0')) {
+		return false;
+	}
+	const stripped = input.replace(/^\/+/, '');
+	if (stripped.length === 0) {
+		return true;
+	}
+	return !stripped.split('/').some((seg) => seg === '.' || seg === '..');
+}
+
 const apiSchema = z.object({
-	path: z.string(),
+	path: z.string().refine(isSafeLogicalPath, { message: LOGICAL_PATH_INVALID_MESSAGE }),
 	content: z.string(),
 	frontMatter: z.record(z.string(), z.unknown()).optional(),
 	originalFrontMatter: z.string().optional(),
@@ -55,7 +78,10 @@ const createApiSchema = z.object({
 					'id must not contain path separators, NUL bytes, or be "." / ".." / a dotfile',
 			},
 		),
-	path: z.string().min(1),
+	path: z
+		.string()
+		.min(1)
+		.refine(isSafeLogicalPath, { message: LOGICAL_PATH_INVALID_MESSAGE }),
 	content: z.string().optional(),
 	frontMatter: z.record(z.string(), z.unknown()).optional(),
 });
@@ -236,6 +262,14 @@ export function setRoute(
 							return c.json(
 								{
 									error: `Front matter "${pathKey}" must be a non-empty string`,
+								},
+								400,
+							);
+						}
+						if (!isSafeLogicalPath(newLogical)) {
+							return c.json(
+								{
+									error: `Front matter "${pathKey}" ${LOGICAL_PATH_INVALID_MESSAGE}`,
 								},
 								400,
 							);
