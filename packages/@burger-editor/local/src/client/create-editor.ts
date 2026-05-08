@@ -12,6 +12,7 @@ import {
 	createFrontMatterEditor,
 	type FrontMatterEditor,
 } from './front-matter-editor.js';
+import { saveContentRequest } from './save-content-request.js';
 
 const client = hc<AppType>(location.origin);
 
@@ -82,34 +83,20 @@ export async function createEditor() {
 		frontMatterData?: Record<string, unknown>,
 		originalFrontMatter?: string,
 	) {
-		const res = await client.api.content.$post({
-			json: {
+		await saveContentRequest(
+			client.api.content.$post,
+			{
 				path: location.pathname,
 				content,
 				frontMatter: frontMatterData,
 				originalFrontMatter,
 			},
-		});
-
-		if (!res.ok) {
-			const errorBody = (await res.json().catch(() => ({}))) as {
-				error?: string;
-			};
-			// eslint-disable-next-line no-console
-			console.error(`Failed to save: ${errorBody.error ?? res.statusText}`);
-			return;
-		}
-
-		const json = await res.json();
-		if (!('saved' in json) || !json.saved) {
-			// eslint-disable-next-line no-console
-			console.error('Save did not complete');
-			return;
-		}
-
-		// eslint-disable-next-line no-console
-		console.log(
-			`Saved: ${json.path}${json.hasFrontMatter ? ' (with Front Matter)' : ''}`,
+			{
+				// eslint-disable-next-line no-console
+				info: (message) => console.log(message),
+				// eslint-disable-next-line no-console
+				error: (message) => console.error(message),
+			},
 		);
 	}
 
