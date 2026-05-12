@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.66](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.65...v4.0.0-alpha.66) (2026-05-12)
+
+### Bug Fixes
+
+- **local:** reject logical paths containing "." or ".." segments ([5e33e20](https://github.com/d-zero-dev/BurgerEditor/commit/5e33e203bf1030a64ababfb9fa7d2e03d5309092))
+- **local:** reject logical paths that normalize to empty string ([6c1c6ed](https://github.com/d-zero-dev/BurgerEditor/commit/6c1c6ed84b07ad8d2bf90a16dacae8ffe4289d04))
+- **local:** resolve leading-slash logical paths and label leaves with disk id ([477eb13](https://github.com/d-zero-dev/BurgerEditor/commit/477eb1387b696e4f187ee7ae94d50807dca8897f))
+
+### Features
+
+- **local:** add Virtual File Tree mode for flat-id documentRoot layouts ([3784880](https://github.com/d-zero-dev/BurgerEditor/commit/3784880b1ed03ad22de64332ec957258e4445715)), closes [#753](https://github.com/d-zero-dev/BurgerEditor/issues/753) [#754](https://github.com/d-zero-dev/BurgerEditor/issues/754) [#755](https://github.com/d-zero-dev/BurgerEditor/issues/755)
+- **local:** format virtualTree boot failure as readable stderr + exit 1 ([733bcdb](https://github.com/d-zero-dev/BurgerEditor/commit/733bcdb2e7ff142639ecad5c06ee9de65abb62ea))
+
 # [4.0.0-alpha.65](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.64...v4.0.0-alpha.65) (2026-04-08)
 
 **Note:** Version bump only for package @burger-editor/local
