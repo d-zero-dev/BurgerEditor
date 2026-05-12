@@ -30,10 +30,10 @@ npx bge
 yarn bge
 ```
 
-開発サーバーが起動したら、ブラウザで以下にアクセスしてください：
+開発サーバーが起動したら、ブラウザで以下にアクセスしてください（ポートは設定で上書き可能）：
 
 ```
-http://localhost:3000
+http://localhost:5255
 ```
 
 ### 検索コマンド
@@ -153,10 +153,10 @@ title: 'New Page'
 
 #### オプショナル設定
 
-- `version` (string): 設定ファイルのバージョン（デフォルト: パッケージバージョン）
-- `port` (number): サーバーのポート番号（デフォルト: 3000）
+- `version` (string): 設定ファイルのバージョン（デフォルト: `'0.0.0-unknown'`）
+- `port` (number): サーバーのポート番号（デフォルト: 5255）
 - `host` (string): ホスト名（デフォルト: 'localhost'）
-- `lang` (string): 言語設定（デフォルト: 'ja'）
+- `lang` (string): 言語設定（デフォルト: 'en'）
 - `stylesheets` (string[]): 読み込むスタイルシートのパス（デフォルト: []）
 - `classList` (string[]): ブロックに適用するCSSクラス（デフォルト: []）
 - `editableArea` (string | null): 編集可能エリアのセレクタ（デフォルト: null）
@@ -173,6 +173,9 @@ title: 'New Page'
   - `enabled` (boolean): ヘルスチェックを有効にする（デフォルト: true）
   - `interval` (number): チェック間隔（ミリ秒）（デフォルト: 10000）
   - `retryCount` (number): リトライ回数（デフォルト: 3）
+- `virtualTree` (object): 仮想ファイルツリー機能の設定（詳細は [Virtual File Tree](#virtual-file-tree仮想ファイルツリー) 参照）
+  - `enabled` (boolean): 有効化フラグ（デフォルト: false）
+  - `pathKey` (string): 論理パスとして読み取る Front Matter キー名（デフォルト: 'path'）
 
 ## Front Matter編集機能
 
@@ -219,6 +222,96 @@ published: true
 1. キー名を入力（例: `author`, `category`）
 2. 型を選択（テキスト、数値、真偽値、日付、JSON）
 3. 「追加」ボタンをクリック
+
+## Virtual File Tree（仮想ファイルツリー）
+
+外部 CMS と連携する際など、`documentRoot` 配下に **HTML ファイルがフラットな ID 名で並んでいる** プロジェクト向けに、Front Matter に書かれたパス情報からエディタ上の仮想ツリーを構築するオプトイン機能です。
+
+### 何が変わるか
+
+|                          | 通常モード（既定）       | 仮想モード（`virtualTree.enabled = true`）                   |
+| ------------------------ | ------------------------ | ------------------------------------------------------------ |
+| ディスク上のファイル配置 | ディレクトリ階層そのまま | フラット `<id>.html`（変更しない）                           |
+| エディタのファイルツリー | ディスク階層と同じ       | 各ファイルの `frontMatter[pathKey]` から再構築した仮想ツリー |
+| 新規ファイル作成         | パスを入力               | パスと **ID** の両方を入力                                   |
+| パス変更                 | ファイルを実際に移動     | Front Matter の path 値を書き換えるだけ（ディスク不変）      |
+| マイナーリリース互換性   | —                        | 既定 `enabled: false` で完全に従来挙動                       |
+
+### 採用前提
+
+仮想モードを有効化する前に、以下を必ず満たしてください。満たさないとサーバ起動時にエラーで停止します。
+
+1. `documentRoot` 直下の `*.html` がすべて Front Matter を持っている
+2. すべてのファイルの Front Matter に `pathKey`（既定 `path`）が文字列として存在する
+3. 同じ `pathKey` 値を持つファイルが複数存在しない
+
+### 設定例
+
+```js
+// burgereditor.config.js
+export default {
+	documentRoot: path.join(import.meta.dirname, 'src'),
+	assetsRoot: path.join(import.meta.dirname, 'public'),
+	editableArea: '.my-editor',
+	virtualTree: {
+		enabled: true,
+		// 既定は 'path'。プロジェクトのスタイルに合わせて 'slug' / 'route' などに変更可
+		pathKey: 'path',
+	},
+};
+```
+
+### 期待される Front Matter
+
+ファイル `documentRoot/42.html`（ファイル名 = ID）の内容:
+
+```text
+---
+path: company/about.html
+title: 会社概要
+---
+<div class="my-editor">…</div>
+```
+
+エディタは上記ファイルを `company/about.html` の位置にあるかのように表示します。Front Matter の `path` を編集して保存すると、仮想ツリーは即座に新しい位置に切り替わりますが、ディスク上のファイル名は `42.html` のまま変わりません。
+
+### 起動時に PathConflictError で停止したとき
+
+エラーメッセージに衝突した論理パスと、その論理パスを主張している複数のディスクファイルが列挙されます：
+
+```
+Conflicting logical paths in virtual tree:
+  - "about.html" claimed by: 1.html, 2.html
+```
+
+いずれか一方の Front Matter `path` を別の値に書き換えてからサーバを再起動してください。
+
+整形済みのメッセージは stderr に書かれ、プロセスは exit code 1 で終了します（[PR #759](https://github.com/d-zero-dev/BurgerEditor/pull/759)）。Node のデフォルト uncaught handler はバイパスされるため、衝突ファイル名がスタックトレースに埋もれません。
+
+### ツリー表示
+
+仮想モード時、ファイルツリーの各リンクは **`<論理ファイル名> (<id>)` 形式** で表示されます（例: `maintenance.html (10)`）。これにより編集者は「いま開いている論理パス」と「ディスク上の実体」を同時に把握できます。
+
+- 名前と id は別の `<span>` 要素として描画されます（`a > span` + `a > span.file-id`）。CSS で `.file-id` をグレーアウトしたり非表示にしたりして見た目を調整できます
+- id 末尾の `.html` は冗長なので自動で除去します（`10.html` → `10`、ただし `10.html.bak` のように末尾でない `.html` は維持）
+- 通常モード（`virtualTree.enabled = false`）では従来どおり名前のみ表示
+
+### 受け付けるパス形式
+
+Front Matter `path` の値は、**先頭スラッシュの有無に関わらず同じ論理パスとして扱われます**。
+
+- `path: about.html` と `path: /about.html` は同一エントリ
+- 先頭の連続スラッシュ（`//foo.html`、`///foo.html` 等）も除去されて正規化
+- 正規化後に空文字列になる値（`'/'` 単独、`'///'` のみ等）は **起動時エラー**、API 呼び出し経由でも **400 (`EmptyLogicalPathError`)** で拒否
+
+### 制約と既知の限界
+
+- 編集ダイアログから新規作成するときに **ID と論理パスの両方をユーザが手入力** する必要があります（ID 自動採番は未対応）
+- 同一の論理パスを複数ファイルに持たせることはできません
+- 論理パスは仮想ツリー内のキーとしてのみ使われ、ディスクパスには影響しません。`..` / `.` セグメントや NUL 文字を含む論理パスは API レイヤで `400` 拒否されるため、孤児ファイル化は起きません（[#758](https://github.com/d-zero-dev/BurgerEditor/pull/758) 以降）。`loadResolverState` は boot 時にこのチェックを行わないので、旧バージョンで disk に書き込まれた `..` 入りの Front Matter は手動で修正する必要があります
+- 並行更新の整合性は内部 mutex で守られます（シングルユーザー編集前提）
+
+詳細な採用手順とトラブルシュートは [`docs/virtual-tree.md`](./docs/virtual-tree.md) を参照してください。
 
 ## ブロックのコピー&ペースト
 

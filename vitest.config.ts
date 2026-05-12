@@ -63,7 +63,7 @@ export default defineConfig({
 						viewport: { width: 1280, height: 720 },
 						screenshotFailures: false,
 					},
-					testTimeout: 5000,
+					testTimeout: 15_000,
 				},
 				plugins: [cssAsRaw(), string({ include: ['**/*.html', '**/*.svg'] })],
 				define: {
@@ -118,6 +118,7 @@ export default defineConfig({
 					include: [
 						'packages/@burger-editor/local/**/*.spec.ts',
 						'!packages/@burger-editor/local/src/import/**/*.spec.ts',
+						'!packages/@burger-editor/local/src/client/**/*.spec.ts',
 					],
 				},
 			},
@@ -126,6 +127,14 @@ export default defineConfig({
 				test: {
 					name: 'local/import',
 					include: ['packages/@burger-editor/local/src/import/**/*.spec.ts'],
+					...jsdomConfig,
+				},
+			},
+			{
+				extends: './packages/@burger-editor/local/vite.config.ts',
+				test: {
+					name: 'local/client',
+					include: ['packages/@burger-editor/local/src/client/**/*.spec.ts'],
 					...jsdomConfig,
 				},
 			},

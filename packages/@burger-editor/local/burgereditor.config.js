@@ -51,6 +51,14 @@ title: 'New Page'
 		other: '/files/others',
 	},
 	open: true,
+	// Virtual File Tree（仮想ファイルツリー）
+	// documentRoot 配下を <id>.html のフラット運用にしつつ、Front Matter の path
+	// で論理ツリーを再構築するオプション。詳細は README.md / docs/virtual-tree.md。
+	// このローカル開発設定では既定どおり無効。
+	virtualTree: {
+		enabled: false,
+		pathKey: 'path',
+	},
 	// 実験的機能: アイテムオプションのカスタマイズ
 	experimental: {
 		itemOptions: {

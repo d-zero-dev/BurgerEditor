@@ -4,8 +4,8 @@ import { Nav } from './nav.js';
 type Props = {
 	path: string;
 	content: string | null | Error;
-	rootDir: string;
 	lang: string;
+	virtualTreeEnabled: boolean;
 	// Front Matter support (optional)
 	frontMatter?: Record<string, unknown>;
 	hasFrontMatter?: boolean;
@@ -16,25 +16,35 @@ type Props = {
  * @param props - Component properties
  * @param props.path - Current page path
  * @param props.content - Page content or error
- * @param props.rootDir - Root directory path
  * @param props.lang - Language code
+ * @param props.virtualTreeEnabled - Whether the server is running in virtualTree mode
  * @param props.frontMatter - Front Matter data
  * @param props.hasFrontMatter - Whether Front Matter exists
  */
 export function App({
 	path,
 	content,
-	rootDir,
 	lang,
+	virtualTreeEnabled,
 	frontMatter,
 	hasFrontMatter,
 }: Props) {
 	return (
 		<Layout lang={lang}>
 			<div class="app">
-				<Nav rootPath={rootDir} />
+				<Nav virtualTreeEnabled={virtualTreeEnabled} />
 				<div class="content">
 					<h1>{path}</h1>
+
+					{/*
+					 * Always render the virtualTree mode flag — `new-file.ts` must read
+					 * it even on error pages where the editor itself isn't mounted.
+					 */}
+					<input
+						type="hidden"
+						id="virtual-tree-enabled"
+						value={String(virtualTreeEnabled)}
+					/>
 
 					{content instanceof Error ? (
 						<p>{content.message}</p>

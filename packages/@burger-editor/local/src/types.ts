@@ -32,6 +32,24 @@ export interface LocalServerConfig {
 			};
 		};
 	};
+	readonly virtualTree: VirtualTreeConfig;
+}
+
+/**
+ * Configuration for the Virtual File Tree feature. See
+ * `docs/virtual-tree.md` for usage and adoption guidance.
+ */
+export interface VirtualTreeConfig {
+	/**
+	 * Toggle for the feature. When `false` (default) the editor uses the
+	 *  on-disk directory structure as-is.
+	 */
+	readonly enabled: boolean;
+	/**
+	 * Front Matter key whose value is read as the logical path
+	 *  (default: `'path'`).
+	 */
+	readonly pathKey: string;
 }
 
 export type SamplePath = `/${string}` | `https://${string}` | `base64:${string}`;
@@ -40,11 +58,12 @@ export type LocalServerFileDirConfig = Record<FileType, FileDirSettings>;
 
 export type LocalServerConfigUserSettings = Omit<
 	Partial<LocalServerConfig>,
-	'filesDir' | 'healthCheck'
+	'filesDir' | 'healthCheck' | 'virtualTree'
 > & {
 	readonly assetsRoot?: string;
 	readonly filesDir?: string | FileDirSettings | LocalServerFileDirUserSettings;
 	readonly healthCheck?: Partial<LocalServerConfig['healthCheck']>;
+	readonly virtualTree?: Partial<VirtualTreeConfig>;
 };
 
 export type LocalServerFileDirUserSettings = {
