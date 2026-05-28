@@ -1,0 +1,21 @@
+@use 'font' as *;
+@use 'color' as *;
+
+.edit-inner {
+	$w: 34px;
+	$h: 40px;
+	position: absolute;
+	z-index: 20000;
+	display: none;
+	inline-size: $w;
+	block-size: $h;
+	margin: 0;
+	margin-block-start: calc(-1 * $h * 2);
+	margin-inline-start: calc(-1 * $w / 2);
+	overflow: visible;
+	color: $lightest-color;
+	text-indent: -9999px;
+	pointer-events: none;
+	background: url('../../img/edit.png') no-repeat scroll 0 0;
+	border: none;
+}

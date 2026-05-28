@@ -1,0 +1,93 @@
+@use 'font' as *;
+@use 'color' as *;
+
+//
+// 管理画面上のタイプのプレビュー
+//
+// 公開側でJSなどを利用するケースなど、
+// 公開側と異なる表示が必要な場合などもここに定義する
+//
+//
+[data-bgt] {
+	// クリックできるならないように最低限の高さを保つ
+	min-block-size: 20px;
+	outline: 1px #a6a6a6 dotted;
+
+	&:hover {
+		cursor: pointer;
+		outline: 1px solid $type-outline-heighlight-color;
+		background-color: $type-background-heighlight-color;
+
+		img {
+			opacity: 0.8;
+		}
+	}
+
+	// iframe内でのイベント発火禁止
+	iframe {
+		pointer-events: none;
+	}
+
+	//
+	// gallery
+	//
+	&[data-bgt='gallery'] {
+		display: flex;
+		flex-direction: column;
+		block-size: auto;
+		padding: 20px;
+
+		&::before {
+			display: block;
+			order: 1;
+			font-weight: bold;
+			color: #999;
+			text-align: center;
+			content: 'スライドショー';
+		}
+
+		&::after {
+			display: block;
+			order: 2;
+			color: #999;
+			text-align: center;
+			content: 'スライドショーはエディタ上ではプレビューできません';
+		}
+
+		.bgt-gallery {
+			position: static;
+			order: 100;
+			inline-size: auto;
+			block-size: auto;
+			padding: 0;
+			margin-block-start: 20px;
+			text-align: center;
+
+			&__group {
+				position: static;
+				inline-size: auto;
+				block-size: auto;
+				padding: 0;
+			}
+
+			&__item {
+				position: static;
+				display: inline-block;
+				inline-size: 50px;
+				block-size: 50px;
+				padding: 0;
+				margin: 0 10px;
+				overflow: hidden;
+			}
+
+			&__img {
+				img {
+					display: block;
+					inline-size: 100%;
+					block-size: 100%;
+					object-fit: cover;
+				}
+			}
+		}
+	}
+}

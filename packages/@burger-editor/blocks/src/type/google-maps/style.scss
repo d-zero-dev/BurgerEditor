@@ -1,0 +1,22 @@
+// # [Type] google-maps
+:where(.bgt-google-maps) {
+	inline-size: 100%;
+	block-size: 400px;
+
+	> img {
+		/* 管理側 static map */
+		display: block;
+		inline-size: 100%;
+		block-size: 100%;
+		margin: 0 auto;
+		object-fit: contain;
+	}
+}
+
+:where(.bgt-google-maps-link) {
+	display: none;
+
+	@media screen and (max-width: $breakPoint) {
+		display: block;
+	}
+}

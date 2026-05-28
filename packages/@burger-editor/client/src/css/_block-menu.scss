@@ -1,0 +1,256 @@
+@use 'font' as *;
+@use 'color' as *;
+
+[data-bge='bgb-menu'] {
+	position: absolute;
+	z-index: 100000;
+	inline-size: calc(100% - 10px * 2);
+
+	.bgb-menu-buttons {
+		position: absolute;
+		inset-block-start: 0;
+		inset-inline-start: 0;
+		z-index: 100000;
+		inline-size: 100%;
+
+		.no-item & {
+			display: none;
+			block-size: 24px;
+			margin: 0;
+			background-color: #dfdfdf;
+			border-block-end: 1px #ccc solid;
+			border-inline-start: 1px #ccc solid;
+			border-inline-end: 1px #ccc solid;
+		}
+
+		.bgb-menu-btn-area-move {
+			position: absolute;
+			inset-block-start: 0;
+			inset-inline-start: 0;
+			block-size: 100%;
+			padding: 3px 3px 0 0;
+			border-radius: 0 0 0 0;
+
+			button {
+				z-index: 100;
+				float: none;
+				margin-block-end: 3px;
+			}
+
+			&::after {
+				$width: 34px;
+				position: fixed;
+				inset-block-start: 0;
+				inset-inline-start: auto;
+				z-index: 0;
+				display: block;
+				inline-size: $width;
+				block-size: 100dvh;
+				content: '';
+				background: rgba(#000, 0);
+			}
+		}
+
+		.bgb-menu-btn-area-command {
+			position: absolute;
+			inset-block-start: 0;
+			inset-inline-end: 0;
+			padding: 3px 3px 3px 0;
+			border-radius: 0 0 0 4px;
+		}
+
+		button {
+			$size: 28px;
+			position: relative;
+			float: inline-start;
+			display: block;
+			inline-size: $size;
+			block-size: $size;
+			padding: 0;
+			margin: 0 0 0 3px;
+			appearance: none;
+			cursor: pointer;
+			background: no-repeat scroll center center;
+			border: none;
+			border-radius: 2px;
+
+			span {
+				position: absolute;
+				inset-block-start: 30px;
+				inset-inline-start: calc(100% / 2);
+				z-index: 1000;
+				display: none;
+				inline-size: 100px;
+				padding: 2px 5px;
+				font-size: 10px;
+				color: $lightest-color;
+				pointer-events: none;
+				background: #333;
+				transform: translate(-50%, 0);
+			}
+
+			&:hover {
+				z-index: 1000;
+
+				span {
+					display: block;
+				}
+			}
+
+			&:active,
+			&:focus {
+				outline: none;
+			}
+
+			&.bgb-menu-move-up,
+			&.bgb-menu-move-down,
+			&.bgb-menu-insert-before,
+			&.bgb-menu-insert-after,
+			&.bgb-menu-block-copy,
+			&.bgb-menu-block-config,
+			&.bgb-menu-delete {
+				&::before {
+					@extend %iconfonts;
+					position: absolute;
+					inset-block-start: 0;
+					inset-inline-start: 0;
+					z-index: 0;
+					display: block;
+					inline-size: 100%;
+					block-size: 100%;
+					font-family: bge-ui-icons, system-ui;
+					font-size: $size;
+					line-height: $size;
+					color: inherit;
+					text-align: center;
+					text-indent: 0;
+				}
+
+				:disabled,
+				:disabled:hover {
+					cursor: default !important; // stylelint-disable-line declaration-no-important
+				}
+			}
+
+			&.bgb-menu-move-up {
+				color: #f2ffce;
+				background: $primary-color;
+
+				&::before {
+					content: '\e130';
+				}
+
+				&:hover {
+					background-color: #67b416;
+				}
+
+				&:disabled,
+				&:disabled:hover {
+					color: #333;
+					cursor: default;
+					background: #d5d5d5;
+					opacity: 0.3;
+				}
+			}
+
+			&.bgb-menu-move-down {
+				color: #f2ffce;
+				background: $primary-color;
+
+				&::before {
+					content: '\e131';
+				}
+
+				&:hover {
+					background-color: #67b416;
+				}
+
+				&:disabled,
+				&:disabled:hover {
+					color: #333;
+					cursor: default;
+					background: #d5d5d5;
+					opacity: 0.3;
+				}
+			}
+
+			&.bgb-menu-move-up,
+			&.bgb-menu-move-down {
+				span {
+					inset-inline-start: 0;
+					transform: translate(0, 0);
+				}
+			}
+
+			&.bgb-menu-insert-before {
+				color: #f2ffce;
+				background: #86be0d;
+
+				&::before {
+					content: '\e100';
+				}
+
+				&:hover {
+					background-color: #67b416;
+				}
+			}
+
+			&.bgb-menu-insert-after {
+				color: #f2ffce;
+				background: #86be0d;
+
+				&::before {
+					content: '\e101';
+				}
+
+				&:hover {
+					background-color: #67b416;
+				}
+			}
+
+			&.bgb-menu-block-config {
+				color: #ddd;
+				background: $background-color02;
+
+				&::before {
+					content: '\e102';
+				}
+
+				&:hover {
+					background-color: #000;
+				}
+			}
+
+			&.bgb-menu-block-copy {
+				color: #ddd;
+				background: $background-color02;
+
+				&::before {
+					content: '\e103';
+				}
+
+				&:hover {
+					background-color: #099177;
+				}
+			}
+
+			&.bgb-menu-delete {
+				color: #ddd;
+				background: $background-color02;
+
+				&::before {
+					content: '\e111';
+				}
+
+				&:hover {
+					background-color: #b62d38;
+				}
+
+				span {
+					inset-inline: auto 0;
+					transform: translate(0, 0);
+				}
+			}
+		}
+	}
+}

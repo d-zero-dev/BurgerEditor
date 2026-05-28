@@ -1,0 +1,37 @@
+:where(.bgt-trimmed-image-link__link) {
+	display: block;
+	color: #333;
+	text-decoration: none;
+
+	&:where([href*='bg-noimage']) {
+		pointer-events: none;
+		cursor: default;
+	}
+
+	:where(.bgt-link__box) {
+		margin: 0;
+	}
+
+	:where(.bgt-box__image) {
+		inline-size: 100%;
+		block-size: 0;
+		padding-block-start: 100%;
+		overflow: hidden;
+		background-repeat: no-repeat;
+		background-position: center center;
+		background-size: cover;
+
+		// 空画像
+		:where([data-bge-empty='1']) & {
+			@media screen and (max-width: $breakPoint) {
+				display: none;
+			}
+		}
+	}
+
+	:where(.bgt-box__caption) {
+		&:empty {
+			display: none;
+		}
+	}
+}

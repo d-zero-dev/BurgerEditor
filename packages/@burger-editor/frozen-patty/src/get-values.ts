@@ -2,11 +2,11 @@ import type { Filter, FrozenPattyData, PrimitiveDatum } from './types.js';
 
 /**
  * Get value from an element
- *
  * @param el A target element
  * @param name A label name
  * @param typeConvert Auto covert type of value
  * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
+ * @param filter
  */
 export function getValues(
 	el: Element,
@@ -80,6 +80,12 @@ export function getValues(
 	return result;
 }
 
+/**
+ *
+ * @param el
+ * @param keyAttr
+ * @param typeConvert
+ */
 function getAttribute(el: Element, keyAttr: string, typeConvert: boolean) {
 	switch (keyAttr) {
 		case 'contenteditable': {
@@ -123,6 +129,10 @@ function getAttribute(el: Element, keyAttr: string, typeConvert: boolean) {
 	}
 }
 
+/**
+ *
+ * @param value
+ */
 function cast(value: string) {
 	if (value == null || value === '') {
 		return '';
@@ -144,7 +154,7 @@ function cast(value: string) {
 
 /**
  * Get path from value of "background-image"
- *
+ * @param value
  */
 function getBackgroundImagePath(value: string) {
 	const origin = `${location.protocol}//${location.hostname}${

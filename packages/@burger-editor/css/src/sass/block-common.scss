@@ -1,0 +1,20 @@
+:where([data-bgb]) {
+	--bge-options-margin: var(--bge-options-margin-normal);
+	--bge-options-bgcolor: var(--bge-options-bgcolor-transparent);
+	--bge-options-border: var(--bge-options-border-none);
+	--bge-options-padding: var(--bge-options-padding-none);
+	padding: var(--bge-options-padding);
+	margin-block-end: var(--bge-options-margin);
+	background-color: var(--bge-options-bgcolor);
+	border: var(--bge-options-border);
+
+	&,
+	:where(*) {
+		&,
+		&::after,
+		&::before {
+			/* ボックスサイジングの統一 */
+			box-sizing: border-box;
+		}
+	}
+}

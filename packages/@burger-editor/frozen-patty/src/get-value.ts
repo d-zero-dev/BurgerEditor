@@ -5,11 +5,11 @@ import { arrayToHash } from './utils.js';
 
 /**
  * Get value from an element
- *
  * @param el A target element
  * @param name A label name
  * @param typeConvert Auto covert type of value
  * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
+ * @param filter
  */
 export function getValue(
 	el: Element,

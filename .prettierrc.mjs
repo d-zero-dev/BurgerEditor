@@ -1,3 +1,5 @@
-import config from '@d-zero/prettier-config';
+/**
+ * @type {import('prettier').Options}
+ */
 
-export default config;
+export { default } from '@d-zero/prettier-config/base';

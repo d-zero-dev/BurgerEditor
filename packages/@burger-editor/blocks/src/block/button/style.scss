@@ -1,0 +1,9 @@
+:where([data-bgb='button']) {
+	text-align: center;
+
+	:where([data-bgt='button']) {
+		/* ボタンブロック内 ボタンタイプ */
+		display: inline-block;
+		vertical-align: middle;
+	}
+}

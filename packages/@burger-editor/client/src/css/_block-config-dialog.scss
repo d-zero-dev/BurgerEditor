@@ -1,0 +1,58 @@
+@use 'font' as *;
+@use 'color' as *;
+
+// ブロック設定ダイアログ
+#BgBlockConfigArea {
+	[data-bge-grid-changer] {
+		display: none;
+
+		input[type='range'] {
+			display: block;
+			inline-size: 100%;
+		}
+
+		label {
+			display: block;
+			margin-block-end: 5px;
+		}
+	}
+
+	.bgb-block-covert {
+		padding: 10px;
+		background: #f0f0f0;
+		border-radius: 5px;
+
+		h2 {
+			font-size: 1.2em;
+			font-weight: bold;
+		}
+
+		ul.bgb-block-convert-pattern {
+			li {
+				display: block;
+
+				label {
+					display: block;
+
+					input {
+						vertical-align: middle;
+					}
+
+					span {
+						vertical-align: middle;
+
+						&.bgb-block-covert-from {
+							&::after {
+								content: ' ▶';
+							}
+						}
+
+						img {
+							vertical-align: middle;
+						}
+					}
+				}
+			}
+		}
+	}
+}

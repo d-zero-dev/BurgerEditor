@@ -1,0 +1,22 @@
+{
+	"extends": [
+		"@d-zero/stylelint-config/base",
+		"@d-zero/stylelint-config/order",
+		"@d-zero/stylelint-config/scss",
+		"@d-zero/stylelint-config/values"
+	],
+	"ignoreFiles": ["**/*.{css,js,jsx,ts,tsx,html,pug,md}"],
+	"rules": {
+		"selector-max-id": null,
+		"selector-id-pattern": null,
+		"declaration-property-value-disallowed-list": null,
+		"declaration-property-value-allowed-list": null,
+		"selector-max-compound-selectors": null,
+		"media-query-no-invalid": null,
+		"comment-empty-line-before": null,
+		"declaration-property-value-no-unknown": null,
+		"@d-zero/declaration-value-type-disallowed-list": null,
+		"@d-zero/shorthand-property-use-logical": null,
+		"@d-zero/prefer-individual-transform-properties": null
+	}
+}

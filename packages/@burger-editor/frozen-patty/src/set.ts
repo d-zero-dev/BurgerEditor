@@ -2,6 +2,13 @@ import type { Filter, FrozenPattyData } from './types.js';
 
 import { setValue } from './set-value.js';
 
+/**
+ *
+ * @param el
+ * @param data
+ * @param attr
+ * @param filter
+ */
 export default function (
 	el: Element,
 	data: FrozenPattyData,

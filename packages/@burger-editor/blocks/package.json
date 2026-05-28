@@ -1,0 +1,17 @@
+{
+	"name": "@burger-editor/blocks",
+	"version": "3.5.0-alpha.0",
+	"description": "BurgerEditor Blocks",
+	"author": "D-ZERO",
+	"license": "(MIT OR Apache-2.0)",
+	"private": true,
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/d-zero-dev/BurgerEditor.git",
+		"directory": "packages/@burger-editor/blocks"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module"
+}

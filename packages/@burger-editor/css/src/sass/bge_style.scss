@@ -1,0 +1,761 @@
+/*!
+ *
+ * BurgerEditor StyleSheet Style Sample v2.21.0
+ *
+ */
+@charset "UTF-8";
+
+// ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- /
+//
+// 設定（変数・関数・ミックスイン・プレースホルダの読み込み
+//
+// ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- /
+@import 'settings';
+
+[data-bgb] {
+	// 大見出し
+	h2 {
+		padding: 0.3em 0.5em;
+		margin: 1.5em 0;
+
+		/* 回り込み防止 */
+		overflow: hidden;
+
+		/* スタイル */
+		font-size: 1.8em;
+		font-weight: bold;
+		line-height: 1.2;
+		text-align: center;
+		background: none;
+
+		&:first-child {
+			/* ブロックの最初の場合は余白を詰める */
+			margin-block-start: 0;
+		}
+
+		&::after {
+			display: block;
+			inline-size: 2em;
+			block-size: 2px;
+			margin: 0.8em auto;
+			content: '';
+			background: #ccc;
+		}
+	}
+
+	// 中見出し
+	h3 {
+		padding: 0.5em 0.75em;
+		margin: 1em 0;
+
+		/* 回り込み防止 */
+		overflow: hidden;
+
+		/* スタイル */
+		font-size: 1.5em;
+		font-weight: bold;
+		line-height: 1.2;
+		background: #f6f6f6;
+		border: 1px solid #eee;
+		box-shadow:
+			1px 1px 0 rgb(255 255 255 / 50%) inset,
+			-1px -1px 0 rgb(100 100 100 / 10%) inset;
+
+		&:first-child {
+			/* ブロックの最初の場合は余白を詰める */
+			margin-block-start: 0;
+		}
+	}
+
+	// 小見出し
+	h4 {
+		position: relative;
+		padding: 0.3em 0.2em;
+		margin: 1em 0;
+
+		/* 回り込み防止 */
+		overflow: hidden;
+
+		/* スタイル */
+		font-size: 1.3em;
+		font-weight: bold;
+		line-height: 1.2;
+		border: none;
+
+		&:first-child {
+			/* ブロックの最初の場合は余白を詰める */
+			margin-block-start: 0;
+		}
+
+		&::after {
+			position: absolute;
+			inset-block-end: 0.25em;
+			inset-inline-start: 0;
+			z-index: -1;
+			inline-size: 100%;
+			block-size: 8px;
+			content: '';
+			background-color: #ddd;
+			border-radius: 2px;
+		}
+	}
+
+	// 小見出し
+	h5 {
+		padding: 0.3em 0;
+		margin: 1em 0;
+
+		/* 回り込み防止 */
+		overflow: hidden;
+
+		/* スタイル */
+		font-size: 1.2em;
+		font-weight: bold;
+		line-height: 1.2;
+		border-block-end: 1px dashed #999;
+
+		&:first-child {
+			/* ブロックの最初の場合は余白を詰める */
+			margin-block-start: 0;
+		}
+	}
+
+	// 小見出し
+	h6 {
+		padding: 0.3em 0.5em;
+		margin: 1em 0;
+
+		/* 回り込み防止 */
+		overflow: hidden;
+
+		/* スタイル */
+		font-size: 1em;
+		font-weight: bold;
+		line-height: 1.2;
+		background: #eee;
+		border: none;
+		border-inline-start: 3px solid #ccc;
+
+		&:first-child {
+			/* ブロックの最初の場合は余白を詰める */
+			margin-block-start: 0;
+		}
+	}
+
+	// 文章・段落
+	p {
+		/* スタイル */
+		margin: 1em 0;
+
+		&:first-child {
+			/* ブロックの最初の場合は余白を詰める */
+			margin-block-start: 0;
+		}
+	}
+
+	// リスト共通
+	li {
+		/* 回り込み防止 */
+		overflow: hidden;
+
+		/* スタイル */
+		list-style: inherit;
+
+		&:first-child {
+			/* ブロックの最初の場合は余白を詰める */
+			margin-block-start: 0;
+		}
+	}
+
+	// 箇条書きリスト
+	ul {
+		/* スタイル */
+		margin: 1em 0;
+
+		&:first-child {
+			/* ブロックの最初の場合は余白を詰める */
+			margin-block-start: 0;
+		}
+
+		ul {
+			/* 箇条書きリストの内箇条書きリスト */
+			margin: 0 0 0 1.8em;
+
+			&:first-child {
+				/* ブロックの最初の場合は余白を詰める */
+				margin-block-start: 0;
+			}
+		}
+
+		li {
+			margin: 0 0 0.2em;
+
+			/* 箇条書きリストアイテム */
+			list-style-position: inside;
+			list-style-type: disc;
+		}
+	}
+
+	// 番号順リスト
+	ol {
+		/* スタイル */
+		margin: 1em 0;
+
+		&:first-child {
+			/* ブロックの最初の場合は余白を詰める */
+			margin-block-start: 0;
+		}
+
+		ol {
+			/* 番号順リスト内の番号順リスト */
+			margin: 0 0 0 2em;
+
+			&:first-child {
+				/* ブロックの最初の場合は余白を詰める */
+				margin-block-start: 0;
+			}
+		}
+
+		li {
+			margin: 0 0 0.2em;
+
+			/* 番号順リストアイテム */
+			list-style-position: inside;
+			list-style-type: decimal-leading-zero;
+		}
+	}
+
+	// 引用
+	blockquote {
+		position: relative;
+		padding: 1px 2.5em;
+		margin: 1em 0;
+
+		/* 回り込み防止 */
+		overflow: hidden;
+		font-size: 0.9em;
+		color: #888;
+		background: none;
+		border: 2px solid #ccc;
+		border-radius: 5px;
+
+		&:first-child {
+			/* ブロックの最初の場合は余白を詰める */
+			margin-block-start: 0;
+		}
+
+		&::before {
+			position: absolute;
+			inset-block-start: 0.3em;
+			inset-inline-start: 0.25em;
+			z-index: 0;
+			display: block;
+			font-family: serif;
+			font-size: 3em;
+			color: #ccc;
+
+			/* 引用 */
+			content: '“';
+		}
+
+		&::after {
+			position: absolute;
+			inset-block-end: -0.3em;
+			inset-inline-end: 0.25em;
+			z-index: 0;
+			display: block;
+			font-family: serif;
+			font-size: 3em;
+			color: #ccc;
+
+			/* 引用 */
+			content: '”';
+		}
+	}
+
+	// テーブル
+	table {
+		inline-size: 100%;
+		margin: 1em 0;
+		table-layout: fixed;
+		border-spacing: 0;
+		border-collapse: collapse;
+		border: none;
+
+		@media screen and (max-width: $breakPoint) {
+			display: block;
+
+			/* テーブル */
+			inline-size: 100%;
+		}
+
+		&:first-child {
+			/* ブロックの最初の場合は余白を詰める */
+			margin-block-start: 0;
+		}
+
+		caption {
+			/* テーブルキャプション */
+			font-weight: bold;
+			text-align: start;
+
+			@media screen and (max-width: $breakPoint) {
+				display: block;
+			}
+		}
+
+		tbody,
+		tfoot {
+			@media screen and (max-width: $breakPoint) {
+				display: block;
+			}
+		}
+
+		tr {
+			@media screen and (max-width: $breakPoint) {
+				display: block;
+				margin-block-start: -1px;
+			}
+
+			/* テーブル行 */
+			&:nth-child(odd) td {
+				/* 奇数行 */
+				background: #fff;
+			}
+
+			&:nth-child(even) td {
+				/* 偶数行 */
+				background: #fafafa;
+			}
+
+			th,
+			td {
+				padding: 0.5em;
+
+				/* テーブルセル共通 */
+				text-align: start;
+				border: 1px solid #ccc;
+
+				@media screen and (max-width: $breakPoint) {
+					display: block;
+					inline-size: auto;
+				}
+			}
+
+			th {
+				/* テーブル見出しセル */
+				font-weight: bold;
+				background: #eee;
+
+				@media screen and (max-width: $breakPoint) {
+					border-block-end: none;
+				}
+			}
+
+			td {
+				/* テーブル通常セル */
+				font-weight: normal;
+			}
+		}
+	}
+
+	// インライン要素
+	strong {
+		font-style: normal;
+
+		/* 太字 */
+		font-weight: bold;
+		text-decoration: none;
+	}
+
+	u {
+		font-style: normal;
+
+		/* 下線 */
+		font-weight: normal;
+		text-decoration: underline;
+	}
+
+	s {
+		font-style: normal;
+
+		/* 取り消し線 */
+		font-weight: normal;
+		text-decoration: line-through;
+	}
+
+	sub {
+		/* 下付き文字 */
+		font-size: 0.8em;
+		font-style: normal;
+		font-weight: normal;
+		vertical-align: sub;
+		text-decoration: none;
+	}
+
+	sup {
+		/* 上付き文字 */
+		font-size: 0.8em;
+		font-style: normal;
+		font-weight: normal;
+		vertical-align: super;
+		text-decoration: none;
+	}
+
+	hr {
+		/* 区切り線 */
+		inline-size: 100%;
+		block-size: 2px;
+		margin: 50px auto;
+		color: #ccc;
+		background: currentcolor;
+		border-style: none;
+
+		&:first-child {
+			/* ブロックの最初の場合は余白を詰める */
+			margin-block-start: 0;
+		}
+	}
+}
+
+/**
+ * 画像タイプのキャプション
+ *
+ */
+.bgt-box__caption {
+	padding: 3px;
+	font-size: 0.8em;
+	font-weight: normal;
+	text-align: start;
+	background: none;
+}
+
+/**
+ * ボタン
+ *
+ */
+
+/* ボタンタイプ */
+.bgt-btn {
+	display: inline-block;
+	min-inline-size: 280px;
+	padding: 12px 10px;
+	vertical-align: middle;
+	text-decoration: none;
+	appearance: none;
+	background: #fff;
+	border-style: solid;
+	border-width: 1px;
+	border-radius: 2px;
+
+	&:active,
+	&:focus {
+		box-shadow:
+			0 0 10px 0 #0570c7,
+			0 0 10px 0 #fff;
+	}
+}
+
+.bgt-btn--link/* 旧セレクタ */,
+[data-bgt-button-kind='link'] .bgt-btn /* 新セレクタ */ {
+	$color: #333;
+	$bColor: #ccc;
+	$bgColor: #fff;
+	$bgColorHover: #e9e9e9;
+	color: $color;
+	background: $bgColor;
+	border-color: $bColor;
+
+	&:hover,
+	&:active,
+	&:focus {
+		background: $bgColorHover;
+	}
+}
+
+.bgt-btn--em/* 旧セレクタ */,
+[data-bgt-button-kind='em'] .bgt-btn /* 新セレクタ */ {
+	$color: #fff;
+	$bColor: #333;
+	$bgColor: #333;
+	$bgColorHover: #555;
+	font-weight: bold;
+	color: $color;
+	background: $bgColor;
+	border-color: $bColor;
+
+	&:hover,
+	&:active,
+	&:focus {
+		background: $bgColorHover;
+	}
+}
+
+.bgt-btn--external/* 旧セレクタ */,
+[data-bgt-button-kind='external'] .bgt-btn /* 新セレクタ */ {
+	$color: #333;
+	$bColor: #ccc;
+	$bgColor: #fff;
+	$bgColorHover: #e9e9e9;
+	color: $color;
+	background: $bgColor;
+	border-color: $bColor;
+
+	&:hover,
+	&:active,
+	&:focus {
+		background: $bgColorHover;
+	}
+
+	&::after {
+		@include bge-icon;
+		font-size: 1em;
+		vertical-align: middle;
+		color: #999;
+		content: '\f08e';
+	}
+}
+
+.bgt-btn--back/* 旧セレクタ */,
+[data-bgt-button-kind='back'] .bgt-btn /* 新セレクタ */ {
+	$color: #333;
+	$bColor: #ddd;
+	$bgColor: #ddd;
+	$bgColorHover: #e9e9e9;
+	color: $color;
+	background: $bgColor;
+	border-color: $bColor;
+
+	&:hover,
+	&:active,
+	&:focus {
+		background: $bgColorHover;
+	}
+
+	span {
+		display: inline-block;
+		vertical-align: middle;
+	}
+
+	&::before {
+		@include bge-icon;
+		display: inline-block;
+		margin-block-start: -2px;
+		font-size: 1em;
+		vertical-align: middle;
+		content: '\f053';
+	}
+}
+
+.bgt-hr {
+	margin: 0 auto;
+}
+
+[data-bgt-hr-kind='dashed'] .bgt-hr {
+	block-size: 0;
+	background: none;
+	border: none;
+	border-block-end: 2px dashed currentcolor;
+}
+
+.bgt-hr--bold/* 旧セレクタ */,
+[data-bgt-hr-kind='bold'] .bgt-hr/* 新セレクタ */ {
+	block-size: 5px;
+}
+
+.bgt-hr--narrow/* 旧セレクタ */,
+[data-bgt-hr-kind='narrow'] .bgt-hr /* 新セレクタ */ {
+	block-size: 1px;
+}
+
+.bgt-hr--short/* 旧セレクタ */,
+[data-bgt-hr-kind='short'] .bgt-hr /* 新セレクタ */ {
+	inline-size: calc(6 / 10 * 100%);
+	block-size: 1px;
+}
+
+/* ダウンロードファイルタイプ */
+.bgt-download-file__link {
+	box-sizing: border-box;
+	display: inline-block;
+	padding: 0.7em 1em;
+	font-size: 1.08em;
+	font-weight: bold;
+	line-height: 1;
+	color: #333;
+	text-align: start;
+	text-decoration: none;
+	background-color: #fff;
+	border: 1px solid #ccc;
+	border-radius: 3px;
+
+	&:hover {
+		background-color: #eee;
+	}
+
+	&:active,
+	&:focus {
+		outline: none;
+		box-shadow: 0 0 5px 1px #0570c7;
+	}
+}
+
+.bgt-link__size {
+	font-size: 0.8em;
+	font-weight: normal;
+	color: #808080;
+}
+
+.bgt-google-maps-link {
+	@media screen and (max-width: $breakPoint) {
+		padding: 1em;
+		margin-block-start: 10px;
+		color: #333;
+		text-align: center;
+		text-decoration: none;
+		border: solid 1px #999;
+		border-radius: 3px;
+
+		span {
+			display: inline-block;
+			vertical-align: middle;
+		}
+
+		&::after {
+			@include bge-icon;
+			font-size: 1em;
+			vertical-align: middle;
+			content: '\f08e';
+		}
+	}
+}
+
+// # [Type] gallery
+[data-bgt='gallery'] {
+	$thumb-size: 60px;
+
+	.bgt-gallery {
+		padding-block-start: calc(9 / 16 * 100%); // 16:9
+
+		&:hover &-ctrl {
+			opacity: 1;
+		}
+
+		&__img {
+			img {
+				object-fit: cover;
+			}
+		}
+
+		&__caption {
+			padding: 0.7em 1em;
+			color: #fff;
+			text-align: center;
+			background: rgb(0 0 0 / 60%);
+		}
+
+		&-ctrl {
+			inset-block-start: calc(1 / 2 * 100%);
+			opacity: 0;
+			transition: opacity 200ms ease-in;
+
+			&__prev,
+			&__next {
+				display: block;
+				padding: 0;
+				margin: -20px 0 0;
+				appearance: none;
+				background: none;
+				border: none;
+				transform-origin: center center;
+
+				&:hover {
+					opacity: 0.5;
+				}
+
+				&:focus {
+					outline: none;
+				}
+
+				span {
+					display: block;
+					inline-size: 0;
+					block-size: 0;
+					overflow: hidden;
+				}
+
+				&::after {
+					display: block;
+					inline-size: 40px;
+					block-size: 40px;
+					content: '';
+					border: solid #fff;
+					border-width: 5px 5px 0 0;
+				}
+			}
+
+			&__prev {
+				inset-inline-start: 20px;
+				transform: rotate(-135deg);
+			}
+
+			&__next {
+				inset-inline-end: 20px;
+				transform: rotate(45deg);
+			}
+		}
+	}
+
+	[data-gallery-marker='thumbs'] {
+		+ .bgt-gallery-marker {
+			margin-block-start: 10px;
+
+			li {
+				inline-size: $thumb-size;
+				block-size: $thumb-size;
+				margin: 0 5px;
+
+				&::before {
+					display: none;
+				}
+			}
+		}
+	}
+
+	[data-gallery-marker='dot'] {
+		+ .bgt-gallery-marker {
+			margin-block-start: 10px;
+
+			li {
+				inline-size: 10px;
+				block-size: 10px;
+				margin: 0 2px;
+				background-color: #999;
+				border-radius: 100%;
+
+				// stylelint-disable selector-class-pattern
+				&.current {
+					background-color: #000;
+				}
+				// stylelint-enable selector-class-pattern
+			}
+		}
+	}
+}
+
+/* デバイス依存汎用クラス */
+.pc-only {
+	display: block;
+
+	@media screen and (max-width: $breakPoint) {
+		display: none;
+	}
+}
+
+.sp-only {
+	display: none;
+
+	@media screen and (max-width: $breakPoint) {
+		display: block;
+	}
+}

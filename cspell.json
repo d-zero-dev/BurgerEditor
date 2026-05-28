@@ -1,7 +1,24 @@
 {
 	"import": ["@d-zero/cspell-config"],
+	"ignorePaths": [".vscode", ".claude", "**/CODEOWNERS", "*.ai", "*.ico"],
 	"words": [
-		//
-		"nocheck"
+		// Lowercased
+		"nocheck",
+
+		// Dependencies
+		"jaco",
+
+		// Project specific
+		"bgeconfig",
+
+		// v3 (移植元由来)
+		"psycle",
+		"gmap",
+		"noimage",
+		"mqdefault",
+		"styl",
+		"iefix",
+		"honkou",
+		"soukou"
 	]
 }

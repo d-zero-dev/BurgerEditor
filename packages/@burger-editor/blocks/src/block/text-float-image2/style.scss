@@ -1,0 +1,13 @@
+:where([data-bgb='text-float-image2']) {
+	@extend %float-image;
+
+	:where(.bgt-grid--first) {
+		float: inline-start;
+		margin-block-end: calc(var(--bge-grid-gap) / 4);
+		margin-inline-end: var(--bge-grid-gap);
+	}
+
+	:where(.bgt-grid--last) {
+		overflow: visible;
+	}
+}

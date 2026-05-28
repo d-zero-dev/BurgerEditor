@@ -1,0 +1,128 @@
+:where([data-bgt='gallery']) {
+	$thumb-size: 60px;
+
+	:where(.bgt-gallery) {
+		position: relative;
+		inline-size: 100%;
+		block-size: 0;
+		padding: 54% 0 0; // stylelint-disable-line  @d-zero/declaration-value-type-disallowed-list
+		overflow: hidden;
+
+		:where(.bgt-gallery__group) {
+			position: absolute;
+			inset-block-start: 0;
+			inset-inline-start: 0;
+			z-index: 0;
+			inline-size: 100%;
+			block-size: 100%;
+		}
+
+		:where(.bgt-gallery__item) {
+			display: block;
+			inline-size: 100%;
+			block-size: 100%;
+			padding: 0;
+			margin: 0;
+			pointer-events: none;
+		}
+
+		:where(.bgt-gallery__img) {
+			position: relative;
+			z-index: 0;
+			inline-size: 100%;
+			block-size: 100%;
+
+			:where(img) {
+				display: block;
+				inline-size: 100%;
+				block-size: 100%;
+				object-fit: cover;
+			}
+		}
+
+		:where(.bgt-gallery__caption) {
+			position: absolute;
+			inset-block-end: 0;
+			inset-inline-start: 0;
+			z-index: 1;
+			inline-size: 100%;
+
+			&:empty {
+				display: none;
+			}
+		}
+
+		:where(.bgt-gallery-ctrl) {
+			position: absolute;
+			inset-block-start: calc(100% / 2);
+			inset-inline-start: 0;
+			inline-size: 100%;
+
+			:where(.bgt-gallery-ctrl__prev, .bgt-gallery-ctrl__next) {
+				position: absolute;
+				inset-block-start: 0;
+			}
+
+			:where(.bgt-gallery-ctrl__prev) {
+				inset-inline-start: 0;
+			}
+
+			:where(.bgt-gallery-ctrl__next) {
+				inset-inline-end: 0;
+			}
+		}
+	}
+
+	:where([data-gallery-marker='thumbs']) {
+		+ :where(.bgt-gallery-marker) {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			padding: 0;
+			margin: 0;
+
+			:where(li) {
+				display: block;
+				flex: 0 0 auto;
+				inline-size: $thumb-size;
+				block-size: $thumb-size;
+				padding: 0;
+				margin: 0;
+				cursor: pointer;
+				list-style: none;
+				background-repeat: none;
+				background-position: center center;
+				background-size: cover;
+			}
+		}
+	}
+
+	:where([data-gallery-marker='dot']) {
+		+ :where(.bgt-gallery-marker) {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			padding: 0;
+			margin: 0;
+
+			:where(li) {
+				display: block;
+				flex: 0 0 auto;
+				inline-size: 10px;
+				block-size: 10px;
+				padding: 0;
+				margin: 0;
+				cursor: pointer;
+				list-style: none;
+				background-color: #000;
+				background-image: none;
+			}
+		}
+	}
+
+	:where([data-gallery-marker='none']) {
+		+ :where(.bgt-gallery-marker) {
+			display: none;
+		}
+	}
+}

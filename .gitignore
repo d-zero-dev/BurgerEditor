@@ -51,6 +51,9 @@ typings/
 # Optional eslint cache
 .eslintcache
 
+# Rollup cache
+.rollup.cache
+
 # Optional REPL history
 .node_repl_history
 
@@ -60,6 +63,10 @@ typings/
 # Yarn Integrity file
 .yarn-integrity
 
+# Yarn v4 (node_modules mode)
+.yarn/install-state.gz
+.yarn/build-state.yml
+
 # dotenv environment variables file
 .env
 
@@ -68,3 +75,10 @@ typings/
 
 # TypeScript
 *.tsbuildinfo
+
+# Playwright
+test-results
+
+# VR test diff/received images (only baseline snapshots are committed)
+*-diff.png
+*-received.png

@@ -1,0 +1,56 @@
+@use 'font' as *;
+@use 'color' as *;
+
+#DraftArea {
+	text-align: start;
+	background-color: $background-color-draft-area;
+}
+
+[data-component='ContentArea'] {
+	&[data-component-mode='visual'] {
+		iframe {
+			display: block;
+			margin: 0 auto;
+			overflow: hidden;
+			border: none;
+		}
+
+		textarea {
+			display: none;
+		}
+	}
+
+	&[data-component-mode='source'] {
+		iframe {
+			display: none;
+		}
+
+		textarea {
+			box-sizing: border-box;
+			display: block;
+			inline-size: 100%;
+			min-inline-size: 100%;
+			block-size: 500px;
+			padding: 10px;
+			margin: 0;
+			font-family:
+				Consolas,
+				Courier New,
+				Courier,
+				Monaco,
+				monospace;
+			font-size: 14px;
+			line-height: 1.4;
+			color: $lightest-color;
+			appearance: none;
+			background: #272822;
+			border: 1px solid #ddd;
+			border-radius: 0;
+
+			&:focus {
+				outline: none;
+				border: 1px solid #8dc71c;
+			}
+		}
+	}
+}

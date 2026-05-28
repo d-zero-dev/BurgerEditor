@@ -1,0 +1,27 @@
+@use 'font' as *;
+@use 'color' as *;
+
+.nodata-button {
+	button.insert_after {
+		display: block;
+		padding: 13px 30px;
+		margin: 0 auto;
+		line-height: 1;
+		color: $lightest-color;
+		appearance: none;
+		cursor: pointer;
+		background: #86be0d;
+		border: none;
+		border-radius: 2px;
+
+		&:hover,
+		&:focus {
+			outline: none;
+			background: #67b416;
+		}
+
+		&:active {
+			background: #3f9222;
+		}
+	}
+}

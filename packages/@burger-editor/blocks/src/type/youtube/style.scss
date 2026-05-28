@@ -1,0 +1,29 @@
+:where(.bgt-youtube) {
+	position: relative;
+	inline-size: 100%;
+	block-size: auto;
+	padding-block-start: calc(9 / 16 * 100%);
+
+	:where(iframe) {
+		position: absolute;
+		inset-block-start: 0;
+		inset-inline-start: 0;
+
+		/* YouTube本体 */
+		display: block;
+		inline-size: 100%;
+		block-size: 100%;
+		margin: 0 auto;
+		border: none;
+	}
+
+	:where(.bgt-youtube__thumb) {
+		position: absolute;
+		inset-block-start: 0;
+		inset-inline-start: 0;
+
+		/* フォールバック画像 */
+		inline-size: 100%;
+		block-size: auto;
+	}
+}

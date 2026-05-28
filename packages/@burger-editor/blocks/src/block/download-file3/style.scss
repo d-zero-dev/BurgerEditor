@@ -1,0 +1,10 @@
+:where([data-bgb='download-file3']) {
+	@extend %column3-layout;
+	text-align: center;
+
+	:where([data-bgt='download-file']) {
+		/* ファイルダウンロードブロック内 ファイルダウンロードタイプ */
+		display: inline-block;
+		vertical-align: middle;
+	}
+}

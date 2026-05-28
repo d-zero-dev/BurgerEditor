@@ -6,11 +6,11 @@ import type { Filter, PrimitiveDatum } from './types.js';
  * ```html
  * <div [target-attribute] data-[attr]="[name]:[target-attribute]"></div>
  * ```
- *
  * @param el A target element
  * @param name A label name
  * @param datum A datum of value
  * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
+ * @param filter
  */
 export function setValue(
 	el: Element,
@@ -119,11 +119,9 @@ export function setValue(
 
 /**
  * Set attribute
- *
  * @param el Target HTML element
  * @param attr Attribute name
  * @param datum Datum
- *
  */
 function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 	if (datum == null) {
@@ -645,6 +643,10 @@ function setAttribute(el: HTMLElement, attr: string, datum: PrimitiveDatum) {
 	}
 }
 
+/**
+ *
+ * @param datum
+ */
 function toNum(datum: boolean | string | number) {
 	let i: number;
 	if (typeof datum === 'boolean') {
@@ -657,6 +659,10 @@ function toNum(datum: boolean | string | number) {
 	return i;
 }
 
+/**
+ *
+ * @param datum
+ */
 function toInt(datum: boolean | string | number) {
 	return Math.floor(toNum(datum));
 }

@@ -1,11 +1,11 @@
 {
-	"lerna": "8.1.2",
-	"version": "independent",
-	"npmClient": "yarn",
+	"lerna": "9.0.3",
+	"version": "3.5.0-alpha.0",
 	"packages": ["packages/@burger-editor/*"],
+	"npmClient": "yarn",
 	"command": {
 		"version": {
-			"message": "chore(release): publish"
+			"message": "chore(release): publish %s"
 		}
 	}
 }

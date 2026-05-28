@@ -53,7 +53,6 @@ export default class FrozenPatty {
 export interface FrozenPattyOptions {
 	/**
 	 * **Data attribute** name for specifying the node that FrozenPatty treats as a _field_
-	 *
 	 * @default `"field"`
 	 */
 	attr?: string;
@@ -67,7 +66,6 @@ export interface FrozenPattyOptions {
 	 * - `"1"` => `1`
 	 * - `"1.0"` => `1`
 	 * - `"0.1"` => `0.1`
-	 *
 	 * @default `false`
 	 */
 	typeConvert?: boolean;

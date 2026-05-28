@@ -1,5 +1,9 @@
 import type { FrozenPattyData, PrimitiveDatum } from './types.js';
 
+/**
+ *
+ * @param kvs
+ */
 export function arrayToHash(kvs: [keyof FrozenPattyData, PrimitiveDatum, boolean][]) {
 	const result: { [index: string]: PrimitiveDatum | PrimitiveDatum[] } = {};
 	for (const kv of kvs) {

@@ -1,0 +1,53 @@
+@use 'font' as *;
+@use 'color' as *;
+
+$white: #f9fef0;
+
+#bg_editor_heading,
+#bg_editor_setting_heading {
+	$font-size: 15px;
+	position: relative;
+	block-size: $font-size;
+	padding: $font-size 32px;
+	margin: 30px -20px 20px;
+	font-size: $font-size;
+	line-height: 1;
+	color: $lightest-color;
+	background: #333;
+	border: none;
+
+	&::before {
+		position: absolute;
+		inset-block-start: $font-size;
+		inset-inline-start: 23px;
+		display: block;
+		inline-size: 3px;
+		block-size: $font-size;
+		content: '';
+		background: $primary-color;
+	}
+}
+
+.bg-editor-items {
+	display: none;
+}
+
+.bg-float-right:hover {
+	background-color: $white !important; // stylelint-disable-line declaration-no-important
+}
+
+.bg-float-right {
+	z-index: 2000;
+	float: inline-end !important; // stylelint-disable-line declaration-no-important
+	background-color: $lightest-color !important; // stylelint-disable-line declaration-no-important
+}
+
+.bg-float-left {
+	z-index: 2000;
+	float: inline-start !important; // stylelint-disable-line declaration-no-important
+	background-color: $lightest-color !important; // stylelint-disable-line declaration-no-important
+}
+
+.bg-float-left:hover {
+	background-color: $white !important; // stylelint-disable-line declaration-no-important
+}

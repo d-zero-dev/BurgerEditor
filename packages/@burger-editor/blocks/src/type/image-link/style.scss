@@ -1,0 +1,43 @@
+:where(.bgt-image-link__link) {
+	position: relative;
+	z-index: 1;
+	display: block;
+	color: #333;
+	text-decoration: none;
+
+	:where(.bgt-link__box) {
+		margin: 0;
+	}
+
+	:where(.bgt-box__image-container) {
+		background: none;
+
+		:where(img) {
+			display: block;
+			max-inline-size: 100%;
+			block-size: auto;
+			margin: 0 auto;
+		}
+
+		// 空画像
+		:where([data-bge-empty='1']) & {
+			visibility: hidden;
+			inline-size: 100%;
+			block-size: 1px; // float: leftの状態のため
+
+			@media screen and (max-width: $breakPoint) {
+				display: none;
+			}
+
+			img {
+				display: none;
+			}
+		}
+	}
+
+	:where(.bgt-box__caption) {
+		&:empty {
+			display: none;
+		}
+	}
+}

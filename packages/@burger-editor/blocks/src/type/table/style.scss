@@ -1,0 +1,11 @@
+:where(.bge-type-table) {
+	margin: 0;
+
+	:where(th) {
+		inline-size: calc(100% * 1 / 4);
+	}
+
+	:where(td) {
+		inline-size: calc(100% * 3 / 4);
+	}
+}

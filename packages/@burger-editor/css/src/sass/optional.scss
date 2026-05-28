@@ -1,0 +1,83 @@
+/*
+# 下余白
+*/
+.bgb-opt--mb-large {
+	--bge-options-margin: var(--bge-options-margin-large);
+}
+
+.bgb-opt--mb-small {
+	--bge-options-margin: var(--bge-options-margin-small);
+}
+
+.bgb-opt--mb-none {
+	--bge-options-margin: var(--bge-options-margin-none);
+}
+
+/*
+# 背景色
+*/
+.bgb-opt--bg-gray {
+	--bge-options-bgcolor: var(--bge-options-bgcolor-gray);
+	--bge-options-padding: var(--bge-options-padding-with-border-or-bg);
+}
+
+.bgb-opt--bg-blue {
+	--bge-options-bgcolor: var(--bge-options-bgcolor-blue);
+	--bge-options-padding: var(--bge-options-padding-with-border-or-bg);
+}
+
+.bgb-opt--bg-pink {
+	--bge-options-bgcolor: var(--bge-options-bgcolor-pink);
+	--bge-options-padding: var(--bge-options-padding-with-border-or-bg);
+}
+
+/*
+# 枠線 - スタイル
+*/
+.bgb-opt--border-none {
+	--bge-options-border: var(--bge-options-border-none);
+}
+
+.bgb-opt--border-bold {
+	--bge-options-border: var(--bge-options-border-bold);
+	--bge-options-padding: var(--bge-options-padding-with-border-or-bg);
+}
+
+.bgb-opt--border-thin {
+	--bge-options-border: var(--bge-options-border-thin);
+	--bge-options-padding: var(--bge-options-padding-with-border-or-bg);
+}
+
+.bgb-opt--border-dotted {
+	--bge-options-border: var(--bge-options-border-dotted);
+	--bge-options-padding: var(--bge-options-padding-with-border-or-bg);
+}
+
+/*
+# 枠線 - 適用箇所
+*/
+.bgb-opt--border-trbl {
+	--bge-options-padding: var(--bge-options-padding-with-border-or-bg);
+}
+
+.bgb-opt--border-tb {
+	padding-inline: 0;
+	border-inline-start-width: 0;
+	border-inline-end-width: 0;
+}
+
+.bgb-opt--border-lr {
+	padding-block: 0;
+	border-block-start-width: 0;
+	border-block-end-width: 0;
+}
+
+.bgb-opt--border-trl {
+	padding-block-end: 0;
+	border-block-end-width: 0;
+}
+
+.bgb-opt--border-rbl {
+	padding-block-start: 0;
+	border-block-start-width: 0;
+}

@@ -1,0 +1,430 @@
+// ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- /
+//
+// 変数
+//
+// ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- /
+
+// RWDのブレークポイント
+$breakPoint: 768px;
+
+// カスタムプロパティ定義
+:root {
+	// カラム間のマージン
+	--bge-column-gap: 20px; /* @deprecated */
+	--bge-grid-gap: var(--bge-column-gap);
+
+	// RWDでカラムが落ちた時の下マージン
+	--bge-column-margin-block-end: 20px;
+
+	/* Custom margin */
+	--bge-options-margin-normal: 1.5rem;
+	--bge-options-margin-none: 0;
+	--bge-options-margin-small: 1rem;
+	--bge-options-margin-large: 4rem;
+	--bge-options-margin: var(--bge-options-margin-normal);
+
+	/* Custom background color */
+	--bge-options-bgcolor-transparent: transparent;
+	--bge-options-bgcolor-gray: #efefef;
+	--bge-options-bgcolor-blue: #d8f4ff;
+	--bge-options-bgcolor-pink: #fee;
+	--bge-options-bgcolor: var(--bge-options-bgcolor-transparent);
+
+	/* Custom border style */
+	--bge-options-border-none: none;
+	--bge-options-border-bold: solid 5px currentcolor;
+	--bge-options-border-thin: solid 1px currentcolor;
+	--bge-options-border-dotted: dotted 1px currentcolor;
+	--bge-options-border: var(--bge-options-border-none);
+
+	/* Custom padding */
+	--bge-options-padding-none: 0;
+	--bge-options-padding-with-border-or-bg: 1.5em;
+	--bge-options-padding: var(--bge-options-padding-none);
+}
+
+/** ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- *
+ *
+ * フォントの定義
+ * Font Awesome 4.6.3 by @davegandy - http://fontawesome.io - @fontawesome
+ * License - http://fontawesome.io/license (Font: SIL OFL 1.1, CSS: MIT License)
+ *
+ * ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- **/
+@font-face {
+	font-family: FontAwesome;
+	font-style: normal;
+	font-weight: normal;
+	src: url('../fonts/fontawesome-webfont.eot?v=4.6.3');
+	src:
+		url('../fonts/fontawesome-webfont.eot?#iefix&v=4.6.3') format('embedded-opentype'),
+		url('../fonts/fontawesome-webfont.woff2?v=4.6.3') format('woff2'),
+		url('../fonts/fontawesome-webfont.woff?v=4.6.3') format('woff'),
+		url('../fonts/fontawesome-webfont.ttf?v=4.6.3') format('truetype'),
+		url('../fonts/fontawesome-webfont.svg?v=4.6.3#fontawesomeregular') format('svg');
+}
+
+// ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- /
+//
+// ミックスイン
+//
+// ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- /
+@mixin bge-icon {
+	font-family: FontAwesome, serif;
+	font-style: normal;
+	font-weight: normal;
+	font-variant: normal;
+	line-height: 1;
+	text-transform: none;
+	speak: none;
+	text-rendering: auto;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/** ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- *
+ *
+ * マルチカラムブロックのレイアウト
+ *
+ * ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- **/
+%column-layout {
+	display: grid;
+	grid-template-columns: repeat(var(--col), 1fr);
+	column-gap: var(--bge-grid-gap-local, var(--bge-grid-gap));
+
+	@media screen and (max-width: $breakPoint) {
+		&:has(> :not([class*='bgt-sp-grid'])) {
+			display: flex;
+			flex-direction: column;
+			gap: var(--bge-column-margin-block-end);
+		}
+	}
+}
+
+%column2-layout {
+	$gte: $breakPoint + 1px;
+	--col: 2;
+
+	@extend %column-layout;
+
+	&:has(> .bgt-grid1:first-child) {
+		@media screen and (min-width: $gte) {
+			grid-template-columns: 1fr 11fr;
+		}
+	}
+
+	&:has(> .bgt-grid2:first-child) {
+		@media screen and (min-width: $gte) {
+			grid-template-columns: 2fr 10fr;
+		}
+	}
+
+	&:has(> .bgt-grid3:first-child) {
+		@media screen and (min-width: $gte) {
+			grid-template-columns: 3fr 9fr;
+		}
+	}
+
+	&:has(> .bgt-grid4:first-child) {
+		@media screen and (min-width: $gte) {
+			grid-template-columns: 4fr 8fr;
+		}
+	}
+
+	&:has(> .bgt-grid5:first-child) {
+		@media screen and (min-width: $gte) {
+			grid-template-columns: 5fr 7fr;
+		}
+	}
+
+	&:has(> .bgt-grid6:first-child) {
+		@media screen and (min-width: $gte) {
+			grid-template-columns: 6fr 6fr;
+		}
+	}
+
+	&:has(> .bgt-grid7:first-child) {
+		@media screen and (min-width: $gte) {
+			grid-template-columns: 7fr 5fr;
+		}
+	}
+
+	&:has(> .bgt-grid8:first-child) {
+		@media screen and (min-width: $gte) {
+			grid-template-columns: 8fr 4fr;
+		}
+	}
+
+	&:has(> .bgt-grid9:first-child) {
+		@media screen and (min-width: $gte) {
+			grid-template-columns: 9fr 3fr;
+		}
+	}
+
+	&:has(> .bgt-grid10:first-child) {
+		@media screen and (min-width: $gte) {
+			grid-template-columns: 10fr 2fr;
+		}
+	}
+
+	&:has(> .bgt-grid11:first-child) {
+		@media screen and (min-width: $gte) {
+			grid-template-columns: 11fr 1fr;
+		}
+	}
+
+	&:has(> .bgt-grid1:first-child) {
+		@media screen and (min-width: $gte) {
+			grid-template-columns: 1fr 11fr;
+		}
+	}
+
+	&:has(> .bgt-sp-grid1:first-child) {
+		@media screen and (max-width: $breakPoint) {
+			grid-template-columns: 1fr 11fr;
+		}
+	}
+
+	&:has(> .bgt-sp-grid2:first-child) {
+		@media screen and (max-width: $breakPoint) {
+			grid-template-columns: 2fr 10fr;
+		}
+	}
+
+	&:has(> .bgt-sp-grid3:first-child) {
+		@media screen and (max-width: $breakPoint) {
+			grid-template-columns: 3fr 9fr;
+		}
+	}
+
+	&:has(> .bgt-sp-grid4:first-child) {
+		@media screen and (max-width: $breakPoint) {
+			grid-template-columns: 4fr 8fr;
+		}
+	}
+
+	&:has(> .bgt-sp-grid5:first-child) {
+		@media screen and (max-width: $breakPoint) {
+			grid-template-columns: 5fr 7fr;
+		}
+	}
+
+	&:has(> .bgt-sp-grid6:first-child) {
+		@media screen and (max-width: $breakPoint) {
+			grid-template-columns: 6fr 6fr;
+		}
+	}
+
+	&:has(> .bgt-sp-grid7:first-child) {
+		@media screen and (max-width: $breakPoint) {
+			grid-template-columns: 7fr 5fr;
+		}
+	}
+
+	&:has(> .bgt-sp-grid8:first-child) {
+		@media screen and (max-width: $breakPoint) {
+			grid-template-columns: 8fr 4fr;
+		}
+	}
+
+	&:has(> .bgt-sp-grid9:first-child) {
+		@media screen and (max-width: $breakPoint) {
+			grid-template-columns: 9fr 3fr;
+		}
+	}
+
+	&:has(> .bgt-sp-grid10:first-child) {
+		@media screen and (max-width: $breakPoint) {
+			grid-template-columns: 10fr 2fr;
+		}
+	}
+
+	&:has(> .bgt-sp-grid11:first-child) {
+		@media screen and (max-width: $breakPoint) {
+			grid-template-columns: 11fr 1fr;
+		}
+	}
+}
+
+%column3-layout {
+	--col: 3;
+
+	@extend %column-layout;
+}
+
+%column4-layout {
+	--col: 4;
+
+	@extend %column-layout;
+}
+
+%column5-layout {
+	--col: 5;
+
+	@extend %column-layout;
+}
+
+// stylelint-disable declaration-no-important
+%float-image {
+	$span1: 8.3333%;
+	$span2: 16.6666%;
+	$span3: 25%;
+	$span4: 33.3333%;
+	$span5: 41.6666%;
+	$span6: 50%;
+	$span7: 58.3333%;
+	$span8: 66.6666%;
+	$span9: 75%;
+	$span10: 83.3333%;
+	$span11: 91.6666%;
+	$span12: 100%;
+
+	&::after {
+		clear: both;
+		display: block;
+		content: '';
+	}
+
+	/*
+	# 2カラムの幅調整用のグリッドシステム
+	*/
+	:where(.bgt-grid1) {
+		inline-size: $span1;
+	}
+
+	:where(.bgt-grid2) {
+		inline-size: $span2;
+	}
+
+	:where(.bgt-grid3) {
+		inline-size: $span3;
+	}
+
+	:where(.bgt-grid4) {
+		inline-size: $span4;
+	}
+
+	:where(.bgt-grid5) {
+		inline-size: $span5;
+	}
+
+	:where(.bgt-grid6) {
+		inline-size: $span6;
+	}
+
+	:where(.bgt-grid7) {
+		inline-size: $span7;
+	}
+
+	:where(.bgt-grid8) {
+		inline-size: $span8;
+	}
+
+	:where(.bgt-grid9) {
+		inline-size: $span9;
+	}
+
+	:where(.bgt-grid10) {
+		inline-size: $span10;
+	}
+
+	:where(.bgt-grid11) {
+		inline-size: $span11;
+	}
+
+	:where(.bgt-grid12) {
+		inline-size: $span12;
+	}
+
+	// stylelint-disable-next-line order/order
+	@media screen and (max-width: $breakPoint) {
+		:where(
+			.bgt-grid1,
+			.bgt-grid2,
+			.bgt-grid3,
+			.bgt-grid4,
+			.bgt-grid5,
+			.bgt-grid6,
+			.bgt-grid7,
+			.bgt-grid8,
+			.bgt-grid9,
+			.bgt-grid10,
+			.bgt-grid11,
+			.bgt-grid12
+		) {
+			inline-size: 100%;
+		}
+
+		:where(
+			.bgt-sp-grid2,
+			.bgt-sp-grid3,
+			.bgt-sp-grid4,
+			.bgt-sp-grid5,
+			.bgt-sp-grid6,
+			.bgt-sp-grid7,
+			.bgt-sp-grid8,
+			.bgt-sp-grid9,
+			.bgt-sp-grid10,
+			.bgt-sp-grid11,
+			.bgt-sp-grid12
+		) {
+			&:where(.bgt-grid--first) {
+				float: inline-start !important;
+				padding-inline-end: calc(var(--bge-grid-gap) / 2) !important;
+			}
+
+			&:where(.bgt-grid--last) {
+				float: inline-end !important;
+				padding-inline-start: calc(var(--bge-grid-gap) / 2) !important;
+			}
+		}
+
+		:where(.bgt-sp-grid1) {
+			inline-size: $span1 !important;
+		}
+
+		:where(.bgt-sp-grid2) {
+			inline-size: $span2 !important;
+		}
+
+		:where(.bgt-sp-grid3) {
+			inline-size: $span3 !important;
+		}
+
+		:where(.bgt-sp-grid4) {
+			inline-size: $span4 !important;
+		}
+
+		:where(.bgt-sp-grid5) {
+			inline-size: $span5 !important;
+		}
+
+		:where(.bgt-sp-grid6) {
+			inline-size: $span6 !important;
+		}
+
+		:where(.bgt-sp-grid7) {
+			inline-size: $span7 !important;
+		}
+
+		:where(.bgt-sp-grid8) {
+			inline-size: $span8 !important;
+		}
+
+		:where(.bgt-sp-grid9) {
+			inline-size: $span9 !important;
+		}
+
+		:where(.bgt-sp-grid10) {
+			inline-size: $span10 !important;
+		}
+
+		:where(.bgt-sp-grid11) {
+			inline-size: $span11 !important;
+		}
+
+		:where(.bgt-sp-grid12) {
+			inline-size: $span12 !important;
+		}
+	}
+}
+// stylelint-enable declaration-no-important

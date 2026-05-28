@@ -1,0 +1,38 @@
+@use 'font' as *;
+@use 'color' as *;
+
+// ===== ===== ===== ===== ===== ===== ===== ===== ===== ===== ===== ===== ===== ===== ===== =====
+//
+// Value Migration Message
+//
+// ===== ===== ===== ===== ===== ===== ===== ===== ===== ===== ===== ===== ===== ===== ===== =====
+#ValueMigrationMessage {
+	display: none;
+	padding: 20px 50px 10px;
+	margin-block-end: 20px;
+	font-weight: bold;
+	color: #b62d38;
+	background: $lightest-color;
+	border: #b62d38 5px solid;
+
+	&.bge-vmm--success {
+		color: #690;
+		border: #690 5px solid;
+	}
+
+	button {
+		padding: 10px 50px 10px;
+		margin-block-end: 10px;
+		font-size: 1.2em;
+		font-weight: bold;
+		color: #b62d38;
+		background: #f6edff;
+		border: #b62d38 2px solid;
+
+		&:hover {
+			color: $lightest-color;
+			cursor: pointer;
+			background: #b62d38;
+		}
+	}
+}

@@ -1,0 +1,64 @@
+@use 'font' as *;
+@use 'color' as *;
+
+.draft-btn {
+	block-size: 35px;
+
+	a {
+		display: inline-block;
+		padding: 3px 5px;
+		color: #333;
+		text-decoration: none;
+		background-color: $background-color01;
+		border: $border-primary-color solid 1px;
+	}
+
+	.draft-tab-btn {
+		float: inline-start;
+		text-align: start;
+
+		a {
+			&.on {
+				color: $lightest-color !important; // stylelint-disable-line declaration-no-important
+				background-color: $background-color02 !important; // stylelint-disable-line declaration-no-important
+				border-color: $background-color02 !important; // stylelint-disable-line declaration-no-important
+			}
+
+			&:hover {
+				cursor: pointer;
+				background-color: $border-primary-color;
+			}
+
+			span {
+				margin-inline-start: 0.5em;
+				font-size: 0.8em;
+
+				&::before {
+					content: '(';
+				}
+
+				&::after {
+					content: ')';
+				}
+			}
+		}
+	}
+
+	.draft-copy-btn {
+		float: inline-end;
+		text-align: end;
+
+		a {
+			display: none;
+
+			&.on {
+				display: inline-block;
+			}
+
+			&:hover {
+				cursor: pointer;
+				background-color: $border-primary-color;
+			}
+		}
+	}
+}
