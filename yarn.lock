@@ -128,7 +128,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@burger-editor/client@workspace:packages/@burger-editor/client"
   dependencies:
-    "@burger-editor/frozen-patty": "npm:3.5.0-alpha.0"
+    "@burger-editor/frozen-patty": "npm:3.5.0-alpha.1"
     "@types/google.maps": "npm:3.64.1"
     "@types/jquery": "npm:3.5.34"
     "@types/jqueryui": "npm:1.12.24"
@@ -162,7 +162,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/frozen-patty@npm:3.5.0-alpha.0, @burger-editor/frozen-patty@workspace:packages/@burger-editor/frozen-patty":
+"@burger-editor/frozen-patty@npm:3.5.0-alpha.1, @burger-editor/frozen-patty@workspace:packages/@burger-editor/frozen-patty":
   version: 0.0.0-use.local
   resolution: "@burger-editor/frozen-patty@workspace:packages/@burger-editor/frozen-patty"
   languageName: unknown
