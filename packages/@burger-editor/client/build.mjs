@@ -51,3 +51,8 @@ const result = sass.compile(path.join(srcDir, 'css', 'burger_editor.scss'), {
 });
 await fs.mkdir(cssOutDir, { recursive: true });
 await fs.writeFile(path.join(cssOutDir, 'burger_editor.css'), `${result.css}\n`);
+
+// フォント（FontAwesome / bge-ui-icons）を dist/fonts へコピー
+await fs.cp(path.join(srcDir, 'fonts'), path.join(dirname, 'dist', 'fonts'), {
+	recursive: true,
+});

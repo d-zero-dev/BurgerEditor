@@ -3,7 +3,7 @@
 	"version": "3.5.0-alpha.1",
 	"description": "BurgerEditor client package",
 	"author": "D-ZERO",
-	"license": "(MIT OR Apache-2.0)",
+	"license": "(MIT OR Apache-2.0) AND OFL-1.1",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/d-zero-dev/BurgerEditor.git",
@@ -18,7 +18,8 @@
 		"./style": "./dist/css/admin/burger_editor.css"
 	},
 	"files": [
-		"dist"
+		"dist",
+		"LICENSE-OFL-1.1"
 	],
 	"scripts": {
 		"build": "node build.mjs"

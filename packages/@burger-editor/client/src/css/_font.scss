@@ -6,26 +6,14 @@
 	font-family: FontAwesome;
 	font-style: normal;
 	font-weight: normal;
-	src: url('../../fonts/fontawesome-webfont.eot?v=4.6.3');
-	src:
-	// cspell:disable-next-line
-		url('../../fonts/fontawesome-webfont.eot?#iefix&v=4.6.3') format('embedded-opentype'),
-		url('../../fonts/fontawesome-webfont.woff2?v=4.6.3') format('woff2'),
-		url('../../fonts/fontawesome-webfont.woff?v=4.6.3') format('woff'),
-		url('../../fonts/fontawesome-webfont.ttf?v=4.6.3') format('truetype'),
-		url('../../fonts/fontawesome-webfont.svg?v=4.6.3#fontawesomeregular') format('svg');
+	src: url('../../fonts/fontawesome-webfont.woff2?v=4.6.3') format('woff2');
 }
 
 @font-face {
 	font-family: bge-ui-icons;
 	font-style: normal;
 	font-weight: normal;
-	src: url('../../fonts/icons.eot?bge');
-	src:
-	// cspell:disable-next-line
-		url('../../fonts/icons.eot?#iefixbge') format('embedded-opentype'),
-		url('../../fonts/icons.woff?bge') format('woff'),
-		url('../../fonts/icons.ttf?bge') format('truetype');
+	src: url('../../fonts/icons.woff?bge') format('woff');
 }
 
 %iconfonts {
