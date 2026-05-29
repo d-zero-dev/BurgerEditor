@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/runtime",
-	"version": "3.5.0-alpha.1",
+	"version": "3.5.0-alpha.2",
 	"description": "Runtime library for BurgerEditor generated content in the browser",
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)",

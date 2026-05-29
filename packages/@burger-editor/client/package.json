@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/client",
-	"version": "3.5.0-alpha.1",
+	"version": "3.5.0-alpha.2",
 	"description": "BurgerEditor client package",
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0) AND OFL-1.1",
@@ -26,7 +26,7 @@
 		"build": "node build.mjs"
 	},
 	"dependencies": {
-		"@burger-editor/frozen-patty": "3.5.0-alpha.1",
+		"@burger-editor/frozen-patty": "3.5.0-alpha.2",
 		"baserjs": "1.0.0-beta.0",
 		"core-js": "3.49.0",
 		"jaco": "5.0.0",
