@@ -6,7 +6,12 @@ import { BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX } from '../const.js';
  */
 export function exportStyleOptions(el: HTMLElement): Record<string, string> {
 	const style: Record<string, string> = {};
-	for (const property of el.style) {
+	// jsdom's CSSStyleDeclaration is not always iterable; use indexed access
+	// so the same loop works in browser, jsdom, and any DOM that exposes the
+	// standard `length` + `item()` interface.
+	const decl = el.style;
+	for (let i = 0; i < decl.length; i++) {
+		const property = decl.item(i);
 		if (!property.startsWith(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX)) {
 			continue;
 		}

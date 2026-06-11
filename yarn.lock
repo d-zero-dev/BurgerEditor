@@ -133,6 +133,20 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@burger-editor/cli@npm:4.0.0-alpha.66, @burger-editor/cli@workspace:packages/@burger-editor/cli":
+  version: 0.0.0-use.local
+  resolution: "@burger-editor/cli@workspace:packages/@burger-editor/cli"
+  dependencies:
+    "@burger-editor/blocks": "npm:4.0.0-alpha.66"
+    "@burger-editor/core": "npm:4.0.0-alpha.66"
+    "@burger-editor/file-io": "npm:4.0.0-alpha.66"
+    "@d-zero/roar": "npm:2.1.0"
+    "@types/node": "npm:24.11.0"
+  bin:
+    cli: ./dist/bin.js
+  languageName: unknown
+  linkType: soft
+
 "@burger-editor/client@npm:4.0.0-alpha.66, @burger-editor/client@workspace:packages/@burger-editor/client":
   version: 0.0.0-use.local
   resolution: "@burger-editor/client@workspace:packages/@burger-editor/client"
@@ -157,6 +171,7 @@ __metadata:
     "@burger-editor/frozen-patty": "npm:4.0.0-alpha.66"
     "@burger-editor/utils": "npm:4.0.0-alpha.66"
     "@types/semver": "npm:7.7.1"
+    gray-matter: "npm:4.0.3"
     jaco: "npm:5.0.0"
     semver: "npm:7.7.4"
   languageName: unknown
@@ -191,6 +206,21 @@ __metadata:
     rollup-plugin-dts: "npm:6.3.0"
     rollup-plugin-esbuild: "npm:6.2.1"
     rollup-plugin-string: "npm:3.0.0"
+  languageName: unknown
+  linkType: soft
+
+"@burger-editor/file-io@npm:4.0.0-alpha.66, @burger-editor/file-io@workspace:packages/@burger-editor/file-io":
+  version: 0.0.0-use.local
+  resolution: "@burger-editor/file-io@workspace:packages/@burger-editor/file-io"
+  dependencies:
+    "@burger-editor/blocks": "npm:4.0.0-alpha.66"
+    "@burger-editor/core": "npm:4.0.0-alpha.66"
+    "@burger-editor/utils": "npm:4.0.0-alpha.66"
+    "@types/jsdom": "npm:28.0.1"
+    "@types/node": "npm:24.11.0"
+    cosmiconfig: "npm:9.0.0"
+    jsdom: "npm:28.1.0"
+    prettier: "npm:3.8.1"
   languageName: unknown
   linkType: soft
 
@@ -229,19 +259,16 @@ __metadata:
     "@burger-editor/blocks": "npm:4.0.0-alpha.66"
     "@burger-editor/client": "npm:4.0.0-alpha.66"
     "@burger-editor/core": "npm:4.0.0-alpha.66"
+    "@burger-editor/file-io": "npm:4.0.0-alpha.66"
     "@burger-editor/inspector": "npm:4.0.0-alpha.66"
     "@hono/node-server": "npm:1.19.9"
     "@hono/zod-validator": "npm:0.7.6"
     "@types/debug": "npm:4.1.12"
-    "@types/jsdom": "npm:28.0.1"
     "@types/node": "npm:24.11.0"
     ansi-colors: "npm:4.1.3"
-    cosmiconfig: "npm:9.0.0"
     debug: "npm:4.4.3"
     dotenv: "npm:17.3.1"
-    gray-matter: "npm:^4.0.3"
     hono: "npm:4.12.3"
-    jsdom: "npm:28.1.0"
     open: "npm:11.0.0"
     prettier: "npm:3.8.1"
     tsx: "npm:4.21.0"
@@ -256,7 +283,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@burger-editor/mcp-server@workspace:packages/@burger-editor/mcp-server"
   dependencies:
+    "@burger-editor/cli": "npm:4.0.0-alpha.66"
     "@burger-editor/core": "npm:4.0.0-alpha.66"
+    "@burger-editor/file-io": "npm:4.0.0-alpha.66"
     "@burger-editor/legacy": "npm:4.0.0-alpha.66"
     "@burger-editor/migrator": "npm:4.0.0-alpha.66"
     "@burger-editor/utils": "npm:4.0.0-alpha.66"
@@ -1249,6 +1278,15 @@ __metadata:
     "@prettier/plugin-pug":
       optional: true
   checksum: 10c0/4fe6a175b82a6cb12a112e583b7297d580557d1845b359ca9e18e1ed96e81e51eaa084b3dfbb51dca421c0dbb4444c4649d7a3d4de75fb6d92a90e23bd331eb5
+  languageName: node
+  linkType: hard
+
+"@d-zero/roar@npm:2.1.0":
+  version: 2.1.0
+  resolution: "@d-zero/roar@npm:2.1.0"
+  dependencies:
+    yargs-parser: "npm:22.0.0"
+  checksum: 10c0/197653fe52d5bf053cb97df48b369d6256ac50c6bdb846392ece3a486f3457fea3e836ce3160b7a88a5b0f0f744c5df24f3d6c2a81bfccae1620873a61f79598
   languageName: node
   linkType: hard
 
@@ -8785,7 +8823,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"gray-matter@npm:^4.0.3":
+"gray-matter@npm:4.0.3":
   version: 4.0.3
   resolution: "gray-matter@npm:4.0.3"
   dependencies:
@@ -16710,6 +16748,13 @@ __metadata:
   version: 21.1.1
   resolution: "yargs-parser@npm:21.1.1"
   checksum: 10c0/f84b5e48169479d2f402239c59f084cfd1c3acc197a05c59b98bab067452e6b3ea46d4dd8ba2985ba7b3d32a343d77df0debd6b343e5dae3da2aab2cdf5886b2
+  languageName: node
+  linkType: hard
+
+"yargs-parser@npm:22.0.0":
+  version: 22.0.0
+  resolution: "yargs-parser@npm:22.0.0"
+  checksum: 10c0/cb7ef81759c4271cb1d96b9351dbbc9a9ce35d3e1122d2b739bf6c432603824fa02c67cc12dcef6ea80283379d63495686e8f41cc7b06c6576e792aba4d33e1c
   languageName: node
   linkType: hard
 

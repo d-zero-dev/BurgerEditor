@@ -124,8 +124,65 @@ await run();
 
 ## 対応バージョン
 
-- **v3ブロック**: 完全サポート
-- **v4ブロック**: 計画中
+- **v3ブロック**: 完全サポート（`create_block_v3` / `get_block_data_params_v3` / `get_block_type`）
+- **v4ブロック**: 完全サポート（下記参照）
+
+## v4 ツール（21 個 + 高レベルヘルパー 2 個）
+
+v4 プロジェクト用のツール群は `@burger-editor/cli` のハンドラをラップして提供しています。`burgereditor.config.{js,mjs,ts,cjs,json}` が見つかるディレクトリ階層内で動作します。
+
+### ページ操作
+
+| ツール        | 説明                                                                    |
+| ------------- | ----------------------------------------------------------------------- |
+| `page_list`   | documentRoot 配下のページツリー                                         |
+| `page_get`    | Front Matter + 編集可能領域内容                                         |
+| `page_create` | 新規ページ作成（atomic、初期ブロックを任意で受ける）                    |
+| `page_delete` | ページ削除                                                              |
+| `page_rename` | リネーム / 移動（失敗時に作成済みディレクトリを巻き戻す）               |
+| `page_copy`   | 複製                                                                    |
+| `page_concat` | 複数 source の編集可能領域を target に append（source は 1 つ以上必須） |
+
+### Front Matter
+
+| ツール             | 説明                                                      |
+| ------------------ | --------------------------------------------------------- |
+| `front_matter_get` | Front Matter 取得                                         |
+| `front_matter_set` | Front Matter 更新（既定 merge、`replace: true` で全置換） |
+
+### ブロック操作
+
+| ツール          | 説明                                               |
+| --------------- | -------------------------------------------------- |
+| `block_list`    | ブロックメタ + 構造化アイテムデータ                |
+| `block_get`     | 単一ブロック取得                                   |
+| `block_insert`  | 指定 index に挿入                                  |
+| `block_replace` | 指定 index を置換                                  |
+| `block_delete`  | 指定 index を削除                                  |
+| `block_move`    | 移動。`to` は最終配列における index（splice 慣用） |
+
+### スキーマ参照
+
+| ツール                         | 説明                                                           |
+| ------------------------------ | -------------------------------------------------------------- |
+| `catalog_list` / `catalog_get` | プロジェクトのブロックカタログ                                 |
+| `item_list` / `item_schema`    | 標準アイテムとテンプレート（データキー推定用）                 |
+| `style_options_list`           | プロジェクト CSS から抽出した `--bge-options-*` 軸とバリアント |
+| `container_options_list`       | grid / inline / float の静的オプション                         |
+| `config_resolve`               | 解決済み config の要約                                         |
+
+### 高レベルヘルパー
+
+| ツール            | 説明                                                                                |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| `duplicate_block` | block-get → block-insert の組み合わせ（id は自動で剥がれる）                        |
+| `update_page`     | insert / replace / delete / move をバッチ適用。シーケンシャル実行、ロールバックなし |
+
+### 設計上の不変条件
+
+- **JSON 出力**: すべて MCP の `text` ペイロードに JSON.stringify した内容を入れる
+- **context キャッシュ**: `loadContext()`（cosmiconfig + virtualTree resolver scan）は MCP server プロセス内で 1 回だけ実行され、以降の全ツール呼び出しで再利用される。テスト時のリセット用に `__resetV4ContextCache()` を export
+- **エラー**: 検証失敗は MCP の `{isError: true}` payload として返る（throw しない）
 
 ## アーキテクチャ
 
@@ -141,15 +198,21 @@ await run();
 │   /mcp-server   │
 └────────┬────────┘
          │
-         ├─► @burger-editor/core
-         ├─► @burger-editor/legacy
-         ├─► @burger-editor/migrator
-         └─► @burger-editor/utils
+         ├─► @burger-editor/cli      (v4 tools の本体 — handlers を直接呼ぶ)
+         │       │
+         │       ├─► @burger-editor/file-io  (config / fs / virtual-path)
+         │       └─► @burger-editor/core     (block-ops / Front Matter / HTML detection)
+         │
+         ├─► @burger-editor/core      (v3 互換)
+         ├─► @burger-editor/legacy    (v3 互換)
+         └─► @burger-editor/migrator  (v3 互換)
 ```
 
 ## 依存パッケージ
 
 - [@modelcontextprotocol/sdk](https://www.npmjs.com/package/@modelcontextprotocol/sdk) - MCP SDK
+- [@burger-editor/cli](../cli/) - v4 ツール用ハンドラ
+- [@burger-editor/file-io](../file-io/) - Node 側 fs / config 層（cli 経由で間接依存）
 - [@burger-editor/core](../core/) - エディタエンジン
 - [@burger-editor/legacy](../legacy/) - v3互換性サポート
 - [@burger-editor/migrator](../migrator/) - バージョン間移行ツール

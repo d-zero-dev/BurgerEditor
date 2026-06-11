@@ -16,8 +16,10 @@ graph TD
     custom["@burger-editor/custom-element<br/>(TipTap Web Components)"]
     migrator["@burger-editor/migrator<br/>(バージョン移行)"]
     inspector["@burger-editor/inspector<br/>(HTML検査・検索)"]
+    fileio["@burger-editor/file-io<br/>(Node 側 fs / config / virtual-path)"]
+    cli["@burger-editor/cli<br/>(AI エージェント向け CLI)"]
     local["@burger-editor/local<br/>(ローカルファイルシステム CMS)"]
-    mcp["@burger-editor/mcp-server<br/>(AI統合サーバー)"]
+    mcp["@burger-editor/mcp-server<br/>(MCP プロトコル サーバー)"]
     legacy["@burger-editor/legacy<br/>(v3互換性サポート)"]
     css["@burger-editor/css<br/>(blocks全CSS統合配布)"]
     runtime["@burger-editor/runtime<br/>(ブラウザ用ランタイム)"]
@@ -49,11 +51,25 @@ graph TD
     %% Inspector dependencies
     core --> inspector
 
-    %% Local dependencies
+    %% File-IO (Node 側集約)
+    core --> fileio
+    blocks --> fileio
+    utils --> fileio
+
+    %% Local dependencies (file-io 経由で fs を扱うようリファクタ済み)
+    fileio --> local
     inspector --> local
     blocks --> local
+    core --> local
 
-    %% MCP Server dependencies
+    %% CLI (AI エージェント向け)
+    fileio --> cli
+    core --> cli
+    blocks --> cli
+
+    %% MCP Server (v3 互換 + v4 ツールは CLI 経由)
+    cli --> mcp
+    fileio --> mcp
     core --> mcp
     legacy --> mcp
     migrator --> mcp
@@ -112,6 +128,37 @@ graph TD
 
 #### Platform Layer（プラットフォーム層）
 
+**`@burger-editor/file-io`**
+
+- Node 側の fs / config / virtual-path-resolver 集約パッケージ
+- 依存関係: core, blocks, utils, cosmiconfig, jsdom, prettier
+- 責任: 設定ファイル（`burgereditor.config.*`）解決、ページ HTML の load/save、Front Matter 処理、ディレクトリツリー生成、仮想パス ↔ 実ファイルパスの双方向マッピング、Node から `@burger-editor/core` を使うための jsdom-backed DOM の遅延インストール
+- **設計判断**:
+  1. **shared by local & cli & mcp-server** — fs を触る全パッケージのフロントエンド。同じ config / 同じパス解釈 / 同じ Front Matter パーサを共有することで、ブラウザ UI 経由の編集と AI エージェント経由の編集が必ず一致する
+  2. **遅延 DOM インストール** — `import '@burger-editor/file-io'` は `globalThis.document` / `DOMParser` 等のアクセサだけを置き、最初のアクセスで初めて JSDOM を構築する。DOM 不要な CLI コマンド（`catalog-list` 等）は JSDOM コストを払わない
+  3. **cosmiconfig `searchStrategy: 'project'`** — サブディレクトリから CLI / MCP を起動してもプロジェクトルートの設定が見つかる
+- **構成ファイル**:
+  - `src/config/resolve.ts` — `resolveConfig(searchFrom?)` / `clearConfigCache()`
+  - `src/document/edit-content.ts` — `loadContent` / `saveContent` / `FileNotFoundError`
+  - `src/file-tree.ts` — `generateFileTree` / `buildFileTreeFromLogicalPaths`
+  - `src/virtual-path-resolver.ts` — `loadResolverState` / `toDiskPath` 他（旧 local からの移植）
+  - `src/path-input.ts` — `resolvePathInput`（実 / 仮想パス両対応、リーディング `/` を documentRoot 直下として解釈）
+  - `src/dom-shim.ts` — jsdom-backed DOM の遅延インストール
+- **詳細ドキュメント**: [`packages/@burger-editor/file-io/README.md`](packages/@burger-editor/file-io/README.md)
+
+**`@burger-editor/cli`**
+
+- AI エージェント / 非対話スクリプト向けの JSON-only CLI
+- 依存関係: core, blocks, file-io, `@d-zero/roar`
+- 責任: ページ / ブロック / Front Matter / カタログ / スタイルオプションの CRUD と参照を、JSON で stdout に返す
+- **`bin: "@burger-editor/cli"`** — グローバルコマンド名を取らない。`npx @burger-editor/cli <subcommand>` で起動
+- **設計判断**:
+  1. **JSON-only stdout** — 成功時は単一 JSON 行のみ。ユーザー設定の `dotenv` バナー等は stderr にリダイレクトされ、最終 JSON は drain callback で確実に flush される
+  2. **3-way spec input** — `--spec`（インライン）/ `--spec-file`（ファイル）/ stdin の優先順で受け取り。シェルクォート地獄を回避
+  3. **atomic 操作** — `page-create` は `fs.writeFile(... flag: 'wx')` で原子的に reserve、`page-rename` は rename 失敗時に作成済みディレクトリを巻き戻す
+  4. **ハンドラの再利用** — `src/handlers.ts` の各関数は `mcp-server` の v4 ツールがそのままラップして公開する
+- **詳細ドキュメント**: [`packages/@burger-editor/cli/README.md`](packages/@burger-editor/cli/README.md)
+
 **`@burger-editor/inspector`**
 
 - HTML検査・検索ユーティリティ
@@ -134,9 +181,10 @@ graph TD
 
 **`@burger-editor/local`**
 
-- ローカルファイルシステム向けCMS実装
-- 依存関係: inspector, Hono, Node.js関連パッケージ
-- 責任: ローカルサーバー、ファイルIO、設定管理、CLI機能、プログラマティックAPI
+- ローカルファイルシステム向けCMS実装（Hono ベース HTTP + Vite ベース React UI）
+- 依存関係: core, file-io, blocks, inspector, Hono, Node.js関連パッケージ
+- 責任: ローカルサーバー、ブラウザ UI、CLI機能（`bge dev` / `bge search`）、プログラマティックAPI
+- **重要**: ファイル I/O / 設定解決 / virtual-path-resolver / Front Matter の本体は `@burger-editor/file-io` に移っており、local はそれを再エクスポートする薄いシムに痩身化されている。`local/src/helpers/{front-matter,html-detection,no-editable-area-error,edit-content}.ts` と `local/src/model/{file-tree,virtual-path-resolver,get-user-config}.ts` は互換性のためのシム re-export であり、本体は `@burger-editor/core` / `@burger-editor/file-io` 側を参照すること
 - **環境固有**: ローカルファイルシステム専用
 - **CLI機能**:
   - `bge` - 開発サーバー起動
@@ -185,7 +233,10 @@ graph TD
 - MCP (Model Context Protocol) サーバー実装
 - 依存関係: core, legacy, migrator, utils
 - 責任: AIアシスタント（Claude等）にBurgerEditor機能を提供
-- 機能: ブロック作成、パラメータ取得、v3互換性サポート
+- 機能:
+  - v3 ツール 3 個（`create_block_v3` / `get_block_data_params_v3` / `get_block_type`）— v3 プロジェクト互換
+  - v4 ツール 21 個 + 高レベルヘルパー 2 個（`update_page` / `duplicate_block`）— v4 プロジェクトのページ・ブロック CRUD、カタログ・スタイルオプションの参照を `@burger-editor/cli` のハンドラ経由で公開
+  - `loadContext()` の結果はサーバープロセス内で 1 回だけ評価し、以降の全ツールで再利用（テスト用に `__resetV4ContextCache()` を export）
 
 **`@burger-editor/legacy`**
 

@@ -8,6 +8,12 @@
 			"path": "../core"
 		},
 		{
+			"path": "../cli"
+		},
+		{
+			"path": "../file-io"
+		},
+		{
 			"path": "../migrator"
 		},
 		{

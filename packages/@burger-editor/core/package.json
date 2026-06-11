@@ -34,6 +34,7 @@
 	"dependencies": {
 		"@burger-editor/frozen-patty": "4.0.0-alpha.66",
 		"@burger-editor/utils": "4.0.0-alpha.66",
+		"gray-matter": "4.0.3",
 		"jaco": "5.0.0",
 		"semver": "7.7.4"
 	},

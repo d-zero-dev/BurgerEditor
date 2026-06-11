@@ -1,0 +1,40 @@
+{
+	"name": "@burger-editor/cli",
+	"version": "4.0.0-alpha.66",
+	"description": "BurgerEditor v4 agent-facing CLI — JSON-only stdout, noun-verb subcommands, designed for AI agents (Claude, etc.) and MCP servers to drive page/block edits.",
+	"author": "D-ZERO",
+	"license": "(MIT OR Apache-2.0)",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/d-zero-dev/BurgerEditor.git",
+		"directory": "packages/@burger-editor/cli"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"bin": "./dist/bin.js",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc --project tsconfig.build.json",
+		"dev": "tsc --watch --project tsconfig.build.json",
+		"clean": "tsc --build --clean"
+	},
+	"dependencies": {
+		"@burger-editor/blocks": "4.0.0-alpha.66",
+		"@burger-editor/core": "4.0.0-alpha.66",
+		"@burger-editor/file-io": "4.0.0-alpha.66",
+		"@d-zero/roar": "2.1.0"
+	},
+	"devDependencies": {
+		"@types/node": "24.11.0"
+	}
+}
