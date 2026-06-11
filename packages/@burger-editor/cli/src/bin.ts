@@ -5,13 +5,6 @@
 // dotenv before any user code (including cosmiconfig-loaded configs) runs.
 process.env.DOTENV_CONFIG_QUIET = 'true';
 
-// Likewise, any leaked stdout writes during config load must not contaminate
-// the JSON payload we produce. Redirect them to stderr.
-const realStdoutWrite = process.stdout.write.bind(process.stdout);
-process.stdout.write = ((chunk: string | Uint8Array, ...rest: unknown[]) => {
-	return process.stderr.write(chunk as never, ...(rest as []));
-}) as typeof process.stdout.write;
-
 import type { BlockSpec } from './block-builder.js';
 
 import { parseCli } from '@d-zero/roar';
@@ -20,6 +13,28 @@ import { loadContext } from './context.js';
 import * as h from './handlers.js';
 import { writeErrorJson } from './output.js';
 import { resolveSpec } from './spec-input.js';
+
+// Capture the original stdout writer once. We swap process.stdout.write only
+// during loadContext() (when user config files may print banners) and restore
+// immediately after so library consumers — and any post-config legitimate
+// stdout — see a normal channel. The cached reference is what we always use
+// to emit the final JSON payload, immune to whatever the swap left behind.
+const realStdoutWrite = process.stdout.write.bind(process.stdout);
+
+/**
+ *
+ */
+async function loadContextWithSilencedStdout(): ReturnType<typeof loadContext> {
+	const saved = process.stdout.write;
+	process.stdout.write = ((chunk: string | Uint8Array, ...rest: unknown[]) => {
+		return process.stderr.write(chunk as never, ...(rest as []));
+	}) as typeof process.stdout.write;
+	try {
+		return await loadContext();
+	} finally {
+		process.stdout.write = saved;
+	}
+}
 
 const commands = {
 	'page-list': { desc: 'List pages under documentRoot' },
@@ -87,7 +102,7 @@ async function main() {
 		commands,
 		onError: () => true,
 	});
-	const ctx = await loadContext();
+	const ctx = await loadContextWithSilencedStdout();
 
 	switch (result.command) {
 		case 'page-list': {

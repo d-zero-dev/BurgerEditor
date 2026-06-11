@@ -81,15 +81,25 @@ export async function pageCreate(
 	options: PageCreateOptions = {},
 ) {
 	const filePath = expectPath(pathInput, ctx);
-	try {
-		await fs.access(filePath);
-		throw new Error(`Page already exists: ${filePath}`);
-	} catch (error) {
-		if (error instanceof Error && 'code' in error && error.code !== 'ENOENT') {
-			throw error;
-		}
-	}
 	const template = ctx.config.newFileContent || '';
+
+	// Atomically reserve the file: fs.writeFile with `wx` either creates it
+	// (when missing) or rejects with EEXIST. This closes the race window
+	// between access-check and write that two concurrent page_create calls
+	// could exploit to both pass the check and clobber each other.
+	await fs.mkdir(path.dirname(filePath), { recursive: true });
+	try {
+		await fs.writeFile(filePath, template, { encoding: 'utf8', flag: 'wx' });
+	} catch (error: unknown) {
+		if (error instanceof Error && 'code' in error && error.code === 'EEXIST') {
+			throw new Error(`Page already exists: ${filePath}`);
+		}
+		throw error;
+	}
+
+	// File now exists with the template contents — the subsequent loadContent
+	// will just read it back, parse the Front Matter, and let us layer
+	// requested frontMatter / initial blocks on top via saveContent.
 	const result = await loadContent(filePath, ctx.config.editableArea, template);
 	if (result instanceof NoEditableAreaError) {
 		throw result;
@@ -132,9 +142,68 @@ export async function pageDelete(ctx: CliContext, pathInput: string) {
 export async function pageRename(ctx: CliContext, fromInput: string, toInput: string) {
 	const from = expectPath(fromInput, ctx);
 	const to = expectPath(toInput, ctx);
-	await fs.mkdir(path.dirname(to), { recursive: true });
-	await fs.rename(from, to);
+	const targetDir = path.dirname(to);
+	// Remember which directories we created so a failed rename can clean up
+	// instead of leaving orphan empty dirs under documentRoot (e.g. when
+	// rename fails with EXDEV on a cross-device move).
+	const createdDirs = await mkdirpReportCreated(targetDir);
+	try {
+		await fs.rename(from, to);
+	} catch (error) {
+		// Undo dir creation in reverse order; stop at the first non-empty dir.
+		// Only swallow the two expected outcomes — ENOTEMPTY (sibling content
+		// exists, leave it) and ENOENT (already gone). Anything else is a
+		// surprise we don't want to mask.
+		for (const dir of createdDirs.toReversed()) {
+			await fs.rmdir(dir).catch((error_: unknown) => {
+				if (
+					error_ instanceof Error &&
+					'code' in error_ &&
+					(error_.code === 'ENOTEMPTY' || error_.code === 'ENOENT')
+				) {
+					return;
+				}
+				throw error_;
+			});
+		}
+		throw error;
+	}
 	return { from: fromInput, to: toInput, renamed: true };
+}
+
+/**
+ * Walk up the path creating each missing directory and report what we
+ * actually created (innermost first), so a follow-up failure can roll the
+ * creation back.
+ * @param target directory to ensure exists
+ */
+async function mkdirpReportCreated(target: string): Promise<string[]> {
+	const segments: string[] = [];
+	let cursor = target;
+	while (cursor && cursor !== path.dirname(cursor)) {
+		// Only ENOENT indicates "directory does not exist yet, will create".
+		// Anything else (EACCES, EIO, …) is a surprise — surface it so the
+		// caller doesn't silently fall into a follow-up mkdir that fails for
+		// the same reason and discards the diagnostic.
+		const exists = await fs
+			.stat(cursor)
+			.then(() => true)
+			.catch((error: unknown) => {
+				if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+					return false;
+				}
+				throw error;
+			});
+		if (exists) break;
+		segments.push(cursor);
+		cursor = path.dirname(cursor);
+	}
+	// `segments` is innermost-first; create outermost-first so each mkdir's
+	// parent already exists.
+	for (const dir of segments.toReversed()) {
+		await fs.mkdir(dir);
+	}
+	return segments;
 }
 
 /**
@@ -163,6 +232,11 @@ export async function pageConcat(
 	targetInput: string,
 	sourceInputs: readonly string[],
 ) {
+	if (sourceInputs.length === 0) {
+		throw new Error(
+			'pageConcat requires at least one source — refusing a no-op so the CLI matches the MCP page_concat schema (sources.min(1)).',
+		);
+	}
 	const target = expectPath(targetInput, ctx);
 	const targetResult = await loadContent(target, ctx.config.editableArea, '');
 	if (targetResult instanceof NoEditableAreaError) {
@@ -171,6 +245,17 @@ export async function pageConcat(
 	const pieces: string[] = [targetResult.editableContent];
 	for (const sourceInput of sourceInputs) {
 		const source = expectPath(sourceInput, ctx);
+		// loadContent silently CREATES a missing file using newFileContent —
+		// that's the right behaviour for target (page-create-ish), but for a
+		// source it would mask a typoed path. Pre-check existence so a
+		// missing source surfaces as an ENOENT instead of a stealth file
+		// creation under documentRoot.
+		await fs.access(source).catch((error: unknown) => {
+			if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+				throw new Error(`pageConcat source does not exist: ${sourceInput}`);
+			}
+			throw error;
+		});
 		const sourceResult = await loadContent(source, ctx.config.editableArea, '');
 		if (sourceResult instanceof NoEditableAreaError) {
 			throw sourceResult;
@@ -452,14 +537,17 @@ export async function styleOptionsList(ctx: CliContext) {
 	// properties, and return them grouped by axis.
 	const collected = new Map<string, Set<string>>();
 	const stylesheetUrls = ctx.config.stylesheets ?? [];
-	for (const url of stylesheetUrls) {
-		const filePath = path.join(ctx.config.assetsRoot, url.replace(/^\//, ''));
-		try {
-			const css = await fs.readFile(filePath, 'utf8');
-			extractBgeOptions(css, collected);
-		} catch {
-			// non-fatal: stylesheet may be served from elsewhere
-		}
+	// Stylesheet reads are independent — fan out so 8 sheets cost the
+	// slowest read, not the sum.
+	const cssContents = await Promise.all(
+		stylesheetUrls.map((url) => {
+			const filePath = path.join(ctx.config.assetsRoot, url.replace(/^\//, ''));
+			return fs.readFile(filePath, 'utf8').catch(() => null);
+		}),
+	);
+	for (const css of cssContents) {
+		if (css === null) continue; // non-fatal: stylesheet may be served from elsewhere
+		extractBgeOptions(css, collected);
 	}
 	const result: Record<string, string[]> = {};
 	for (const [axis, variants] of collected) {
