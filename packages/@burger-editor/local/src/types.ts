@@ -5,9 +5,35 @@ import type {
 	BurgerEditorFileDirUserSettings,
 } from '@burger-editor/file-io';
 
-// Backwards-compatible aliases. The runtime config is fully defined in
-// @burger-editor/file-io now (shared with the agent-facing CLI/MCP layer).
-export type LocalServerConfig = BurgerEditorConfig;
+// LocalServerConfig is the SAME shape as BurgerEditorConfig today, but is
+// declared as an explicit Pick so a future widening of BurgerEditorConfig in
+// @burger-editor/file-io doesn't silently widen this package's surface. When
+// a new field is added that local should consume, add the key here so the
+// switch over LocalServerConfig fields breaks exhaustiveness checks.
+type LocalKeys =
+	| 'version'
+	| 'port'
+	| 'host'
+	| 'documentRoot'
+	| 'assetsRoot'
+	| 'lang'
+	| 'stylesheets'
+	| 'classList'
+	| 'editableArea'
+	| 'indexFileName'
+	| 'filesDir'
+	| 'sampleImagePath'
+	| 'sampleFilePath'
+	| 'googleMapsApiKey'
+	| 'open'
+	| 'newFileContent'
+	| 'catalog'
+	| 'enableImportBlock'
+	| 'healthCheck'
+	| 'experimental'
+	| 'virtualTree';
+
+export type LocalServerConfig = Pick<BurgerEditorConfig, LocalKeys>;
 export type LocalServerConfigUserSettings = BurgerEditorConfigUserSettings;
 export type LocalServerFileDirConfig = BurgerEditorFileDirConfig;
 export type LocalServerFileDirUserSettings = BurgerEditorFileDirUserSettings;
