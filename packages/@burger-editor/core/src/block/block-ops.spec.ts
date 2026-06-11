@@ -114,6 +114,47 @@ describe('block-ops', () => {
 		expect(listed.map((b) => b.data.name)).toEqual(['a', 'a', 'b']);
 	});
 
+	test('duplicateBlock strips id so the clone is not a duplicate-id element', () => {
+		// Block A has id="hero"; duplicating it must NOT yield two #hero
+		// elements in the same document (HTML validity + later block_replace
+		// would otherwise resolve by id ambiguously).
+		const htmlWithId = `
+<main class="content">
+	<div id="hero" data-bge-name="a" data-bge-container="grid:1">
+		<div data-bge-container-frame><div data-bge-group><div data-bge-item><div data-bgi="wysiwyg"><p>A</p></div></div></div></div>
+	</div>
+</main>
+`;
+		const result = duplicateBlock(htmlWithId, '.content', 0) as string;
+		const idMatches = result.match(/id="hero"/g) ?? [];
+		expect(idMatches).toHaveLength(1);
+	});
+
+	test('duplicateBlock leaves a block with no id alone', () => {
+		// Pin the no-op case: stripping id on a block that never had one
+		// must not introduce any spurious attribute changes.
+		const result = duplicateBlock(SAMPLE_HTML, '.content', 0) as string;
+		expect(result).not.toContain('id=""');
+	});
+
+	test('moveBlock interprets toIndex as the destination in the FINAL list', () => {
+		// Pin the splice-style semantics documented in update-page.md so
+		// future refactors don't silently flip to "insert before original
+		// index N".
+		const fourBlocks = `<main class="content">
+			<div data-bge-name="a" data-bge-container="grid:1"></div>
+			<div data-bge-name="b" data-bge-container="grid:1"></div>
+			<div data-bge-name="c" data-bge-container="grid:1"></div>
+			<div data-bge-name="d" data-bge-container="grid:1"></div>
+		</main>`;
+		const result = moveBlock(fourBlocks, '.content', 0, 2) as string;
+		const listed = listBlocks(result, '.content') as Exclude<
+			ReturnType<typeof listBlocks>,
+			NoEditableAreaError
+		>;
+		expect(listed.map((b) => b.data.name)).toEqual(['b', 'c', 'a', 'd']);
+	});
+
 	test('works with editableArea=null on fragment input', () => {
 		const fragment = `<div data-bge-name="x" data-bge-container="grid:1"></div><div data-bge-name="y" data-bge-container="grid:1"></div>`;
 		const result = listBlocks(fragment, null);

@@ -26,12 +26,28 @@ function parseHtml(htmlContent: string): Document {
  */
 function serializeDocument(doc: Document): string {
 	const doctype = doc.doctype;
-	const doctypeString = doctype
-		? `<!DOCTYPE ${doctype.name}` +
-			(doctype.publicId ? ` PUBLIC "${doctype.publicId}"` : '') +
-			(doctype.systemId ? ` "${doctype.systemId}"` : '') +
-			'>\n'
-		: '';
+	let doctypeString = '';
+	if (doctype) {
+		// Per the HTML serialization spec:
+		//   - "<!DOCTYPE " + name
+		//   - if publicId is non-empty:   ' PUBLIC "<publicId>"' (and if systemId is
+		//     also non-empty, append ' "<systemId>"' — no SYSTEM keyword needed
+		//     because PUBLIC implies a systemId follows)
+		//   - else if systemId is non-empty: ' SYSTEM "<systemId>"'
+		//   - ">"
+		// The old jsdom.serialize() emitted the SYSTEM keyword correctly for
+		// SYSTEM-only DOCTYPEs (e.g. `<!DOCTYPE html SYSTEM "about:legacy-compat">`).
+		doctypeString = `<!DOCTYPE ${doctype.name}`;
+		if (doctype.publicId) {
+			doctypeString += ` PUBLIC "${doctype.publicId}"`;
+			if (doctype.systemId) {
+				doctypeString += ` "${doctype.systemId}"`;
+			}
+		} else if (doctype.systemId) {
+			doctypeString += ` SYSTEM "${doctype.systemId}"`;
+		}
+		doctypeString += '>\n';
+	}
 	return doctypeString + doc.documentElement.outerHTML;
 }
 
@@ -125,7 +141,13 @@ function updateFullDocument(
 	newContent: string,
 ): string {
 	const doc = parseHtml(originalHtml);
-	const element = doc.querySelector(selector) ?? doc.body;
+	const element = doc.querySelector(selector);
+	// updateFragment throws on missing selector; do the same here so a typo in
+	// editableArea fails loudly instead of silently rewriting the entire
+	// <body> (which would destroy header / nav / scripts / etc.).
+	if (!element) {
+		throw new NoEditableAreaError(selector);
+	}
 	element.innerHTML = newContent;
 	return serializeDocument(doc);
 }

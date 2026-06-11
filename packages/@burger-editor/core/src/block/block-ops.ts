@@ -242,6 +242,11 @@ export function moveBlock(
 				`Block index ${fromIndex} out of range (length=${blocks.length})`,
 			);
 		}
+		// `toIndex` is the destination in the FINAL list (after the move),
+		// matching Array.prototype.splice/DOM insertBefore conventions.
+		// For [A,B,C,D] with moveBlock(0, 2) the result is [B,C,A,D] — A is
+		// the element at index 2 in the final list. The SKILL `update-page.md`
+		// pins this convention so agents don't have to guess.
 		target.remove();
 		const remaining = [
 			...scope.querySelectorAll<HTMLElement>(`:scope > ${BLOCK_SELECTOR}`),
@@ -254,6 +259,15 @@ export function moveBlock(
 			remaining[toIndex]!.before(target);
 		}
 	});
+}
+
+/**
+ * Strip data-bge-* ids and the standard `id` attribute from a cloned block so
+ * duplicates don't introduce duplicate-id markup.
+ * @param el
+ */
+function stripIdentifiers(el: HTMLElement): void {
+	el.removeAttribute('id');
 }
 
 /**
@@ -273,6 +287,11 @@ export function duplicateBlock(
 			throw new RangeError(`Block index ${index} out of range (length=${blocks.length})`);
 		}
 		const clone = target.cloneNode(true) as HTMLElement;
+		// cloneNode(true) preserves the id attribute verbatim. Without this
+		// strip, duplicating a block with id="hero" produces two #hero
+		// elements in the same document — invalid HTML and a footgun for any
+		// CSS/JS or subsequent block_replace that resolves by id.
+		stripIdentifiers(clone);
 		target.after(clone);
 	});
 }
