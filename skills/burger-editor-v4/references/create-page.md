@@ -45,11 +45,13 @@ page_create {
   path: "/about.html",
   frontMatter: { "title": "会社概要" },
   blocks: [
-    { catalog: "h2", items: [[{ name: "title-h2", data: { "bge-title-h2": "会社概要" } }]] },
+    { catalog: "h2", items: [[{ name: "title-h2", data: { titleH2: "会社概要" } }]] },
     { catalog: "wysiwyg", items: [[{ name: "wysiwyg", data: { wysiwyg: "<p>弊社は…</p>" } }]] }
   ]
 }
 ```
+
+データキーは camelCase（`titleH2`、`wysiwyg`、…）。詳細は `references/update-page.md` の「アイテムデータキーの調べ方」を参照。
 
 ### 6. 検証
 
