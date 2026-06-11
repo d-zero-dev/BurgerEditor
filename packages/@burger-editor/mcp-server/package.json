@@ -32,7 +32,9 @@
 		"clean": "tsc --build --clean"
 	},
 	"dependencies": {
+		"@burger-editor/cli": "4.0.0-alpha.64",
 		"@burger-editor/core": "4.0.0-alpha.64",
+		"@burger-editor/file-io": "4.0.0-alpha.64",
 		"@burger-editor/legacy": "4.0.0-alpha.64",
 		"@burger-editor/migrator": "4.0.0-alpha.64",
 		"@burger-editor/utils": "4.0.0-alpha.64",

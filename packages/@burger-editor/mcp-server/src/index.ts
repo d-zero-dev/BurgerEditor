@@ -6,6 +6,7 @@ import server from './server.js';
 import createBlockV3 from './tools/create-block-v3.js';
 import getBlockDataParamsV3 from './tools/get-block-data-params-v3.js';
 import getBlockType from './tools/get-block-type.js';
+import registerV4Tools from './tools/v4.js';
 
 /**
  *
@@ -15,6 +16,7 @@ function registerTools(server: McpServer) {
 	getBlockType(server);
 	getBlockDataParamsV3(server);
 	createBlockV3(server);
+	registerV4Tools(server);
 }
 
 /**
