@@ -38,11 +38,35 @@ function asText(value: unknown) {
 }
 
 /**
+ * Cache the CliContext for the lifetime of this MCP server process. loadContext()
+ * runs cosmiconfig + (when virtualTree is enabled) a full documentRoot scan —
+ * expensive enough that paying it on every tool call adds O(files × calls) work
+ * to an agent session. The cache is invalidated by `__resetV4ContextCache()` so
+ * tests can swap fixtures.
+ */
+let cachedContextPromise: Promise<CliContext> | null = null;
+
+/**
+ *
+ */
+function getContext(): Promise<CliContext> {
+	if (!cachedContextPromise) {
+		cachedContextPromise = h.loadContext();
+	}
+	return cachedContextPromise;
+}
+
+/** Test-only: clear the per-process context cache. */
+export function __resetV4ContextCache(): void {
+	cachedContextPromise = null;
+}
+
+/**
  *
  * @param run
  */
 async function withContext<T>(run: (ctx: CliContext) => Promise<T> | T): Promise<T> {
-	const ctx = await h.loadContext();
+	const ctx = await getContext();
 	return await run(ctx);
 }
 
@@ -257,6 +281,10 @@ export default function registerV4Tools(server: McpServer) {
 			asText(
 				await withContext(async (ctx) => {
 					const got = await h.blockGet(ctx, path, index);
+					// buildBlockData() in @burger-editor/cli does not propagate
+					// `id` (BlockSpec has no `id` field), so id is dropped here
+					// by the type system — the rendered insertion is id-free
+					// and cannot collide with the original.
 					const spec: BlockSpec = { ...got.block.data };
 					return await h.blockInsert(ctx, path, index + 1, spec);
 				}),
