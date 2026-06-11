@@ -5,7 +5,7 @@ import './dom-shim.js';
 export type * from './types.js';
 
 export type { ResolvedConfig } from './config/resolve.js';
-export { resolveConfig } from './config/resolve.js';
+export { clearConfigCache, resolveConfig } from './config/resolve.js';
 
 export { loadContent, saveContent, FileNotFoundError } from './document/edit-content.js';
 

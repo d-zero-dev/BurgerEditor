@@ -11,11 +11,27 @@ import path from 'node:path';
 import { defaultCatalog } from '@burger-editor/blocks';
 import { cosmiconfig } from 'cosmiconfig';
 
-const explorer = cosmiconfig('burgereditor');
+// cosmiconfig 9's default `searchStrategy: 'none'` only checks the passed
+// directory and refuses to walk up. We want the canonical "find the project
+// config no matter where the agent invoked the CLI from" behaviour, which is
+// `searchStrategy: 'project'` — walk up until the first ancestor containing
+// `package.json` (then check that ancestor too).
+const explorer = cosmiconfig('burgereditor', { searchStrategy: 'project' });
 
 export interface ResolvedConfig {
 	readonly config: BurgerEditorConfig;
 	readonly configPath: string | null;
+}
+
+/**
+ * Drop cosmiconfig's load + search caches. The shared explorer instance
+ * memoizes per-directory hits, which is fine for normal CLI / MCP usage but
+ * inappropriate for tests (a "no config found at X" entry survives across
+ * cases that subsequently *do* create a config under X) and for long-lived
+ * daemons that need to react to config edits.
+ */
+export function clearConfigCache(): void {
+	explorer.clearCaches();
 }
 
 /**

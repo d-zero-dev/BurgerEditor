@@ -105,7 +105,16 @@ export async function saveContent(
 			);
 		}
 	} else {
-		const fileContent = await fs.readFile(filePath, 'utf8');
+		// If the file disappeared between loadContent and saveContent (race
+		// against another agent / git checkout), surface it as a clear
+		// FileNotFoundError instead of letting the raw ENOENT bubble up
+		// uncaught from fs.readFile.
+		const fileContent = await fs.readFile(filePath, 'utf8').catch((error: unknown) => {
+			if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+				throw new FileNotFoundError(filePath);
+			}
+			throw error;
+		});
 		const parsed = parseFrontMatter(fileContent);
 		const html = updateHtmlContent(parsed.content, editableArea, newContent);
 		const finalFrontMatterData = frontMatterData ?? parsed.data;

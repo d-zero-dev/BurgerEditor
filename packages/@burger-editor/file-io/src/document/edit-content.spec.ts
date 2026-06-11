@@ -1,12 +1,14 @@
-import type { LoadContentResult } from '../types.js';
+import type { LoadContentResult } from '@burger-editor/core';
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import { NoEditableAreaError, updateHtmlContent } from '@burger-editor/core';
 import { afterAll, beforeEach, describe, expect, test } from 'vitest';
 
-import { loadContent, saveContent } from './edit-content.js';
-import { NoEditableAreaError } from './no-editable-area-error.js';
+import '../dom-shim.js';
+
+import { FileNotFoundError, loadContent, saveContent } from './edit-content.js';
 
 const TEST_DIR = path.join(import.meta.dirname, '..', '..', 'test-temp');
 
@@ -212,6 +214,56 @@ title: 'Null Area Test'
 				.then(() => true)
 				.catch(() => false);
 			expect(exists).toBe(true);
+		});
+
+		test('saveContent throws NoEditableAreaError on a full HTML document when the selector misses', async () => {
+			// Used to silently fall back to <body> and destroy header / nav /
+			// scripts. updateFullDocument now mirrors updateFragment's
+			// behaviour and throws.
+			const fullDoc = `<!DOCTYPE html><html><body><main class="content">old</main></body></html>`;
+			const filePath = path.join(TEST_DIR, 'misses-selector.html');
+			await fs.writeFile(filePath, fullDoc, 'utf8');
+			await expect(
+				saveContent(filePath, '<p>x</p>', '.does-not-exist', {}),
+			).rejects.toBeInstanceOf(NoEditableAreaError);
+		});
+
+		test('saveContent surfaces FileNotFoundError when the file is deleted between load and save', async () => {
+			const filePath = path.join(TEST_DIR, 'transient.html');
+			await fs.writeFile(filePath, `<main class="c">old</main>`, 'utf8');
+			await fs.rm(filePath); // race: external deletion between load and save
+			await expect(saveContent(filePath, '<p>x</p>', '.c', {})).rejects.toBeInstanceOf(
+				FileNotFoundError,
+			);
+		});
+	});
+
+	describe('updateHtmlContent — DOCTYPE preservation', () => {
+		// These pin the spec-compliant SYSTEM-keyword serialization fix in
+		// core/document/html-detection.ts. Without them, dropping the SYSTEM
+		// keyword (the bug) doesn't fail any test.
+
+		test('preserves simple HTML5 DOCTYPE', () => {
+			const input = `<!DOCTYPE html><html><body><main class="c">old</main></body></html>`;
+			const out = updateHtmlContent(input, '.c', '<p>new</p>');
+			expect(out).toContain('<!DOCTYPE html>');
+		});
+
+		test('preserves SYSTEM-only DOCTYPE with the SYSTEM keyword', () => {
+			const input = `<!DOCTYPE html SYSTEM "about:legacy-compat"><html><body><main class="c">old</main></body></html>`;
+			const out = updateHtmlContent(input, '.c', '<p>new</p>');
+			expect(out).toContain('<!DOCTYPE html SYSTEM "about:legacy-compat">');
+		});
+
+		test('preserves PUBLIC + SYSTEM DOCTYPE without an extra SYSTEM keyword', () => {
+			const input = `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><body><main class="c">old</main></body></html>`;
+			const out = updateHtmlContent(input, '.c', '<p>new</p>');
+			expect(out).toContain(
+				'<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">',
+			);
+			// Defensive: PUBLIC must not be followed by SYSTEM (that's the
+			// per-spec join — public implies system follows in the same form).
+			expect(out).not.toMatch(/PUBLIC[^>]*SYSTEM/);
 		});
 	});
 });
