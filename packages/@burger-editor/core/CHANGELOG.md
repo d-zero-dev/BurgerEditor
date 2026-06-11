@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.67](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.66...v4.0.0-alpha.67) (2026-06-11)
+
+### Bug Fixes
+
+- **core:** strip block ids on duplicate, fail loudly when editableArea misses, fix SYSTEM doctype ([3fd5312](https://github.com/d-zero-dev/BurgerEditor/commit/3fd531202aa473d9cd05b41144de847717b9eba8))
+
+### Features
+
+- **core:** add block-ops, front matter, and html detection ([4893d02](https://github.com/d-zero-dev/BurgerEditor/commit/4893d023433ce8c8d0723cf4f6e49061376087ee))
+
 # [4.0.0-alpha.66](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.65...v4.0.0-alpha.66) (2026-05-12)
 
 **Note:** Version bump only for package @burger-editor/core

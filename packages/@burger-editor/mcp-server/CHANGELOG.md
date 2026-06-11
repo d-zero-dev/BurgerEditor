@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.67](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.66...v4.0.0-alpha.67) (2026-06-11)
+
+### Bug Fixes
+
+- **mcp-server:** cache CliContext across tool calls, plus v4 spec and README update ([5cac27b](https://github.com/d-zero-dev/BurgerEditor/commit/5cac27be381d25462351b8a90527a7ac4b442a1d))
+
+### Features
+
+- **mcp-server:** add v4 tool surface alongside existing v3 tools ([f4af9f5](https://github.com/d-zero-dev/BurgerEditor/commit/f4af9f50ac59f447b11d281f6ff42e8b81ebc874))
+
 # [4.0.0-alpha.66](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.65...v4.0.0-alpha.66) (2026-05-12)
 
 **Note:** Version bump only for package @burger-editor/mcp-server

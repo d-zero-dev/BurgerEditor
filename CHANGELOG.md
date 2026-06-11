@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.67](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.66...v4.0.0-alpha.67) (2026-06-11)
+
+### Bug Fixes
+
+- **cli:** atomic page-create, source existence check, scoped stdout redirect, plus tests + README ([a9e6769](https://github.com/d-zero-dev/BurgerEditor/commit/a9e6769c1b5d9d849d3fc6338435d5222007099e))
+- **core:** strip block ids on duplicate, fail loudly when editableArea misses, fix SYSTEM doctype ([3fd5312](https://github.com/d-zero-dev/BurgerEditor/commit/3fd531202aa473d9cd05b41144de847717b9eba8))
+- **file-io:** walk up for config, fix path semantics, lazy DOM, ENOENT race, plus tests + README ([1563147](https://github.com/d-zero-dev/BurgerEditor/commit/156314723991143cd792cd601b13c8028e91d062))
+- **mcp-server:** cache CliContext across tool calls, plus v4 spec and README update ([5cac27b](https://github.com/d-zero-dev/BurgerEditor/commit/5cac27be381d25462351b8a90527a7ac4b442a1d))
+
+### Features
+
+- **cli:** add agent-facing CLI with noun-verb subcommands ([3d8a52b](https://github.com/d-zero-dev/BurgerEditor/commit/3d8a52bffcdc41822d84e2f9df61d8abb17b9069))
+- **core:** add block-ops, front matter, and html detection ([4893d02](https://github.com/d-zero-dev/BurgerEditor/commit/4893d023433ce8c8d0723cf4f6e49061376087ee))
+- **file-io:** add Node-side package for config and page I/O ([da813ae](https://github.com/d-zero-dev/BurgerEditor/commit/da813ae700cb91d46f7ad5e17d2ae7b49747b167))
+- **mcp-server:** add v4 tool surface alongside existing v3 tools ([f4af9f5](https://github.com/d-zero-dev/BurgerEditor/commit/f4af9f50ac59f447b11d281f6ff42e8b81ebc874))
+
 # [4.0.0-alpha.66](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.65...v4.0.0-alpha.66) (2026-05-12)
 
 ### Bug Fixes
