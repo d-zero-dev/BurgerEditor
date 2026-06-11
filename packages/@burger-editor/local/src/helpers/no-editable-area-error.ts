@@ -1,7 +1,2 @@
-export class NoEditableAreaError extends Error {
-	readonly selector: string;
-	constructor(selector: string) {
-		super(`Editable area not found: ${selector}`);
-		this.selector = selector;
-	}
-}
+// Compatibility shim. Canonical implementation lives in @burger-editor/core.
+export { NoEditableAreaError } from '@burger-editor/core';
