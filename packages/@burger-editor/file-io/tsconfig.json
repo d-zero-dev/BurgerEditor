@@ -1,0 +1,17 @@
+{
+	"extends": "../../../tsconfig.json",
+	"compilerOptions": {
+		"composite": true,
+		"lib": ["ES2024", "DOM"],
+		"types": ["node", "jsdom"]
+	},
+	"references": [
+		{
+			"path": "../core"
+		},
+		{
+			"path": "../utils"
+		}
+	],
+	"exclude": ["dist"]
+}
