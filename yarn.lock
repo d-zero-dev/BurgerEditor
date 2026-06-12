@@ -294,7 +294,6 @@ __metadata:
     zod: "npm:4.3.6"
   bin:
     bge-mcp-server: ./bin/index.js
-    mcp-server: ./bin/index.js
   languageName: unknown
   linkType: soft
 
