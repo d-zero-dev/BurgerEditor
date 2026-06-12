@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/cli",
-	"version": "4.0.0-alpha.68",
+	"version": "4.0.0-alpha.69",
 	"description": "BurgerEditor v4 agent-facing CLI — JSON-only stdout, noun-verb subcommands, designed for AI agents (Claude, etc.) and MCP servers to drive page/block edits.",
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)",
@@ -29,9 +29,9 @@
 		"clean": "tsc --build --clean"
 	},
 	"dependencies": {
-		"@burger-editor/blocks": "4.0.0-alpha.68",
-		"@burger-editor/core": "4.0.0-alpha.68",
-		"@burger-editor/file-io": "4.0.0-alpha.68",
+		"@burger-editor/blocks": "4.0.0-alpha.69",
+		"@burger-editor/core": "4.0.0-alpha.69",
+		"@burger-editor/file-io": "4.0.0-alpha.69",
 		"@d-zero/roar": "2.1.0"
 	},
 	"devDependencies": {

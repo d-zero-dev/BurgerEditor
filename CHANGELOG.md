@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.69](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.68...v4.0.0-alpha.69) (2026-06-12)
+
+### Bug Fixes
+
+- **deps:** sync yarn.lock with mcp-server single-bin configuration ([3859486](https://github.com/d-zero-dev/BurgerEditor/commit/385948633637c9a1333d8b0addf9e1890709028b))
+
 # [4.0.0-alpha.68](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.67...v4.0.0-alpha.68) (2026-06-12)
 
 ### Bug Fixes

@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.69](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.68...v4.0.0-alpha.69) (2026-06-12)
+
+**Note:** Version bump only for package @burger-editor/file-io
+
 # [4.0.0-alpha.68](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.67...v4.0.0-alpha.68) (2026-06-12)
 
 - feat(file-io)!: lenient loadResolverState by default, propagate I/O errors ([1e32026](https://github.com/d-zero-dev/BurgerEditor/commit/1e320260bb7c736bebad65b71089219b716f94f9))
