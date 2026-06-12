@@ -13,8 +13,11 @@ export type { DirInfo, FileInfo, LogicalEntry, Tree } from './file-tree.js';
 export { buildFileTreeFromLogicalPaths, generateFileTree } from './file-tree.js';
 
 export type {
+	LoadResolverStateOptions,
+	LoadResolverStateResult,
 	PathConflict,
 	ResolverEntry,
+	ResolverInvalidEntry,
 	ResolverState,
 } from './virtual-path-resolver.js';
 export {

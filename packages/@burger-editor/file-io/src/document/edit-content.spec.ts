@@ -228,6 +228,26 @@ title: 'Null Area Test'
 			).rejects.toBeInstanceOf(NoEditableAreaError);
 		});
 
+		test('NoEditableAreaError carries candidate selectors lifted from near-root elements', async () => {
+			// Helps recovery from typoed editableArea (e.g. `.contnet`
+			// instead of `.content`) without grepping the file by hand.
+			const fullDoc = `<!DOCTYPE html><html><body>
+				<header id="site-header"></header>
+				<main class="content"></main>
+				<aside class="sidebar"></aside>
+			</body></html>`;
+			const filePath = path.join(TEST_DIR, 'candidate-selectors.html');
+			await fs.writeFile(filePath, fullDoc, 'utf8');
+			const error = await saveContent(filePath, '<p>x</p>', '.contnet', {}).catch(
+				(error_: unknown) => error_,
+			);
+			expect(error).toBeInstanceOf(NoEditableAreaError);
+			const candidates = (error as NoEditableAreaError).candidates;
+			expect(candidates).toEqual(
+				expect.arrayContaining(['#site-header', '.content', '.sidebar']),
+			);
+		});
+
 		test('saveContent surfaces FileNotFoundError when the file is deleted between load and save', async () => {
 			const filePath = path.join(TEST_DIR, 'transient.html');
 			await fs.writeFile(filePath, `<main class="c">old</main>`, 'utf8');

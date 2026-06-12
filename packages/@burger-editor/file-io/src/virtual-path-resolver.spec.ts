@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import {
 	EmptyLogicalPathError,
@@ -266,16 +266,17 @@ describe('loadResolverState', () => {
 		await writeFile('1.html', '---\npath: about.html\n---\n<h1>About</h1>\n');
 		await writeFile('2.html', '---\npath: foo/bar.html\n---\n<h1>Bar</h1>\n');
 
-		const state = await loadResolverState(tmpDir, 'path');
+		const { state, invalid } = await loadResolverState(tmpDir, 'path');
 
 		expect(toDiskPath(state, 'about.html')).toBe('1.html');
 		expect(toDiskPath(state, 'foo/bar.html')).toBe('2.html');
 		expect(listLogicalPaths(state).toSorted()).toEqual(['about.html', 'foo/bar.html']);
+		expect(invalid).toEqual([]);
 	});
 
 	test('honors a custom pathKey', async () => {
 		await writeFile('1.html', '---\nslug: about.html\n---\n<h1>About</h1>\n');
-		const state = await loadResolverState(tmpDir, 'slug');
+		const { state } = await loadResolverState(tmpDir, 'slug');
 		expect(toDiskPath(state, 'about.html')).toBe('1.html');
 	});
 
@@ -294,16 +295,35 @@ describe('loadResolverState', () => {
 		expect([...(conflicts[0]?.diskFiles ?? [])].toSorted()).toEqual(['1.html', '2.html']);
 	});
 
-	test('throws with a message naming the file when frontmatter pathKey is missing', async () => {
+	test('lenient by default: collects missing-key files into `invalid` instead of throwing', async () => {
 		await writeFile('1.html', '<h1>No frontmatter</h1>\n');
+		await writeFile('2.html', '---\npath: ok.html\n---\n<h1>OK</h1>\n');
 
-		await expect(loadResolverState(tmpDir, 'path')).rejects.toThrow(/1\.html/);
+		const { state, invalid } = await loadResolverState(tmpDir, 'path');
+
+		// Good file is still registered; bad file is surfaced in `invalid`.
+		expect(toDiskPath(state, 'ok.html')).toBe('2.html');
+		expect(invalid).toHaveLength(1);
+		expect(invalid[0]).toMatchObject({ file: '1.html', reason: 'missing-key' });
 	});
 
-	test('throws when frontmatter has the key but it is not a string (number)', async () => {
+	test('strict mode: throws naming the file when frontmatter pathKey is missing', async () => {
+		await writeFile('1.html', '<h1>No frontmatter</h1>\n');
+		await expect(loadResolverState(tmpDir, 'path', { strict: true })).rejects.toThrow(
+			/1\.html/,
+		);
+	});
+
+	test('lenient: collects type-mismatch (number) into invalid; strict throws', async () => {
 		await writeFile('1.html', '---\npath: 42\n---\n<h1>Bad</h1>\n');
 
-		await expect(loadResolverState(tmpDir, 'path')).rejects.toThrow(/1\.html/);
+		const lenient = await loadResolverState(tmpDir, 'path');
+		expect(lenient.invalid).toHaveLength(1);
+		expect(lenient.invalid[0]).toMatchObject({ file: '1.html', reason: 'invalid-type' });
+
+		await expect(loadResolverState(tmpDir, 'path', { strict: true })).rejects.toThrow(
+			/1\.html/,
+		);
 	});
 
 	test('ignores non-html files', async () => {
@@ -311,7 +331,7 @@ describe('loadResolverState', () => {
 		await writeFile('readme.md', '# readme');
 		await writeFile('.DS_Store', '');
 
-		const state = await loadResolverState(tmpDir, 'path');
+		const { state } = await loadResolverState(tmpDir, 'path');
 		expect([...listLogicalPaths(state)]).toEqual(['about.html']);
 	});
 
@@ -324,13 +344,14 @@ describe('loadResolverState', () => {
 		);
 		await writeFile('1.html', '---\npath: about.html\n---\n<h1>About</h1>\n');
 
-		const state = await loadResolverState(tmpDir, 'path');
+		const { state } = await loadResolverState(tmpDir, 'path');
 		expect([...listLogicalPaths(state)]).toEqual(['about.html']);
 	});
 
 	test('returns an empty state when the directory has no html files', async () => {
-		const state = await loadResolverState(tmpDir, 'path');
+		const { state, invalid } = await loadResolverState(tmpDir, 'path');
 		expect(listLogicalPaths(state)).toEqual([]);
+		expect(invalid).toEqual([]);
 	});
 
 	test('rejects with ENOENT-style error when documentRoot does not exist', async () => {
@@ -339,24 +360,45 @@ describe('loadResolverState', () => {
 	});
 
 	test('normalizes leading slashes in frontmatter path so /foo.html and foo.html resolve to the same entry', async () => {
-		// Regression: production data sets often write `path: /foo.html` while
-		// Hono's `c.req.param('page')` strips the leading slash. Without
-		// normalization, every link click on the editor 404'd.
 		await writeFile('1.html', '---\npath: /maintenance.html\n---\n<h1>m</h1>\n');
 
-		const state = await loadResolverState(tmpDir, 'path');
+		const { state } = await loadResolverState(tmpDir, 'path');
 
 		expect(toDiskPath(state, '/maintenance.html')).toBe('1.html');
 		expect(toDiskPath(state, 'maintenance.html')).toBe('1.html');
 		expect(listLogicalPaths(state)).toEqual(['maintenance.html']);
 	});
 
-	test('rejects when frontmatter path is just a slash (normalizes to empty string)', async () => {
+	test('lenient: empty-after-normalize ("/" only) lands in invalid; strict throws', async () => {
 		await writeFile('1.html', '---\npath: /\n---\n<h1>x</h1>\n');
-		await expect(loadResolverState(tmpDir, 'path')).rejects.toThrow(/1\.html/);
+		const { invalid } = await loadResolverState(tmpDir, 'path');
+		expect(invalid).toHaveLength(1);
+		expect(invalid[0]).toMatchObject({ file: '1.html', reason: 'empty-path' });
+
+		await expect(loadResolverState(tmpDir, 'path', { strict: true })).rejects.toThrow(
+			/1\.html/,
+		);
 	});
 
-	test('detects conflicts after normalization (/foo.html vs foo.html on different ids)', async () => {
+	test('lenient mode PROPAGATES fs.readFile I/O errors — must not silently mask EACCES/EBUSY/EIO', async () => {
+		// Regression: the lenient path previously demoted read-error to
+		// invalid[] alongside FM dirt. Real I/O faults (permission glitch,
+		// EBUSY on a locked file, EIO) MUST surface — they're not dirt, and
+		// silently hiding them lets an agent overwrite the wrong file.
+		await writeFile('1.html', '---\npath: about.html\n---\n<h1>a</h1>\n');
+		const spy = vi
+			.spyOn(fs, 'readFile')
+			.mockRejectedValueOnce(
+				Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' }),
+			);
+		try {
+			await expect(loadResolverState(tmpDir, 'path')).rejects.toThrow(/EACCES/);
+		} finally {
+			spy.mockRestore();
+		}
+	});
+
+	test('PathConflictError still thrown in lenient mode (structural ambiguity, not dirt)', async () => {
 		await writeFile('1.html', '---\npath: /shared.html\n---\n<h1>a</h1>\n');
 		await writeFile('2.html', '---\npath: shared.html\n---\n<h1>b</h1>\n');
 		await expect(loadResolverState(tmpDir, 'path')).rejects.toBeInstanceOf(

@@ -282,45 +282,113 @@ export function deleteEntry(state: ResolverState, id: string): ResolverState {
 }
 
 /**
+ * An entry that could not be registered in the resolver state — typically
+ * because the file's Front Matter is missing or malformed. Surfaced to the
+ * caller so it can warn the user (or expose the list via `page-list`'s
+ * `invalidPages` output) instead of failing the entire session.
+ */
+export interface ResolverInvalidEntry {
+	readonly file: string;
+	readonly reason: 'missing-key' | 'invalid-type' | 'empty-path';
+	readonly message: string;
+}
+
+/**
+ * Result of {@link loadResolverState}. Always returned (never thrown for
+ * per-file Front Matter problems by default) so the caller can decide whether
+ * to surface, warn, or hard-fail.
+ *
+ * `state` reflects only the files that were registered cleanly; `invalid`
+ * lists the ones that were skipped along with the reason.
+ */
+export interface LoadResolverStateResult {
+	readonly state: ResolverState;
+	readonly invalid: readonly ResolverInvalidEntry[];
+}
+
+export interface LoadResolverStateOptions {
+	/**
+	 * When `true`, re-throw on the first per-file Front Matter problem
+	 * (matching the pre-4.0.0-alpha.68 behaviour). Default `false` —
+	 * per-file errors are collected into `invalid` and the rest is loaded.
+	 *
+	 * Path conflicts (two files claiming the same logical path) always
+	 * throw `PathConflictError`, regardless of this flag, because they
+	 * represent ambiguity rather than dirt.
+	 */
+	readonly strict?: boolean;
+}
+
+/**
  * Scan `documentRoot` (non-recursively) for `*.html` files, parse each Front
  * Matter, and build the bidirectional mapping. Used at server start when
  * `virtualTree.enabled` is true.
+ *
+ * **Lenient by default** (since 4.0.0-alpha.68). Migration projects routinely
+ * contain a handful of legacy redirect stubs / pre-conversion files that
+ * don't carry the expected Front Matter `pathKey`; the previous strict
+ * behaviour threw on the first such file and made the CLI completely
+ * unusable for the rest. Set `strict: true` to opt back into the throw-fast
+ * behaviour (recommended for boot-time validation in the local server).
  * @param documentRoot directory containing the flat `<id>.html` files
  * @param pathKey Front Matter key to read as the logical path (e.g. `'path'`, `'slug'`)
- * @returns a fully populated `ResolverState`
- * @throws {PathConflictError} if any logical path is claimed by more than one file (all conflicts are reported in a single error)
- * @throws {Error} if a file is missing the `pathKey` or its value is not a non-empty string (the message names the offending file)
+ * @param options lenient / strict toggle
+ * @throws {PathConflictError} if any logical path is claimed by more than one file (always; this is structural ambiguity, not dirt)
+ * @throws {Error} if `strict: true` and a file is missing the `pathKey` or its value is not a non-empty string
  * @throws {Error} if `documentRoot` does not exist (propagates `fs.readdir` ENOENT)
  */
 export async function loadResolverState(
 	documentRoot: string,
 	pathKey: string,
-): Promise<ResolverState> {
+	options: LoadResolverStateOptions = {},
+): Promise<LoadResolverStateResult> {
+	const { strict = false } = options;
 	const entries = await fs.readdir(documentRoot, { withFileTypes: true });
 
 	const claims = new Map<string, string[]>();
 	const diskToLogical = new Map<string, string>();
+	const invalid: ResolverInvalidEntry[] = [];
 
 	for (const entry of entries) {
 		if (!entry.isFile() || !entry.name.endsWith('.html')) {
 			continue;
 		}
 		const filePath = path.join(documentRoot, entry.name);
-		const fileContent = await fs.readFile(filePath, 'utf8');
-		const parsed = parseFrontMatter(fileContent);
 
+		// Note: I/O errors (EACCES, EBUSY, EIO, ...) PROPAGATE in both strict
+		// and lenient mode — they're real operational faults, not "dirt", and
+		// must not be silently masked from the CLI/MCP. Only per-file Front
+		// Matter problems are demoted to `invalid` in lenient mode.
+		const fileContent = await fs.readFile(filePath, 'utf8');
+
+		const parsed = parseFrontMatter(fileContent);
 		const raw = parsed.data[pathKey];
-		if (typeof raw !== 'string' || raw.length === 0) {
-			throw new Error(
-				`Front matter "${pathKey}" missing or not a string in ${entry.name}`,
-			);
+
+		if (raw === undefined) {
+			const msg = `Front matter "${pathKey}" missing in ${entry.name}`;
+			if (strict) throw new Error(msg);
+			invalid.push({ file: entry.name, reason: 'missing-key', message: msg });
+			continue;
+		}
+		if (typeof raw !== 'string') {
+			const msg = `Front matter "${pathKey}" is not a string (got ${typeof raw}) in ${entry.name}`;
+			if (strict) throw new Error(msg);
+			invalid.push({ file: entry.name, reason: 'invalid-type', message: msg });
+			continue;
+		}
+		if (raw.length === 0) {
+			const msg = `Front matter "${pathKey}" is an empty string in ${entry.name}`;
+			if (strict) throw new Error(msg);
+			invalid.push({ file: entry.name, reason: 'empty-path', message: msg });
+			continue;
 		}
 
 		const logicalPath = normalizeLogicalPath(raw);
 		if (logicalPath.length === 0) {
-			throw new Error(
-				`Front matter "${pathKey}" normalizes to empty string in ${entry.name}`,
-			);
+			const msg = `Front matter "${pathKey}" normalizes to empty string in ${entry.name}`;
+			if (strict) throw new Error(msg);
+			invalid.push({ file: entry.name, reason: 'empty-path', message: msg });
+			continue;
 		}
 		diskToLogical.set(entry.name, logicalPath);
 		const list = claims.get(logicalPath) ?? [];
@@ -335,6 +403,8 @@ export async function loadResolverState(
 		}
 	}
 	if (conflicts.length > 0) {
+		// Structural ambiguity: throw even in lenient mode. Two files
+		// claiming the same logical path is a correctness bug, not dirt.
 		throw new PathConflictError(conflicts);
 	}
 
@@ -343,5 +413,5 @@ export async function loadResolverState(
 		logicalToDisk.set(logicalPath, diskFile);
 	}
 
-	return { diskToLogical, logicalToDisk };
+	return { state: { diskToLogical, logicalToDisk }, invalid };
 }
