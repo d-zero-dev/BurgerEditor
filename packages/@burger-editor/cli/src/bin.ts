@@ -12,7 +12,7 @@ import { parseCli } from '@d-zero/roar';
 import { loadContext } from './context.js';
 import * as h from './handlers.js';
 import { writeErrorJson } from './output.js';
-import { resolveSpec } from './spec-input.js';
+import { resolveSpec, type SpecResolution } from './spec-input.js';
 
 // Capture the original stdout writer once. We swap process.stdout.write only
 // during loadContext() (when user config files may print banners) and restore
@@ -36,62 +36,147 @@ async function loadContextWithSilencedStdout(): ReturnType<typeof loadContext> {
 	}
 }
 
+// IMPORTANT — flag keys MUST be camelCase. roar derives the user-facing
+// `--kebab-case` form automatically; if you define `'spec-file'` literally
+// here, roar silently drops the flag entirely. (See @d-zero/roar's
+// camelCase→kebab-case conversion contract.)
+//
+// Positional argument hints live in the `desc` string (roar's help generator
+// doesn't carry positional info separately). Keep the `<usage>` suffix
+// consistent so `<package-cli> <cmd> --help` reads like the project README.
 const commands = {
-	'page-list': { desc: 'List pages under documentRoot' },
-	'page-get': { desc: 'Get raw page content with front matter' },
+	'page-list': {
+		desc: 'List pages under documentRoot, plus invalidPages (resolver-skipped files)',
+	},
+	'page-get': {
+		desc: 'Get raw page content + front matter — usage: page-get <path>',
+	},
 	'page-create': {
-		desc: 'Create a new page (optionally with initial blocks via --spec*)',
+		desc: 'Create a new page (optional initial blocks via --spec*) — usage: page-create <path>',
 		flags: {
 			spec: { type: 'string', desc: 'Inline JSON spec' },
-			'spec-file': { type: 'string', desc: 'Path to a JSON spec file' },
+			specFile: { type: 'string', desc: 'Path to a JSON spec file' },
 		},
 	},
-	'page-delete': { desc: 'Delete a page file' },
-	'page-rename': { desc: 'Rename / move a page file' },
-	'page-copy': { desc: 'Copy a page file' },
+	'page-delete': { desc: 'Delete a page file — usage: page-delete <path>' },
+	'page-rename': { desc: 'Rename / move a page file — usage: page-rename <from> <to>' },
+	'page-copy': { desc: 'Copy a page file — usage: page-copy <from> <to>' },
 	'page-concat': {
-		desc: 'Append the editable content of source pages onto the target',
+		desc: 'Append editable content of sources onto target — usage: page-concat <target> <source...>',
 	},
-	'front-matter-get': { desc: 'Get a page front matter' },
+	'front-matter-get': {
+		desc: 'Get a page front matter — usage: front-matter-get <path>',
+	},
 	'front-matter-set': {
-		desc: 'Set a page front matter via --spec* (defaults to merge)',
+		desc: 'Set a page front matter (merge by default; --replace to overwrite) — usage: front-matter-set <path>',
 		flags: {
 			spec: { type: 'string', desc: 'Inline JSON object' },
-			'spec-file': { type: 'string', desc: 'Path to JSON file' },
+			specFile: { type: 'string', desc: 'Path to JSON file' },
 			replace: {
 				type: 'boolean',
 				desc: 'Replace front matter entirely instead of merging',
 			},
 		},
 	},
-	'block-list': { desc: 'List blocks in a page' },
-	'block-get': { desc: 'Get a single block by index' },
+	'block-list': { desc: 'List blocks in a page — usage: block-list <path>' },
+	'block-get': { desc: 'Get a single block by index — usage: block-get <path> <index>' },
 	'block-insert': {
-		desc: 'Insert a block at a given index',
+		desc: 'Insert a block at index — usage: block-insert <path> <atIndex>',
 		flags: {
 			spec: { type: 'string', desc: 'Inline JSON block spec' },
-			'spec-file': { type: 'string', desc: 'Path to JSON block spec' },
+			specFile: { type: 'string', desc: 'Path to JSON block spec' },
+			dryRun: {
+				type: 'boolean',
+				desc: 'Compute the would-be HTML but do not write — returns previewContent',
+			},
 		},
 	},
 	'block-replace': {
-		desc: 'Replace a block at a given index',
+		desc: 'Replace a block at index — usage: block-replace <path> <index>',
 		flags: {
 			spec: { type: 'string', desc: 'Inline JSON block spec' },
-			'spec-file': { type: 'string', desc: 'Path to JSON block spec' },
+			specFile: { type: 'string', desc: 'Path to JSON block spec' },
+			dryRun: { type: 'boolean', desc: 'Compute the would-be HTML but do not write' },
 		},
 	},
-	'block-delete': { desc: 'Delete a block at a given index' },
-	'block-move': { desc: 'Move a block from one index to another' },
-	'catalog-list': { desc: 'List catalog block definitions available in this project' },
-	'catalog-get': { desc: 'Get a single catalog block definition' },
+	'block-delete': {
+		desc: 'Delete a block at index — usage: block-delete <path> <index>',
+		flags: {
+			dryRun: { type: 'boolean', desc: 'Compute the would-be HTML but do not write' },
+		},
+	},
+	'block-move': {
+		desc: 'Move a block — usage: block-move <path> <from> <to> (to = destination in FINAL list, splice convention)',
+		flags: {
+			dryRun: { type: 'boolean', desc: 'Compute the would-be HTML but do not write' },
+		},
+	},
+	'catalog-list': {
+		desc: 'List catalog block definitions available in this project',
+	},
+	'catalog-get': {
+		desc: 'Get a single catalog block definition (with ready-to-insert template) — usage: catalog-get <name>',
+	},
 	'item-list': { desc: 'List item names' },
-	'item-schema': { desc: 'Get item editor template (so the agent can infer data keys)' },
+	'item-schema': {
+		desc: 'Get item editor template + camelCase dataKeys — usage: item-schema <name>',
+	},
 	'style-options-list': {
 		desc: 'List CSS bge-options custom property axes found in project stylesheets',
 	},
 	'container-options-list': { desc: 'List container layout option values (static)' },
 	'config-resolve': { desc: 'Resolve and print the active burgereditor config summary' },
 } as const;
+
+/**
+ * Validate that a resolved spec is shaped like a BlockSpec — i.e. an object,
+ * not null, not an array. Lifts the cast out of the case arms so e.g.
+ * `--spec '[1,2,3]'` or `--spec '0'` rejects with a clear top-level message
+ * instead of crashing deep inside renderBlockHtml.
+ * @param raw
+ */
+function expectBlockSpec(raw: unknown): BlockSpec {
+	if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+		throw new Error(
+			`spec must be a JSON object describing a block (got ${Array.isArray(raw) ? 'array' : raw === null ? 'null' : typeof raw}).`,
+		);
+	}
+	return raw as BlockSpec;
+}
+
+/**
+ * Convenience around resolveSpec that emits a richer diagnostic when nothing
+ * was found. Branches on SpecResolution.source rather than value — a
+ * deliberate `--spec null` resolves to `value=null, source='inline'` and
+ * should pass through to the handler's own type check, not trigger this
+ * "no source" diagnostic.
+ * @param command
+ * @param flags
+ * @param flags.spec
+ * @param flags.specFile
+ */
+async function resolveSpecForCommand(
+	command: string,
+	flags: { spec?: string; specFile?: string },
+): Promise<unknown> {
+	const resolution: SpecResolution = await resolveSpec(flags.spec, flags.specFile);
+	// Branch on `source` (not `value`): a deliberate `--spec null` resolves to
+	// `value=null, source='inline'` and should pass through to the handler's
+	// own type check, not trigger the "missing source" diagnostic. Conversely,
+	// a falsy non-null value (0, '', false) from a real source is also the
+	// handler's call — it knows what shape it needs.
+	if (resolution.source === 'none') {
+		const reasons: string[] = [
+			flags.spec ? '--spec provided (empty?)' : '--spec absent',
+			flags.specFile ? `--spec-file=${flags.specFile}` : '--spec-file absent',
+			process.stdin.isTTY ? 'stdin is a TTY (not piped)' : 'stdin piped but empty',
+		];
+		throw new Error(
+			`${command} requires a JSON spec via --spec, --spec-file, or piped stdin. Checked: ${reasons.join('; ')}`,
+		);
+	}
+	return resolution.value;
+}
 
 /**
  *
@@ -112,10 +197,9 @@ async function main() {
 			return await h.pageGet(ctx, result.args[0]!);
 		}
 		case 'page-create': {
-			const spec = (await resolveSpec(
-				result.flags.spec,
-				result.flags['spec-file'],
-			)) as h.PageCreateOptions | null;
+			const flags = result.flags as { spec?: string; specFile?: string };
+			const resolution = await resolveSpec(flags.spec, flags.specFile);
+			const spec = resolution.value as h.PageCreateOptions | null;
 			return await h.pageCreate(ctx, result.args[0]!, spec ?? {});
 		}
 		case 'page-delete': {
@@ -134,14 +218,21 @@ async function main() {
 			return await h.frontMatterGet(ctx, result.args[0]!);
 		}
 		case 'front-matter-set': {
-			const patch = (await resolveSpec(
-				result.flags.spec,
-				result.flags['spec-file'],
-			)) as Record<string, unknown> | null;
-			if (!patch || typeof patch !== 'object') {
-				throw new Error('front-matter-set requires a JSON object spec.');
+			const flags = result.flags as {
+				spec?: string;
+				specFile?: string;
+				replace?: boolean;
+			};
+			const raw = await resolveSpecForCommand('front-matter-set', flags);
+			// typeof check alone misses arrays (typeof [] === 'object') and
+			// would happily merge numeric-index keys into Front Matter.
+			if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+				throw new Error(
+					`front-matter-set spec must be a JSON object (got ${Array.isArray(raw) ? 'array' : raw === null ? 'null' : typeof raw}).`,
+				);
 			}
-			return await h.frontMatterSet(ctx, result.args[0]!, patch, !result.flags.replace);
+			const patch = raw as Record<string, unknown>;
+			return await h.frontMatterSet(ctx, result.args[0]!, patch, !flags.replace);
 		}
 		case 'block-list': {
 			return await h.blockList(ctx, result.args[0]!);
@@ -150,34 +241,41 @@ async function main() {
 			return await h.blockGet(ctx, result.args[0]!, Number(result.args[1]));
 		}
 		case 'block-insert': {
-			const spec = await resolveSpec(result.flags.spec, result.flags['spec-file']);
-			if (!spec) throw new Error('block-insert requires a JSON block spec.');
-			return await h.blockInsert(
-				ctx,
-				result.args[0]!,
-				Number(result.args[1]),
-				spec as BlockSpec,
-			);
+			const flags = result.flags as {
+				spec?: string;
+				specFile?: string;
+				dryRun?: boolean;
+			};
+			const spec = expectBlockSpec(await resolveSpecForCommand('block-insert', flags));
+			return await h.blockInsert(ctx, result.args[0]!, Number(result.args[1]), spec, {
+				dryRun: Boolean(flags.dryRun),
+			});
 		}
 		case 'block-replace': {
-			const spec = await resolveSpec(result.flags.spec, result.flags['spec-file']);
-			if (!spec) throw new Error('block-replace requires a JSON block spec.');
-			return await h.blockReplace(
-				ctx,
-				result.args[0]!,
-				Number(result.args[1]),
-				spec as BlockSpec,
-			);
+			const flags = result.flags as {
+				spec?: string;
+				specFile?: string;
+				dryRun?: boolean;
+			};
+			const spec = expectBlockSpec(await resolveSpecForCommand('block-replace', flags));
+			return await h.blockReplace(ctx, result.args[0]!, Number(result.args[1]), spec, {
+				dryRun: Boolean(flags.dryRun),
+			});
 		}
 		case 'block-delete': {
-			return await h.blockDelete(ctx, result.args[0]!, Number(result.args[1]));
+			const flags = result.flags as { dryRun?: boolean };
+			return await h.blockDelete(ctx, result.args[0]!, Number(result.args[1]), {
+				dryRun: Boolean(flags.dryRun),
+			});
 		}
 		case 'block-move': {
+			const flags = result.flags as { dryRun?: boolean };
 			return await h.blockMove(
 				ctx,
 				result.args[0]!,
 				Number(result.args[1]),
 				Number(result.args[2]),
+				{ dryRun: Boolean(flags.dryRun) },
 			);
 		}
 		case 'catalog-list': {

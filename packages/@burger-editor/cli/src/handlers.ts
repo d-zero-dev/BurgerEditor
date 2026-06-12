@@ -11,6 +11,7 @@ import {
 	deleteBlock,
 	getBlock,
 	insertBlock,
+	itemExport,
 	listBlocks,
 	moveBlock,
 	parseFrontMatter,
@@ -43,7 +44,15 @@ function expectPath(input: string, ctx: CliContext): string {
  */
 export async function pageList(ctx: CliContext) {
 	const tree = await generateFileTree(ctx.config.documentRoot);
-	return { tree, documentRoot: ctx.config.documentRoot };
+	// Surface files that couldn't be registered into the virtual-path
+	// resolver (missing / malformed Front Matter, etc.). Without this an
+	// agent has no way to know which legacy / pre-conversion files exist —
+	// they'd just disappear from the agent's view of the project.
+	return {
+		tree,
+		documentRoot: ctx.config.documentRoot,
+		invalidPages: ctx.invalidPages,
+	};
 }
 
 /**
@@ -297,6 +306,16 @@ export async function frontMatterSet(
 	patch: Record<string, unknown>,
 	merge: boolean,
 ) {
+	// `Record<string, unknown>` at the type level admits arrays at runtime
+	// (`typeof [] === 'object'`). The CLI's bin.ts catches this for cmdline
+	// users, but MCP (`front_matter_set` tool) and any programmatic caller
+	// would otherwise smuggle numeric-index keys into Front Matter and
+	// silently corrupt the file. Defend at the handler too.
+	if (Array.isArray(patch)) {
+		throw new TypeError(
+			'frontMatterSet patch must be a JSON object, not an array — numeric-index keys would corrupt Front Matter.',
+		);
+	}
 	const filePath = expectPath(pathInput, ctx);
 	const raw = await fs.readFile(filePath, 'utf8');
 	const parsed = parseFrontMatter(raw);
@@ -361,12 +380,52 @@ export async function blockGet(ctx: CliContext, pathInput: string, index: number
  * @param pathInput
  * @param transform
  */
+export interface MutationOptions {
+	/**
+	 * When `true`, compute the new editable-area HTML but do NOT write to
+	 * disk. The would-be content is returned to the caller via the handler's
+	 * result object (under `previewContent`) so CI / reviewer flows can
+	 * diff before committing.
+	 */
+	readonly dryRun?: boolean;
+}
+
+interface WriteEditableResult {
+	readonly filePath: string;
+	/** The HTML that would be (or was) written into the editable area. */
+	readonly previewContent: string;
+	readonly dryRun: boolean;
+}
+
+/**
+ *
+ * @param ctx
+ * @param pathInput
+ * @param transform
+ * @param options
+ */
 async function writeEditable(
 	ctx: CliContext,
 	pathInput: string,
 	transform: (html: string) => string | NoEditableAreaError,
-) {
+	options: MutationOptions = {},
+): Promise<WriteEditableResult> {
 	const filePath = expectPath(pathInput, ctx);
+	// dryRun must not have side effects. loadContent creates the file when it
+	// doesn't exist (intentional for the real write path — page_create relies
+	// on it). Refuse before loadContent so a preview never leaves an empty
+	// file behind on disk.
+	if (options.dryRun) {
+		const exists = await fs
+			.access(filePath)
+			.then(() => true)
+			.catch(() => false);
+		if (!exists) {
+			throw new Error(
+				`Cannot dry-run mutation on a non-existent page: ${pathInput} (resolved to ${filePath}). Create the page first or omit --dry-run.`,
+			);
+		}
+	}
 	const result = await loadContent(filePath, ctx.config.editableArea, '');
 	if (result instanceof NoEditableAreaError) {
 		throw result;
@@ -375,6 +434,9 @@ async function writeEditable(
 	if (next instanceof NoEditableAreaError) {
 		throw next;
 	}
+	if (options.dryRun) {
+		return { filePath, previewContent: next, dryRun: true };
+	}
 	await saveContent(
 		filePath,
 		next,
@@ -382,7 +444,7 @@ async function writeEditable(
 		result.frontMatter,
 		result.originalFrontMatter,
 	);
-	return filePath;
+	return { filePath, previewContent: next, dryRun: false };
 }
 
 /**
@@ -391,18 +453,28 @@ async function writeEditable(
  * @param pathInput
  * @param atIndex
  * @param spec
+ * @param options
  */
 export async function blockInsert(
 	ctx: CliContext,
 	pathInput: string,
 	atIndex: number,
 	spec: BlockSpec,
+	options: MutationOptions = {},
 ) {
 	const blockHtml = await renderBlockHtml(spec, ctx.config);
-	await writeEditable(ctx, pathInput, (html) =>
-		insertBlock(html, null, atIndex, blockHtml),
+	const write = await writeEditable(
+		ctx,
+		pathInput,
+		(html) => insertBlock(html, null, atIndex, blockHtml),
+		options,
 	);
-	return { path: pathInput, atIndex };
+	return {
+		path: pathInput,
+		atIndex,
+		dryRun: write.dryRun,
+		...(write.dryRun && { previewContent: write.previewContent }),
+	};
 }
 
 /**
@@ -411,18 +483,28 @@ export async function blockInsert(
  * @param pathInput
  * @param index
  * @param spec
+ * @param options
  */
 export async function blockReplace(
 	ctx: CliContext,
 	pathInput: string,
 	index: number,
 	spec: BlockSpec,
+	options: MutationOptions = {},
 ) {
 	const blockHtml = await renderBlockHtml(spec, ctx.config);
-	await writeEditable(ctx, pathInput, (html) =>
-		replaceBlock(html, null, index, blockHtml),
+	const write = await writeEditable(
+		ctx,
+		pathInput,
+		(html) => replaceBlock(html, null, index, blockHtml),
+		options,
 	);
-	return { path: pathInput, index };
+	return {
+		path: pathInput,
+		index,
+		dryRun: write.dryRun,
+		...(write.dryRun && { previewContent: write.previewContent }),
+	};
 }
 
 /**
@@ -430,10 +512,30 @@ export async function blockReplace(
  * @param ctx
  * @param pathInput
  * @param index
+ * @param options
  */
-export async function blockDelete(ctx: CliContext, pathInput: string, index: number) {
-	await writeEditable(ctx, pathInput, (html) => deleteBlock(html, null, index));
-	return { path: pathInput, index, deleted: true };
+export async function blockDelete(
+	ctx: CliContext,
+	pathInput: string,
+	index: number,
+	options: MutationOptions = {},
+) {
+	const write = await writeEditable(
+		ctx,
+		pathInput,
+		(html) => deleteBlock(html, null, index),
+		options,
+	);
+	// No `deleted: bool` field — the operation was always "delete by index";
+	// success is implicit from a non-throwing return. The earlier shape
+	// `deleted: !dryRun` lied (it read 'the delete failed' when actually the
+	// dry-run preview succeeded).
+	return {
+		path: pathInput,
+		index,
+		dryRun: write.dryRun,
+		...(write.dryRun && { previewContent: write.previewContent }),
+	};
 }
 
 /**
@@ -442,15 +544,30 @@ export async function blockDelete(ctx: CliContext, pathInput: string, index: num
  * @param pathInput
  * @param from
  * @param to
+ * @param options
  */
 export async function blockMove(
 	ctx: CliContext,
 	pathInput: string,
 	from: number,
 	to: number,
+	options: MutationOptions = {},
 ) {
-	await writeEditable(ctx, pathInput, (html) => moveBlock(html, null, from, to));
-	return { path: pathInput, from, to, moved: true };
+	const write = await writeEditable(
+		ctx,
+		pathInput,
+		(html) => moveBlock(html, null, from, to),
+		options,
+	);
+	// No `moved: bool` — see the note on blockDelete. Non-throwing return is
+	// success; dryRun carries the rest.
+	return {
+		path: pathInput,
+		from,
+		to,
+		dryRun: write.dryRun,
+		...(write.dryRun && { previewContent: write.previewContent }),
+	};
 }
 
 // ------------------------------------------------ catalog / item ----
@@ -482,10 +599,17 @@ export function catalogGet(ctx: CliContext, name: string) {
 	for (const category of Object.keys(ctx.config.catalog)) {
 		for (const item of ctx.config.catalog[category] ?? []) {
 			if (item.definition.name === name) {
+				// Build a ready-to-insert spec template alongside the raw
+				// definition. The raw `definition.items` only carries item
+				// NAMES (e.g. [["title-h2"]]); agents previously had to know
+				// to wrap each entry as `{name, data: {...}}` with the right
+				// camelCased data keys. The template does that expansion for
+				// them so `block-insert --spec '<template>'` works as-is.
 				return {
 					category,
 					label: item.label,
 					definition: item.definition,
+					template: buildBlockSpecTemplate(item.definition),
 				};
 			}
 		}
@@ -515,13 +639,84 @@ export function itemSchema(itemName: string) {
 		editor?: string;
 		exportData?: (el: HTMLElement) => ItemData;
 	};
-	// Editor HTML describes the input fields; their `name` attributes become
-	// the keys of the item data. We surface the editor template verbatim so
-	// the agent can read it and infer required keys.
+	// `dataKeys` is the camelCased key set the runtime data record uses —
+	// derived from the item's *template* via frozen-patty (itemExport). The
+	// template's `data-bge=*` attributes are the source of truth at render
+	// time; the editor form's `name=` attributes happen to align for simple
+	// items but DIVERGE for wysiwyg / image (`bge-path[]`) / details etc.
 	return {
 		name: seed.name,
 		template: seed.template,
 		editor: seed.editor,
+		dataKeys: extractDataKeys(seed.template),
+	};
+}
+
+/**
+ * Derive the camelCase data-key set an item uses at render time by parsing
+ * its *template* via the project's own `itemExport` (frozen-patty). That is
+ * the actual contract — the runtime read/write goes through `data-bge=*`
+ * attributes on the template, NOT through the editor form's `name=`
+ * attributes. The two are conventionally aligned for simple items (e.g.
+ * `title-h2`), but diverge for items whose editor uses custom elements
+ * (`<bge-wysiwyg-editor>`), array-suffix names (`bge-path[]`), or computed
+ * fields that never appear in the rendered template.
+ * @param template item template HTML (may be undefined for items that
+ * have only an editor, like rare meta-items)
+ */
+function extractDataKeys(template: string | undefined): string[] {
+	if (!template) return [];
+	return Object.keys(itemExport(template));
+}
+
+/**
+ * Expand a catalog `BlockDefinition` into a ready-to-render `BlockSpec` —
+ * fills containerProps, replaces item name strings with `{name, data}`
+ * objects whose `data` is populated with all known camelCase keys set to
+ * empty strings.
+ * @param definition
+ * @param definition.name
+ * @param definition.containerProps
+ * @param definition.classList
+ * @param definition.style
+ * @param definition.items
+ */
+function buildBlockSpecTemplate(definition: {
+	readonly name: string;
+	readonly containerProps: Record<string, unknown>;
+	readonly classList?: readonly string[];
+	readonly style?: Record<string, string>;
+	readonly items: ReadonlyArray<ReadonlyArray<unknown>>;
+}): {
+	readonly catalog: string;
+	readonly containerProps: Record<string, unknown>;
+	readonly classList?: readonly string[];
+	readonly style?: Record<string, string>;
+	readonly items: unknown[][];
+} {
+	const expandedItems: unknown[][] = definition.items.map((group) =>
+		group.map((slot) => {
+			const itemName = typeof slot === 'string' ? slot : (slot as { name: string }).name;
+			const existingData =
+				typeof slot === 'string'
+					? {}
+					: ((slot as { data?: Record<string, unknown> }).data ?? {});
+			const seed = (defaultItems as Record<string, unknown>)[itemName];
+			const template = (seed as { template?: string } | undefined)?.template;
+			const dataKeys = extractDataKeys(template);
+			const data: Record<string, unknown> = { ...existingData };
+			for (const key of dataKeys) {
+				if (!(key in data)) data[key] = '';
+			}
+			return { name: itemName, data };
+		}),
+	);
+	return {
+		catalog: definition.name,
+		containerProps: { ...definition.containerProps },
+		...(definition.classList && { classList: definition.classList }),
+		...(definition.style && { style: definition.style }),
+		items: expandedItems,
 	};
 }
 

@@ -153,6 +153,59 @@ describe('catalog handlers', () => {
 		expect(result.label).toBe('テキスト');
 	});
 
+	test('catalogGet includes a ready-to-insert template with expanded items and data shape', () => {
+		// The raw `definition.items` is just item names; the `template`
+		// field expands each to `{name, data: {<camelKey>: ""}}` so an
+		// agent can pass it straight to `block-insert --spec` without
+		// reverse-engineering the dataKeys.
+		const result = catalogGet(ctx, 'h2');
+		expect(result.template).toMatchObject({
+			catalog: 'h2',
+			items: [[{ name: 'title-h2', data: { titleH2: '' } }]],
+		});
+		expect(result.template.containerProps).toBeDefined();
+	});
+
+	test('catalogGet template for the `wysiwyg` catalog expands the wysiwyg data slot (regression)', () => {
+		// Was broken in the editor-regex era: dataKeys for wysiwyg returned []
+		// because <bge-wysiwyg-editor> isn't <input|select|textarea>, so the
+		// template included `data: {}` and the agent's `block-insert --spec
+		// <template>` rendered an empty body.
+		const result = catalogGet(ctx, 'wysiwyg');
+		expect(result.template.items).toEqual([[{ name: 'wysiwyg', data: { wysiwyg: '' } }]]);
+	});
+
+	test('catalogGet template for the `image` catalog expands ALL image data-bge slots, no `[]` suffix', () => {
+		// Was broken: editor.html has name="bge-path[]" etc. and the old
+		// kebabToCamel preserved the brackets. Now driven by template
+		// data-bge, the data shape is the full frozen-patty key set.
+		const result = catalogGet(ctx, 'image');
+		const item = result.template.items[0]![0] as {
+			name: string;
+			data: Record<string, unknown>;
+		};
+		expect(item.name).toBe('image');
+		expect(Object.keys(item.data).toSorted()).toEqual([
+			'alt',
+			'aspectRatio',
+			'caption',
+			'command',
+			'height',
+			'href',
+			'loading',
+			'media',
+			'node',
+			'path',
+			'scale',
+			'scaleType',
+			'style',
+			'target',
+			'width',
+		]);
+		// No bracket suffix on any key — pin the format too.
+		expect(Object.keys(item.data).some((k) => k.includes('['))).toBe(false);
+	});
+
 	test('catalogGet throws on an unknown catalog name', () => {
 		expect(() => catalogGet(ctx, 'nope')).toThrow(/Unknown catalog block name: "nope"/);
 	});
@@ -171,6 +224,56 @@ describe('item handlers', () => {
 		expect(result.name).toBe('title-h2');
 		expect(result.template).toContain('data-bge="title-h2"');
 		expect(result.editor).toContain('name="bge-title-h2"');
+	});
+
+	test('itemSchema dataKeys derives from template data-bge attrs (the runtime contract)', () => {
+		// Pin the template-based derivation. For simple items editor.name and
+		// template.data-bge agree; for wysiwyg / image / details they diverge,
+		// and template is the source of truth.
+		expect(itemSchema('title-h2').dataKeys).toEqual(['titleH2']);
+		expect(itemSchema('hr').dataKeys).toEqual(['kind']);
+	});
+
+	test('itemSchema wysiwyg.dataKeys uses the template, not the <bge-wysiwyg-editor> custom element in editor.html', () => {
+		// Regression: the old editor-regex implementation matched only
+		// <input|select|textarea>, so wysiwyg.dataKeys was [] even though the
+		// runtime data key is 'wysiwyg' per <div data-bge="wysiwyg">.
+		const result = itemSchema('wysiwyg');
+		expect(result.dataKeys).toEqual(['wysiwyg']);
+	});
+
+	test('itemSchema image.dataKeys pins the exact frozen-patty key set (no `[]`, no missing slots)', () => {
+		// Regression: editor.html has name="bge-path[]" / "bge-alt[]" etc.;
+		// the old kebabToCamel preserved the literal `[]` suffix, producing
+		// invalid keys like 'path[]'. Pin the EXACT set so future frozen-patty
+		// changes that drop a key (or add a stray one) are caught.
+		const result = itemSchema('image');
+		expect([...result.dataKeys].toSorted()).toEqual([
+			'alt',
+			'aspectRatio',
+			'caption',
+			'command',
+			'height',
+			'href',
+			'loading',
+			'media',
+			'node',
+			'path',
+			'scale',
+			'scaleType',
+			'style',
+			'target',
+			'width',
+		]);
+	});
+
+	test('itemSchema details.dataKeys captures the bge-wysiwyg-editor content slot', () => {
+		// Regression: details has <bge-wysiwyg-editor name="bge-content"> which
+		// the old regex missed. Template-derived keys include 'content'.
+		const result = itemSchema('details');
+		expect(result.dataKeys).toContain('open');
+		expect(result.dataKeys).toContain('summary');
+		expect(result.dataKeys).toContain('content');
 	});
 
 	test('itemSchema throws on an unknown item name', () => {
@@ -202,6 +305,22 @@ describe('page handlers', () => {
 		expect(result.documentRoot).toBe(docRoot);
 		const names = result.tree.map((e) => e.name);
 		expect(names).toContain('about.html');
+	});
+
+	test('pageList surfaces invalidPages from the resolver context', async () => {
+		const ctxWithInvalid = {
+			...ctx,
+			invalidPages: [
+				{
+					file: '310010.html',
+					reason: 'missing-key' as const,
+					message: 'Front matter "path" missing in 310010.html',
+				},
+			],
+		};
+		const result = await pageList(ctxWithInvalid);
+		expect(result.invalidPages).toHaveLength(1);
+		expect(result.invalidPages[0]!.file).toBe('310010.html');
 	});
 
 	test('pageGet returns Front Matter and content', async () => {
@@ -352,6 +471,23 @@ describe('front matter handlers', () => {
 		const got = await frontMatterGet(ctx, 'about.html');
 		expect(got.frontMatter).toEqual({ description: 'desc' });
 	});
+
+	test('frontMatterSet rejects an array patch — bin.ts gate is not the only line of defense', async () => {
+		// MCP / programmatic callers bypass bin.ts. The handler itself must
+		// refuse arrays, otherwise the merge would silently write numeric-
+		// index keys ('0', '1', ...) into Front Matter.
+		await expect(
+			frontMatterSet(
+				ctx,
+				'about.html',
+				['a', 'b'] as unknown as Record<string, unknown>,
+				true,
+			),
+		).rejects.toThrow(/array/i);
+		// File must be untouched on rejection.
+		const got = await frontMatterGet(ctx, 'about.html');
+		expect(got.frontMatter).toEqual({ title: 'Test Page' });
+	});
 });
 
 describe('block handlers', () => {
@@ -417,6 +553,100 @@ describe('block handlers', () => {
 		await blockMove(ctx, 'about.html', 0, 1);
 		const result = await blockList(ctx, 'about.html');
 		expect(result.blocks.map((b) => b.data.name)).toEqual(['wysiwyg', 'h2']);
+	});
+});
+
+describe('mutation dry-run', () => {
+	test('blockInsert dry-run returns previewContent without writing to disk', async () => {
+		const before = await fs.readFile(path.join(docRoot, 'about.html'), 'utf8');
+		const result = await blockInsert(
+			ctx,
+			'about.html',
+			0,
+			{
+				catalog: 'h2',
+				items: [[{ name: 'title-h2', data: { titleH2: 'プレビュー' } }]],
+			},
+			{ dryRun: true },
+		);
+		expect(result.dryRun).toBe(true);
+		expect((result as { previewContent?: string }).previewContent).toContain(
+			'プレビュー',
+		);
+		// File on disk MUST be unchanged.
+		const after = await fs.readFile(path.join(docRoot, 'about.html'), 'utf8');
+		expect(after).toBe(before);
+	});
+
+	test('blockReplace dry-run preview shows the replacement but file is untouched', async () => {
+		const before = await fs.readFile(path.join(docRoot, 'about.html'), 'utf8');
+		const result = await blockReplace(
+			ctx,
+			'about.html',
+			0,
+			{
+				catalog: 'h2',
+				items: [[{ name: 'title-h2', data: { titleH2: 'preview-replace' } }]],
+			},
+			{ dryRun: true },
+		);
+		expect(result.dryRun).toBe(true);
+		expect((result as { previewContent?: string }).previewContent).toContain(
+			'preview-replace',
+		);
+		const after = await fs.readFile(path.join(docRoot, 'about.html'), 'utf8');
+		expect(after).toBe(before);
+	});
+
+	test('blockDelete dry-run preview omits the targeted block but file is untouched', async () => {
+		const before = await fs.readFile(path.join(docRoot, 'about.html'), 'utf8');
+		const result = await blockDelete(ctx, 'about.html', 0, { dryRun: true });
+		expect(result.dryRun).toBe(true);
+		// No `deleted` field on the result — the previous `deleted: !dryRun`
+		// shape lied about a successful preview.
+		expect((result as { deleted?: boolean }).deleted).toBeUndefined();
+		expect((result as { previewContent?: string }).previewContent).not.toContain(
+			'最初の見出し',
+		);
+		const after = await fs.readFile(path.join(docRoot, 'about.html'), 'utf8');
+		expect(after).toBe(before);
+	});
+
+	test('blockMove dry-run preview reorders but file is untouched', async () => {
+		const before = await fs.readFile(path.join(docRoot, 'about.html'), 'utf8');
+		const result = await blockMove(ctx, 'about.html', 0, 1, { dryRun: true });
+		expect(result.dryRun).toBe(true);
+		// No `moved` field — symmetric to blockDelete's removal of `deleted`.
+		expect((result as { moved?: boolean }).moved).toBeUndefined();
+		const after = await fs.readFile(path.join(docRoot, 'about.html'), 'utf8');
+		expect(after).toBe(before);
+	});
+
+	test('dry-run on a non-existent page throws (must not create the file as a side effect)', async () => {
+		const newPath = path.join(docRoot, 'never-existed.html');
+		await expect(
+			blockInsert(
+				ctx,
+				'never-existed.html',
+				0,
+				{ catalog: 'h2', items: [[{ name: 'title-h2', data: { titleH2: 'x' } }]] },
+				{ dryRun: true },
+			),
+		).rejects.toThrow(/non-existent page/);
+		await expect(fs.access(newPath)).rejects.toThrow();
+	});
+
+	test('dry-run defaults to false so existing callers keep writing', async () => {
+		const result = await blockInsert(ctx, 'about.html', 0, {
+			catalog: 'h2',
+			items: [[{ name: 'title-h2', data: { titleH2: '実書き込み' } }]],
+		});
+		expect(result.dryRun).toBe(false);
+		// previewContent is not included on the success path.
+		expect((result as { previewContent?: string }).previewContent).toBeUndefined();
+		// Verify the file was actually written.
+		const after = await fs.readFile(path.join(docRoot, 'about.html'), 'utf8');
+		expect(after).toContain('実書き込み');
 	});
 });
 

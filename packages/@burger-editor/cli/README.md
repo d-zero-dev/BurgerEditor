@@ -42,26 +42,37 @@ npx @burger-editor/cli <subcommand> [args] [flags]
 
 ### ブロック操作
 
-| コマンド                                     | 説明                                                                              |
-| -------------------------------------------- | --------------------------------------------------------------------------------- |
-| `block-list <path>`                          | 各ブロックのメタ + 構造化されたアイテムデータを返す（`{index, data, html}[]`）    |
-| `block-get <path> <index>`                   | 単一ブロックを返す                                                                |
-| `block-insert <path> <atIndex> [--spec ...]` | atIndex 位置に挿入（0 = 先頭、大きな値 = 末尾）                                   |
-| `block-replace <path> <index> [--spec ...]`  | 指定 index のブロックを置き換え                                                   |
-| `block-delete <path> <index>`                | 削除                                                                              |
-| `block-move <path> <from> <to>`              | 移動。`to` は **移動後の最終配列における index**（`Array.prototype.splice` 慣用） |
+| コマンド                                                 | 説明                                                                              |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `block-list <path>`                                      | 各ブロックのメタ + 構造化されたアイテムデータを返す（`{index, data, html}[]`）    |
+| `block-get <path> <index>`                               | 単一ブロックを返す                                                                |
+| `block-insert <path> <atIndex> [--spec ...] [--dry-run]` | atIndex 位置に挿入（0 = 先頭、大きな値 = 末尾）                                   |
+| `block-replace <path> <index> [--spec ...] [--dry-run]`  | 指定 index のブロックを置き換え                                                   |
+| `block-delete <path> <index> [--dry-run]`                | 削除                                                                              |
+| `block-move <path> <from> <to> [--dry-run]`              | 移動。`to` は **移動後の最終配列における index**（`Array.prototype.splice` 慣用） |
+
+#### `--dry-run`（プレビュー）
+
+書き込み系コマンドはすべて `--dry-run` を受け付けます。ファイルを更新せず、書き込まれるはずの編集可能領域 HTML を `previewContent` に入れて返します。CI / レビュー差分プレビュー用途を想定。
+
+```bash
+npx @burger-editor/cli block-insert about.html 0 --dry-run --spec '{...}'
+# → { "path": "about.html", "atIndex": 0, "dryRun": true, "previewContent": "<...>" }
+```
+
+**注意**: dryRun は副作用なし。対象ページが存在しないと「Cannot dry-run mutation on a non-existent page」エラーを返します（旧版で空ファイルが残る不具合を防ぐため）。
 
 ### スキーマ・参照
 
-| コマンド                 | 説明                                                                  |
-| ------------------------ | --------------------------------------------------------------------- |
-| `catalog-list`           | プロジェクト設定で使えるブロックカタログ一覧                          |
-| `catalog-get <name>`     | 単一カタログ定義                                                      |
-| `item-list`              | 標準アイテム名一覧                                                    |
-| `item-schema <name>`     | アイテムの template / editor HTML（データキー推定用）                 |
-| `style-options-list`     | プロジェクト CSS から抽出した `--bge-options-<軸>--<バリアント>` 一覧 |
-| `container-options-list` | 静的なコンテナレイアウト選択肢（grid/inline/float）                   |
-| `config-resolve`         | 解決済み config の要約                                                |
+| コマンド                 | 説明                                                                                |
+| ------------------------ | ----------------------------------------------------------------------------------- |
+| `catalog-list`           | プロジェクト設定で使えるブロックカタログ一覧                                        |
+| `catalog-get <name>`     | 単一カタログ定義 + そのまま `block-insert --spec` に渡せる `template` 雛形          |
+| `item-list`              | 標準アイテム名一覧                                                                  |
+| `item-schema <name>`     | アイテムの template / editor HTML + テンプレート由来の `dataKeys: [camelCase, ...]` |
+| `style-options-list`     | プロジェクト CSS から抽出した `--bge-options-<軸>--<バリアント>` 一覧               |
+| `container-options-list` | 静的なコンテナレイアウト選択肢（grid/inline/float）                                 |
+| `config-resolve`         | 解決済み config の要約                                                              |
 
 ## block spec の渡し方
 
@@ -111,6 +122,38 @@ npx @burger-editor/cli page-get /about.html       # 同じ
 npx @burger-editor/cli page-get foo/bar.html       # 仮想ツリー有効時は logical path として lookup
 npx @burger-editor/cli page-get /                  # → documentRoot/<indexFileName>
 ```
+
+## `invalidPages` — 壊れた / 移行待ちページの surface
+
+`virtualTree.enabled: true` のプロジェクトで `pathKey` Front Matter を持たないファイル（移行待ちの legacy stub 等）があると、4.0.0-alpha.68 以降 **CLI / MCP は停止せずスキップ** します。エージェントの視界から消えないよう、`page-list` の戻り値に `invalidPages` 配列が含まれます。
+
+```json
+{
+	"tree": [
+		/* ... */
+	],
+	"documentRoot": "...",
+	"invalidPages": [{ "file": "1.html", "reason": "missing-key", "message": "..." }]
+}
+```
+
+`reason` は `'missing-key' | 'invalid-type' | 'empty-path'` のいずれか。**I/O エラー（EACCES, EBUSY, EIO 等）は常に伝搬** し、`invalidPages` には入りません（オペレーション上の障害は dirt ではないため silent mask しない）。
+
+ローカルサーバーのブート時のように「Front Matter が壊れていたら止めたい」場合は、内部で `loadResolverState(..., { strict: true })` を直接呼ぶことで strict 挙動に切り替えられます。
+
+## `dataKeys` — 確定 camelCase キーセット
+
+`item-schema <name>` の戻り値に含まれる `dataKeys` は、アイテムの **template HTML 内の `data-bge=*` 属性** から導出された camelCase キー一覧です（frozen-patty 経由）。
+
+```bash
+npx @burger-editor/cli item-schema image
+# → { name: "image", template: "...", editor: "...",
+#      dataKeys: ["alt","aspectRatio","caption","command","height","href",
+#                 "loading","media","node","path","scale","scaleType",
+#                 "style","target","width"] }
+```
+
+**重要**: editor.html 内の `<input name="bge-...">` ではなく、template.html 内の `data-bge=*` が真の contract です。両者は単純なアイテムでは一致しますが、`wysiwyg`（カスタム要素）や `image`（`bge-path[]` の配列名）などでは divergeします。template 由来を使うことで全アイテムで agent が確実なキー集合を得られます。
 
 ## stdout / stderr の契約
 

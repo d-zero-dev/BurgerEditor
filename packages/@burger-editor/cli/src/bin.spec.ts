@@ -154,6 +154,114 @@ describe('bin.js end-to-end', () => {
 		expect(payload.blocks[0]!.data.items[0]![0]!.data.titleH2).toBe('stdin 見出し');
 	}, 30_000);
 
+	test('block-insert accepts --spec-file AFTER positional args (roar camelCase flag contract)', async () => {
+		// Regression: an earlier release defined the flag as `'spec-file'`
+		// (kebab) in roar, which roar silently dropped — `--spec-file ...`
+		// after positionals appeared to do nothing and the CLI errored
+		// with "block-insert requires a JSON block spec." This test pins
+		// that the flag now reaches the handler.
+		const specFile = path.join(FIXTURE_ROOT, 'h2-via-file.json');
+		await fs.writeFile(
+			specFile,
+			JSON.stringify({
+				catalog: 'h2',
+				items: [[{ name: 'title-h2', data: { titleH2: 'via spec-file' } }]],
+			}),
+			'utf8',
+		);
+		await fs.writeFile(
+			path.join(docRoot, 'spec-file-target.html'),
+			`<div class="content"></div>`,
+			'utf8',
+		);
+		const result = await run([
+			'block-insert',
+			'spec-file-target.html',
+			'0',
+			'--spec-file',
+			specFile,
+		]);
+		expect(result.code).toBe(0);
+		const list = await run(['block-list', 'spec-file-target.html']);
+		const payload = JSON.parse(list.stdout) as {
+			blocks: { data: { items: { data: { titleH2?: string } }[][] } }[];
+		};
+		expect(payload.blocks).toHaveLength(1);
+		expect(payload.blocks[0]!.data.items[0]![0]!.data.titleH2).toBe('via spec-file');
+	}, 30_000);
+
+	test('block-insert --dry-run returns previewContent and does not write the file', async () => {
+		await fs.writeFile(
+			path.join(docRoot, 'dryrun-target.html'),
+			`<div class="content"></div>`,
+			'utf8',
+		);
+		const before = await fs.readFile(path.join(docRoot, 'dryrun-target.html'), 'utf8');
+		const result = await run([
+			'block-insert',
+			'dryrun-target.html',
+			'0',
+			'--dry-run',
+			'--spec',
+			JSON.stringify({
+				catalog: 'h2',
+				items: [[{ name: 'title-h2', data: { titleH2: 'preview only' } }]],
+			}),
+		]);
+		expect(result.code).toBe(0);
+		const payload = JSON.parse(result.stdout) as {
+			dryRun: boolean;
+			previewContent: string;
+		};
+		expect(payload.dryRun).toBe(true);
+		expect(payload.previewContent).toContain('preview only');
+		const after = await fs.readFile(path.join(docRoot, 'dryrun-target.html'), 'utf8');
+		expect(after).toBe(before);
+	}, 30_000);
+
+	test('block-insert rejects an array spec at the top level (expectBlockSpec gate)', async () => {
+		// Regression: previously `as BlockSpec` cast passed arrays straight
+		// through to renderBlockHtml; users saw an obscure deep crash. The
+		// expectBlockSpec helper must intercept BEFORE the handler.
+		const result = await run(['block-insert', 'about.html', '0', '--spec', '[1,2,3]']);
+		expect(result.code).not.toBe(0);
+		// The error must specifically call out the array shape so the user
+		// knows to wrap their JSON in `{}` — a generic "spec is wrong"
+		// message would leave them debugging deeper.
+		expect(result.stderr.toLowerCase()).toContain('array');
+	}, 20_000);
+
+	test('block-insert rejects a JSON primitive spec (e.g. `0`) without crashing inside the renderer', async () => {
+		const result = await run(['block-insert', 'about.html', '0', '--spec', '0']);
+		expect(result.code).not.toBe(0);
+		// "got number" or "JSON object" both acceptable — the point is the
+		// rejection happens at the boundary, not inside renderBlockHtml.
+		expect(result.stderr.toLowerCase()).toMatch(/number|json object/);
+	}, 20_000);
+
+	test('block-insert --spec null reaches expectBlockSpec, NOT the "no source" diagnostic', async () => {
+		// Regression: resolveSpecForCommand used to branch on
+		// `value === null`, which conflated "no source given" with
+		// "user explicitly passed null". The new contract: deliberate
+		// `--spec null` falls through to expectBlockSpec, which throws
+		// "got null". The "Checked: --spec absent; ..." message MUST NOT
+		// appear because --spec was, in fact, supplied.
+		const result = await run(['block-insert', 'about.html', '0', '--spec', 'null']);
+		expect(result.code).not.toBe(0);
+		expect(result.stderr.toLowerCase()).toContain('null');
+		expect(result.stderr).not.toContain('Checked: --spec absent');
+	}, 20_000);
+
+	test('front-matter-set rejects an array spec — `typeof [] === "object"` would otherwise corrupt FM', async () => {
+		// Regression: `typeof patch !== 'object' || patch === null` admits
+		// arrays. Without the Array.isArray gate, the merge would write
+		// numeric-string keys ('0','1',...) into Front Matter and silently
+		// corrupt the file.
+		const result = await run(['front-matter-set', 'about.html', '--spec', '["a","b"]']);
+		expect(result.code).not.toBe(0);
+		expect(result.stderr.toLowerCase()).toContain('array');
+	}, 20_000);
+
 	test('unknown command exits non-zero and prints an error to stderr', async () => {
 		const result = await run(['this-command-does-not-exist']);
 		expect(result.code).not.toBe(0);

@@ -51,39 +51,42 @@ describe('resolveSpec', () => {
 		// re-order things).
 	});
 
-	test('--spec inline JSON wins over --spec-file and stdin', async () => {
+	test('--spec inline JSON wins over --spec-file and stdin (source: inline)', async () => {
 		const filePath = path.join(FIXTURE_ROOT, 'never.json');
 		await fs.writeFile(filePath, JSON.stringify({ source: 'file' }), 'utf8');
 		const result = await withMockStdin(false, JSON.stringify({ source: 'stdin' }), () =>
 			resolveSpec(JSON.stringify({ source: 'inline' }), filePath),
 		);
-		expect(result).toEqual({ source: 'inline' });
+		expect(result.source).toBe('inline');
+		expect(result.value).toEqual({ source: 'inline' });
 	});
 
-	test('--spec-file is used when --spec is absent', async () => {
+	test('--spec-file is used when --spec is absent (source: file)', async () => {
 		const filePath = path.join(FIXTURE_ROOT, 'fromfile.json');
 		await fs.writeFile(filePath, JSON.stringify({ source: 'file', n: 7 }), 'utf8');
 		const result = await withMockStdin(false, JSON.stringify({ source: 'stdin' }), () =>
 			resolveSpec(undefined, filePath),
 		);
-		expect(result).toEqual({ source: 'file', n: 7 });
+		expect(result.source).toBe('file');
+		expect(result.value).toEqual({ source: 'file', n: 7 });
 	});
 
-	test('stdin is consumed only when both --spec and --spec-file are absent', async () => {
+	test('stdin is consumed only when both --spec and --spec-file are absent (source: stdin)', async () => {
 		const result = await withMockStdin(false, JSON.stringify({ source: 'stdin' }), () =>
 			resolveSpec(),
 		);
-		expect(result).toEqual({ source: 'stdin' });
+		expect(result.source).toBe('stdin');
+		expect(result.value).toEqual({ source: 'stdin' });
 	});
 
-	test('returns null when no source is provided and stdin is a TTY', async () => {
+	test('returns {value: null, source: "none"} when no source is provided and stdin is a TTY', async () => {
 		const result = await withMockStdin(true, null, () => resolveSpec());
-		expect(result).toBeNull();
+		expect(result).toEqual({ value: null, source: 'none' });
 	});
 
-	test('returns null when stdin is piped but empty', async () => {
+	test('returns {value: null, source: "none"} when stdin is piped but empty', async () => {
 		const result = await withMockStdin(false, '', () => resolveSpec());
-		expect(result).toBeNull();
+		expect(result).toEqual({ value: null, source: 'none' });
 	});
 
 	test('propagates JSON parse errors from --spec', async () => {
