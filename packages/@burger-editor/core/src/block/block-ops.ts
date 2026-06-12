@@ -1,6 +1,7 @@
 import type { BlockData } from '../types.js';
 
 import {
+	collectCandidateSelectors,
 	extractContentFromHtml,
 	isFullHtmlDocument,
 	updateHtmlContent,
@@ -46,7 +47,7 @@ function withEditableScope<T>(
 	const scopeSelector = editableArea === null ? '[data-bge-temp-scope]' : selector;
 	const scope = doc.querySelector<HTMLElement>(scopeSelector);
 	if (!scope) {
-		return new NoEditableAreaError(selector);
+		return new NoEditableAreaError(selector, collectCandidateSelectors(doc));
 	}
 
 	const blocks = [...scope.querySelectorAll<HTMLElement>(`:scope > ${BLOCK_SELECTOR}`)];
@@ -109,7 +110,7 @@ function rewriteScope(
 		const doc = new DOMParser().parseFromString(wrapped, 'text/html');
 		const scope = doc.querySelector<HTMLElement>('[data-bge-temp-scope]');
 		if (!scope) {
-			return new NoEditableAreaError('document');
+			return new NoEditableAreaError('document', collectCandidateSelectors(doc));
 		}
 		const blocks = [...scope.querySelectorAll<HTMLElement>(`:scope > ${BLOCK_SELECTOR}`)];
 		mutate(blocks, scope);
@@ -126,7 +127,7 @@ function rewriteScope(
 	const doc = new DOMParser().parseFromString(wrapped, 'text/html');
 	const scope = doc.querySelector<HTMLElement>('[data-bge-temp-scope]');
 	if (!scope) {
-		return new NoEditableAreaError(editableArea);
+		return new NoEditableAreaError(editableArea, collectCandidateSelectors(doc));
 	}
 	const blocks = [...scope.querySelectorAll<HTMLElement>(`:scope > ${BLOCK_SELECTOR}`)];
 	mutate(blocks, scope);

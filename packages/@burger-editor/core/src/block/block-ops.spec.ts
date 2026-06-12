@@ -49,6 +49,28 @@ describe('block-ops', () => {
 		expect(result).toBeInstanceOf(NoEditableAreaError);
 	});
 
+	test('listBlocks NoEditableAreaError carries candidate selectors (recovery hint for typoed editableArea)', () => {
+		// Regression: block-ops used to call `new NoEditableAreaError(selector)`
+		// without candidates, so the "did you mean?" hint that file-io
+		// surfaces was absent here. Now wired through collectCandidateSelectors.
+		const html = `<header id="site-header"></header><main class="content"></main><aside class="sidebar"></aside>`;
+		const result = listBlocks(html, '.contnet');
+		expect(result).toBeInstanceOf(NoEditableAreaError);
+		const candidates = (result as NoEditableAreaError).candidates;
+		expect(candidates).toEqual(
+			expect.arrayContaining(['#site-header', '.content', '.sidebar']),
+		);
+	});
+
+	test('insertBlock NoEditableAreaError carries candidates so agents can recover from a typo', () => {
+		const html = `<main class="real"></main><nav class="menu"></nav>`;
+		const result = insertBlock(html, '.typo', 0, NEW_BLOCK_HTML);
+		expect(result).toBeInstanceOf(NoEditableAreaError);
+		expect((result as NoEditableAreaError).candidates).toEqual(
+			expect.arrayContaining(['.real', '.menu']),
+		);
+	});
+
 	test('getBlock retrieves a specific block', () => {
 		const result = getBlock(SAMPLE_HTML, '.content', 1);
 		expect(result).not.toBeInstanceOf(NoEditableAreaError);

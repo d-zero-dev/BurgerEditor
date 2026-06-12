@@ -21,6 +21,41 @@ function parseHtml(htmlContent: string): Document {
 }
 
 /**
+ * Walk the body's descendant elements and collect selectors that *do* match,
+ * up to `limit`. Used to surface "did you mean…?" hints alongside
+ * `NoEditableAreaError` so a typo in `editableArea` isn't a dead end.
+ *
+ * Prefers selectors that look like editable-area roots: id, then class on a
+ * top-level element. Falls back to tag-with-class on shallow descendants.
+ * @param doc
+ * @param limit
+ */
+export function collectCandidateSelectors(doc: Document, limit = 5): string[] {
+	const out = new Set<string>();
+	const root = doc.body ?? doc.documentElement;
+	if (!root) return [];
+	// Walk top-level + one level deep.
+	const candidates: Element[] = [];
+	for (const top of root.children) {
+		candidates.push(top);
+		for (const child of top.children) candidates.push(child);
+		if (candidates.length > 30) break;
+	}
+	for (const el of candidates) {
+		if (out.size >= limit) break;
+		if (el.id) {
+			out.add(`#${el.id}`);
+			continue;
+		}
+		const cls = [...el.classList][0];
+		if (cls) {
+			out.add(`.${cls}`);
+		}
+	}
+	return [...out];
+}
+
+/**
  *
  * @param doc
  */
@@ -90,7 +125,7 @@ function extractFromFullDocument(
 	const doc = parseHtml(htmlContent);
 	const element = doc.querySelector(selector);
 	if (!element) {
-		throw new NoEditableAreaError(selector);
+		throw new NoEditableAreaError(selector, collectCandidateSelectors(doc));
 	}
 	return { content: element.innerHTML, isFullDocument: true };
 }
@@ -108,7 +143,7 @@ function extractFromFragment(
 	const doc = parseHtml(tempHtml);
 	const element = doc.querySelector(selector);
 	if (!element) {
-		throw new NoEditableAreaError(selector);
+		throw new NoEditableAreaError(selector, collectCandidateSelectors(doc));
 	}
 	return { content: element.innerHTML, isFullDocument: false };
 }
@@ -146,7 +181,7 @@ function updateFullDocument(
 	// editableArea fails loudly instead of silently rewriting the entire
 	// <body> (which would destroy header / nav / scripts / etc.).
 	if (!element) {
-		throw new NoEditableAreaError(selector);
+		throw new NoEditableAreaError(selector, collectCandidateSelectors(doc));
 	}
 	element.innerHTML = newContent;
 	return serializeDocument(doc);
@@ -167,7 +202,7 @@ function updateFragment(
 	const doc = parseHtml(tempHtml);
 	const element = doc.querySelector(selector);
 	if (!element) {
-		throw new NoEditableAreaError(selector);
+		throw new NoEditableAreaError(selector, collectCandidateSelectors(doc));
 	}
 	element.innerHTML = newContent;
 	return doc.body.innerHTML;

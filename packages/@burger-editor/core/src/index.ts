@@ -26,6 +26,7 @@ export {
 	isFrontMatterChanged,
 } from './document/front-matter.js';
 export {
+	collectCandidateSelectors,
 	isFullHtmlDocument,
 	extractContentFromHtml,
 	updateHtmlContent,
