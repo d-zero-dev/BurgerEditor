@@ -176,52 +176,78 @@ export default function registerV4Tools(server: McpServer) {
 			asText(await withContext((ctx) => h.blockGet(ctx, path, index))),
 	);
 
+	const dryRunArg = z
+		.boolean()
+		.optional()
+		.describe(
+			'Compute the would-be HTML but do not write — preview content returned alongside result',
+		);
+
 	server.tool(
 		'block_insert',
-		'Insert a block at a given index (use 0 to prepend, large value to append)',
+		'Insert a block at a given index (use 0 to prepend, large value to append). Set dryRun=true to preview without writing.',
 		{
 			path: pathArg,
 			atIndex: z.number().int().nonnegative(),
 			spec: blockSpecSchema,
+			dryRun: dryRunArg,
 		},
-		async ({ path, atIndex, spec }) =>
+		async ({ path, atIndex, spec, dryRun }) =>
 			asText(
-				await withContext((ctx) => h.blockInsert(ctx, path, atIndex, spec as BlockSpec)),
+				await withContext((ctx) =>
+					h.blockInsert(ctx, path, atIndex, spec as BlockSpec, {
+						dryRun: Boolean(dryRun),
+					}),
+				),
 			),
 	);
 
 	server.tool(
 		'block_replace',
-		'Replace a block at a given index',
+		'Replace a block at a given index. Set dryRun=true to preview without writing.',
 		{
 			path: pathArg,
 			index: z.number().int().nonnegative(),
 			spec: blockSpecSchema,
+			dryRun: dryRunArg,
 		},
-		async ({ path, index, spec }) =>
+		async ({ path, index, spec, dryRun }) =>
 			asText(
-				await withContext((ctx) => h.blockReplace(ctx, path, index, spec as BlockSpec)),
+				await withContext((ctx) =>
+					h.blockReplace(ctx, path, index, spec as BlockSpec, {
+						dryRun: Boolean(dryRun),
+					}),
+				),
 			),
 	);
 
 	server.tool(
 		'block_delete',
-		'Delete a block at a given index',
-		{ path: pathArg, index: z.number().int().nonnegative() },
-		async ({ path, index }) =>
-			asText(await withContext((ctx) => h.blockDelete(ctx, path, index))),
+		'Delete a block at a given index. Set dryRun=true to preview without writing.',
+		{ path: pathArg, index: z.number().int().nonnegative(), dryRun: dryRunArg },
+		async ({ path, index, dryRun }) =>
+			asText(
+				await withContext((ctx) =>
+					h.blockDelete(ctx, path, index, { dryRun: Boolean(dryRun) }),
+				),
+			),
 	);
 
 	server.tool(
 		'block_move',
-		'Move a block from one index to another',
+		'Move a block from one index to another. `to` is the destination in the FINAL list (splice convention). Set dryRun=true to preview.',
 		{
 			path: pathArg,
 			from: z.number().int().nonnegative(),
 			to: z.number().int().nonnegative(),
+			dryRun: dryRunArg,
 		},
-		async ({ path, from, to }) =>
-			asText(await withContext((ctx) => h.blockMove(ctx, path, from, to))),
+		async ({ path, from, to, dryRun }) =>
+			asText(
+				await withContext((ctx) =>
+					h.blockMove(ctx, path, from, to, { dryRun: Boolean(dryRun) }),
+				),
+			),
 	);
 
 	// ----- catalog / item
@@ -275,9 +301,9 @@ export default function registerV4Tools(server: McpServer) {
 
 	server.tool(
 		'duplicate_block',
-		'Duplicate a block (block-get followed by block-insert after the original)',
-		{ path: pathArg, index: z.number().int().nonnegative() },
-		async ({ path, index }) =>
+		'Duplicate a block (block-get followed by block-insert after the original). Set dryRun=true to preview without writing.',
+		{ path: pathArg, index: z.number().int().nonnegative(), dryRun: dryRunArg },
+		async ({ path, index, dryRun }) =>
 			asText(
 				await withContext(async (ctx) => {
 					const got = await h.blockGet(ctx, path, index);
@@ -286,14 +312,16 @@ export default function registerV4Tools(server: McpServer) {
 					// by the type system — the rendered insertion is id-free
 					// and cannot collide with the original.
 					const spec: BlockSpec = { ...got.block.data };
-					return await h.blockInsert(ctx, path, index + 1, spec);
+					return await h.blockInsert(ctx, path, index + 1, spec, {
+						dryRun: Boolean(dryRun),
+					});
 				}),
 			),
 	);
 
 	server.tool(
 		'update_page',
-		'Apply multiple block operations to a page sequentially. Each operation runs against the latest state; downstream indexes shift as you insert/delete.',
+		'Apply multiple block operations to a page sequentially. Each operation runs against the latest state; downstream indexes shift as you insert/delete. Does NOT support dryRun — each step writes before the next is computed; for a preview, run individual block_* tools with dryRun.',
 		{
 			path: pathArg,
 			operations: z

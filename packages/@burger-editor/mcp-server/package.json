@@ -14,7 +14,8 @@
 	},
 	"type": "module",
 	"bin": {
-		"bge-mcp-server": "./bin/mcp-server.js"
+		"@burger-editor/mcp-server": "./bin/index.js",
+		"bge-mcp-server": "./bin/index.js"
 	},
 	"exports": {
 		".": {
@@ -39,7 +40,9 @@
 		"@burger-editor/migrator": "4.0.0-alpha.67",
 		"@burger-editor/utils": "4.0.0-alpha.67",
 		"@modelcontextprotocol/sdk": "1.27.1",
-		"vitest": "4.0.18",
 		"zod": "4.3.6"
+	},
+	"devDependencies": {
+		"vitest": "4.0.18"
 	}
 }

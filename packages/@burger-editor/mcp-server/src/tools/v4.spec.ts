@@ -177,6 +177,64 @@ describe('registerV4Tools — schema rejections', () => {
 	});
 });
 
+describe('registerV4Tools — mutation dryRun forwarding (transport-level shape)', () => {
+	test('block_delete dryRun payload omits the `deleted` field (regression: was deleted:false on success)', async () => {
+		// The handler now omits the `deleted` boolean entirely under dryRun
+		// because `deleted: !dryRun` lied about preview success. Pin the wire
+		// shape so a regression that re-adds the field is caught at the MCP
+		// boundary, not just inside the cli handler tests.
+		const result = (await client.callTool({
+			name: 'block_delete',
+			arguments: { path: 'index.html', index: 0, dryRun: true },
+		})) as { content: { type: 'text'; text: string }[] };
+		const payload = JSON.parse(result.content[0]!.text) as Record<string, unknown>;
+		expect(payload.dryRun).toBe(true);
+		expect(payload).not.toHaveProperty('deleted');
+	});
+
+	test('block_move dryRun payload omits the `moved` field', async () => {
+		const result = (await client.callTool({
+			name: 'block_move',
+			arguments: { path: 'index.html', from: 0, to: 0, dryRun: true },
+		})) as { content: { type: 'text'; text: string }[] };
+		const payload = JSON.parse(result.content[0]!.text) as Record<string, unknown>;
+		expect(payload.dryRun).toBe(true);
+		expect(payload).not.toHaveProperty('moved');
+	});
+
+	test('duplicate_block dryRun returns previewContent and does not mutate the page', async () => {
+		// Regression: duplicate_block didn't accept dryRun; an agent reading
+		// the SKILL.md table reasonably assumed it did and would have written
+		// to disk. Now wired through.
+		const before = (await client.callTool({
+			name: 'block_list',
+			arguments: { path: 'index.html' },
+		})) as { content: { type: 'text'; text: string }[] };
+		const beforeCount = (JSON.parse(before.content[0]!.text) as { blocks: unknown[] })
+			.blocks.length;
+
+		const result = (await client.callTool({
+			name: 'duplicate_block',
+			arguments: { path: 'index.html', index: 0, dryRun: true },
+		})) as { content: { type: 'text'; text: string }[] };
+		const payload = JSON.parse(result.content[0]!.text) as {
+			dryRun: boolean;
+			previewContent?: string;
+		};
+		expect(payload.dryRun).toBe(true);
+		expect(payload.previewContent).toBeDefined();
+
+		// File untouched: block count stays the same.
+		const after = (await client.callTool({
+			name: 'block_list',
+			arguments: { path: 'index.html' },
+		})) as { content: { type: 'text'; text: string }[] };
+		const afterCount = (JSON.parse(after.content[0]!.text) as { blocks: unknown[] })
+			.blocks.length;
+		expect(afterCount).toBe(beforeCount);
+	});
+});
+
 describe('registerV4Tools — context caching', () => {
 	afterEach(() => {
 		vi.restoreAllMocks();
