@@ -50,12 +50,59 @@ npx @burger-editor/cli <subcommand>
 | **実パス / バーチャルパス** | `virtualTree.enabled: true` 時は Front Matter の `path` で論理パスを使う。CLI/MCP はどちらも受ける              |
 | **スタイル軸**              | `--bge-options-<軸>--<バリアント>` というプロジェクト CSS カスタムプロパティで定義。`style_options_list` で取得 |
 
-## 主要 MCP ツール（CLI と 1:1）
+## 主要ツール — CLI と MCP の対応表
 
-- 読み: `page_list`, `page_get`, `block_list`, `block_get`, `catalog_list`, `catalog_get`, `item_list`, `item_schema`, `style_options_list`, `container_options_list`, `config_resolve`, `front_matter_get`
-- 書き: `page_create`, `page_delete`, `page_rename`, `page_copy`, `page_concat`, `front_matter_set`, `block_insert`, `block_replace`, `block_delete`, `block_move`, `duplicate_block`, `update_page`
+CLI（kebab-case）と MCP ツール（snake_case）は **同じ機能の表記違い** です。同じ行同士が同一機能。
 
-高レベル: `update_page` は複数の `block_*` 操作を一気に流せます。`page_create` は初期ブロックの配列を任意で受けます。
+| CLI（`npx @burger-editor/cli ...`） | MCP ツール               | 種別                                                      |
+| ----------------------------------- | ------------------------ | --------------------------------------------------------- |
+| `page-list`                         | `page_list`              | 読み — `invalidPages` も返す                              |
+| `page-get <path>`                   | `page_get`               | 読み                                                      |
+| `page-create <path>`                | `page_create`            | 書き — atomic、初期ブロック可                             |
+| `page-delete <path>`                | `page_delete`            | 書き                                                      |
+| `page-rename <from> <to>`           | `page_rename`            | 書き                                                      |
+| `page-copy <from> <to>`             | `page_copy`              | 書き                                                      |
+| `page-concat <target> <source...>`  | `page_concat`            | 書き — source は 1 つ以上必須                             |
+| `front-matter-get <path>`           | `front_matter_get`       | 読み                                                      |
+| `front-matter-set <path>`           | `front_matter_set`       | 書き — `--replace` で全置換                               |
+| `block-list <path>`                 | `block_list`             | 読み — `{index, data, html}[]`                            |
+| `block-get <path> <index>`          | `block_get`              | 読み                                                      |
+| `block-insert <path> <atIndex>`     | `block_insert`           | 書き — `--dry-run` 可                                     |
+| `block-replace <path> <index>`      | `block_replace`          | 書き — `--dry-run` 可                                     |
+| `block-delete <path> <index>`       | `block_delete`           | 書き — `--dry-run` 可                                     |
+| `block-move <path> <from> <to>`     | `block_move`             | 書き — `--dry-run` 可 / `to` は最終配列 index             |
+| `catalog-list`                      | `catalog_list`           | 読み                                                      |
+| `catalog-get <name>`                | `catalog_get`            | 読み — `template` 付き（spec として直渡し可）             |
+| `item-list`                         | `item_list`              | 読み                                                      |
+| `item-schema <name>`                | `item_schema`            | 読み — `dataKeys: [camelCase, ...]` 付き                  |
+| `style-options-list`                | `style_options_list`     | 読み                                                      |
+| `container-options-list`            | `container_options_list` | 読み                                                      |
+| `config-resolve`                    | `config_resolve`         | 読み                                                      |
+| （CLI 単独）                        | `duplicate_block`        | 書き — `block_get` + `block_insert` の合成。`dryRun` 対応 |
+| （CLI 単独）                        | `update_page`            | 書き — operations[] バッチ。**`dryRun` 非対応**           |
+
+高レベル MCP ツール: `update_page` は複数の `block_*` 操作を一気に流せます。`page_create` は初期ブロックの配列を任意で受けます。
+
+## dry-run（書き込み系のプレビュー）
+
+`block-insert` / `block-replace` / `block-delete` / `block-move` / `duplicate_block`（CLI / MCP 双方）は `--dry-run` / `dryRun: true` を受け付けます。書き込みを行わず、書き込まれるはずの編集可能領域 HTML を `previewContent` に入れて返します。CI でのレビュー、差分プレビューに使ってください。
+
+レスポンス形（dryRun=true 時）:
+
+```jsonc
+// block_delete dryRun の例
+{ "path": "about.html", "index": 0, "dryRun": true, "previewContent": "<...>" }
+// 注意: `deleted` / `moved` フィールドは v4.0.0-alpha.68 以降 含まれない
+// （旧仕様 `deleted: !dryRun` が dryRun 成功を「失敗」と誤読させたため削除）
+```
+
+`update_page`（バッチ）は dryRun **非対応**。各 op が前 op の書き込み結果に依存するため。プレビューしたければ個別 `block_*` ツールで分割実行。
+
+dryRun は副作用なし — 対象ページが存在しないと `Cannot dry-run mutation on a non-existent page` エラーを返します。
+
+## invalidPages（壊れた / 移行待ちページ）
+
+`virtualTree.enabled: true` のプロジェクトで `pathKey` Front Matter を持たないファイル（移行待ちのレガシースタブ等）があると、4.0.0-alpha.68 以降は **CLI/MCP は停止せずスキップ**します。`page_list` の戻り値 `invalidPages: [{file, reason, message}]` で確認できます。strict 挙動が必要なら（local server のブート時など）`loadResolverState(..., { strict: true })` を直接呼びます。
 
 ## 操作プロトコル（**毎回守る**）
 

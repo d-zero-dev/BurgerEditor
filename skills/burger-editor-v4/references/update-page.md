@@ -41,8 +41,8 @@ Markdown 短文で：
 ### 4. 必要な追加情報を取得
 
 - 別カタログのブロックに差し替えるなら `catalog_list` で利用可能ブロックを確認
-- 個別ブロックの定義（containerProps デフォルトや items 構造）が必要なら `catalog_get { name }`
-- アイテムのデータキーが不明なら `item_schema { name }`（`editor` HTML 内の `<input name="…">` がキー）
+- 個別ブロックの定義が必要なら `catalog_get { name }` — **戻り値の `template` フィールドがそのまま `block_insert` の `spec` に渡せる雛形**（containerProps デフォルト fill 済み + items を `{name, data}` 形式に展開済み）
+- アイテムのデータキーが不明なら `item_schema { name }` — **戻り値の `dataKeys` 配列が確定した camelCase キー一覧**（`editor` HTML を自分でパースする必要なし）
 - スタイル軸を触るなら `style_options_list` を必ず読む
 
 ### 5. 書き込み
@@ -71,6 +71,13 @@ update_page {
 **注意**：operations は順次適用される。`delete` や `insert` を挟むと **以降の index は変化** する。ユーザーが「2 つ削除して 1 つ足す」と言ったとき、後段の index を再計算するか、より単純な順序に並べ替える。
 
 **move の意味**：`block_move { from, to }` の `to` は **移動後の最終配列における index**（Array.prototype.splice と同じ慣用）。例：`[A,B,C,D]` で `move(0, 2)` は `[B,C,A,D]` になり A は最終 index 2 に着地する。「現在 index 2 の要素（C）の手前に置く」と解釈してはいけない。
+
+**dry-run でプレビュー**：書き込み前にプレビューしたいときは `dryRun: true`（MCP）/ `--dry-run`（CLI）。書き込まれるはずの編集可能領域 HTML が `previewContent` に入って返るので、人間レビューや CI 差分確認に使える。
+
+```
+block_replace { path: "<page>", index: 3, spec: {...}, dryRun: true }
+// → { path, index, dryRun: true, previewContent: "<...新しい編集可能領域HTML...>" }
+```
 
 ### 6. 検証
 
