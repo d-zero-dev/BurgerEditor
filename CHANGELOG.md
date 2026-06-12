@@ -3,6 +3,43 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.68](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.67...v4.0.0-alpha.68) (2026-06-12)
+
+### Bug Fixes
+
+- **local:** adopt file-io strict resolver mode at server boot ([47b51a9](https://github.com/d-zero-dev/BurgerEditor/commit/47b51a98a587ab568e3e9d10d61dba1589809121))
+
+- feat(file-io)!: lenient loadResolverState by default, propagate I/O errors ([1e32026](https://github.com/d-zero-dev/BurgerEditor/commit/1e320260bb7c736bebad65b71089219b716f94f9))
+
+### Features
+
+- **core:** surface candidate selectors on NoEditableAreaError, export collector ([0088ad1](https://github.com/d-zero-dev/BurgerEditor/commit/0088ad1b4839d7585a15a190a9e3da86fa09f1cf))
+- **mcp-server:** explicit startup logging on stderr so host clients can diagnose ([a8cb4d8](https://github.com/d-zero-dev/BurgerEditor/commit/a8cb4d8374598cbf0627ee592dc3ac0d01e96330)), closes [#7](https://github.com/d-zero-dev/BurgerEditor/issues/7)
+
+### BREAKING CHANGES
+
+- loadResolverState now returns { state, invalid } instead of
+  ResolverState directly. Pass { strict: true } to opt back into throw-fast
+  behavior (recommended for boot-time validation in the local server).
+
+Migration projects routinely contain legacy redirect stubs or pre-conversion
+files without the expected pathKey Front Matter; the previous strict behavior
+threw on the first such file and locked the CLI/MCP out of the rest of the
+project. Lenient mode collects per-file Front Matter dirt into an invalid
+array while preserving the rest.
+
+Details:
+
+- ResolverInvalidEntry reasons: missing-key / invalid-type / empty-path
+- fs.readFile I/O errors (EACCES, EBUSY, EIO) propagate in BOTH modes — they
+  are operational faults, not dirt, and must not be silently masked
+- PathConflictError still throws in both modes (structural ambiguity)
+- export new types: LoadResolverStateOptions, LoadResolverStateResult,
+  ResolverInvalidEntry
+- pin lenient/strict pair and an I/O error propagation regression test
+- add NoEditableAreaError candidate-selectors regression test for saveContent
+- README documents lenient/strict modes with reason table
+
 # [4.0.0-alpha.67](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.66...v4.0.0-alpha.67) (2026-06-11)
 
 ### Bug Fixes

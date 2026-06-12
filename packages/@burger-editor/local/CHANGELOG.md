@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.68](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.67...v4.0.0-alpha.68) (2026-06-12)
+
+### Bug Fixes
+
+- **local:** adopt file-io strict resolver mode at server boot ([47b51a9](https://github.com/d-zero-dev/BurgerEditor/commit/47b51a98a587ab568e3e9d10d61dba1589809121))
+
 # [4.0.0-alpha.67](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.66...v4.0.0-alpha.67) (2026-06-11)
 
 **Note:** Version bump only for package @burger-editor/local

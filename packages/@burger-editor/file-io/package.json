@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/file-io",
-	"version": "4.0.0-alpha.67",
+	"version": "4.0.0-alpha.68",
 	"description": "Node.js side file I/O for BurgerEditor v4 — config loader, page load/save, file tree, virtual path resolver. Initializes globalThis.DOMParser via jsdom so @burger-editor/core can run outside the browser.",
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)",
@@ -28,9 +28,9 @@
 		"clean": "tsc --build --clean"
 	},
 	"dependencies": {
-		"@burger-editor/blocks": "4.0.0-alpha.67",
-		"@burger-editor/core": "4.0.0-alpha.67",
-		"@burger-editor/utils": "4.0.0-alpha.67",
+		"@burger-editor/blocks": "4.0.0-alpha.68",
+		"@burger-editor/core": "4.0.0-alpha.68",
+		"@burger-editor/utils": "4.0.0-alpha.68",
 		"cosmiconfig": "9.0.0",
 		"jsdom": "28.1.0",
 		"prettier": "3.8.1"

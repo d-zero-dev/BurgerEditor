@@ -39,7 +39,7 @@ Claude Desktopの設定ファイル（`~/Library/Application Support/Claude/clau
 }
 ```
 
-**バイナリエイリアス**: 4.0.0-alpha.68 以降、`@burger-editor/mcp-server` パッケージは scoped 名と並んで legacy alias の `bge-mcp-server` も bin として登録しています。`args: ["-y", "bge-mcp-server"]` のように古い設定でも互換動作します。新規設定では scoped 名を推奨。
+**バイナリ名**: 4.0.0-alpha.68 以降、bin は **`bge-mcp-server` のみ** 公開しています。汎用名の `mcp-server` を bin 化すると `node_modules/.bin/` や global PATH 上で他の MCP server パッケージと衝突するため、独自プレフィクス付きの 1 名のみに絞っています。`npx @burger-editor/mcp-server` でこの bin が呼ばれます（npm は single-bin パッケージを名前不問で実行する仕様）。global install 後に `bge-mcp-server` コマンドとしても叩けます。
 
 ### その他のMCPクライアント
 
@@ -198,7 +198,7 @@ Claude Code / Claude Desktop / Cursor などの MCP host はサーバの stderr 
 <stack trace>
 ```
 
-`tools/list` が空になる症状（feedback #7）の主な原因は alpha.67 時点では bin path mismatch でした（`bge-mcp-server` の bin が指していたファイルが存在しなかった）。alpha.68 で `@burger-editor/mcp-server` と `bge-mcp-server` 両方の bin を正しいファイルに向けたので、host 設定はそのままで動きます。
+`tools/list` が空になる症状（feedback #7）の主な原因は alpha.67 時点では bin path mismatch でした（`bge-mcp-server` の bin が指していたファイルが存在しなかった）。alpha.68 で `bge-mcp-server` の bin を実在ファイル `./bin/index.js` に向け、汎用名 `mcp-server` は他パッケージとの衝突を避けるため意図的に公開していません。`npx @burger-editor/mcp-server` は single-bin 仕様によりこの `bge-mcp-server` bin を実行します。
 
 ### 設計上の不変条件
 
@@ -289,7 +289,7 @@ yarn test
 トラブルシューティング / 仕様確認時に役立つ検索語:
 
 - 「BurgerEditor MCP server dryRun preview」
-- 「bge-mcp-server alias removed」 — alias は v4.0.0-alpha.68 で維持済み
+- 「bge-mcp-server PATH collision」 — alpha.68 で汎用名 `mcp-server` の公開を取りやめ、`bge-mcp-server` のみに統一
 - 「MCP catalog_get template field」
 - 「BurgerEditor item_schema dataKeys」
 

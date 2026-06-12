@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.68](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.67...v4.0.0-alpha.68) (2026-06-12)
+
+### Features
+
+- **core:** surface candidate selectors on NoEditableAreaError, export collector ([0088ad1](https://github.com/d-zero-dev/BurgerEditor/commit/0088ad1b4839d7585a15a190a9e3da86fa09f1cf))
+
 # [4.0.0-alpha.67](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.66...v4.0.0-alpha.67) (2026-06-11)
 
 ### Bug Fixes

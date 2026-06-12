@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.68](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.67...v4.0.0-alpha.68) (2026-06-12)
+
+### Features
+
+- **mcp-server:** explicit startup logging on stderr so host clients can diagnose ([a8cb4d8](https://github.com/d-zero-dev/BurgerEditor/commit/a8cb4d8374598cbf0627ee592dc3ac0d01e96330)), closes [#7](https://github.com/d-zero-dev/BurgerEditor/issues/7)
+
 # [4.0.0-alpha.67](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.66...v4.0.0-alpha.67) (2026-06-11)
 
 ### Bug Fixes
