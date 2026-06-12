@@ -48,4 +48,11 @@ jobs:
             echo "tag=latest" >> "$GITHUB_OUTPUT"
           fi
       - name: Publish
-        run: npx lerna publish from-git --dist-tag ${{ steps.dist-tag.outputs.tag }} --yes
+        # `from-package` (vs `from-git`): publishes only packages whose
+        # current package.json version is NOT yet on the npm registry.
+        # `from-git` re-attempts every package at the tag, which means a
+        # partial-publish failure (e.g. sigstore transparency log 409 on
+        # one package mid-batch) cannot be recovered by re-running — the
+        # already-published packages re-trigger the 409 and abort the
+        # whole job before the unpublished ones get their turn.
+        run: npx lerna publish from-package --dist-tag ${{ steps.dist-tag.outputs.tag }} --yes
