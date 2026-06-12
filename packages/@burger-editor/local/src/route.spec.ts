@@ -88,9 +88,18 @@ async function buildApp(
 ): Promise<Hono> {
 	const app = new Hono();
 	const userConfig = makeConfig(documentRoot, assetsRoot, overrides);
-	const resolverState = userConfig.virtualTree.enabled
-		? await loadResolverState(userConfig.documentRoot, userConfig.virtualTree.pathKey)
-		: null;
+	let resolverState = null;
+	if (userConfig.virtualTree.enabled) {
+		// Mirror production (loadResolverStateOrExit): the local server boots
+		// in strict mode, so tests must too — otherwise a regression that
+		// breaks the strict-throw path slips through under the lenient default.
+		const loaded = await loadResolverState(
+			userConfig.documentRoot,
+			userConfig.virtualTree.pathKey,
+			{ strict: true },
+		);
+		resolverState = loaded.state;
+	}
 	setRoute(app, userConfig, resolverState);
 	return app;
 }
@@ -105,6 +114,22 @@ describe('GET /api/tree', () => {
 
 	afterEach(async () => {
 		await fs.rm(path.dirname(documentRoot), { recursive: true, force: true });
+	});
+
+	test('buildApp rejects on a documentRoot with malformed Front Matter (strict-mode contract)', async () => {
+		// Regression guard: buildApp must mirror production
+		// (loadResolverStateOrExit) and use strict mode. If anyone reverts the
+		// `{ strict: true }` option in this file, the local server's boot-time
+		// validation silently weakens. The fixture file has no Front Matter
+		// at all, so a strict resolver throws naming it.
+		await fs.writeFile(
+			path.join(documentRoot, 'no-fm.html'),
+			'<h1>no front matter</h1>',
+			'utf8',
+		);
+		await expect(
+			buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: true }),
+		).rejects.toThrow(/no-fm\.html/);
 	});
 
 	test('returns logical tree built from frontmatter when virtualTree is enabled', async () => {

@@ -5,8 +5,15 @@ import {
 } from '../model/virtual-path-resolver.js';
 
 /**
- * Run {@link loadResolverState} and, on failure, print a human-readable error
- * to stderr and exit the process with status 1.
+ * Run {@link loadResolverState} (in strict mode) and, on failure, print a
+ * human-readable error to stderr and exit the process with status 1.
+ *
+ * **Strict mode is intentional here**: the local server's boot is the right
+ * time to refuse a documentRoot with malformed Front Matter — an operator
+ * starting `bge dev` against a project with broken pages should see the
+ * problem immediately, not have the UI silently omit those pages from the
+ * tree. The lenient default in `loadResolverState` is for CLI / MCP agent
+ * sessions where typoed legacy files must not lock the whole tool out.
  *
  * Why a wrapper:
  * - Node's default uncaught handler prefixes errors with `Error:` and a stack
@@ -26,7 +33,10 @@ export async function loadResolverStateOrExit(
 	pathKey: string,
 ): Promise<ResolverState> {
 	try {
-		return await loadResolverState(documentRoot, pathKey);
+		const { state } = await loadResolverState(documentRoot, pathKey, {
+			strict: true,
+		});
+		return state;
 	} catch (error) {
 		if (error instanceof PathConflictError) {
 			console.error('\n' + error.message);
