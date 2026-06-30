@@ -37,7 +37,7 @@
 		"@burger-editor/migrator": "4.0.0-alpha.64",
 		"@burger-editor/utils": "4.0.0-alpha.64",
 		"@tabler/icons-svelte": "3.37.1",
-		"svelte": "5.53.6"
+		"svelte": "5.55.7"
 	},
 	"devDependencies": {
 		"@sveltejs/vite-plugin-svelte": "6.2.4",
