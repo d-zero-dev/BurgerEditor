@@ -261,7 +261,7 @@ __metadata:
     "@burger-editor/core": "npm:4.0.0-alpha.64"
     "@burger-editor/file-io": "npm:4.0.0-alpha.64"
     "@burger-editor/inspector": "npm:4.0.0-alpha.64"
-    "@hono/node-server": "npm:1.19.9"
+    "@hono/node-server": "npm:1.19.13"
     "@hono/zod-validator": "npm:0.7.6"
     "@types/debug": "npm:4.1.12"
     "@types/node": "npm:24.11.0"
@@ -1702,7 +1702,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hono/node-server@npm:1.19.9, @hono/node-server@npm:^1.19.9":
+"@hono/node-server@npm:1.19.13":
+  version: 1.19.13
+  resolution: "@hono/node-server@npm:1.19.13"
+  peerDependencies:
+    hono: ^4
+  checksum: 10c0/e6a13a4831acd6ad2d80f20e9921b9a4207a3c18d78f457647ed102581bd5bbbd3464903b89544a88e5571e470badf105d9ef5c4657a7c2f47f5d0a7beafe51d
+  languageName: node
+  linkType: hard
+
+"@hono/node-server@npm:^1.19.9":
   version: 1.19.9
   resolution: "@hono/node-server@npm:1.19.9"
   peerDependencies:
