@@ -147,7 +147,7 @@ __metadata:
     "@burger-editor/blocks": "npm:4.0.0-alpha.64"
     "@burger-editor/core": "npm:4.0.0-alpha.64"
     "@burger-editor/file-io": "npm:4.0.0-alpha.64"
-    "@d-zero/roar": "npm:2.1.0"
+    "@d-zero/roar": "npm:2.1.2"
     "@types/node": "npm:24.11.0"
   bin:
     cli: ./dist/bin.js
@@ -1288,12 +1288,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@d-zero/roar@npm:2.1.0":
-  version: 2.1.0
-  resolution: "@d-zero/roar@npm:2.1.0"
+"@d-zero/roar@npm:2.1.2":
+  version: 2.1.2
+  resolution: "@d-zero/roar@npm:2.1.2"
   dependencies:
     yargs-parser: "npm:22.0.0"
-  checksum: 10c0/197653fe52d5bf053cb97df48b369d6256ac50c6bdb846392ece3a486f3457fea3e836ce3160b7a88a5b0f0f744c5df24f3d6c2a81bfccae1620873a61f79598
+  checksum: 10c0/cb6f24c648386901b3d70353eac093e11817adf2b2622139da5fbe35e01585d0f567ee4bcbccc57be3591f3272b9676dd6bb22e9b553a67473faeb267e9e5b2e
   languageName: node
   linkType: hard
 
