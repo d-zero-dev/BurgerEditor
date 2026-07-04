@@ -12849,13 +12849,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier-plugin-svelte@npm:3.5.0":
-  version: 3.5.0
-  resolution: "prettier-plugin-svelte@npm:3.5.0"
+"prettier-plugin-svelte@npm:3.5.2":
+  version: 3.5.2
+  resolution: "prettier-plugin-svelte@npm:3.5.2"
   peerDependencies:
     prettier: ^3.0.0
     svelte: ^3.2.0 || ^4.0.0-next.0 || ^5.0.0-next.0
-  checksum: 10c0/bdb7dc8d6859ea0775eb14b55718d682d63914a921b77b19bd0a0055c54a6d04f33d5c541ee4a1a418a971695e7b2997cb70f4ece8317215b6499e197a70f209
+  checksum: 10c0/d0d4a817588efad41b4bc7c7ea41d42bc1068fd52be63b5b6698563fb27eb38ade3007a396a9cd9da875783c5cb489123635c685f20ec9f57b924894732c5f26
   languageName: node
   linkType: hard
 
@@ -13909,7 +13909,7 @@ __metadata:
     playwright: "npm:1.58.2"
     pngjs: "npm:^7.0.0"
     postcss-html: "npm:1.8.1"
-    prettier-plugin-svelte: "npm:3.5.0"
+    prettier-plugin-svelte: "npm:3.5.2"
     stylelint-config-html: "npm:1.1.0"
     typescript: "npm:5.9.3"
     vitest: "npm:4.0.18"
