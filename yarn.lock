@@ -335,7 +335,7 @@ __metadata:
   dependencies:
     "@types/turndown": "npm:5.0.6"
     dayjs: "npm:1.11.21"
-    marked: "npm:17.0.3"
+    marked: "npm:17.0.6"
     turndown: "npm:7.2.2"
   languageName: unknown
   linkType: soft
@@ -10761,12 +10761,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"marked@npm:17.0.3":
-  version: 17.0.3
-  resolution: "marked@npm:17.0.3"
+"marked@npm:17.0.6":
+  version: 17.0.6
+  resolution: "marked@npm:17.0.6"
   bin:
     marked: bin/marked.js
-  checksum: 10c0/3970f96ce3b1a7fd5bba82a6c7e4dffec9f7e0f238633e57139e8aa8fe637bccb1c1b61f2b3ed21b1afdbd4e076326f29e449d147203a0bdb9394e21e9a6a722
+  checksum: 10c0/77961fbb360511d6638491e097cb15b1ef5e643f27c25b9cd52aa3cd92e216fc3cda7dbfc6a10adb7922d1b38df132510df65de4afe6c53c7280772c9d4221bd
   languageName: node
   linkType: hard
 
