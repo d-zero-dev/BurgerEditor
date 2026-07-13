@@ -132,7 +132,7 @@ __metadata:
     "@burger-editor/core": "npm:4.0.0-alpha.64"
     "@burger-editor/custom-element": "npm:4.0.0-alpha.64"
     "@burger-editor/utils": "npm:4.0.0-alpha.64"
-    "@d-zero/shared": "npm:0.21.1"
+    "@d-zero/shared": "npm:0.22.2"
     "@types/google.maps": "npm:3.58.1"
     rollup: "npm:4.59.0"
     rollup-plugin-esbuild: "npm:6.2.1"
@@ -1393,18 +1393,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@d-zero/shared@npm:0.21.1":
-  version: 0.21.1
-  resolution: "@d-zero/shared@npm:0.21.1"
+"@d-zero/shared@npm:0.22.2":
+  version: 0.22.2
+  resolution: "@d-zero/shared@npm:0.22.2"
   dependencies:
     "@holiday-jp/holiday_jp": "npm:2.5.1"
     await-event-emitter: "npm:2.0.2"
-    dayjs: "npm:1.11.19"
+    dayjs: "npm:1.11.21"
     escape-string-regexp: "npm:5.0.0"
     front-matter: "npm:4.0.2"
     micromatch: "npm:4.0.8"
-    sanitize-filename: "npm:1.6.3"
-  checksum: 10c0/6535b99fcf39efc348425d02c812f49b18d9359af9a24606b810d1cd428f7c687826d93e87650d3dd38d1f15160fad45f490849c0a5ef7d616634b3ee704466d
+    sanitize-filename: "npm:1.6.4"
+  checksum: 10c0/fa114b93c983d9604b31e5a7b033ced64059b99b8bc150c688a8d240c327acbfaa786b7a988c8d07b684b3d618de504ee1cbfc3023248410837e1b806fad536a
   languageName: node
   linkType: hard
 
@@ -7212,17 +7212,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dayjs@npm:1.11.19, dayjs@npm:^1.10.0":
-  version: 1.11.19
-  resolution: "dayjs@npm:1.11.19"
-  checksum: 10c0/7d8a6074a343f821f81ea284d700bd34ea6c7abbe8d93bce7aba818948957c1b7f56131702e5e890a5622cdfc05dcebe8aed0b8313bdc6838a594d7846b0b000
-  languageName: node
-  linkType: hard
-
 "dayjs@npm:1.11.21":
   version: 1.11.21
   resolution: "dayjs@npm:1.11.21"
   checksum: 10c0/bd97dfdc4bfea3c66268635690313828b386faa040fbc1f829ff42a2bd748b72c9d9b3c8f9616ce9e61fcb78923f1461a462c969c54b1084458ae1b715898fb0
+  languageName: node
+  linkType: hard
+
+"dayjs@npm:^1.10.0":
+  version: 1.11.19
+  resolution: "dayjs@npm:1.11.19"
+  checksum: 10c0/7d8a6074a343f821f81ea284d700bd34ea6c7abbe8d93bce7aba818948957c1b7f56131702e5e890a5622cdfc05dcebe8aed0b8313bdc6838a594d7846b0b000
   languageName: node
   linkType: hard
 
@@ -14620,12 +14620,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sanitize-filename@npm:1.6.3":
-  version: 1.6.3
-  resolution: "sanitize-filename@npm:1.6.3"
+"sanitize-filename@npm:1.6.4":
+  version: 1.6.4
+  resolution: "sanitize-filename@npm:1.6.4"
   dependencies:
     truncate-utf8-bytes: "npm:^1.0.0"
-  checksum: 10c0/16ff47556a6e54e228c28db096bedd303da67b030d4bea4925fd71324932d6b02c7b0446f00ad33987b25b6414f24ae968e01a1a1679ce599542e82c4b07eb1f
+  checksum: 10c0/b56415a95e4f90dc992cd126b5f45c7b39d178662fbd0dc48f03203e35c58ab8e9eb3f5cebfaabc46f1438093d65a3a3cc96875e2b036a1474e19593bee9a540
   languageName: node
   linkType: hard
 
