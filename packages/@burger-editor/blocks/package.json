@@ -32,7 +32,7 @@
 	"dependencies": {
 		"@burger-editor/core": "4.0.0-alpha.64",
 		"@burger-editor/utils": "4.0.0-alpha.64",
-		"@d-zero/shared": "0.21.1"
+		"@d-zero/shared": "0.22.2"
 	},
 	"devDependencies": {
 		"@burger-editor/custom-element": "4.0.0-alpha.64",
