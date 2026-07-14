@@ -29,7 +29,7 @@
 	},
 	"dependencies": {
 		"@burger-editor/utils": "4.0.0-alpha.64",
-		"@tabler/icons": "3.37.1",
+		"@tabler/icons": "3.44.0",
 		"@tiptap/core": "3.20.0",
 		"@tiptap/extension-image": "3.20.0",
 		"@tiptap/extension-paragraph": "3.20.0",
