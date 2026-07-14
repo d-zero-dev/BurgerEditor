@@ -163,7 +163,7 @@ __metadata:
     "@burger-editor/migrator": "npm:4.0.0-alpha.64"
     "@burger-editor/utils": "npm:4.0.0-alpha.64"
     "@sveltejs/vite-plugin-svelte": "npm:6.2.4"
-    "@tabler/icons-svelte": "npm:3.37.1"
+    "@tabler/icons-svelte": "npm:3.44.0"
     svelte: "npm:5.55.7"
     svelte-check: "npm:4.4.4"
     vite: "npm:7.3.6"
@@ -4004,21 +4004,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tabler/icons-svelte@npm:3.37.1":
-  version: 3.37.1
-  resolution: "@tabler/icons-svelte@npm:3.37.1"
+"@tabler/icons-svelte@npm:3.44.0":
+  version: 3.44.0
+  resolution: "@tabler/icons-svelte@npm:3.44.0"
   dependencies:
-    "@tabler/icons": "npm:"
+    "@tabler/icons": "npm:3.44.0"
   peerDependencies:
     svelte: ">=3 <6 || >=5.0.0-next.0"
-  checksum: 10c0/90ea0f305e70b9dd25418a8e215abda7785c62c808e074e613d84e5ec6e92ce30f442629566f2d81e4ec7d053cdcfdafb2210f561b4538c9eb6c45795826b8ca
-  languageName: node
-  linkType: hard
-
-"@tabler/icons@npm:":
-  version: 3.37.1
-  resolution: "@tabler/icons@npm:3.37.1"
-  checksum: 10c0/d7339e78f294957624d02d3ef9d404b86329f82987f6a08c6c4ca5055c6a967f1350c9765fb2138bd6540140f9bb4f8c80403c4279521e6be22a8a20024c463c
+  checksum: 10c0/93b6a38c11fd7d7b131a3234738f1af68e212f0c0554e491f2dfc36ccd0be3aa630ef18dfb0a2fdcfa1a1d695c2f380de3a5afdbad00c04a87d769e4d81174f0
   languageName: node
   linkType: hard
 
