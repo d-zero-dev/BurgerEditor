@@ -133,7 +133,7 @@ __metadata:
     "@burger-editor/custom-element": "npm:4.0.0-alpha.64"
     "@burger-editor/utils": "npm:4.0.0-alpha.64"
     "@d-zero/shared": "npm:0.22.2"
-    "@types/google.maps": "npm:3.58.1"
+    "@types/google.maps": "npm:3.65.2"
     rollup: "npm:4.59.0"
     rollup-plugin-esbuild: "npm:6.2.1"
     rollup-plugin-string: "npm:3.0.0"
@@ -4679,10 +4679,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/google.maps@npm:3.58.1":
-  version: 3.58.1
-  resolution: "@types/google.maps@npm:3.58.1"
-  checksum: 10c0/0247c61d2aeb216d04ab9392602ef41d58328c6336ed4e9a4e9e69834002e82c116a34def2bf4ceb31c4292f14899815058da4bb8d803147295c6b47c1162621
+"@types/google.maps@npm:3.65.2":
+  version: 3.65.2
+  resolution: "@types/google.maps@npm:3.65.2"
+  checksum: 10c0/790aed74128385bfa6c8b41c6bf18b8f1901e6c7b7c806615e904e9093703a8238f8b2504027ebe714e95f9cd5b2a94fd63306f8b71907a23ba24673754843ea
   languageName: node
   linkType: hard
 
