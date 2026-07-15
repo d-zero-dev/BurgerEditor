@@ -8208,9 +8208,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-svelte@npm:3.15.0":
-  version: 3.15.0
-  resolution: "eslint-plugin-svelte@npm:3.15.0"
+"eslint-plugin-svelte@npm:3.20.0":
+  version: 3.20.0
+  resolution: "eslint-plugin-svelte@npm:3.20.0"
   dependencies:
     "@eslint-community/eslint-utils": "npm:^4.6.1"
     "@jridgewell/sourcemap-codec": "npm:^1.5.0"
@@ -8221,14 +8221,14 @@ __metadata:
     postcss-load-config: "npm:^3.1.4"
     postcss-safe-parser: "npm:^7.0.0"
     semver: "npm:^7.6.3"
-    svelte-eslint-parser: "npm:^1.4.0"
+    svelte-eslint-parser: "npm:^1.7.0"
   peerDependencies:
     eslint: ^8.57.1 || ^9.0.0 || ^10.0.0
     svelte: ^3.37.0 || ^4.0.0 || ^5.0.0
   peerDependenciesMeta:
     svelte:
       optional: true
-  checksum: 10c0/f9c5efb7d9c9a8391c2bc0ac4c5abfc0bc2a2711a372a171babf00d9503b6c718dd9e739bd84ba2123dfc96ce32442ed4ac689a8c5564d40ea1f9500a238e8a8
+  checksum: 10c0/f3eb86bbdceb4b37108b5906e4d0f2db70029022ed99ebe713c45ca987ea0986e9bbdee2da609ae6ba26f46eb86e3d866f00341c08b9ca19cb153f43b0ca6d9d
   languageName: node
   linkType: hard
 
@@ -14601,7 +14601,7 @@ __metadata:
     "@markuplint/svelte-spec": "npm:4.18.0"
     "@vitest/browser": "npm:4.1.8"
     "@vitest/browser-playwright": "npm:4.0.18"
-    eslint-plugin-svelte: "npm:3.15.0"
+    eslint-plugin-svelte: "npm:3.20.0"
     husky: "npm:9.1.7"
     jsdom: "npm:28.1.0"
     lerna: "npm:9.0.7"
@@ -15565,9 +15565,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte-eslint-parser@npm:^1.4.0":
-  version: 1.4.1
-  resolution: "svelte-eslint-parser@npm:1.4.1"
+"svelte-eslint-parser@npm:^1.7.0":
+  version: 1.8.0
+  resolution: "svelte-eslint-parser@npm:1.8.0"
   dependencies:
     eslint-scope: "npm:^8.2.0"
     eslint-visitor-keys: "npm:^4.0.0"
@@ -15575,12 +15575,13 @@ __metadata:
     postcss: "npm:^8.4.49"
     postcss-scss: "npm:^4.0.9"
     postcss-selector-parser: "npm:^7.0.0"
+    semver: "npm:^7.7.2"
   peerDependencies:
     svelte: ^3.37.0 || ^4.0.0 || ^5.0.0
   peerDependenciesMeta:
     svelte:
       optional: true
-  checksum: 10c0/67283b6cb6eee400a3a68e9d33a2f7373695a50a28df487260414d9cea776eba2d195c57cda4cc1597e01790f1ceb9880b77d12f09f9ed5c8acb1b26733e08db
+  checksum: 10c0/c3fed4ddf8e73ca8186a2a4a026c5d8682ab5bb485618d088fd1fdcbf0f5369d842df2aa3697faedb33547a178ce15c425e3ab5fbe1f3e3dc99c49096e427800
   languageName: node
   linkType: hard
 
