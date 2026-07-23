@@ -1,6 +1,6 @@
+import { WysiwygField } from '@burger-editor/client/react';
 import { createItem } from '@burger-editor/core';
 
-import editor from './editor.html';
 import style from './style.css';
 import template from './template.html';
 
@@ -13,5 +13,13 @@ export default createItem<WysiwygData>({
 	name: 'wysiwyg',
 	template,
 	style,
-	editor,
+	Editor({ state, setState }) {
+		return (
+			<WysiwygField
+				itemName="wysiwyg"
+				value={state.wysiwyg ?? ''}
+				onChange={(wysiwyg) => setState({ ...state, wysiwyg })}
+			/>
+		);
+	},
 });
