@@ -32,6 +32,10 @@
 		},
 		"./types": {
 			"types": "./dist/types.d.ts"
+		},
+		"./parse-fields": {
+			"import": "./dist/parse-fields.js",
+			"types": "./dist/parse-fields.d.ts"
 		}
 	},
 	"files": [
