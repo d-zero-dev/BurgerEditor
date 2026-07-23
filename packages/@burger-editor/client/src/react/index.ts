@@ -1,5 +1,6 @@
 import './invoker-commands.js';
 
+export type { InvokerCommandAttributes } from './invoker-commands.js';
 export { EditorDialog } from './editor-dialog.js';
 export { reactMount } from './mount.js';
 export { registerEngineCommands } from './commands/register-engine-commands.js';

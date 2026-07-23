@@ -11,3 +11,4 @@ export { TableEditor } from './table-editor.js';
 export type { TableEditorData } from './table-editor.js';
 export { Tabs } from './tabs.js';
 export { Thumbnail } from './thumbnail.js';
+export { WysiwygField } from './wysiwyg-field.js';

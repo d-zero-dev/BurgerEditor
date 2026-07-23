@@ -24,3 +24,13 @@ declare module 'react' {
 		commandfor?: string;
 	}
 }
+
+/**
+ * Invoker Commands API attributes for buttons. Re-exported (rather than
+ * imported for side effects only) so that the module augmentation above
+ * survives d.ts bundling and reaches consumers.
+ */
+export interface InvokerCommandAttributes {
+	readonly command?: string;
+	readonly commandfor?: string;
+}
