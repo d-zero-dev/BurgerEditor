@@ -18,6 +18,10 @@
 			"import": "./dist/client.js",
 			"types": "./dist/index.d.ts"
 		},
+		"./react": {
+			"import": "./dist/react.js",
+			"types": "./dist/react/index.d.ts"
+		},
 		"./style": {
 			"import": "./dist/client.css"
 		}

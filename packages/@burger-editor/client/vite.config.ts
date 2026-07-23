@@ -13,9 +13,13 @@ export default defineConfig({
 		target: 'esnext',
 		outDir: 'dist',
 		lib: {
-			entry: 'src/index.ts',
+			entry: {
+				client: 'src/index.ts',
+				react: 'src/react/index.ts',
+			},
 			name: 'BgE',
 			formats: ['es'],
+			cssFileName: 'client',
 		},
 		sourcemap: true,
 		minify: false,
