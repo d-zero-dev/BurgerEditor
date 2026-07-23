@@ -296,8 +296,6 @@ export class FrontMatterEditor {
 			this.#onUpdated(this.getData());
 		}
 	}
-	static #uid = 0;
-
 	/**
 	 * Parse initial data and detect field types
 	 * @param data
@@ -315,7 +313,6 @@ export class FrontMatterEditor {
 
 		return fields;
 	}
-
 	/**
 	 * Render the editor UI
 	 */
@@ -356,7 +353,6 @@ export class FrontMatterEditor {
 			this.#container.append(fieldsContainer);
 		}
 	}
-
 	/**
 	 * Show dialog to add a new field
 	 */
@@ -415,7 +411,6 @@ export class FrontMatterEditor {
 		const keyInput = dialog.querySelector<HTMLInputElement>('#fm-new-key');
 		keyInput?.focus();
 	}
-
 	/**
 	 * Update field value
 	 * @param index
@@ -428,6 +423,7 @@ export class FrontMatterEditor {
 			this.#notifyUpdate();
 		}
 	}
+	static #uid = 0;
 }
 
 /**
