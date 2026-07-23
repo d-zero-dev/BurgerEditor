@@ -326,6 +326,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@burger-editor/blocks@workspace:packages/@burger-editor/blocks"
   dependencies:
+    "@burger-editor/client": "npm:4.0.0-alpha.64"
     "@burger-editor/core": "npm:4.0.0-alpha.64"
     "@burger-editor/custom-element": "npm:4.0.0-alpha.64"
     "@burger-editor/utils": "npm:4.0.0-alpha.64"
