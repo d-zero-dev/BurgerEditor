@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/@burger-editor%2Fclient.svg)](https://badge.fury.io/js/@burger-editor%2Fclient)
 
-BurgerEditor をブラウザ上の DOM に組み込むための UI レイヤー。Svelte 製の編集 UI（ツールバー・ブロックメニュー・各種ダイアログ）を内部で組み立て、`@burger-editor/core` の編集エンジンに差し込んだ状態でひとつのファクトリ関数として提供する。
+BurgerEditor をブラウザ上の DOM に組み込むための UI レイヤー。React 製の編集 UI（ブロックメニュー・各種ダイアログ・アイテムエディタ）を内部で組み立て、`@burger-editor/core` の編集エンジンに差し込んだ状態でひとつのファクトリ関数として提供する。アイテムエディタ用のフォーム部品とフック群は `@burger-editor/client/react` として公開される。
 
 ## Installation
 
@@ -40,7 +40,7 @@ const { engine } = await createBurgerEditorClient({
 });
 ```
 
-`options` は `BurgerEditorEngineOptions` から `ui` / `blockMenu` / `initialInsertionButton` / `defineCustomElement` を除いた型。これら 4 つは client が **Svelte 実装で内部的に上書き**するため、利用側で渡してはいけない（渡しても無視される）。
+`options` は `BurgerEditorEngineOptions` から `blockMenu` / `initialInsertionButton` を除いた型。これらは client が **React 実装で内部的に上書き**するため、利用側で渡してはいけない。加えて client はエンジンコマンドのディスパッチテーブル（`registerEngineCommands`）を登録し、ダイアログ群を `engine.uiState` から宣言的にレンダリングするルートをマウントする。
 
 ## `createBurgerEditorClient` オプション
 

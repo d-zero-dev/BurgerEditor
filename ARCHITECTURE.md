@@ -12,7 +12,7 @@ graph TD
     frozen["@burger-editor/frozen-patty<br/>(HTML⇄JSONデータ変換)"]
     core["@burger-editor/core<br/>(エディタエンジン)"]
     blocks["@burger-editor/blocks<br/>(標準ブロック定義)"]
-    client["@burger-editor/client<br/>(Svelte UI)"]
+    client["@burger-editor/client<br/>(React UI)"]
     custom["@burger-editor/custom-element<br/>(TipTap Web Components)"]
     migrator["@burger-editor/migrator<br/>(バージョン移行)"]
     inspector["@burger-editor/inspector<br/>(HTML検査・検索)"]
@@ -116,9 +116,9 @@ graph TD
 
 **`@burger-editor/client`**
 
-- Svelteベースのクライアント側UI
-- 依存関係: core, custom-element, migrator, utils
-- 責任: ブロック選択UI、ファイル管理UI、エディタUI
+- ReactベースのクライアントUI
+- 依存関係: core, custom-element, migrator, utils, react
+- 責任: ブロック選択UI、ファイル管理UI、エディタUI（ダイアログ群を `engine.uiState` から宣言的にレンダリング）、エンジンコマンドのディスパッチテーブル、アイテムエディタ用フォーム部品（`@burger-editor/client/react`）
 
 **`@burger-editor/custom-element`**
 
@@ -181,7 +181,7 @@ graph TD
 
 **`@burger-editor/local`**
 
-- ローカルファイルシステム向けCMS実装（Hono ベース HTTP + Vite ベース React UI）
+- ローカルファイルシステム向けCMS実装（Hono ベース HTTP + Hono JSX による SSR + ビルド済み client UI の埋め込み）
 - 依存関係: core, file-io, blocks, inspector, Hono, Node.js関連パッケージ
 - 責任: ローカルサーバー、ブラウザ UI、CLI機能（`bge dev` / `bge search`）、プログラマティックAPI
 - **重要**: ファイル I/O / 設定解決 / virtual-path-resolver / Front Matter の本体は `@burger-editor/file-io` に移っており、local はそれを再エクスポートする薄いシムに痩身化されている。`local/src/helpers/{front-matter,html-detection,no-editable-area-error,edit-content}.ts` と `local/src/model/{file-tree,virtual-path-resolver,get-user-config}.ts` は互換性のためのシム re-export であり、本体は `@burger-editor/core` / `@burger-editor/file-io` 側を参照すること
@@ -286,9 +286,9 @@ graph TD
 
 **UI Layerに配置する機能:**
 
-- UIフレームワーク固有の実装（Svelte コンポーネント等）
-- core が定義するファクトリインタフェースの具象実装
-- 例: ブロックメニュー、初期挿入ボタン、ダイアログシェル、編集エリアシェル
+- UIフレームワーク固有の実装（React コンポーネント等）
+- core が定義するファクトリインタフェース・UI状態ストアの具象実装
+- 例: ブロックメニュー、初期挿入ボタン、ダイアログ群、アイテムエディタのフォーム
 
 **Platform Layerに配置する機能:**
 
@@ -296,36 +296,41 @@ graph TD
 - 環境固有の設定や統合機能
 - 例: ファイルシステム操作、サーバー設定、環境固有API
 
-### 4. Factory/Shell DI パターン
+### 4. headless core と宣言的 UI
 
-core パッケージは UI コンポーネントの生成をファクトリインタフェースとして定義し、client パッケージが Svelte ベースの具象実装を注入します。これにより、core は UI フレームワークに依存せず、UI の差し替えが可能です。
+core パッケージは UI フレームワークに依存しない headless エンジンです。UI 層（client パッケージ / React）は次の 2 つの接点で core と統合します。
 
-**ファクトリインタフェース:**
+**UIStateStore（`engine.uiState`）:**
 
-- `BlockMenuCreator` — ブロックメニューUI生成
+「どのダイアログが開いているか」を表す外部ストア（`subscribe`/`getSnapshot`）。React 側は `useSyncExternalStore` で購読し、ブロックカタログ・ブロックオプション・アイテムエディタの各 `<dialog>` を宣言的にレンダリングします。エンジンを操作する側は `uiState.openBlockCatalog()` などの状態遷移を呼ぶだけで、ダイアログを命令的に開閉しません。
+
+**ファクトリインタフェース（iframe 内の実DOM島向け）:**
+
+- `BlockMenuCreator` — ブロックメニューUI生成（EditableArea の iframe 文書内にマウント）
 - `InitialInsertionButtonCreator` — 初期挿入ボタンUI生成
-- `EditorDialogShellCreator` — ダイアログシェル生成
 - `EditableAreaShellCreator` — 編集エリアシェル生成
 
 **依存関係の流れ:**
 
 ```
-core（インタフェース定義） ← client（Svelte 実装を注入）
+core（uiState ストア + インタフェース定義） ← client（React 実装を注入）
 ```
 
-`BurgerEditorEngineOptions` の `blockMenu`, `initialInsertionButton`, `dialogShell`, `editableAreaShell` プロパティを通じて注入されます。
+### 5. Invoker Commands API とコマンドバス
 
-### 5. Svelte 5 ルーンと EngineState ブリッジ
+**clickイベント全面禁止**が本プロジェクトの規約です。`onClick` prop・`addEventListener('click')`・プログラムによる `click()` は ESLint（`no-restricted-syntax`）で禁止されており、ボタン起点のアクションはすべて HTML の `command`/`commandfor` 属性（Invoker Commands API）で宣言します。
 
-client パッケージは Svelte 5 ルーン（`$state`, `$derived`, `$effect`, `$props()`）を使用してリアクティブな UI を構築しています。
+**中央コマンドバス（`engine.commandBus`）:**
 
-**EngineState ブリッジ層:**
+エンジン・文書・サーバー状態を変えるコマンド（`BGE_COMMAND`: ブロック移動・追加・削除・コピー、下書き切替、アイテムエディタ起動など）は、単一のディスパッチテーブルで処理されます。`commandfor` は同一 document 内の ID 参照であり `CommandEvent` はバブリングしないため、受信エレメント（`#bge-command-bus`）は親 document と各 EditableArea iframe の両方に設置されます。ディスパッチテーブルの実装は client の `registerEngineCommands()` にあり、「エンジンを動かす唯一の経路 = コマンド語彙」として一箇所で監査できます。
 
-core の `ComponentObserver` が発行するイベントを Svelte 5 の `$state` に変換する橋渡し層です。これにより、core のイベントベースの状態管理と Svelte のリアクティブシステムを統合しています。
+**ローカルコマンド:**
 
-**Invoker Commands API:**
+コンポーネントのビュー状態しか変えないコマンド（タブ選択、ページネーション、テーブル行操作など）は、コンポーネント自身のコンテナを `commandfor` で指し、`useCommand()` フックで受信します。
 
-ダイアログの開閉制御に HTML の `command`/`commandfor` 属性（Invoker Commands API）を使用しています。
+**アイテムエディタ契約:**
+
+各アイテムは `createItem()` に `Editor`（型付き React コンポーネント）と純関数 `toEditorState` / `toItemData` を渡します。旧来の `editor.html` 文字列テンプレートと命令的ライフサイクルフック（`beforeOpen`/`open`/`beforeChange`/`onSubmit`）は廃止されました。コンテンツ出力側（`template.html` + frozen-patty の `data-bge` バインディング）は従来どおりで、React には依存しません。
 
 ## テストアーキテクチャ
 
@@ -337,7 +342,7 @@ core の `ComponentObserver` が発行するイベントを Svelte 5 の `$state
 | client       | jsdom                           | client                       |
 
 - core プロジェクト: iframe の `contentWindow` 等、実ブラウザ API が必要なテストはブラウザ環境で実行
-- client プロジェクト: Svelte コンポーネントのテストは jsdom 環境で実行
+- client プロジェクト: React コンポーネントのテストは jsdom 環境 + Testing Library で実行
 
 ## モノレポ構成の利点
 
