@@ -23,6 +23,7 @@ import {
 	resolvePathInput,
 	saveContent,
 } from '@burger-editor/file-io';
+import { parseFields } from '@burger-editor/frozen-patty/parse-fields';
 
 import { renderBlockHtml } from './block-builder.js';
 
@@ -512,16 +513,23 @@ export function itemSchema(itemName: string) {
 	const seed = item as {
 		name: string;
 		template?: string;
-		editor?: string;
 		exportData?: (el: HTMLElement) => ItemData;
 	};
-	// Editor HTML describes the input fields; their `name` attributes become
-	// the keys of the item data. We surface the editor template verbatim so
-	// the agent can read it and infer required keys.
+	// The data-bge bindings in the template define the item data keys.
+	// Surface them (camelCased, as they appear in the JSON data) so the
+	// agent can infer required keys without the removed editor HTML.
+	const fields = new Set<string>();
+	for (const match of (seed.template ?? '').matchAll(/data-bge="([^"]*)"/g)) {
+		for (const field of parseFields(match[1] ?? '')) {
+			if (field.fieldName) {
+				fields.add(field.fieldName);
+			}
+		}
+	}
 	return {
 		name: seed.name,
 		template: seed.template,
-		editor: seed.editor,
+		fields: [...fields],
 	};
 }
 

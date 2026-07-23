@@ -166,11 +166,11 @@ describe('item handlers', () => {
 		expect(result.items).toContain('image');
 	});
 
-	test('itemSchema returns template and editor for a known item', () => {
+	test('itemSchema returns template and data fields for a known item', () => {
 		const result = itemSchema('title-h2');
 		expect(result.name).toBe('title-h2');
 		expect(result.template).toContain('data-bge="title-h2"');
-		expect(result.editor).toContain('name="bge-title-h2"');
+		expect(result.fields).toContain('titleH2');
 	});
 
 	test('itemSchema throws on an unknown item name', () => {

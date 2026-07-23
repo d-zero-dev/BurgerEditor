@@ -32,6 +32,7 @@
 		"@burger-editor/blocks": "4.0.0-alpha.64",
 		"@burger-editor/core": "4.0.0-alpha.64",
 		"@burger-editor/file-io": "4.0.0-alpha.64",
+		"@burger-editor/frozen-patty": "4.0.0-alpha.64",
 		"@d-zero/roar": "2.1.0"
 	},
 	"devDependencies": {
