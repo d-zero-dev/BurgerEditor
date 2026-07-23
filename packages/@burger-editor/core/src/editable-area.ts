@@ -6,12 +6,13 @@ import type {
 	InitialInsertionButtonCreator,
 } from './types.js';
 
+import { COMMAND_BUS_ID } from './command/command-bus.js';
+import { BGE_COMMAND } from './command/commands.js';
 import { CSS_LAYER } from './const.js';
 import { appendStylesheetTo } from './dom-helpers/append-stylesheet-to.js';
 import { createStylesheet } from './dom-helpers/create-stylesheet.js';
 import { sanitizeAttrs } from './dom-helpers/sanitize-attrs.js';
 import { EditorUI } from './editor-ui.js';
-import { InitialInsertionButton } from './initial-insertion-button.js';
 import { InsertionPoint } from './insertion-point.js';
 
 const CONTAINER_PADDING = 10;
@@ -94,6 +95,9 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 
 		frameDoc.body.setAttribute('style', 'margin: 0; border: 0;');
 
+		// このiframe文書内のボタンが commandfor で参照するバス受信要素
+		engine.commandBus.createReceiver(frameDoc.body);
+
 		const blockMenuEl = frameDoc.createElement('div');
 		blockMenuEl.dataset.bgeComponent = 'block-menu';
 		const blockMenuStylesheetUrl = createStylesheet(
@@ -122,29 +126,26 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 			}
 			this.#insertionButton.hide();
 			this.insertionPoint.set(null, false);
-			this.#engine.blockCatalogDialog.open();
+			this.#engine.uiState.openBlockCatalog();
 		};
 
+		const buttonEl = frameDoc.createElement('div');
+		buttonEl.dataset.bgeComponent = 'initial-insertion';
 		if (createInitialInsertionButton) {
-			const buttonEl = frameDoc.createElement('div');
-			buttonEl.dataset.bgeComponent = 'initial-insertion';
 			createInitialInsertionButton(buttonEl, onInsert);
-			this.#insertionButton = {
-				el: buttonEl,
-				show: () => {
-					buttonEl.hidden = false;
-				},
-				hide: () => {
-					buttonEl.hidden = true;
-				},
-			};
 		} else {
-			this.#insertionButton = new InitialInsertionButton(
-				this.insertionPoint,
-				this.#engine,
-				() => this.#engine.blockCatalogDialog.open(),
-			);
+			// フォールバック: クリックリスナーは使わず Invoker Commands で宣言する
+			buttonEl.innerHTML = `<button class="insert_after" type="button" command="${BGE_COMMAND.insertInitialBlock}" commandfor="${COMMAND_BUS_ID}">下に要素を追加</button>`;
 		}
+		this.#insertionButton = {
+			el: buttonEl,
+			show: () => {
+				buttonEl.hidden = false;
+			},
+			hide: () => {
+				buttonEl.hidden = true;
+			},
+		};
 
 		const els = frameDoc.createDocumentFragment();
 		els.append(this.blockMenu.el);

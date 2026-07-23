@@ -1,8 +1,6 @@
 import type { BurgerEditorEngine } from '../engine/engine.js';
-import type { ItemEditorDialog } from '../item-editor-dialog.js';
 import type { Config } from '../types.js';
 import type { Item } from './item.js';
-import type { Submitter } from '../dom-helpers/types.js';
 
 export type ItemPrimitiveData = string | number | boolean | null | undefined;
 
@@ -102,13 +100,6 @@ export interface ItemSeed<
 	init?: (item: Item<T, C>) => T | Promise<T>;
 
 	/**
-	 * Editor HTML template
-	 * @deprecated Replaced by the `Editor` component contract; removed once
-	 * all items are migrated.
-	 */
-	editor?: string;
-
-	/**
 	 * Item editor component. Receives the current editor state and renders
 	 * a controlled form. Buttons inside the editor must use the Invoker
 	 * Commands API (`command`/`commandfor`) — click handlers are forbidden.
@@ -134,47 +125,7 @@ export interface ItemSeed<
 	toItemData?: (state: Readonly<E>, config: Config) => T | Promise<T>;
 
 	/**
-	 * Editor lifecycle
-	 *
-	 * ---
-	 *
-	 * `open`
-	 * ```
-	 * ┌─────────────────┐
-	 * │ beforeOpen      │
-	 * ├─────────────────┤
-	 * │ Item::export    │
-	 * ├─────────────────┤
-	 * │ Dialog::import  │
-	 * ├─────────────────┤
-	 * │ Dialog::open    │
-	 * ├─────────────────┤
-	 * │ open            │
-	 * └─────────────────┘
-	 * ```
-	 *
-	 * ---
-	 *
-	 * `complete`
-	 * ```
-	 * ┌──────────────────┐
-	 * │ onSubmit         │
-	 * ├──────────────────┤
-	 * │ Dialog::extract  │
-	 * ├──────────────────┤
-	 * │ Item::import     │
-	 * ├──────────────────┤
-	 * │ beforeChange     │
-	 * ├──────────────────┤
-	 * │ <OVERWRITE HTML> │
-	 * ├──────────────────┤
-	 * │ migrateElement   │
-	 * ├──────────────────┤
-	 * │ change           │
-	 * ├──────────────────┤
-	 * │ Dialog::complete │
-	 * └──────────────────┘
-	 * ```
+	 * Non-editor lifecycle hooks.
 	 */
 	editorOptions?: ItemEditorOptions<T, C>;
 }
@@ -183,12 +134,10 @@ export interface ItemEditorOptions<
 	T extends ItemData,
 	C extends { [key: string]: unknown } = {},
 > {
-	customData?: C;
-	open?(data: Readonly<T>, editor: ItemEditorDialog<T, C>): Promise<void> | void;
-	beforeChange?(newData: Readonly<T>, editor: ItemEditorDialog<T, C>): Promise<T> | T;
-	beforeOpen?(data: Readonly<T>, editor: ItemEditorDialog<T, C>): T;
+	/**
+	 * Return a non-empty message to prevent the block containing this item
+	 * from being added.
+	 * @param item - The item instance
+	 */
 	isDisable?(item: Item<T, C>): string;
-	migrate?(item: Item<T, C>): T;
-	migrateElement?(data: T, item: Item<T, C>): Promise<void> | void;
-	onSubmit?(e: SubmitEvent, submitter: Submitter): boolean | void;
 }

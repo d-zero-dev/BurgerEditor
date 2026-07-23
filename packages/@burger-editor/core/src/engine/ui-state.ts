@@ -11,7 +11,7 @@ export type OpenDialogState =
 	| { readonly type: 'block-options' }
 	| {
 			readonly type: 'item-editor';
-			readonly item: Item<ItemData, { [key: string]: unknown }>;
+			readonly item: Item<ItemData, {}>;
 	  }
 	| null;
 
@@ -68,7 +68,7 @@ export class UIStateStore {
 	 * Present the item editor dialog for the given item.
 	 * @param item - The content item being edited
 	 */
-	openItemEditor(item: Item<ItemData, { [key: string]: unknown }>) {
+	openItemEditor(item: Item<ItemData, {}>) {
 		this.#set({ openDialog: { type: 'item-editor', item } });
 	}
 

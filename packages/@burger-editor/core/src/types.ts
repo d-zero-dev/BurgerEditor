@@ -2,10 +2,7 @@ import type { BurgerBlock } from './block/block.js';
 import type { ContainerProps } from './block/types.js';
 import type { BurgerEditorEngine } from './engine/engine.js';
 import type { HealthCheckFunction } from './health-monitor.js';
-import type { ItemEditorService } from './item/item-editor-service.js';
-import type { Item } from './item/item.js';
 import type { ItemData, ItemSeed } from './item/types.js';
-import type { ItemEditorDialog } from './item-editor-dialog.js';
 import type { Mergeable } from '@burger-editor/utils';
 
 export interface BurgerEditorEngineOptions {
@@ -22,10 +19,8 @@ export interface BurgerEditorEngineOptions {
 	readonly items: Record<string, ItemSeed>;
 	readonly catalog: BlockCatalog;
 	readonly generalCSS: string;
-	readonly ui: UIOptions;
 	readonly blockMenu: BlockMenuCreator;
 	readonly initialInsertionButton?: InitialInsertionButtonCreator;
-	readonly dialogShell?: EditorDialogShellCreator;
 	readonly editableAreaShell?: EditableAreaShellCreator;
 	readonly storageKey?: {
 		readonly blockClipboard?: string;
@@ -41,27 +36,6 @@ export interface BurgerEditorEngineOptions {
 		readonly interval?: number;
 		readonly retryCount?: number;
 		readonly checkHealth?: HealthCheckFunction;
-	};
-}
-
-export interface UIOptions {
-	readonly blockCatalog?: UICreator;
-	readonly blockOptions?: UICreator;
-	readonly imageList?: UICreator;
-	readonly fileList?: UICreator;
-	readonly imageUploader?: UICreator;
-	readonly fileUploader?: UICreator;
-	readonly preview?: UICreator;
-	readonly tabs?: UICreator;
-	readonly tableEditor?: UICreator;
-}
-
-export interface UICreator {
-	(
-		el: HTMLElement,
-		engine: BurgerEditorEngine,
-	): {
-		readonly cleanUp: () => void;
 	};
 }
 
@@ -82,22 +56,6 @@ export interface InitialInsertionButtonCreator {
 	): {
 		readonly cleanUp: () => void;
 	};
-}
-
-export interface EditorDialogShell {
-	readonly dialogElement: HTMLDialogElement;
-	readonly containerElement: HTMLElement;
-	readonly formElement: HTMLFormElement;
-}
-
-export interface EditorDialogShellCreator {
-	(options: {
-		readonly name: string;
-		readonly buttons?: {
-			readonly close?: string;
-			readonly complete?: string;
-		};
-	}): EditorDialogShell;
 }
 
 export interface EditableAreaShell {
@@ -167,10 +125,6 @@ export interface Actions {
 		readonly uploaded: FileListItem;
 		readonly data: readonly FileListItem[];
 	};
-	'open-editor': {
-		readonly data: Readonly<ItemData>;
-		readonly editor: ItemEditorDialog<{}>;
-	};
 	'select-block': {
 		readonly block: BurgerBlock;
 		readonly width: number;
@@ -178,9 +132,6 @@ export interface Actions {
 		readonly x: number;
 		readonly y: number;
 		readonly marginBlockEnd: number;
-	};
-	'select-tab-in-item-editor': {
-		readonly index: number;
 	};
 	// Use on test
 	'update-css-width': {
@@ -239,19 +190,6 @@ export interface FileListItem {
 		readonly original?: string | null;
 		readonly small?: string | null;
 	};
-}
-
-export interface ItemEditorCustomFunctions<
-	T extends ItemData,
-	C extends { [key: string]: unknown },
-> {
-	[funcName: string]: (
-		this: ItemEditorService<T, C>,
-		e: CustomEvent<HTMLElement>,
-		editorDialog: ItemEditorDialog<T, C>,
-		item: Item<T, C>,
-		...args: unknown[]
-	) => unknown;
 }
 
 export interface BlockData {

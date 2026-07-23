@@ -33,6 +33,5 @@ export function createUnknownContentItem<
 		version: el.dataset.bgiVer ?? '0.0.0',
 		template: el.innerHTML ?? '',
 		style: '',
-		editor: '',
 	});
 }
