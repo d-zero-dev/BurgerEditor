@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 
 import { svelte } from '@sveltejs/vite-plugin-svelte';
+import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 // eslint-disable-next-line import-x/default
 import dts from 'vite-plugin-dts';
@@ -26,6 +27,7 @@ export default defineConfig({
 	},
 	plugins: [
 		svelte(),
+		react(),
 		dts({
 			outDir: 'dist',
 			entryRoot: 'src',
