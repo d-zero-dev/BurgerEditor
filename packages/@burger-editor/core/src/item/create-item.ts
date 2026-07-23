@@ -8,7 +8,8 @@ export function createItem<
 	T extends ItemData = {},
 	C extends { [key: string]: unknown } = {},
 	N extends string = string,
->(item: ItemSeed<N, T, C>) {
+	E = T,
+>(item: ItemSeed<N, T, C, E>) {
 	return {
 		...item,
 		get _(): T {
