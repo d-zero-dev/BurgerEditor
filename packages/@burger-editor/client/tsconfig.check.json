@@ -4,10 +4,6 @@
 		"noEmit": true,
 		"jsx": "react-jsx"
 	},
-	"include": [
-		"src/react/**/*",
-		"src/get-ext.ts",
-		"src/replace-element.ts",
-		"src/types.d.ts"
-	]
+	"include": ["src/**/*"],
+	"exclude": ["src/__tests__"]
 }

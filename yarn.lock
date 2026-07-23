@@ -2,7 +2,7 @@
 # Manual changes might be lost - proceed with caution!
 
 __metadata:
-  version: 8
+  version: 9
   cacheKey: 10c0
 
 "@acemir/cssom@npm:^0.9.31":
@@ -364,16 +364,12 @@ __metadata:
     "@burger-editor/custom-element": "npm:4.0.0-alpha.64"
     "@burger-editor/migrator": "npm:4.0.0-alpha.64"
     "@burger-editor/utils": "npm:4.0.0-alpha.64"
-    "@sveltejs/vite-plugin-svelte": "npm:6.2.4"
     "@tabler/icons-react": "npm:3.44.0"
-    "@tabler/icons-svelte": "npm:3.37.1"
     "@types/react": "npm:19.2.17"
     "@types/react-dom": "npm:19.2.3"
     "@vitejs/plugin-react": "npm:5.2.0"
     react: "npm:19.2.7"
     react-dom: "npm:19.2.7"
-    svelte: "npm:5.53.6"
-    svelte-check: "npm:4.4.4"
     vite: "npm:7.3.1"
     vite-plugin-dts: "npm:4.5.4"
   languageName: unknown
@@ -2331,7 +2327,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@jridgewell/trace-mapping@npm:^0.3.24, @jridgewell/trace-mapping@npm:^0.3.25, @jridgewell/trace-mapping@npm:^0.3.28":
+"@jridgewell/trace-mapping@npm:^0.3.24, @jridgewell/trace-mapping@npm:^0.3.28":
   version: 0.3.31
   resolution: "@jridgewell/trace-mapping@npm:0.3.31"
   dependencies:
@@ -3853,35 +3849,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sveltejs/vite-plugin-svelte-inspector@npm:^5.0.0":
-  version: 5.0.2
-  resolution: "@sveltejs/vite-plugin-svelte-inspector@npm:5.0.2"
-  dependencies:
-    obug: "npm:^2.1.0"
-  peerDependencies:
-    "@sveltejs/vite-plugin-svelte": ^6.0.0-next.0
-    svelte: ^5.0.0
-    vite: ^6.3.0 || ^7.0.0
-  checksum: 10c0/63ab115addd484a0e1c304af4ff8659b47c364707158b8896a8974bb6f71ea53b8edeccb4d4abc6022408bf95f68a6c3c0e412651cc67fdf2d4686c85e8b2785
-  languageName: node
-  linkType: hard
-
-"@sveltejs/vite-plugin-svelte@npm:6.2.4":
-  version: 6.2.4
-  resolution: "@sveltejs/vite-plugin-svelte@npm:6.2.4"
-  dependencies:
-    "@sveltejs/vite-plugin-svelte-inspector": "npm:^5.0.0"
-    deepmerge: "npm:^4.3.1"
-    magic-string: "npm:^0.30.21"
-    obug: "npm:^2.1.0"
-    vitefu: "npm:^1.1.1"
-  peerDependencies:
-    svelte: ^5.0.0
-    vite: ^6.3.0 || ^7.0.0
-  checksum: 10c0/db50e79dc3ce635b92287e1b1cdee46a5f97ed17df514f59d08a27431f673336fe357901c17710b311e5e75b7d982cd17eedbaa3117a73ae2a328fa1d1ac9eb3
-  languageName: node
-  linkType: hard
-
 "@tabler/icons-react@npm:3.44.0":
   version: 3.44.0
   resolution: "@tabler/icons-react@npm:3.44.0"
@@ -3893,18 +3860,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tabler/icons-svelte@npm:3.37.1":
-  version: 3.37.1
-  resolution: "@tabler/icons-svelte@npm:3.37.1"
-  dependencies:
-    "@tabler/icons": "npm:"
-  peerDependencies:
-    svelte: ">=3 <6 || >=5.0.0-next.0"
-  checksum: 10c0/90ea0f305e70b9dd25418a8e215abda7785c62c808e074e613d84e5ec6e92ce30f442629566f2d81e4ec7d053cdcfdafb2210f561b4538c9eb6c45795826b8ca
-  languageName: node
-  linkType: hard
-
-"@tabler/icons@npm:, @tabler/icons@npm:3.37.1":
+"@tabler/icons@npm:3.37.1":
   version: 3.37.1
   resolution: "@tabler/icons@npm:3.37.1"
   checksum: 10c0/d7339e78f294957624d02d3ef9d404b86329f82987f6a08c6c4ca5055c6a967f1350c9765fb2138bd6540140f9bb4f8c80403c4279521e6be22a8a20024c463c
@@ -4755,13 +4711,6 @@ __metadata:
   version: 4.0.5
   resolution: "@types/tough-cookie@npm:4.0.5"
   checksum: 10c0/68c6921721a3dcb40451543db2174a145ef915bc8bcbe7ad4e59194a0238e776e782b896c7a59f4b93ac6acefca9161fccb31d1ce3b3445cb6faa467297fb473
-  languageName: node
-  linkType: hard
-
-"@types/trusted-types@npm:^2.0.7":
-  version: 2.0.7
-  resolution: "@types/trusted-types@npm:2.0.7"
-  checksum: 10c0/4c4855f10de7c6c135e0d32ce462419d8abbbc33713b31d294596c0cc34ae1fa6112a2f9da729c8f7a20707782b0d69da3b1f8df6645b0366d08825ca1522e0c
   languageName: node
   linkType: hard
 
@@ -5655,13 +5604,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"aria-query@npm:5.3.1":
-  version: 5.3.1
-  resolution: "aria-query@npm:5.3.1"
-  checksum: 10c0/2e9aca7d92d20b8539ee58fa1d29ba07e2269a68da8d27e9830d3cb816d49bb01648610ac3f2e365a8dedbf00168ac18c017ea49c512fbe2537a0b17184a458b
-  languageName: node
-  linkType: hard
-
 "aria-query@npm:^5.3.1":
   version: 5.3.2
   resolution: "aria-query@npm:5.3.2"
@@ -6265,7 +6207,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chokidar@npm:4.0.3, chokidar@npm:^4.0.1":
+"chokidar@npm:4.0.3":
   version: 4.0.3
   resolution: "chokidar@npm:4.0.3"
   dependencies:
@@ -7241,7 +7183,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"deepmerge@npm:4.3.1, deepmerge@npm:^4.3.1":
+"deepmerge@npm:4.3.1":
   version: 4.3.1
   resolution: "deepmerge@npm:4.3.1"
   checksum: 10c0/e53481aaf1aa2c4082b5342be6b6d8ad9dfe387bc92ce197a66dea08bd4265904a087e75e464f14d1347cf2ac8afe1e4c16b266e0561cc5df29382d3c5f80044
@@ -7361,7 +7303,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"devalue@npm:^5.6.2, devalue@npm:^5.6.3":
+"devalue@npm:^5.6.2":
   version: 5.6.3
   resolution: "devalue@npm:5.6.3"
   checksum: 10c0/701fbe57b9b8b71cf5f9e706a6c977cffadd5083298e442d460e82f04480b8c5656aa3c6eb36aed33b387f4266aed6abd2143cd91e94f96931302225d14789ba
@@ -8441,7 +8383,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fdir@npm:^6.2.0, fdir@npm:^6.4.3, fdir@npm:^6.5.0":
+"fdir@npm:^6.4.3, fdir@npm:^6.5.0":
   version: 6.5.0
   resolution: "fdir@npm:6.5.0"
   peerDependencies:
@@ -11809,13 +11751,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mri@npm:^1.1.0":
-  version: 1.2.0
-  resolution: "mri@npm:1.2.0"
-  checksum: 10c0/a3d32379c2554cf7351db6237ddc18dc9e54e4214953f3da105b97dc3babe0deb3ffe99cf409b38ea47cc29f9430561ba6b53b24ab8f9ce97a4b50409e4a50e7
-  languageName: node
-  linkType: hard
-
 "mrmime@npm:^2.0.0":
   version: 2.0.1
   resolution: "mrmime@npm:2.0.1"
@@ -12360,7 +12295,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"obug@npm:^2.1.0, obug@npm:^2.1.1":
+"obug@npm:^2.1.1":
   version: 2.1.1
   resolution: "obug@npm:2.1.1"
   checksum: 10c0/59dccd7de72a047e08f8649e94c1015ec72f94eefb6ddb57fb4812c4b425a813bc7e7cd30c9aca20db3c59abc3c85cc7a62bb656a968741d770f4e8e02bc2e78
@@ -12970,7 +12905,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"picocolors@npm:1.1.1, picocolors@npm:^1.0.0, picocolors@npm:^1.1.0, picocolors@npm:^1.1.1":
+"picocolors@npm:1.1.1, picocolors@npm:^1.1.0, picocolors@npm:^1.1.1":
   version: 1.1.1
   resolution: "picocolors@npm:1.1.1"
   checksum: 10c0/e2e3e8170ab9d7c7421969adaa7e1b31434f789afb9b3f115f6b96d91945041ac3ceb02e9ec6fe6510ff036bcc0bf91e69a1772edc0b707e12b19c0f2d6bcf58
@@ -14426,15 +14361,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sade@npm:^1.7.4":
-  version: 1.8.1
-  resolution: "sade@npm:1.8.1"
-  dependencies:
-    mri: "npm:^1.1.0"
-  checksum: 10c0/da8a3a5d667ad5ce3bf6d4f054bbb9f711103e5df21003c5a5c1a8a77ce12b640ed4017dd423b13c2307ea7e645adee7c2ae3afe8051b9db16a6f6d3da3f90b1
-  languageName: node
-  linkType: hard
-
 "safe-buffer@npm:~5.1.0, safe-buffer@npm:~5.1.1":
   version: 5.1.2
   resolution: "safe-buffer@npm:5.1.2"
@@ -15329,24 +15255,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte-check@npm:4.4.4":
-  version: 4.4.4
-  resolution: "svelte-check@npm:4.4.4"
-  dependencies:
-    "@jridgewell/trace-mapping": "npm:^0.3.25"
-    chokidar: "npm:^4.0.1"
-    fdir: "npm:^6.2.0"
-    picocolors: "npm:^1.0.0"
-    sade: "npm:^1.7.4"
-  peerDependencies:
-    svelte: ^4.0.0 || ^5.0.0-next.0
-    typescript: ">=5.0.0"
-  bin:
-    svelte-check: bin/svelte-check
-  checksum: 10c0/0f3c9c37b54e8c28b9de8589d4b7550d709fa509efb151be72d1cdd8af036ca852b01b418f3d01e6262472ebf856b8aecbe3e0cc325d63fd7d4a6856dccd500a
-  languageName: node
-  linkType: hard
-
 "svelte-eslint-parser@npm:^1.4.0":
   version: 1.4.1
   resolution: "svelte-eslint-parser@npm:1.4.1"
@@ -15386,30 +15294,6 @@ __metadata:
     magic-string: "npm:^0.30.11"
     zimmerframe: "npm:^1.1.2"
   checksum: 10c0/58acd1e42da5065228d2c673aee56a4eaf655272a82541ba8fc97050a7ab3bd54dd66a40bc46aff8fdc65b66ce9c8b613a7f316d1d1e31b0b93e7eac6b8ae4c8
-  languageName: node
-  linkType: hard
-
-"svelte@npm:5.53.6":
-  version: 5.53.6
-  resolution: "svelte@npm:5.53.6"
-  dependencies:
-    "@jridgewell/remapping": "npm:^2.3.4"
-    "@jridgewell/sourcemap-codec": "npm:^1.5.0"
-    "@sveltejs/acorn-typescript": "npm:^1.0.5"
-    "@types/estree": "npm:^1.0.5"
-    "@types/trusted-types": "npm:^2.0.7"
-    acorn: "npm:^8.12.1"
-    aria-query: "npm:5.3.1"
-    axobject-query: "npm:^4.1.0"
-    clsx: "npm:^2.1.1"
-    devalue: "npm:^5.6.3"
-    esm-env: "npm:^1.2.1"
-    esrap: "npm:^2.2.2"
-    is-reference: "npm:^3.0.3"
-    locate-character: "npm:^3.0.0"
-    magic-string: "npm:^0.30.11"
-    zimmerframe: "npm:^1.1.2"
-  checksum: 10c0/e49a586a17283988ba341de16507e92eb43127950762c33543d28f96d148048d6b01fccae89764e9ad3f199dbdbd19493b20df709e1ae759b9a51e6ba60132af
   languageName: node
   linkType: hard
 
@@ -16722,18 +16606,6 @@ __metadata:
   bin:
     vite: bin/vite.js
   checksum: 10c0/5c7548f5f43a23533e53324304db4ad85f1896b1bfd3ee32ae9b866bac2933782c77b350eb2b52a02c625c8ad1ddd4c000df077419410650c982cd97fde8d014
-  languageName: node
-  linkType: hard
-
-"vitefu@npm:^1.1.1":
-  version: 1.1.1
-  resolution: "vitefu@npm:1.1.1"
-  peerDependencies:
-    vite: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0-beta.0
-  peerDependenciesMeta:
-    vite:
-      optional: true
-  checksum: 10c0/7e0d0dd6fb73bd80cb56a3f47ccc44159e0330c3e94b2951648079b35711226f9088dbe616d910b931740b92259230b874fbe351108b49f5c11b629b641292a5
   languageName: node
   linkType: hard
 

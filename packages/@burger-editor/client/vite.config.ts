@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 
-import { svelte } from '@sveltejs/vite-plugin-svelte';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 // eslint-disable-next-line import-x/default
@@ -14,7 +13,7 @@ export default defineConfig({
 		outDir: 'dist',
 		lib: {
 			entry: {
-				client: 'src/index.ts',
+				client: 'src/index.tsx',
 				react: 'src/react/index.ts',
 			},
 			name: 'BgE',
@@ -30,7 +29,6 @@ export default defineConfig({
 		},
 	},
 	plugins: [
-		svelte(),
 		react(),
 		dts({
 			outDir: 'dist',

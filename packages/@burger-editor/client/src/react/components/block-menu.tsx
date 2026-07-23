@@ -13,7 +13,9 @@ import {
 	IconSettings,
 	IconTrash,
 } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
+import { useId, useEffect, useState } from 'react';
+
+import { useCommand } from '../use-command.js';
 
 import { BlockMenuButton } from './block-menu-button.js';
 import styles from './block-menu.module.css';
@@ -25,6 +27,13 @@ interface MenuGeometry {
 	readonly y: number;
 	readonly marginBlockEnd: number;
 	readonly marginBlockEndValue: string;
+}
+
+interface ItemOverlayRect {
+	readonly x: number;
+	readonly y: number;
+	readonly width: number;
+	readonly height: number;
 }
 
 /**
@@ -45,8 +54,10 @@ export function BlockMenu({
 	readonly container: HTMLElement;
 	readonly onHide: () => void;
 }) {
+	const menuId = useId();
 	const [currentBlock, setCurrentBlock] = useState<BurgerBlock | null>(null);
 	const [visible, setVisible] = useState(false);
+	const [itemRects, setItemRects] = useState<readonly ItemOverlayRect[]>([]);
 	const [geometry, setGeometry] = useState<MenuGeometry>({
 		width: 0,
 		height: 0,
@@ -54,6 +65,19 @@ export function BlockMenu({
 		y: 0,
 		marginBlockEnd: 0,
 		marginBlockEndValue: '0px',
+	});
+
+	const rootRef = useCommand<HTMLDivElement>({
+		'--open-item-editor': (e) => {
+			if (engine.isProcessed) {
+				return;
+			}
+			const index = Number((e.source as HTMLButtonElement | null)?.value);
+			const item = engine.getCurrentBlock()?.items[index];
+			if (item) {
+				engine.uiState.openItemEditor(item);
+			}
+		},
 	});
 
 	useEffect(() => {
@@ -103,6 +127,17 @@ export function BlockMenu({
 					.getComputedStyle(block.el)
 					.getPropertyValue('--bge-block-margin'),
 			});
+			setItemRects(
+				block.items.map((item) => {
+					const itemRect = item.el.getBoundingClientRect();
+					return {
+						x: itemRect.left - rect.left,
+						y: itemRect.top - rect.top,
+						width: itemRect.width,
+						height: itemRect.height,
+					};
+				}),
+			);
 
 			engine.componentObserver.notify('select-block', {
 				block,
@@ -171,14 +206,13 @@ export function BlockMenu({
 		};
 	}, [engine, container, onHide]);
 
-	if (!visible) {
-		return null;
-	}
-
 	const isMutable = currentBlock?.isMutable();
 
 	return (
 		<div
+			ref={rootRef}
+			id={menuId}
+			hidden={!visible}
 			className={styles['bgeMenuBase']}
 			style={
 				{
@@ -189,6 +223,22 @@ export function BlockMenu({
 					'--margin-block-end': `${geometry.marginBlockEnd ?? '0'}px`,
 				} as CSSProperties
 			}>
+			{itemRects.map((rect, index) => (
+				<button
+					key={index}
+					type="button"
+					className={styles['bgeItemOverlay']}
+					aria-label="コンテンツを編集"
+					command="--open-item-editor"
+					commandfor={menuId}
+					value={index}
+					style={{
+						insetInlineStart: `${rect.x}px`,
+						insetBlockStart: `${rect.y}px`,
+						inlineSize: `${rect.width}px`,
+						blockSize: `${rect.height}px`,
+					}}></button>
+			))}
 			<div className={styles['bgeMenu']}>
 				<div className={styles['bgeMoveGroup']}>
 					<BlockMenuButton

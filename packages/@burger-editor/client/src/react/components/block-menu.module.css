@@ -58,6 +58,24 @@
 	outline: 4px solid var(--bge-ui-primary-color);
 }
 
+/* アイテム編集用の透明オーバーレイボタン（旧: アイテム要素への直接クリック） */
+.bgeItemOverlay {
+	position: absolute;
+	z-index: 50;
+	padding: 0;
+	margin: 0;
+	appearance: none;
+	pointer-events: all;
+	cursor: pointer;
+	background: transparent;
+	border: none;
+
+	&:is(:hover, :focus-visible) {
+		outline: 2px dashed var(--bge-ui-primary-color);
+		outline-offset: -2px;
+	}
+}
+
 .bgeMoveGroup,
 .bgeStandardGroup {
 	inset-block-start: 0;
