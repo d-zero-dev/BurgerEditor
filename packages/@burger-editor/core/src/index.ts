@@ -13,6 +13,8 @@ export { dataFromHtml as itemExport } from './item/data-from-html.js';
 export { render } from './render.js';
 export { ComponentObserver } from './component-observer.js';
 export { CommandBus, COMMAND_BUS_ID } from './command/command-bus.js';
+export { BGE_COMMAND } from './command/commands.js';
+export type { BgeCommand } from './command/commands.js';
 export type { CommandName, CommandHandler } from './command/command-bus.js';
 export type { BurgerCommandEvent } from './command/types.js';
 export { UIStateStore } from './engine/ui-state.js';
