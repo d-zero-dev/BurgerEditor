@@ -13,6 +13,7 @@ import type {
 import { BurgerBlock } from '../block/block.js';
 import { BlockCatalogDialog } from '../block-catalog-dialog.js';
 import { BlockOptionsDialog } from '../block-options-dialog.js';
+import { CommandBus } from '../command/command-bus.js';
 import { ComponentObserver } from '../component-observer.js';
 import { CSS_LAYER } from '../const.js';
 import { createComponentStylesheet } from '../dom-helpers/create-component-stylesheet.js';
@@ -31,11 +32,14 @@ import { getItemEditorTemplate } from '../item/get-item-editor-template.js';
 import { Item } from '../item/item.js';
 import { ItemEditorDialog } from '../item-editor-dialog.js';
 
+import { UIStateStore } from './ui-state.js';
+
 type ConfirmCallback = () => Promise<boolean> | boolean;
 
 export class BurgerEditorEngine {
 	readonly blockCatalogDialog: BlockCatalogDialog;
 	readonly blockOptionsDialog: BlockOptionsDialog;
+	readonly commandBus = new CommandBus();
 	readonly componentObserver = new ComponentObserver();
 	readonly config: Config;
 	readonly css: {
@@ -54,6 +58,7 @@ export class BurgerEditorEngine {
 		readonly blockClipboard: string;
 	};
 	readonly ui: UIOptions;
+	readonly uiState = new UIStateStore();
 	readonly viewArea: HTMLElement;
 	#contentStylesheetCache: string | null = null;
 	#current!: EditableArea;
@@ -200,6 +205,8 @@ export class BurgerEditorEngine {
 		this.viewArea = viewArea;
 		this.el.append(viewArea);
 
+		this.commandBus.createReceiver(this.el);
+
 		this.el.addEventListener('bge:saved', (e) => {
 			const { main, draft } = e.detail;
 			void options.onUpdated?.(main, draft);
@@ -226,6 +233,7 @@ export class BurgerEditorEngine {
 	 */
 	cleanUp() {
 		this.#healthMonitor.stop();
+		this.commandBus.destroy();
 	}
 
 	clearCurrentBlock() {
