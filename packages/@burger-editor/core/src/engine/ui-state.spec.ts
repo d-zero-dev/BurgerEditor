@@ -1,3 +1,4 @@
+import type { BurgerBlock } from '../block/block.js';
 import type { Item } from '../item/item.js';
 import type { ItemData } from '../item/types.js';
 
@@ -21,8 +22,9 @@ describe('UIStateStore', () => {
 		expect(after).not.toBe(before);
 		expect(after.openDialog).toEqual({ type: 'block-catalog' });
 
-		store.openBlockOptions();
-		expect(store.getSnapshot().openDialog).toEqual({ type: 'block-options' });
+		const block = { name: 'dummy-block' } as unknown as BurgerBlock;
+		store.openBlockOptions(block);
+		expect(store.getSnapshot().openDialog).toEqual({ type: 'block-options', block });
 	});
 
 	test('openItemEditor carries the item', () => {
