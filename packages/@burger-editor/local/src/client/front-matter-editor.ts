@@ -50,6 +50,31 @@ export class FrontMatterEditor {
 			this.#originalFrontMatter = JSON.stringify(options.initialData);
 		}
 
+		// ボタンは commandfor でコンテナを指す（Invoker Commands API）
+		if (!this.#container.id) {
+			this.#container.id = `fm-editor-${FrontMatterEditor.#uid++}`;
+		}
+		this.#container.addEventListener('command', (event) => {
+			switch (event.command) {
+				case '--fm-toggle': {
+					this.#isCollapsed = !this.#isCollapsed;
+					this.#render();
+					return;
+				}
+				case '--fm-add-field': {
+					this.#showAddFieldDialog();
+					return;
+				}
+				case '--fm-delete-field': {
+					const index = Number((event.source as HTMLButtonElement | null)?.value);
+					if (Number.isInteger(index)) {
+						this.#deleteField(index);
+					}
+					return;
+				}
+			}
+		});
+
 		this.#render();
 	}
 
@@ -63,14 +88,12 @@ export class FrontMatterEditor {
 		}
 		return data;
 	}
-
 	/**
 	 * Get original Front Matter string for format preservation
 	 */
 	getOriginalFrontMatter(): string | undefined {
 		return this.#originalFrontMatter;
 	}
-
 	/**
 	 * Check if Front Matter has been modified
 	 */
@@ -81,7 +104,6 @@ export class FrontMatterEditor {
 		const currentData = JSON.stringify(this.getData());
 		return currentData !== this.#originalFrontMatter;
 	}
-
 	/**
 	 * Add a new field
 	 * @param key
@@ -94,7 +116,6 @@ export class FrontMatterEditor {
 		this.#render();
 		this.#notifyUpdate();
 	}
-
 	/**
 	 * Create a field element
 	 * @param field
@@ -123,14 +144,13 @@ export class FrontMatterEditor {
 		deleteBtn.className = 'fm-editor-field-delete';
 		deleteBtn.title = 'フィールドを削除';
 		deleteBtn.textContent = '×';
-		deleteBtn.addEventListener('click', () => {
-			this.#deleteField(index);
-		});
+		deleteBtn.setAttribute('command', '--fm-delete-field');
+		deleteBtn.setAttribute('commandfor', this.#container.id);
+		deleteBtn.value = String(index);
 		fieldEl.append(deleteBtn);
 
 		return fieldEl;
 	}
-
 	/**
 	 * Create input element based on field type
 	 * @param field
@@ -206,7 +226,6 @@ export class FrontMatterEditor {
 			}
 		}
 	}
-
 	/**
 	 * Delete a field
 	 * @param index
@@ -216,7 +235,6 @@ export class FrontMatterEditor {
 		this.#render();
 		this.#notifyUpdate();
 	}
-
 	/**
 	 * Detect the type of a value
 	 * @param value
@@ -247,7 +265,6 @@ export class FrontMatterEditor {
 		}
 		return 'text';
 	}
-
 	/**
 	 * Get default value for a type
 	 * @param type
@@ -271,7 +288,6 @@ export class FrontMatterEditor {
 			}
 		}
 	}
-
 	/**
 	 * Notify update callback
 	 */
@@ -280,6 +296,7 @@ export class FrontMatterEditor {
 			this.#onUpdated(this.getData());
 		}
 	}
+	static #uid = 0;
 
 	/**
 	 * Parse initial data and detect field types
@@ -310,26 +327,13 @@ export class FrontMatterEditor {
 		const header = document.createElement('div');
 		header.className = 'fm-editor-header';
 		header.innerHTML = `
-			<button type="button" class="fm-editor-toggle" aria-expanded="${!this.#isCollapsed}">
+			<button type="button" class="fm-editor-toggle" aria-expanded="${!this.#isCollapsed}" command="--fm-toggle" commandfor="${this.#container.id}">
 				<span class="fm-editor-toggle-icon">${this.#isCollapsed ? '▶' : '▼'}</span>
 				<span>Front Matter</span>
 			</button>
-			<button type="button" class="fm-editor-add" title="フィールドを追加">+ 追加</button>
+			<button type="button" class="fm-editor-add" title="フィールドを追加" command="--fm-add-field" commandfor="${this.#container.id}">+ 追加</button>
 		`;
 		this.#container.append(header);
-
-		// Toggle collapse
-		const toggleBtn = header.querySelector('.fm-editor-toggle');
-		toggleBtn?.addEventListener('click', () => {
-			this.#isCollapsed = !this.#isCollapsed;
-			this.#render();
-		});
-
-		// Add field button
-		const addBtn = header.querySelector('.fm-editor-add');
-		addBtn?.addEventListener('click', () => {
-			this.#showAddFieldDialog();
-		});
 
 		// Fields container
 		if (!this.#isCollapsed) {
@@ -359,6 +363,7 @@ export class FrontMatterEditor {
 	#showAddFieldDialog(): void {
 		const dialog = document.createElement('dialog');
 		dialog.className = 'fm-editor-dialog';
+		dialog.id = `${this.#container.id}-add-dialog`;
 		dialog.innerHTML = `
 			<form method="dialog">
 				<h3>フィールドを追加</h3>
@@ -377,15 +382,14 @@ export class FrontMatterEditor {
 					</select>
 				</div>
 				<div class="fm-editor-dialog-actions">
-					<button type="button" class="fm-editor-dialog-cancel">キャンセル</button>
+					<button type="button" class="fm-editor-dialog-cancel" command="close" commandfor="${this.#container.id}-add-dialog">キャンセル</button>
 					<button type="submit" class="fm-editor-dialog-submit">追加</button>
 				</div>
 			</form>
 		`;
 
-		const cancelBtn = dialog.querySelector('.fm-editor-dialog-cancel');
-		cancelBtn?.addEventListener('click', () => {
-			dialog.close();
+		// キャンセルは組み込みcloseコマンドで宣言し、close後に要素を破棄する
+		dialog.addEventListener('close', () => {
 			dialog.remove();
 		});
 
