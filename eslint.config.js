@@ -71,7 +71,7 @@ export default [
 		},
 	},
 	{
-		files: ['*.mjs', '**/*.spec.{js,mjs,ts}', '**/*.config.ts'],
+		files: ['*.mjs', '**/*.spec.{js,mjs,ts,tsx}', '**/*.config.ts'],
 		rules: {
 			'import-x/no-extraneous-dependencies': 0,
 		},

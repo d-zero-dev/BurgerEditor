@@ -75,7 +75,7 @@ export default defineConfig({
 				extends: './packages/@burger-editor/client/vite.config.ts',
 				test: {
 					name: 'client',
-					include: ['packages/@burger-editor/client/**/*.spec.ts'],
+					include: ['packages/@burger-editor/client/**/*.spec.{ts,tsx}'],
 					exclude: ['**/*.vr.spec.ts'],
 					...jsdomConfig,
 				},
