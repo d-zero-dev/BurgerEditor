@@ -1,0 +1,15 @@
+{
+	"extends": "./tsconfig.json",
+	"exclude": ["src/__tests__/vr", "src/react"],
+	"references": [
+		{
+			"path": "../migrator"
+		},
+		{
+			"path": "../core"
+		},
+		{
+			"path": "../utils"
+		}
+	]
+}

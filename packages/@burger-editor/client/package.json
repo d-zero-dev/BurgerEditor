@@ -32,7 +32,7 @@
 	"scripts": {
 		"build": "npx run-p build:check build:build",
 		"build:build": "vite build",
-		"build:check": "svelte-check",
+		"build:check": "svelte-check --tsconfig ./tsconfig.svelte-check.json && tsc -p tsconfig.react.json",
 		"dev": "vite build --watch"
 	},
 	"dependencies": {

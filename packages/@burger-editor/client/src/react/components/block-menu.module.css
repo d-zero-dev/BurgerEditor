@@ -1,0 +1,68 @@
+.bgeMenuBase {
+	position: absolute;
+	inset-block-start: var(--y);
+	inset-inline-start: var(--x);
+	inline-size: var(--width);
+	block-size: calc(var(--height) + var(--margin-block-end));
+	pointer-events: none;
+}
+
+.bgeMenuMargin {
+	--_line-color: rgb(from var(--bge-ui-primary-color) r g b / 10%);
+
+	position: absolute;
+	inset-block-end: 0;
+	inset-inline-start: 0;
+	z-index: 100;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: 100%;
+	block-size: var(--margin-block-end);
+	container: margin-view / size;
+	font-size: 0.8em;
+	font-weight: bold;
+	color: var(--bge-ui-primary-color);
+	pointer-events: none;
+	background: repeating-linear-gradient(
+		45deg,
+		transparent,
+		transparent 4px,
+		var(--_line-color) 4px,
+		var(--_line-color) 8px
+	);
+}
+
+@container margin-view (height < 1em) {
+	.bgeMenuMargin {
+		span {
+			padding-block: 0.2em;
+			padding-inline: 0.4em;
+			color: var(--bge-lightest-color);
+			background: var(--bge-ui-primary-color);
+			border-radius: 0.2em;
+		}
+	}
+}
+
+.bgeMenu {
+	--gap: 0.2em;
+
+	display: flex;
+	align-items: start;
+	justify-content: space-between;
+	inline-size: 100%;
+	block-size: 100%;
+	min-block-size: max-content;
+	pointer-events: none;
+	outline: 4px solid var(--bge-ui-primary-color);
+}
+
+.bgeMoveGroup,
+.bgeStandardGroup {
+	inset-block-start: 0;
+	display: flex;
+	gap: var(--gap);
+	justify-content: center;
+	padding: var(--gap);
+}

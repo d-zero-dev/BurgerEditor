@@ -1,0 +1,13 @@
+{
+	"extends": "../../../tsconfig.json",
+	"compilerOptions": {
+		"noEmit": true,
+		"jsx": "react-jsx"
+	},
+	"include": [
+		"src/react/**/*",
+		"src/get-ext.ts",
+		"src/replace-element.ts",
+		"src/types.d.ts"
+	]
+}

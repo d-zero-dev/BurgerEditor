@@ -1,0 +1,32 @@
+.tablist {
+	--border-radius: 0.5em;
+
+	display: flex;
+	gap: 0.5em;
+	align-items: center;
+	padding-inline: var(--border-radius);
+
+	[role='tab'] {
+		position: relative;
+		border: 1px solid var(--bge-border-color);
+		border-end-start-radius: 0;
+		border-end-end-radius: 0;
+
+		&[aria-selected='true'] {
+			border-block-end: none;
+
+			&::after {
+				position: absolute;
+				inset-block-start: 100%;
+				inset-inline-start: 50%;
+				display: block;
+				inline-size: 1em;
+				block-size: 0.5em;
+				content: '';
+				background-color: var(--bge-ui-primary-color);
+				clip-path: polygon(0 0, 50% 100%, 100% 0);
+				translate: -50% 0;
+			}
+		}
+	}
+}
