@@ -96,25 +96,21 @@ export function defineBgeWysiwygEditorElement(
 
 export class BgeWysiwygEditorElement extends HTMLElement {
 	#wysiwygElement: BgeWysiwygElement | null = null;
-
 	get editor() {
 		if (!this.#wysiwygElement) {
 			throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
 		}
 		return this.#wysiwygElement.editor;
 	}
-
 	get name() {
 		return this.getAttribute('name') ?? '';
 	}
-
 	get value() {
 		if (!this.#wysiwygElement) {
 			throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
 		}
 		return this.#wysiwygElement.value;
 	}
-
 	/**
 	 * 現在のエディタモードを取得
 	 * @returns 'wysiwyg' | 'html' | 'text-only'
@@ -125,13 +121,17 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 		}
 		return this.#wysiwygElement.mode;
 	}
-
 	constructor() {
 		super();
 
 		const initialValue = this.innerHTML.trim();
 		const label = this.getAttribute('label') ?? '内容';
 		const itemName = this.getAttribute('item-name');
+
+		if (!this.id) {
+			this.id = `bge-wysiwyg-editor-${BgeWysiwygEditorElement.#uid++}`;
+		}
+		const toggleCommand = `command="--wysiwyg-toggle" commandfor="${this.id}"`;
 
 		const commands: ReadonlyArray<string> =
 			// Get commands from attribute
@@ -146,29 +146,29 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 				<legend>${label}</legend>
 				<div data-bge-toolbar>
 					<div data-bge-toolbar-group>
-						${commands.includes('bold') ? `<button type="button" data-bge-toolbar-button="bold">${IconBold}</button>` : ''}
-						${commands.includes('italic') ? `<button type="button" data-bge-toolbar-button="italic">${IconItalic}</button>` : ''}
-						${commands.includes('strikethrough') ? `<button type="button" data-bge-toolbar-button="strikethrough">${IconStrikethrough}</button>` : ''}
-						${commands.includes('underline') ? `<button type="button" data-bge-toolbar-button="underline">${IconUnderline}</button>` : ''}
-						${commands.includes('subscript') ? `<button type="button" data-bge-toolbar-button="subscript">${IconSubscript}</button>` : ''}
-						${commands.includes('superscript') ? `<button type="button" data-bge-toolbar-button="superscript">${IconSuperscript}</button>` : ''}
-						${commands.includes('code') ? `<button type="button" data-bge-toolbar-button="code">${IconCode}</button>` : ''}
-						${commands.includes('link') ? `<button type="button" data-bge-toolbar-button="link">${IconLink}</button>` : ''}
-						${commands.includes('button-like-link') ? `<button type="button" data-bge-toolbar-button="button-like-link">${IconCloud}</button>` : ''}
-						${commands.includes('blockquote') ? `<button type="button" data-bge-toolbar-button="blockquote">${IconBlockquote}</button>` : ''}
-						${commands.includes('bullet-list') ? `<button type="button" data-bge-toolbar-button="bullet-list">${IconBulletList}</button>` : ''}
-						${commands.includes('ordered-list') ? `<button type="button" data-bge-toolbar-button="ordered-list">${IconOrderedList}</button>` : ''}
-						${commands.includes('note') ? `<button type="button" data-bge-toolbar-button="note">${IconNotes}</button>` : ''}
-						${commands.includes('h1') ? `<button type="button" data-bge-toolbar-button="h1">${IconH1}</button>` : ''}
-						${commands.includes('h2') ? `<button type="button" data-bge-toolbar-button="h2">${IconH2}</button>` : ''}
-						${commands.includes('h3') ? `<button type="button" data-bge-toolbar-button="h3">${IconH3}</button>` : ''}
-						${commands.includes('h4') ? `<button type="button" data-bge-toolbar-button="h4">${IconH4}</button>` : ''}
-						${commands.includes('h5') ? `<button type="button" data-bge-toolbar-button="h5">${IconH5}</button>` : ''}
-						${commands.includes('h6') ? `<button type="button" data-bge-toolbar-button="h6">${IconH6}</button>` : ''}
-						${commands.includes('flex-box') ? `<button type="button" data-bge-toolbar-button="flex-box"><span data-bge-rotate>${IconAlignBoxCenterStretch}</span></button>` : ''}
-						${commands.includes('align-start') ? `<button type="button" data-bge-toolbar-button="align-start">${IconAlignLeft}</button>` : ''}
-						${commands.includes('align-center') ? `<button type="button" data-bge-toolbar-button="align-center">${IconAlignCenter}</button>` : ''}
-						${commands.includes('align-end') ? `<button type="button" data-bge-toolbar-button="align-end">${IconAlignRight}</button>` : ''}
+						${commands.includes('bold') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="bold">${IconBold}</button>` : ''}
+						${commands.includes('italic') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="italic">${IconItalic}</button>` : ''}
+						${commands.includes('strikethrough') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="strikethrough">${IconStrikethrough}</button>` : ''}
+						${commands.includes('underline') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="underline">${IconUnderline}</button>` : ''}
+						${commands.includes('subscript') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="subscript">${IconSubscript}</button>` : ''}
+						${commands.includes('superscript') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="superscript">${IconSuperscript}</button>` : ''}
+						${commands.includes('code') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="code">${IconCode}</button>` : ''}
+						${commands.includes('link') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="link">${IconLink}</button>` : ''}
+						${commands.includes('button-like-link') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="button-like-link">${IconCloud}</button>` : ''}
+						${commands.includes('blockquote') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="blockquote">${IconBlockquote}</button>` : ''}
+						${commands.includes('bullet-list') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="bullet-list">${IconBulletList}</button>` : ''}
+						${commands.includes('ordered-list') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="ordered-list">${IconOrderedList}</button>` : ''}
+						${commands.includes('note') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="note">${IconNotes}</button>` : ''}
+						${commands.includes('h1') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h1">${IconH1}</button>` : ''}
+						${commands.includes('h2') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h2">${IconH2}</button>` : ''}
+						${commands.includes('h3') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h3">${IconH3}</button>` : ''}
+						${commands.includes('h4') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h4">${IconH4}</button>` : ''}
+						${commands.includes('h5') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h5">${IconH5}</button>` : ''}
+						${commands.includes('h6') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h6">${IconH6}</button>` : ''}
+						${commands.includes('flex-box') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="flex-box"><span data-bge-rotate>${IconAlignBoxCenterStretch}</span></button>` : ''}
+						${commands.includes('align-start') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="align-start">${IconAlignLeft}</button>` : ''}
+						${commands.includes('align-center') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="align-center">${IconAlignCenter}</button>` : ''}
+						${commands.includes('align-end') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="align-end">${IconAlignRight}</button>` : ''}
 					</div>
 					<div data-bge-toolbar-group>
 						${
@@ -178,7 +178,7 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 								<option value="text-only">テキスト編集モード</option>
 								<option value="html">HTMLモード</option>
 							</select>`
-								: `<button type="button" data-bge-toolbar-button="html-mode">HTML Mode</button>`
+								: `<button type="button" command="--wysiwyg-html-mode" commandfor="${this.id}" data-bge-toolbar-button="html-mode">HTML Mode</button>`
 						}
 					</div>
 				</div>
@@ -206,7 +206,6 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 			},
 		});
 	}
-
 	connectedCallback() {
 		this.#wysiwygElement = this.querySelector<BgeWysiwygElement>('bge-wysiwyg')!;
 
@@ -216,14 +215,20 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 
 		const buttons = this.querySelectorAll<HTMLButtonElement>('[data-bge-toolbar-button]');
 
-		for (const button of buttons) {
-			button.addEventListener('click', () => {
-				if (!this.#wysiwygElement) {
-					throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
-				}
-				bindToggle(button, this.#wysiwygElement);
-			});
-		}
+		// ツールバーボタンは commandfor でこの要素を指す（Invoker Commands API）
+		this.addEventListener('command', (event) => {
+			if (event.command !== '--wysiwyg-toggle') {
+				return;
+			}
+			const source = event.source;
+			if (!(source instanceof HTMLButtonElement)) {
+				return;
+			}
+			if (!this.#wysiwygElement) {
+				throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
+			}
+			bindToggle(source, this.#wysiwygElement);
+		});
 
 		this.#wysiwygElement.addEventListener('transaction', (event) => {
 			for (const button of buttons) {
@@ -316,8 +321,11 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 				throw new Error('HTML mode button not found');
 			}
 
-			// HTMLモードボタンのクリックハンドラー（text-only実装前の動作）
-			htmlModeButton.addEventListener('click', () => {
+			// HTMLモードボタンのコマンドハンドラー（text-only実装前の動作）
+			this.addEventListener('command', (event) => {
+				if (event.command !== '--wysiwyg-html-mode') {
+					return;
+				}
 				if (!this.#wysiwygElement) {
 					throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
 				}
@@ -356,20 +364,19 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 			htmlModeButton.disabled = isHtmlMode && this.#wysiwygElement.hasStructureChange;
 		}
 	}
-
 	setStyle(css: string) {
 		if (!this.#wysiwygElement) {
 			throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
 		}
 		this.#wysiwygElement.setStyle(css);
 	}
-
 	syncWysiwygToTextarea() {
 		if (!this.#wysiwygElement) {
 			throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
 		}
 		this.#wysiwygElement.syncWysiwygToTextarea();
 	}
+	static #uid = 0;
 
 	static extensions: Extensions | null = null;
 
