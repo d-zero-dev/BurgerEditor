@@ -9,13 +9,6 @@ const extended = extendsConfig({
  */
 export default {
 	...extended,
-	parser: {
-		...extended.parser,
-		'\\.svelte$': '@markuplint/svelte-parser',
-	},
-	specs: {
-		'\\.svelte$': '@markuplint/svelte-spec',
-	},
 	rules: {
 		...extended.rules,
 		'heading-levels': false,

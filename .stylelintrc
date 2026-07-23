@@ -10,21 +10,10 @@
 		"selector-type-no-unknown": [
 			true,
 			{
-				"ignoreTypes": ["/^bge-/"]
-			}
-		]
-	},
-	"overrides": [
-		{
-			"files": ["**/*.svelte"],
-			"rules": {
-				"selector-pseudo-class-no-unknown": [
-					true,
-					{
-						"ignorePseudoClasses": ["global"]
-					}
+				"ignoreTypes": [
+					"/^bge-/"
 				]
 			}
-		}
-	]
+		]
+	}
 }
