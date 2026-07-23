@@ -82,7 +82,11 @@ export function registerEngineCommands(
 	});
 
 	bus.define(BGE_COMMAND.openBlockOptions, () => {
-		engine.uiState.openBlockOptions();
+		const currentBlock = engine.getCurrentBlock();
+		if (engine.isProcessed || !currentBlock) {
+			return;
+		}
+		engine.uiState.openBlockOptions(currentBlock);
 	});
 
 	bus.define(BGE_COMMAND.copyBlock, () => {
@@ -100,7 +104,7 @@ export function registerEngineCommands(
 		);
 	});
 
-	bus.define(BGE_COMMAND.removeBlock, async (e) => {
+	bus.define(BGE_COMMAND.removeBlock, async () => {
 		const currentBlock = engine.getCurrentBlock();
 		if (engine.isProcessed || !currentBlock) {
 			return;
@@ -123,8 +127,6 @@ export function registerEngineCommands(
 
 		engine.isProcessed = false;
 		engine.save();
-
-		void e;
 	});
 
 	bus.define(BGE_COMMAND.insertInitialBlock, () => {

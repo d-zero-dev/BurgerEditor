@@ -1,3 +1,4 @@
+import type { BurgerBlock } from '../block/block.js';
 import type { Item } from '../item/item.js';
 import type { ItemData } from '../item/types.js';
 
@@ -5,10 +6,17 @@ import type { ItemData } from '../item/types.js';
  * The dialog currently presented by the editor UI, or `null` when no
  * dialog is open. The UI layer renders `<dialog>` elements declaratively
  * from this value instead of being opened imperatively by the engine.
+ *
+ * Dialogs that operate on a selection carry it in the state — the
+ * hover-driven current block can be cleared while a modal is open, so
+ * re-reading it at submit time is not safe.
  */
 export type OpenDialogState =
 	| { readonly type: 'block-catalog' }
-	| { readonly type: 'block-options' }
+	| {
+			readonly type: 'block-options';
+			readonly block: BurgerBlock;
+	  }
 	| {
 			readonly type: 'item-editor';
 			readonly item: Item<ItemData, {}>;
@@ -59,9 +67,10 @@ export class UIStateStore {
 
 	/**
 	 * Present the block options dialog.
+	 * @param block
 	 */
-	openBlockOptions() {
-		this.#set({ openDialog: { type: 'block-options' } });
+	openBlockOptions(block: BurgerBlock) {
+		this.#set({ openDialog: { type: 'block-options', block } });
 	}
 
 	/**

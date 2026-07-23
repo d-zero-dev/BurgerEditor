@@ -17,6 +17,7 @@ import { useUIState } from './use-engine.js';
 export function BurgerEditorRoot({ engine }: { readonly engine: BurgerEditorEngine }) {
 	const ui = useUIState(engine);
 	const open = ui.openDialog;
+	const optionsBlock = open?.type === 'block-options' ? open.block : null;
 
 	const closeAndSave = () => {
 		engine.uiState.closeDialog();
@@ -34,17 +35,18 @@ export function BurgerEditorRoot({ engine }: { readonly engine: BurgerEditorEngi
 			</EditorDialog>
 			<EditorDialog
 				name="options"
-				open={open?.type === 'block-options'}
+				open={optionsBlock !== null}
 				onClose={closeAndSave}
 				onComplete={(formData) => {
-					const block = engine.getCurrentBlock();
-					if (block) {
-						applyBlockOptions(block, formData);
+					// ダイアログ表示中にホバー選択が外れても適用できるよう、
+					// openDialog状態にスナップショットされたblockを使う
+					if (optionsBlock) {
+						applyBlockOptions(optionsBlock, formData);
 					}
 					engine.uiState.closeDialog();
 				}}
 				buttons={{ close: 'キャンセル', complete: '決定' }}>
-				<BlockOptions engine={engine} />
+				{optionsBlock ? <BlockOptions engine={engine} block={optionsBlock} /> : null}
 			</EditorDialog>
 			<ItemEditorHost
 				engine={engine}

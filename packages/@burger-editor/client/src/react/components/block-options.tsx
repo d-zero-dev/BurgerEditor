@@ -1,4 +1,4 @@
-import type { BurgerEditorEngine } from '@burger-editor/core';
+import type { BurgerBlock, BurgerEditorEngine } from '@burger-editor/core';
 
 import { useState } from 'react';
 
@@ -14,13 +14,16 @@ const containerTypeLabel = {
  * drive conditional rendering are controlled.
  * @param root0
  * @param root0.engine
+ * @param root0.block
  */
-export function BlockOptions({ engine }: { readonly engine: BurgerEditorEngine }) {
-	const currentBlock = engine.getCurrentBlock();
-
-	if (!currentBlock) {
-		throw new Error('currentBlock is null');
-	}
+export function BlockOptions({
+	engine,
+	block,
+}: {
+	readonly engine: BurgerEditorEngine;
+	readonly block: BurgerBlock;
+}) {
+	const currentBlock = block;
 
 	const [options] = useState(() => currentBlock.exportOptions());
 	const cssProps = engine.getCustomProperties(options.containerProps.type);

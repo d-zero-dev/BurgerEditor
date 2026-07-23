@@ -61,8 +61,10 @@ describe('registerEngineCommands', () => {
 		sessionStorage.clear();
 	});
 
-	test('--open-block-options opens the options dialog', () => {
+	test('--open-block-options snapshots the current block into the dialog state', () => {
 		const engine = createMockEngine();
+		const block = { name: 'target-block' };
+		(engine.getCurrentBlock as ReturnType<typeof vi.fn>).mockReturnValue(block);
 		registerEngineCommands(engine, {});
 		const receiver = engine.commandBus.createReceiver(document.body);
 
@@ -70,7 +72,18 @@ describe('registerEngineCommands', () => {
 
 		expect(engine.uiState.getSnapshot().openDialog).toEqual({
 			type: 'block-options',
+			block,
 		});
+	});
+
+	test('--open-block-options is guarded when no block is selected', () => {
+		const engine = createMockEngine();
+		registerEngineCommands(engine, {});
+		const receiver = engine.commandBus.createReceiver(document.body);
+
+		dispatchCommand(receiver, BGE_COMMAND.openBlockOptions);
+
+		expect(engine.uiState.getSnapshot().openDialog).toBeNull();
 	});
 
 	test('--switch-content routes to showMain/showDraft by value', () => {
