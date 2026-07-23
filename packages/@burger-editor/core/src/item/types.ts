@@ -106,7 +106,7 @@ export interface ItemSeed<
 	 * @deprecated Replaced by the `Editor` component contract; removed once
 	 * all items are migrated.
 	 */
-	editor: string;
+	editor?: string;
 
 	/**
 	 * Item editor component. Receives the current editor state and renders
@@ -128,9 +128,10 @@ export interface ItemSeed<
 	 * Derive the item data to persist from the editor state on submit.
 	 * Pure function — replaces `beforeChange`.
 	 * @param state - The editor state at submit time
+	 * @param config - Engine configuration
 	 * @returns The item data to import into the content
 	 */
-	toItemData?: (state: Readonly<E>) => T | Promise<T>;
+	toItemData?: (state: Readonly<E>, config: Config) => T | Promise<T>;
 
 	/**
 	 * Editor lifecycle
