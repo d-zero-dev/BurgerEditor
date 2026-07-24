@@ -43,8 +43,9 @@ export default defineConfig(({ mode }) => ({
 	],
 	define: {
 		__VERSION__: JSON.stringify(pkg.version),
-		// Reactを同梱するlibビルドではprocess.env参照を静的に解決する必要がある
-		// （ブラウザ実行時に `process is not defined` で起動が壊れる）。
+		// react/react-domはexternalだが、同梱される@burger-editor/custom-element
+		// が無防備なprocess.env.NODE_ENV参照を含むため静的解決が必要
+		// （欠くとブラウザ実行時に `process is not defined` で起動が壊れる）。
 		// vitest（このconfigをextendsする）ではReactを開発モードのまま
 		// 動かしたいので、testモードでは定義しない
 		...(mode === 'test' ? {} : { 'process.env.NODE_ENV': JSON.stringify('production') }),
