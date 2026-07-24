@@ -12,7 +12,7 @@ type Props = {
  */
 export function Nav({ virtualTreeEnabled }: Props) {
 	return (
-		<nav class="nav">
+		<nav className="nav">
 			<div>
 				<button type="button" command="show-modal" commandfor="new-file-dialog">
 					新規ファイル作成

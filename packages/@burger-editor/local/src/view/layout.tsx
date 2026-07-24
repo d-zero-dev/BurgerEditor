@@ -14,7 +14,7 @@ export function Layout({ children, lang }: PropsWithChildren<Props>) {
 	return (
 		<html lang={lang}>
 			<head>
-				<meta charset="utf-8" />
+				<meta charSet="utf-8" />
 				<title>BurgerEditor</title>
 				<link rel="stylesheet" href="https://unpkg.com/trix@2.0.8/dist/trix.css" />
 				<link rel="stylesheet" href="/client.css" />
