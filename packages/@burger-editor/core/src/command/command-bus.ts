@@ -8,6 +8,10 @@ import type { BurgerCommandEvent } from './types.js';
  * main document and one in each EditableArea iframe, because `commandfor`
  * can only reference an id within its own document and `CommandEvent` does
  * not bubble.
+ * @example
+ * ```tsx
+ * <button command="--remove-block" commandfor={COMMAND_BUS_ID}>削除</button>
+ * ```
  */
 export const COMMAND_BUS_ID = 'bge-command-bus';
 
@@ -22,6 +26,16 @@ export type CommandHandler = (event: BurgerCommandEvent) => void;
  * receiver elements. UI code never adds click listeners; buttons declare
  * `command`/`commandfor` and the bus routes the resulting `command` events
  * to engine operations.
+ * @example
+ * ```ts
+ * const bus = new CommandBus();
+ * bus.define('--my-action', (event) => {
+ * 	const value = (event.source as HTMLButtonElement | null)?.value;
+ * 	// ...
+ * });
+ * bus.createReceiver(document.body);
+ * // <button command="--my-action" commandfor="bge-command-bus" value="x">
+ * ```
  */
 export class CommandBus {
 	readonly #detachers = new Map<HTMLElement, () => void>();

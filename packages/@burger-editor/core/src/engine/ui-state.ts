@@ -23,6 +23,11 @@ export type OpenDialogState =
 	  }
 	| null;
 
+/**
+ * `UIStateStore` が公開するUI状態のスナップショット。変更のたびに
+ * オブジェクトごと差し替えられる（Reactの参照比較で再レンダーを
+ * 起こすため、部分的なミューテーションはしない）
+ */
 export interface UIState {
 	readonly openDialog: OpenDialogState;
 }
@@ -36,6 +41,16 @@ type Listener = () => void;
  *
  * The engine owns the store and performs all transitions; the UI layer
  * only subscribes and renders.
+ * @example
+ * ```ts
+ * const state = useSyncExternalStore(
+ * 	(cb) => engine.uiState.subscribe(cb),
+ * 	() => engine.uiState.getSnapshot(),
+ * );
+ * if (state.openDialog?.type === 'item-editor') {
+ * 	// render the item editor for state.openDialog.item
+ * }
+ * ```
  */
 export class UIStateStore {
 	#listeners = new Set<Listener>();

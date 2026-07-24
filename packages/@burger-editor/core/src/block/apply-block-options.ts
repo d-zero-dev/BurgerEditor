@@ -7,6 +7,15 @@ import type { BlockData } from '../types.js';
  * shell can reuse it on submit.
  * @param block - The block to update
  * @param formData - The submitted `bge-options-*` form data
+ * @example
+ * ```ts
+ * // フォーム側は `bge-options-<name>` 規約のname属性を持つ:
+ * // bge-options-container-type / bge-options-columns / bge-options-classes /
+ * // bge-options-id / bge-options-style-<category> など
+ * const formData = new FormData(optionsFormElement);
+ * applyBlockOptions(block, formData);
+ * engine.save();
+ * ```
  */
 export function applyBlockOptions(block: BurgerBlock, formData: FormData) {
 	const containerType = formData.get('bge-options-container-type');

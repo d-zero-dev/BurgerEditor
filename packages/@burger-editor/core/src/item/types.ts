@@ -20,6 +20,18 @@ export interface ItemMataData {
  * `E` is the editor state shape — by default the item data itself, or the
  * result of `toEditorState` when the form works on a transformed view of
  * the data.
+ * @example
+ * ```tsx
+ * function Editor({ state, setState }: ItemEditorProps<{ title: string }>) {
+ * 	return (
+ * 		<input
+ * 			type="text"
+ * 			value={state.title ?? ''}
+ * 			onChange={(e) => setState({ ...state, title: e.currentTarget.value })}
+ * 		/>
+ * 	);
+ * }
+ * ```
  */
 export interface ItemEditorProps<
 	T extends ItemData = ItemData,
@@ -57,6 +69,16 @@ export interface ItemEditorProps<
  * An item editor component. The UI layer renders it as a React component;
  * the return type is `unknown` so that this package stays free of React
  * type dependencies.
+ * @example
+ * ```tsx
+ * const Editor: ItemEditorComponent<{ href: string }> = ({ state, setState }) => (
+ * 	<input
+ * 		type="url"
+ * 		value={state.href ?? ''}
+ * 		onChange={(e) => setState({ ...state, href: e.currentTarget.value })}
+ * 	/>
+ * );
+ * ```
  */
 export type ItemEditorComponent<
 	T extends ItemData = ItemData,
@@ -64,6 +86,20 @@ export type ItemEditorComponent<
 	E = T,
 > = (props: ItemEditorProps<T, C, E>) => unknown;
 
+/**
+ * アイテムの静的定義
+ *
+ * コンテンツ出力（`template` + frozen-patty）と編集UI（`Editor` React
+ * コンポーネント）の両方を1つのオブジェクトで宣言する。保存データ`T`と
+ * 編集状態`E`を分離できる（`toEditorState`/`toItemData` で相互変換）のは、
+ * 編集中にしか意味を持たない派生値（チェックボックス状態など）を保存
+ * データに混ぜないため。定義は `createItem` を通して作成する（`@example`
+ * はそちらを参照）。
+ * @template N - アイテム名のリテラル型
+ * @template T - 保存データ型（frozen-pattyでHTMLと相互変換される形）
+ * @template C - カスタムデータ型
+ * @template E - エディタ状態型。省略時は保存データと同型
+ */
 export interface ItemSeed<
 	N extends string = string,
 	T extends ItemData = {},

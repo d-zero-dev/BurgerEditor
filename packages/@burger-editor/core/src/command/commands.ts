@@ -8,6 +8,12 @@ import type { CommandName } from './command-bus.js';
  *
  * Parameters travel on the invoker button (`value` / `data-*` attributes)
  * and are read from `CommandEvent.source`.
+ * @example
+ * ```tsx
+ * <button command={BGE_COMMAND.moveBlock} commandfor={COMMAND_BUS_ID} value="up">
+ * 	上に移動
+ * </button>
+ * ```
  */
 export const BGE_COMMAND = {
 	/** Append a new block from the catalog. `value`: catalog index. */
