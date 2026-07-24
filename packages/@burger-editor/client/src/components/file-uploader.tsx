@@ -47,33 +47,44 @@ export function FileUploader({
 			isEmpty: false,
 		});
 
-		const res = await engine.serverAPI.postFile?.(fileType, file, (uploaded, total) => {
-			engine.componentObserver.notify('file-upload-progress', {
-				blob: path,
-				uploaded,
-				total,
+		try {
+			const res = await engine.serverAPI.postFile?.(fileType, file, (uploaded, total) => {
+				engine.componentObserver.notify('file-upload-progress', {
+					blob: path,
+					uploaded,
+					total,
+				});
 			});
-		});
 
-		if (!res) {
-			throw new Error(`Failed to upload file: ${file.name}`);
+			if (!res || res.error) {
+				throw new Error(`Failed to upload file: ${file.name}`);
+			}
+
+			engine.componentObserver.notify('file-listup', {
+				fileType: fileType,
+				data: [res.uploaded],
+			});
+
+			engine.componentObserver.notify('file-select', {
+				path: res.uploaded.url,
+				fileSize: res.uploaded.size,
+				isEmpty: false,
+			});
+		} catch {
+			// onChangeからのfire-and-forget呼び出しのため、ここで
+			// ユーザーに通知しないと失敗が闇に消える
+			alert(`ファイルのアップロードに失敗しました: ${file.name}`);
 		}
-
-		engine.componentObserver.notify('file-listup', {
-			fileType: fileType,
-			data: [res.uploaded],
-		});
-
-		engine.componentObserver.notify('file-select', {
-			path: res.uploaded.url,
-			fileSize: res.uploaded.size,
-			isEmpty: false,
-		});
 	};
 
 	return (
 		<div ref={rootRef} id={rootId} className={styles['uploader']}>
-			<input type="file" ref={inputRef} onChange={stageFile} accept={accept} />
+			<input
+				type="file"
+				ref={inputRef}
+				onChange={() => void stageFile()}
+				accept={accept}
+			/>
 			<button type="button" command="--open-file-picker" commandfor={rootId}>
 				ファイルを追加アップロードする
 			</button>

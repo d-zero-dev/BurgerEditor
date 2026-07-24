@@ -148,7 +148,24 @@ export function FileList({
 			if (!url) {
 				return;
 			}
-			void deleteFile?.(fileType, url);
+			void (async () => {
+				const res = await deleteFile?.(fileType, url);
+				if (!res || res.error) {
+					throw new Error(`Failed to delete file: ${url}`);
+				}
+				// 削除後は現在の検索条件・ページでリストを取り直す
+				const result = await getFileList?.(fileType, {
+					page: currentPage,
+					filter: searchWord,
+				});
+				if (result) {
+					setFileList(result.data);
+					setCurrentPage(result.pagination.current);
+					setTotalPage(result.pagination.total);
+				}
+			})().catch(() => {
+				alert('ファイルの削除に失敗しました。');
+			});
 		},
 	});
 
