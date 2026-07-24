@@ -1,4 +1,5 @@
 import dz from '@d-zero/eslint-config';
+import reactHooks from 'eslint-plugin-react-hooks';
 
 // @d-zero/eslint-config/base の no-restricted-syntax セレクタを複製せず継承する
 const baseNoRestrictedSyntax =
@@ -21,6 +22,10 @@ export default [
 		],
 	},
 	...dz.configs.frontend,
+	{
+		files: ['**/*.{jsx,tsx}', '**/use-*.{ts,tsx}'],
+		...reactHooks.configs.flat.recommended,
+	},
 	{
 		rules: {
 			'@typescript-eslint/no-empty-object-type': 0,
