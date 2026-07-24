@@ -40,8 +40,8 @@ describe('youtubeItemSeed', () => {
 	});
 
 	describe('toItemData関数', () => {
-		test('動画URLからIDを抽出しurl/thumbを導出する', () => {
-			const result = youtubeItemSeed.toItemData?.(
+		test('動画URLからIDを抽出しurl/thumbを導出する', async () => {
+			const result = await youtubeItemSeed.toItemData?.(
 				{ ...baseData, id: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
 				testConfig,
 			);
@@ -53,16 +53,19 @@ describe('youtubeItemSeed', () => {
 			expect(result?.thumb).toBe('//img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg');
 		});
 
-		test('タイトルが空ならフォールバックタイトルを書き出す', () => {
-			const result = youtubeItemSeed.toItemData?.({ ...baseData, title: '' }, testConfig);
+		test('タイトルが空ならフォールバックタイトルを書き出す', async () => {
+			const result = await youtubeItemSeed.toItemData?.(
+				{ ...baseData, title: '' },
+				testConfig,
+			);
 
 			expect(result?.title).toBe('YouTube動画');
 		});
 	});
 
-	test('toEditorState→toItemDataのラウンドトリップでデータが保存形式に戻る', () => {
+	test('toEditorState→toItemDataのラウンドトリップでデータが保存形式に戻る', async () => {
 		const editorState = youtubeItemSeed.toEditorState!(baseData, testConfig);
-		const result = youtubeItemSeed.toItemData!(editorState, testConfig);
+		const result = await youtubeItemSeed.toItemData!(editorState, testConfig);
 
 		expect(result).toEqual(baseData);
 	});

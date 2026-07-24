@@ -25,8 +25,8 @@ const baseData = {
 
 describe('googleMapsItemSeed', () => {
 	describe('toItemData関数', () => {
-		test('座標からApple Maps URLとStatic Maps画像URLを導出する', () => {
-			const result = googleMapsItemSeed.toItemData?.(baseData, testConfig);
+		test('座標からApple Maps URLとStatic Maps画像URLを導出する', async () => {
+			const result = await googleMapsItemSeed.toItemData?.(baseData, testConfig);
 
 			expect(result?.url).toBe('//maps.apple.com/?q=33.5902,130.4017');
 			expect(result?.img).toBe(
@@ -36,8 +36,8 @@ describe('googleMapsItemSeed', () => {
 			);
 		});
 
-		test('APIキー未設定でもkeyパラメータが空で書き出される', () => {
-			const result = googleMapsItemSeed.toItemData?.(baseData, {
+		test('APIキー未設定でもkeyパラメータが空で書き出される', async () => {
+			const result = await googleMapsItemSeed.toItemData?.(baseData, {
 				...testConfig,
 				googleMapsApiKey: null,
 			});
@@ -46,8 +46,8 @@ describe('googleMapsItemSeed', () => {
 			expect(result?.img.endsWith('&key=')).toBe(true);
 		});
 
-		test('lat/lng/zoom/searchは変換後も維持される', () => {
-			const result = googleMapsItemSeed.toItemData?.(
+		test('lat/lng/zoom/searchは変換後も維持される', async () => {
+			const result = await googleMapsItemSeed.toItemData?.(
 				{ ...baseData, search: '福岡市', zoom: 8 },
 				testConfig,
 			);

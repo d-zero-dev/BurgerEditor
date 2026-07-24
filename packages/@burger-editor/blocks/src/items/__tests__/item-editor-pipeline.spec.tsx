@@ -1,4 +1,4 @@
-import type { BurgerEditorEngine, ItemData } from '@burger-editor/core';
+import type { BurgerEditorEngine, ItemData, ItemSeed } from '@burger-editor/core';
 
 import { ItemEditorHost } from '@burger-editor/client/ui';
 import { Item, UIStateStore } from '@burger-editor/core';
@@ -18,7 +18,7 @@ const testConfig = {
 	stylesheets: [],
 } as const;
 
-const itemSeeds = new Map([['title-h2', titleH2Seed]]);
+const itemSeeds = new Map<string, ItemSeed>([['title-h2', titleH2Seed as never]]);
 
 // jsdomは<dialog>のshowModal/closeを実装していないため最小限を補う
 beforeAll(() => {

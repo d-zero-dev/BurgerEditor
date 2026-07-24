@@ -42,8 +42,8 @@ describe('downloadFileItemSeed', () => {
 	});
 
 	describe('toItemData関数', () => {
-		test('downloadCheckがtrueならnameをdownload属性に書き出す', () => {
-			const result = downloadFileItemSeed.toItemData?.(
+		test('downloadCheckがtrueならnameをdownload属性に書き出す', async () => {
+			const result = await downloadFileItemSeed.toItemData?.(
 				{ ...baseData, downloadCheck: true },
 				testConfig,
 			);
@@ -51,8 +51,8 @@ describe('downloadFileItemSeed', () => {
 			expect(result?.download).toBe('manual.pdf');
 		});
 
-		test('downloadCheckがfalseならdownload属性は空', () => {
-			const result = downloadFileItemSeed.toItemData?.(
+		test('downloadCheckがfalseならdownload属性は空', async () => {
+			const result = await downloadFileItemSeed.toItemData?.(
 				{ ...baseData, download: 'manual.pdf', downloadCheck: false },
 				testConfig,
 			);
@@ -61,11 +61,11 @@ describe('downloadFileItemSeed', () => {
 		});
 	});
 
-	test('toEditorState→toItemDataのラウンドトリップでデータが保存形式に戻る', () => {
+	test('toEditorState→toItemDataのラウンドトリップでデータが保存形式に戻る', async () => {
 		const stored = { ...baseData, download: 'manual.pdf' };
 
 		const editorState = downloadFileItemSeed.toEditorState!(stored, testConfig);
-		const result = downloadFileItemSeed.toItemData!(editorState, testConfig);
+		const result = await downloadFileItemSeed.toItemData!(editorState, testConfig);
 
 		expect(result).toEqual({
 			path: '/files/manual.pdf',

@@ -38,8 +38,8 @@ describe('tableItemSeed', () => {
 	});
 
 	describe('toItemData関数', () => {
-		test('tdのMarkdownをHTMLに変換して書き出す', () => {
-			const result = tableItemSeed.toItemData?.(
+		test('tdのMarkdownをHTMLに変換して書き出す', async () => {
+			const result = await tableItemSeed.toItemData?.(
 				{ ...baseData, td: ['1,000円', '**無料**'] },
 				testConfig,
 			);
@@ -48,9 +48,9 @@ describe('tableItemSeed', () => {
 		});
 	});
 
-	test('toEditorState→toItemDataのラウンドトリップでデータが保存形式に戻る', () => {
+	test('toEditorState→toItemDataのラウンドトリップでデータが保存形式に戻る', async () => {
 		const editorState = tableItemSeed.toEditorState!(baseData, testConfig);
-		const result = tableItemSeed.toItemData!(editorState, testConfig);
+		const result = await tableItemSeed.toItemData!(editorState, testConfig);
 
 		expect(result).toEqual(baseData);
 	});
