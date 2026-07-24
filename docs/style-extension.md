@@ -320,7 +320,7 @@ gridコンテナの `auto-fit`/`auto-fill` で使用する折り返し基準イ�
 
 ### UI実装
 
-- [block-options.svelte](../packages/@burger-editor/client/src/block-options.svelte) - ブロックオプションのSvelte UIコンポーネント
+- [block-options.tsx](../packages/@burger-editor/client/src/components/block-options.tsx) - ブロックオプションのReact UIコンポーネント
 
 ### スタイル定義
 
