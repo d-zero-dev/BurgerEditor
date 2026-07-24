@@ -1,6 +1,6 @@
 import { narrowElement } from '@burger-editor/utils';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { test, expect, describe, vi } from 'vitest';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { test, expect, describe, afterEach, vi } from 'vitest';
 
 import {
 	Checkbox,
@@ -8,8 +8,13 @@ import {
 	NumberField,
 	RadioGroup,
 	SelectField,
+	TextArea,
 	TextField,
 } from '../form/index.js';
+
+// vitestはglobals無効のためtesting-libraryの自動cleanupが効かない。
+// レンダー結果がテスト間でリークしないよう明示的に登録する
+afterEach(cleanup);
 
 /**
  * label文字列から要素を型安全に取得する
@@ -79,6 +84,28 @@ describe('SelectField', () => {
 	});
 });
 
+describe('TextArea', () => {
+	test('renders label > span + textarea and lifts changes', () => {
+		const onChange = vi.fn();
+		render(
+			<TextArea label="説明" name="bge-caption" value="前の値" onChange={onChange} />,
+		);
+
+		const textarea = getAs('説明', HTMLTextAreaElement);
+		expect(textarea.name).toBe('bge-caption');
+		expect(textarea.value).toBe('前の値');
+
+		fireEvent.change(textarea, { target: { value: '複数行の\nテキスト' } });
+		expect(onChange).toHaveBeenCalledWith('複数行の\nテキスト');
+	});
+
+	test('disabled disables the textarea', () => {
+		render(<TextArea label="説明" value="" disabled onChange={() => {}} />);
+
+		expect(getAs('説明', HTMLTextAreaElement).disabled).toBe(true);
+	});
+});
+
 describe('RadioGroup', () => {
 	test('renders a radiogroup and lifts the selected value', () => {
 		const onChange = vi.fn();
@@ -95,9 +122,10 @@ describe('RadioGroup', () => {
 			/>,
 		);
 
-		expect(screen.getByRole('radiogroup')).toBeTruthy();
+		expect(screen.getByRole('radiogroup', { name: '基準' })).toBeInstanceOf(HTMLElement);
 		const original = getAs('画像基準', HTMLInputElement);
 		expect(original.checked).toBe(true);
+		expect(getAs('コンテナ', HTMLInputElement).checked).toBe(false);
 
 		fireEvent.click(screen.getByLabelText('コンテナ'));
 		expect(onChange).toHaveBeenCalledWith('container');
@@ -112,7 +140,11 @@ describe('Fieldset', () => {
 			</Fieldset>,
 		);
 
-		expect(screen.getByRole('group', { name: 'リンク' })).toBeTruthy();
-		expect(screen.getByText('content')).toBeTruthy();
+		const fieldset = narrowElement(
+			screen.getByRole('group', { name: 'リンク' }),
+			HTMLFieldSetElement,
+		);
+		expect(fieldset.disabled).toBe(false);
+		expect(screen.getByText('content').tagName).toBe('P');
 	});
 });
