@@ -14,13 +14,11 @@ export function Layout({ children, lang }: PropsWithChildren<Props>) {
 	return (
 		<html lang={lang}>
 			<head>
+				<meta charset="utf-8" />
+				<title>BurgerEditor</title>
 				<link rel="stylesheet" href="https://unpkg.com/trix@2.0.8/dist/trix.css" />
 				<link rel="stylesheet" href="/client.css" />
 				<link rel="stylesheet" href="/app.css" />
-				<script
-					src="https://cdn.jsdelivr.net/npm/invokers-polyfill@0.5.2/index.min.js"
-					type="module"
-					async></script>
 				<script src="/client.js" type="module"></script>
 			</head>
 			<body>{children}</body>
