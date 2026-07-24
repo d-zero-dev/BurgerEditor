@@ -1,6 +1,6 @@
 import type { BurgerBlock, BurgerEditorEngine } from '@burger-editor/core';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 const containerTypeLabel = {
 	grid: 'グリッド',
@@ -26,8 +26,15 @@ export function BlockOptions({
 	const currentBlock = block;
 
 	const [options] = useState(() => currentBlock.exportOptions());
-	const cssProps = engine.getCustomProperties(options.containerProps.type);
-	const repeatMinInlineSizeVariants = engine.getRepeatMinInlineSizeVariants();
+	// CSSOM全走査は高コストなのでダイアログを開いたときの1回に留める
+	const cssProps = useMemo(
+		() => engine.getCustomProperties(options.containerProps.type),
+		[engine, options],
+	);
+	const repeatMinInlineSizeVariants = useMemo(
+		() => engine.getRepeatMinInlineSizeVariants(),
+		[engine],
+	);
 
 	const [currentColumns, setCurrentColumns] = useState(
 		options.containerProps.columns ?? 1,

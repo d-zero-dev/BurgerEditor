@@ -67,6 +67,8 @@ export function EditorDialog({
 					id={formId}
 					method="dialog"
 					noValidate
+					autoComplete="off"
+					autoCapitalize="off"
 					onSubmit={(e) => {
 						e.preventDefault();
 						onComplete?.(new FormData(e.currentTarget));

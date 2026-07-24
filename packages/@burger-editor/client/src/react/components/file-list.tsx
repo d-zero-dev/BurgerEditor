@@ -94,7 +94,7 @@ export function FileList({
 	});
 
 	const paginate = (page: number) => {
-		page = Number.isNaN(page) ? 0 : Math.max(0, page);
+		page = Number.isNaN(page) ? 0 : Math.min(Math.max(0, page), totalPage - 1);
 		if (currentPage === page) {
 			return;
 		}

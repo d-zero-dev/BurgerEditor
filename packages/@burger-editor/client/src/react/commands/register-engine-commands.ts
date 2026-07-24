@@ -51,7 +51,7 @@ export function registerEngineCommands(
 
 	bus.define(BGE_COMMAND.insertBlock, (e) => {
 		const currentBlock = engine.getCurrentBlock();
-		if (!currentBlock) {
+		if (engine.isProcessed || !currentBlock) {
 			return;
 		}
 		const toTop = (e.source as HTMLButtonElement | null)?.value === 'before';
