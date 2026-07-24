@@ -48,6 +48,12 @@
 .bgeMenu {
 	--gap: 0.2em;
 
+	position: relative;
+
+	/* itemオーバーレイ(z-index: 50)より上に重ね、移動・削除・設定等の
+	   ボタンがクリックを奪われないようにする。ボタン以外の領域は
+	   pointer-events: none でオーバーレイへ透過する */
+	z-index: 60;
 	display: flex;
 	align-items: start;
 	justify-content: space-between;
