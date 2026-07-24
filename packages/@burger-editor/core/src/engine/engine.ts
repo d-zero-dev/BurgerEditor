@@ -323,7 +323,7 @@ export class BurgerEditorEngine {
 
 	async #createItemElement(itemData: BlockItem | HTMLElement) {
 		if (typeof itemData !== 'string' && 'localName' in itemData) {
-			const item = Item.rebind(itemData, this.items);
+			const item = Item.rebind(itemData, this.items, this.config);
 			return item.el;
 		}
 

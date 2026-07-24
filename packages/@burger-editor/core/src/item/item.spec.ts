@@ -61,7 +61,7 @@ describe('Item', () => {
 			el.dataset.bgiVer = '1.0.0';
 			el.innerHTML = '<div>existing content</div>';
 
-			const item = Item.rebind(el, seeds);
+			const item = Item.rebind(el, seeds, testConfig);
 
 			expect(item.name).toBe('text');
 			expect(item.version).toBe('1.0.0');
@@ -74,7 +74,7 @@ describe('Item', () => {
 			el.dataset.bgiVer = '2.0.0';
 			el.innerHTML = '<div>preserved content</div>';
 
-			const item = Item.rebind(el, new Map());
+			const item = Item.rebind(el, new Map(), testConfig);
 
 			expect(item.name).toBe('unknown-item');
 			expect(item.version).toBe('2.0.0');
@@ -86,7 +86,7 @@ describe('Item', () => {
 			const el = document.createElement('div');
 			// No data-bgi attribute
 
-			expect(() => Item.rebind(el, new Map())).toThrow('data-bgi not found');
+			expect(() => Item.rebind(el, new Map(), testConfig)).toThrow('data-bgi not found');
 		});
 	});
 });

@@ -15,6 +15,7 @@ export class Item<
 	C extends { [key: string]: unknown },
 	N extends keyof T & string = keyof T & string,
 > {
+	readonly config: Config;
 	readonly name: string;
 	readonly seed: ItemSeed<N, T, C>;
 	readonly #el: HTMLElement;
@@ -29,9 +30,10 @@ export class Item<
 	}
 
 	// eslint-disable-next-line no-restricted-syntax
-	private constructor(seed: ItemSeed<N, T, C> | null, el: HTMLElement) {
+	private constructor(seed: ItemSeed<N, T, C> | null, el: HTMLElement, config: Config) {
 		elMap.set(el, this);
 		this.#el = el;
+		this.config = config;
 
 		// Synthesize fallback seed when missing
 		const effectiveSeed = seed ?? createUnknownContentItem<T, C, N>(el);
@@ -59,7 +61,7 @@ export class Item<
 		return this.seed.editorOptions?.isDisable?.(this) ?? '';
 	}
 
-	static async create<T extends ItemData, C extends { [key: string]: unknown }>(
+	static create<T extends ItemData, C extends { [key: string]: unknown }>(
 		name: string,
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		itemSeeds: ReadonlyMap<string, ItemSeed<string, any, any>>,
@@ -68,8 +70,8 @@ export class Item<
 	) {
 		const seed: ItemSeed<string, T, C> | null = itemSeeds.get(name) ?? null;
 		const wrapper = Item.createWrapper(name, seed, config);
-		const item = new Item<T, C>(seed, wrapper);
-		await item.import(initData);
+		const item = new Item<T, C>(seed, wrapper, config);
+		item.import(initData);
 		return item;
 	}
 
@@ -98,13 +100,14 @@ export class Item<
 		el: HTMLElement,
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		itemSeeds: ReadonlyMap<string, ItemSeed<string, any, any>>,
+		config: Config,
 	) {
 		const name = el.dataset.bgi;
 		if (!name) {
 			throw new Error('data-bgi not found');
 		}
 		const seed: ItemSeed<string, T, C> | null = itemSeeds.get(name) ?? null;
-		const item = new Item<T, C>(seed, el);
+		const item = new Item<T, C>(seed, el, config);
 		return item;
 	}
 
