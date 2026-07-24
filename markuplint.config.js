@@ -9,11 +9,29 @@ const extended = extendsConfig({
  */
 export default {
 	...extended,
+	parser: {
+		...extended.parser,
+		'\\.[jt]sx$': '@markuplint/jsx-parser',
+	},
+	specs: {
+		'\\.[jt]sx$': '@markuplint/react-spec',
+	},
 	rules: {
 		...extended.rules,
 		'heading-levels': false,
 	},
 	nodeRules: [
+		{
+			// ReactのonDoubleClickをreact-specが未収載のため許可
+			selector: 'button',
+			rules: {
+				'invalid-attr': {
+					options: {
+						allowAttrs: [{ name: 'onDoubleClick', value: 'Any' }],
+					},
+				},
+			},
+		},
 		...extended.nodeRules.filter((rule) => !rule.selector.startsWith('img')),
 		{
 			...extended.nodeRules.find((rule) => rule.selector.startsWith('img')),
@@ -38,18 +56,35 @@ export default {
 			},
 		},
 		{
-			// https://github.com/markuplint/markuplint/issues/2590
+			// defaultValue/defaultChecked: https://github.com/markuplint/markuplint/issues/2590
+			// placeholder: type属性が動的（JSX式）だとreact-specが判定できず誤検出する
 			selector: 'input',
 			rules: {
 				'invalid-attr': {
 					options: {
-						allowAttrs: ['defaultValue', 'defaultChecked'],
+						allowAttrs: ['defaultValue', 'defaultChecked', 'placeholder'],
 					},
 				},
 			},
 		},
 	],
 	overrides: {
+		// localのJSXはHono JSX（class等のHTML属性名が正）のため、
+		// React spec由来の属性規約は適用しない。プリセットのnodeRuleが
+		// ノード単位でinvalid-attrを再有効化するためnodeRulesでも打ち消す
+		'**/local/src/**/*.tsx': {
+			rules: {
+				'invalid-attr': false,
+			},
+			nodeRules: [
+				{
+					selector: '*',
+					rules: {
+						'invalid-attr': false,
+					},
+				},
+			],
+		},
 		'packages/@burger-editor/legacy/src/v3/**/*': {
 			...extended,
 			rules: {
