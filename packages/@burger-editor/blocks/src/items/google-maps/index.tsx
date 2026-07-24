@@ -119,6 +119,7 @@ export default createItem<{
 			return () => {
 				google.maps.event.clearInstanceListeners(map);
 			};
+			// eslint-disable-next-line react-hooks/exhaustive-deps
 		}, []);
 
 		const rootRef = useCommand<HTMLDivElement>({

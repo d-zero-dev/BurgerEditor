@@ -3,6 +3,7 @@ import { createItem } from '@burger-editor/core';
 import { ImageEditor } from './editor.js';
 import style from './style.css';
 import template from './template.html';
+import { createWidthState } from './width.js';
 
 const ORIGIN = '__org';
 
@@ -55,6 +56,13 @@ export default createItem<ImageData>({
 		const lazy = (data.loading ?? []).includes('lazy');
 		const popup = data.node === 'button' && data.command === 'show-modal';
 		const targetBlank = data.node === 'a' && data.target === '_blank';
+
+		// cssWidth系の値を保存データからクランプ・単位変換して正規化する
+		const widthState = createWidthState();
+		widthState.setScaleType(data.scaleType);
+		widthState.setScale(data.scale);
+		widthState.setMaxNumber(data.width?.[0] ?? 400);
+
 		return {
 			...data,
 			path,
@@ -62,6 +70,12 @@ export default createItem<ImageData>({
 			popup,
 			targetBlank,
 			altEditable: data.alt?.[0] ?? '',
+			mediaInput: data.media?.[0] ?? '',
+			cssWidth: widthState.getCSSWidth(),
+			cssWidthNumber: widthState.getCSSWidthNumber(),
+			cssWidthUnit: widthState.getCSSWidthUnit(),
+			scaleType: widthState.getScaleType(),
+			scale: widthState.getScale(),
 		};
 	},
 	toItemData(state) {

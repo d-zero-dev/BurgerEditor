@@ -36,11 +36,18 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const currentIndexRef = useRef(0);
 	const [fieldsetDisabled, setFieldsetDisabled] = useState(false);
-	const [maxNumber, setMaxNumber] = useState(100);
 
-	const widthStateRef = useRef<ReturnType<typeof createWidthState> | null>(null);
-	widthStateRef.current ??= createWidthState();
-	const widthState = widthStateRef.current;
+	// 初期stateの値でシードした可変ストア（識別子はマウント間で安定）。
+	// cssWidth系の正規化はtoEditorState（純関数）側で済んでいる
+	const [widthState] = useState(() => {
+		const ws = createWidthState();
+		ws.setScaleType(state.scaleType);
+		ws.setScale(state.scale);
+		ws.setMaxNumber(state.width?.[0] ?? 400);
+		return ws;
+	});
+
+	const [maxNumber, setMaxNumber] = useState(() => widthState.getCSSWidthMaxNumber());
 
 	const stateRef = useRef(state);
 	useEffect(() => {
@@ -145,14 +152,15 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 		void _updateImage(path);
 	});
 
-	// 初期化: widthStateの同期とタブ0の選択
+	// 初期化: タブ0のプレビュー連携と画像読み込み（マウント時のみ）。
+	// state側の初期値はtoEditorStateで正規化済みのためここでは更新しない
 	useEffect(() => {
-		widthState.setScaleType(state.scaleType);
-		widthState.setScale(state.scale);
-		widthState.setMaxNumber(state.width?.[0] ?? 400);
-		updateCSSWidth();
-
-		selectTab(0);
+		engine.componentObserver.notify('update-css-width', {
+			cssWidth: widthState.getCSSWidth(),
+		});
+		fileSelect(0);
+		void _updateImage(stateRef.current.path?.[0] ?? '');
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	const currentPath = state.path?.[currentIndex] ?? '';

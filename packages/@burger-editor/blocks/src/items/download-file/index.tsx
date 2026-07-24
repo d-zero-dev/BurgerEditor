@@ -59,6 +59,7 @@ export default createItem<{
 				isEmpty: (state.path ?? '') === '',
 				isMounted: false,
 			});
+			// eslint-disable-next-line react-hooks/exhaustive-deps
 		}, []);
 
 		return (
