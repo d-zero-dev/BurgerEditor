@@ -69,22 +69,6 @@ export default {
 		},
 	],
 	overrides: {
-		// localのJSXはHono JSX（class等のHTML属性名が正）のため、
-		// React spec由来の属性規約は適用しない。プリセットのnodeRuleが
-		// ノード単位でinvalid-attrを再有効化するためnodeRulesでも打ち消す
-		'**/local/src/**/*.tsx': {
-			rules: {
-				'invalid-attr': false,
-			},
-			nodeRules: [
-				{
-					selector: '*',
-					rules: {
-						'invalid-attr': false,
-					},
-				},
-			],
-		},
 		'packages/@burger-editor/legacy/src/v3/**/*': {
 			...extended,
 			rules: {
