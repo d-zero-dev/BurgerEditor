@@ -28,6 +28,14 @@ export function Preview({
 	} | null>(null);
 	const [progress, setProgress] = useState({ uploaded: 0, total: 100 });
 
+	// path変更時のリセットはeffectではなくrender中に行う
+	// （effect内の同期setStateはカスケードレンダーを起こすため）
+	const [prevPath, setPrevPath] = useState(path);
+	if (prevPath !== path) {
+		setPrevPath(path);
+		setDimension(null);
+	}
+
 	const file = path ? getExt(path) : null;
 	const isUploadingMode = path.startsWith('blob:');
 
@@ -38,9 +46,8 @@ export function Preview({
 	});
 
 	useEffect(() => {
-		setDimension(null);
-
 		const file = path ? getExt(path) : null;
+		let aborted = false;
 
 		if (file?.isImage) {
 			const image = new Image();
@@ -48,7 +55,9 @@ export function Preview({
 			image.addEventListener(
 				'load',
 				() => {
-					setDimension({ width: image.naturalWidth, height: image.naturalHeight });
+					if (!aborted) {
+						setDimension({ width: image.naturalWidth, height: image.naturalHeight });
+					}
 				},
 				{ once: true },
 			);
@@ -58,11 +67,17 @@ export function Preview({
 			video.addEventListener(
 				'loadedmetadata',
 				() => {
-					setDimension({ width: video.videoWidth, height: video.videoHeight });
+					if (!aborted) {
+						setDimension({ width: video.videoWidth, height: video.videoHeight });
+					}
 				},
 				{ once: true },
 			);
 		}
+
+		return () => {
+			aborted = true;
+		};
 	}, [path]);
 
 	return (
