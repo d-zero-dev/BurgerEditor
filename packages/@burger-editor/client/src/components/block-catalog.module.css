@@ -33,9 +33,14 @@
 		appearance: none;
 	}
 
-	figure {
+	.figure {
+		display: block;
 		margin-block: 0;
 		margin-inline: auto;
+	}
+
+	.img {
+		display: block;
 	}
 
 	.img > * {
@@ -48,7 +53,8 @@
 		border-radius: 10px;
 	}
 
-	figcaption {
+	.figcaption {
+		display: block;
 		padding-block-start: 0.5em;
 		font-size: 0.6em;
 		font-weight: bold;

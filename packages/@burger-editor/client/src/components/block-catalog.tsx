@@ -55,21 +55,23 @@ export function BlockCatalog({
 										data-category={category}
 										data-index={index}>
 										{blockInfo.definition.img || blockInfo.definition.svg ? (
-											<figure>
+											// button内はphrasing contentのみ許可のため
+											// figure/figcaptionではなくspanで構成する
+											<span className={styles['figure']}>
 												{blockInfo.definition.img ? (
-													<div className={styles['img']}>
+													<span className={styles['img']}>
 														<img src={blockInfo.definition.img} alt="" loading="lazy" />
-													</div>
+													</span>
 												) : (
-													<div
+													<span
 														className={styles['img']}
 														dangerouslySetInnerHTML={{
 															__html: blockInfo.definition.svg ?? '',
 														}}
 													/>
 												)}
-												<figcaption>{blockInfo.label}</figcaption>
-											</figure>
+												<span className={styles['figcaption']}>{blockInfo.label}</span>
+											</span>
 										) : (
 											blockInfo.label
 										)}
