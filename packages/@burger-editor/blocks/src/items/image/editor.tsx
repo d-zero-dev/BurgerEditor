@@ -22,7 +22,7 @@ type LoadedImage = {
 	width: number;
 	height: number;
 	src: string;
-} | null;
+};
 
 /**
  * imageアイテムのエディタ。旧 `editorOptions.open()` の命令的配線を
@@ -36,6 +36,7 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const currentIndexRef = useRef(0);
 	const [fieldsetDisabled, setFieldsetDisabled] = useState(false);
+	const [loadError, setLoadError] = useState<string | null>(null);
 
 	// 初期stateの値でシードした可変ストア（識別子はマウント間で安定）。
 	// cssWidth系の正規化はtoEditorState（純関数）側で済んでいる
@@ -71,14 +72,6 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 	};
 
 	const updateImage = ($src: LoadedImage) => {
-		if (!$src) {
-			if (__DEBUG__) {
-				// eslint-disable-next-line no-console
-				console.error('画像の読み込みに失敗しました');
-			}
-			return;
-		}
-
 		const index = currentIndexRef.current;
 
 		setState((prev) => {
@@ -109,11 +102,17 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 		}
 
 		setFieldsetDisabled(true);
-		const $src = await loadImage(path);
-
-		updateImage($src);
-
-		setFieldsetDisabled(false);
+		setLoadError(null);
+		try {
+			const $src = await loadImage(path);
+			updateImage($src);
+		} catch {
+			// 失敗（読み込みエラー・タイムアウト）はUIに表示し、
+			// サイズ入力欄は必ず復帰させる
+			setLoadError(`画像を読み込めませんでした: ${path}`);
+		} finally {
+			setFieldsetDisabled(false);
+		}
 	};
 
 	const fileSelect = (index: number) => {
@@ -173,6 +172,7 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 
 					<div id={TABS_CONTENT_ID} role="tabpanel" aria-label="画像">
 						<Preview engine={engine} path={currentPath} />
+						{loadError ? <p role="alert">{loadError}</p> : null}
 						<div>
 							<TextField
 								label="メディアクエリー"
@@ -332,18 +332,22 @@ async function loadImage(src: string) {
 	return new Promise<LoadedImage>((resolve, reject) => {
 		const img = new Image();
 		img.src = src;
-		img.addEventListener('load', () =>
+		const timer = setTimeout(() => {
+			reject(new Error(`Image load timeout: ${src}`));
+		}, 30_000);
+		img.addEventListener('load', () => {
+			clearTimeout(timer);
 			resolve({
 				width: img.naturalWidth,
 				height: img.naturalHeight,
 				src,
-			}),
-		);
-		img.addEventListener('error', () => resolve(null));
-		img.addEventListener('abort', () => resolve(null));
-
-		setTimeout(() => {
-			reject(new ReferenceError('Image load timeout'));
-		}, 30_000);
+			});
+		});
+		const fail = () => {
+			clearTimeout(timer);
+			reject(new Error(`Failed to load image: ${src}`));
+		};
+		img.addEventListener('error', fail);
+		img.addEventListener('abort', fail);
 	});
 }

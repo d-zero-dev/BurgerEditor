@@ -3,9 +3,9 @@ import type { BurgerEditorEngine, ItemData, Item } from '@burger-editor/core';
 
 import { ComponentObserver } from '@burger-editor/core';
 import { narrowElement } from '@burger-editor/utils';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { useState } from 'react';
-import { test, expect, describe, beforeEach } from 'vitest';
+import { test, expect, describe, beforeEach, afterEach, vi } from 'vitest';
 
 import { ImageEditor } from './editor.js';
 
@@ -20,13 +20,15 @@ const testConfig = {
 } as const;
 
 /**
- * 2枚構成の初期エディタ状態。pathを空にして画像ロード（jsdomでは
- * 完了しない）を発生させず、サイズ用fieldsetが無効化されないようにする
+ * 2枚構成の初期エディタ状態。デフォルトはpathを空にして画像ロード
+ * （jsdomでは完了しない）を発生させず、サイズ用fieldsetが無効化され
+ * ないようにする
+ * @param path
  */
-function createInitialState(): ImageData {
+function createInitialState(path: string[] = ['', '']): ImageData {
 	return imageItemSeed.toEditorState!(
 		{
-			path: ['', ''],
+			path,
 			alt: ['Aの説明', 'Bの説明'],
 			width: [400, 400],
 			height: [300, 300],
@@ -87,9 +89,16 @@ function createMockEngine() {
  * state/setStateを実際のReact stateとして供給するテストハーネス
  * @param root0
  * @param root0.engine
+ * @param root0.initialPath
  */
-function Harness({ engine }: { readonly engine: BurgerEditorEngine }) {
-	const [state, setState] = useState<ImageData>(createInitialState);
+function Harness({
+	engine,
+	initialPath,
+}: {
+	readonly engine: BurgerEditorEngine;
+	readonly initialPath?: string[];
+}) {
+	const [state, setState] = useState<ImageData>(() => createInitialState(initialPath));
 	return (
 		<ImageEditor
 			state={state}
@@ -108,6 +117,10 @@ function Harness({ engine }: { readonly engine: BurgerEditorEngine }) {
 function getInput(label: string): HTMLInputElement {
 	return narrowElement(screen.getByLabelText(label), HTMLInputElement, label);
 }
+
+// vitestはglobals無効のためtesting-libraryの自動cleanupが効かない。
+// レンダー結果がテスト間でリークしないよう明示的に登録する
+afterEach(cleanup);
 
 describe('ImageEditor', () => {
 	beforeEach(() => {
@@ -190,6 +203,35 @@ describe('ImageEditor', () => {
 
 		expect(href.disabled).toBe(true);
 		expect(targetBlank.disabled).toBe(true);
+	});
+});
+
+describe('画像ロード失敗', () => {
+	afterEach(() => {
+		vi.unstubAllGlobals(); // cspell:disable-line
+	});
+
+	test('読み込み失敗時はエラーが表示されサイズfieldsetが再有効化される', async () => {
+		class FailingImage extends EventTarget {
+			naturalHeight = 0;
+			naturalWidth = 0;
+
+			set src(_value: string) {
+				queueMicrotask(() => this.dispatchEvent(new Event('error')));
+			}
+		}
+		vi.stubGlobal('Image', FailingImage);
+
+		render(<Harness engine={createMockEngine()} initialPath={['/img/broken.png', '']} />);
+
+		const alert = await screen.findByRole('alert');
+		expect(alert.textContent).toBe('画像を読み込めませんでした: /img/broken.png');
+
+		const fieldset = narrowElement(
+			screen.getByRole('group', { name: '画像のサイズ' }),
+			HTMLFieldSetElement,
+		);
+		expect(fieldset.disabled).toBe(false);
 	});
 });
 
