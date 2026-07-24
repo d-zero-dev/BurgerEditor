@@ -1,4 +1,4 @@
-import { Checkbox, TableEditor, TextField } from '@burger-editor/client/react';
+import { Checkbox, TableEditor, TextField } from '@burger-editor/client/ui';
 import { createItem } from '@burger-editor/core';
 import { htmlToMarkdown, markdownToHtml } from '@burger-editor/utils';
 

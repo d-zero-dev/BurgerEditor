@@ -1,6 +1,6 @@
 import type { SelectableValue } from '@burger-editor/core';
 
-import { Fieldset, SelectField, TextField } from '@burger-editor/client/react';
+import { Fieldset, SelectField, TextField } from '@burger-editor/client/ui';
 import { createItem } from '@burger-editor/core';
 import { mergeItems } from '@burger-editor/utils';
 

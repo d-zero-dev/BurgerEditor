@@ -9,7 +9,7 @@ import {
 } from '@tabler/icons-react';
 import { useState } from 'react';
 
-import { getExt } from '../../get-ext.js';
+import { getExt } from '../get-ext.js';
 
 import styles from './thumbnail.module.css';
 

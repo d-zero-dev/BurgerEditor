@@ -2,7 +2,7 @@ import type { BlockCatalog, BurgerEditorEngine } from '@burger-editor/core';
 
 import { BGE_COMMAND } from '@burger-editor/core';
 
-import { replaceElement } from '../../replace-element.js';
+import { replaceElement } from '../replace-element.js';
 
 /**
  * Register the engine's central command dispatch table.

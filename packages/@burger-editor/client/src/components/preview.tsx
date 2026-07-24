@@ -2,7 +2,7 @@ import type { BurgerEditorEngine } from '@burger-editor/core';
 
 import { useEffect, useState } from 'react';
 
-import { getExt } from '../../get-ext.js';
+import { getExt } from '../get-ext.js';
 import { useComponentEvent } from '../use-engine.js';
 
 import styles from './preview.module.css';

@@ -178,7 +178,7 @@ export default createItem<{
 });
 ```
 
-`Editor` は React コンポーネント（型付き props: `state` / `setState` / `config` / `engine` / `item`）。フォーム部品は `@burger-editor/client/react` の `TextField` / `SelectField` / `Checkbox` などを利用できる。ボタンを置く場合は Invoker Commands API（`command`/`commandfor`）で宣言する — click ハンドラは禁止。
+`Editor` は React コンポーネント（型付き props: `state` / `setState` / `config` / `engine` / `item`）。フォーム部品は `@burger-editor/client/ui` の `TextField` / `SelectField` / `Checkbox` などを利用できる。ボタンを置く場合は Invoker Commands API（`command`/`commandfor`）で宣言する — click ハンドラは禁止。
 
 ### `createItem` の引数
 

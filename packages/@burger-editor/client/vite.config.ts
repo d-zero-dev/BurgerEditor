@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
 		lib: {
 			entry: {
 				client: 'src/index.tsx',
-				react: 'src/react/index.ts',
+				ui: 'src/ui.ts',
 			},
 			name: 'BgE',
 			formats: ['es'],

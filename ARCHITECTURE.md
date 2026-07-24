@@ -118,7 +118,7 @@ graph TD
 
 - ReactベースのクライアントUI
 - 依存関係: core, custom-element, migrator, utils, react
-- 責任: ブロック選択UI、ファイル管理UI、エディタUI（ダイアログ群を `engine.uiState` から宣言的にレンダリング）、エンジンコマンドのディスパッチテーブル、アイテムエディタ用フォーム部品（`@burger-editor/client/react`）
+- 責任: ブロック選択UI、ファイル管理UI、エディタUI（ダイアログ群を `engine.uiState` から宣言的にレンダリング）、エンジンコマンドのディスパッチテーブル、アイテムエディタ用フォーム部品（`@burger-editor/client/ui`）
 
 **`@burger-editor/custom-element`**
 

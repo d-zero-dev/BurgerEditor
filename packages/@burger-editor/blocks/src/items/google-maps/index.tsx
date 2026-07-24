@@ -1,4 +1,4 @@
-import { TextField, useCommand } from '@burger-editor/client/react';
+import { TextField, useCommand } from '@burger-editor/client/ui';
 import { createItem } from '@burger-editor/core';
 import { useEffect, useId, useRef } from 'react';
 

@@ -11,7 +11,7 @@ import {
 	Tabs,
 	TextField,
 	useComponentEvent,
-} from '@burger-editor/client/react';
+} from '@burger-editor/client/ui';
 import { useEffect, useRef, useState } from 'react';
 
 import { createWidthState } from './width.js';

@@ -1,4 +1,4 @@
-import { WysiwygField } from '@burger-editor/client/react';
+import { WysiwygField } from '@burger-editor/client/ui';
 import { createItem } from '@burger-editor/core';
 
 import style from './style.css';

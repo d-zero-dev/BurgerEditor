@@ -3,12 +3,12 @@ import type { BurgerEditorEngineOptions } from '@burger-editor/core';
 import { BurgerEditorEngine } from '@burger-editor/core';
 import { defineBgeWysiwygEditorElement } from '@burger-editor/custom-element';
 
-import { BurgerEditorRoot } from './react/burger-editor-root.js';
-import { registerEngineCommands } from './react/commands/register-engine-commands.js';
-import { BlockMenu } from './react/components/block-menu.js';
-import { DraftSwitcher } from './react/components/draft-switcher.js';
-import { InitialInsertionButton } from './react/components/initial-insertion-button.js';
-import { reactMount } from './react/mount.js';
+import { BurgerEditorRoot } from './burger-editor-root.js';
+import { registerEngineCommands } from './commands/register-engine-commands.js';
+import { BlockMenu } from './components/block-menu.js';
+import { DraftSwitcher } from './components/draft-switcher.js';
+import { InitialInsertionButton } from './components/initial-insertion-button.js';
+import { reactMount } from './mount.js';
 
 import './style/ui.css';
 

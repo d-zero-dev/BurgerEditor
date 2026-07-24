@@ -1,4 +1,4 @@
-import { TextField } from '@burger-editor/client/react';
+import { TextField } from '@burger-editor/client/ui';
 import { createItem } from '@burger-editor/core';
 import { parseYTId } from '@burger-editor/utils';
 

@@ -3,7 +3,7 @@ import type { BurgerEditorEngine } from '@burger-editor/core';
 import { BGE_COMMAND, CommandBus, UIStateStore } from '@burger-editor/core';
 import { test, expect, describe, beforeEach, vi } from 'vitest';
 
-import { registerEngineCommands } from '../react/commands/register-engine-commands.js';
+import { registerEngineCommands } from '../commands/register-engine-commands.js';
 
 /**
  * CommandEventの合成ディスパッチ

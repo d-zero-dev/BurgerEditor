@@ -8,7 +8,7 @@ import {
 	RadioGroup,
 	SelectField,
 	TextField,
-} from '../react/form/index.js';
+} from '../form/index.js';
 
 /**
  * label文字列から要素を型安全に取得する

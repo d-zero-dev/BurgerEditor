@@ -60,10 +60,10 @@ export default defineConfig({
 				},
 				resolve: {
 					alias: {
-						// client distはReactを同梱するため、テストのReactと二重に
-						// ならないようソースを直接読む
-						'@burger-editor/client/react': path.resolve(
-							'./packages/@burger-editor/client/src/react/index.ts',
+						// clientはUIエントリをdist経由で提供するため、テストでは
+						// ソースを直接読んでReactインスタンスを揃える
+						'@burger-editor/client/ui': path.resolve(
+							'./packages/@burger-editor/client/src/ui.ts',
 						),
 					},
 				},

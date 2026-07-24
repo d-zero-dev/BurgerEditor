@@ -5,7 +5,7 @@ import {
 	Preview,
 	TextField,
 	useComponentEvent,
-} from '@burger-editor/client/react';
+} from '@burger-editor/client/ui';
 import { createItem } from '@burger-editor/core';
 import { formatByteSize } from '@burger-editor/utils';
 import { useEffect } from 'react';
