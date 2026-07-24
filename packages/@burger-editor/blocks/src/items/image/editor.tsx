@@ -133,7 +133,8 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 		void _updateImage(stateRef.current.path?.[index] ?? '');
 
 		const media = stateRef.current.media?.[index] ?? '';
-		setState((prev) => ({ ...prev, mediaInput: media }));
+		const altEditable = stateRef.current.alt?.[index] ?? '';
+		setState((prev) => ({ ...prev, mediaInput: media, altEditable }));
 	};
 
 	useComponentEvent(engine, 'file-select', ({ path, isEmpty }) => {

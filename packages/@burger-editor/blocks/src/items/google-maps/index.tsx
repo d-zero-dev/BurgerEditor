@@ -17,6 +17,14 @@ export default createItem<{
 	name: 'google-maps',
 	template,
 	style,
+	editorOptions: {
+		isDisable(item) {
+			if (item.config.googleMapsApiKey) {
+				return '';
+			}
+			return 'Google Maps APIキーが登録されていないため、利用できません。\n「システム設定」からAPIキーを登録することができます。';
+		},
+	},
 	toItemData(state, config) {
 		const url = `//maps.apple.com/?q=${state.lat},${state.lng}`;
 		const BASE_URL = '//maps.google.com/maps/api/staticmap';
