@@ -1,3 +1,4 @@
+import { narrowElement } from '@burger-editor/utils';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { test, expect, describe, vi } from 'vitest';
 
@@ -16,11 +17,7 @@ import {
  * @param ctor
  */
 function getAs<T extends HTMLElement>(label: string, ctor: new () => T): T {
-	const el = screen.getByLabelText(label);
-	if (!(el instanceof ctor)) {
-		throw new TypeError(`unexpected element for: ${label}`);
-	}
-	return el;
+	return narrowElement(screen.getByLabelText(label), ctor, label);
 }
 
 describe('TextField', () => {
