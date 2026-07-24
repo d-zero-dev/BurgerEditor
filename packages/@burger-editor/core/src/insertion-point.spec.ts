@@ -1,6 +1,6 @@
 import { test, expect, beforeEach, describe, vi } from 'vitest';
 
-import { InsertionPoint } from '../../../core/src/insertion-point.js';
+import { InsertionPoint } from './insertion-point.js';
 
 /**
  *
@@ -37,20 +37,28 @@ describe('InsertionPoint', () => {
 	});
 
 	describe('set', () => {
-		test('should set the insert target block', () => {
+		test('should set the insert target so the point lands next to the block', () => {
 			const engine = createMockEngine();
 			const ip = new InsertionPoint(engine);
 			const block = createMockBlock();
+			engine.content.containerElement.append(block.el);
 
-			// set should not throw
 			ip.set(block, false);
+			void ip.insert(createMockBlock());
+
+			expect(block.el.nextElementSibling).toBe(ip.el);
 		});
 
-		test('should accept null as target block', () => {
+		test('should accept null as target block and append at the end', () => {
 			const engine = createMockEngine();
+			const existingBlock = createMockBlock();
+			engine.content.containerElement.append(existingBlock.el);
 			const ip = new InsertionPoint(engine);
 
 			ip.set(null, false);
+			void ip.insert(createMockBlock());
+
+			expect(engine.content.containerElement.lastElementChild).toBe(ip.el);
 		});
 	});
 
