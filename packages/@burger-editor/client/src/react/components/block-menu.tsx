@@ -1,7 +1,12 @@
 import type { BurgerBlock, BurgerEditorEngine } from '@burger-editor/core';
-import type { CSSProperties } from 'react';
+import type { RefObject, CSSProperties } from 'react';
 
-import { BGE_COMMAND, COMMAND_BUS_ID, getBlockAtPosition } from '@burger-editor/core';
+import {
+	BGE_COMMAND,
+	COMMAND_BUS_ID,
+	Item,
+	getBlockAtPosition,
+} from '@burger-editor/core';
 import {
 	IconArrowBigDownLine,
 	IconArrowBigUpLine,
@@ -13,7 +18,7 @@ import {
 	IconSettings,
 	IconTrash,
 } from '@tabler/icons-react';
-import { useId, useEffect, useState } from 'react';
+import { useId, useEffect, useRef, useState } from 'react';
 
 import { useCommand } from '../use-command.js';
 
@@ -58,6 +63,7 @@ export function BlockMenu({
 	const [currentBlock, setCurrentBlock] = useState<BurgerBlock | null>(null);
 	const [visible, setVisible] = useState(false);
 	const [itemRects, setItemRects] = useState<readonly ItemOverlayRect[]>([]);
+	const itemElsRef: RefObject<readonly HTMLElement[]> = useRef([]);
 	const [geometry, setGeometry] = useState<MenuGeometry>({
 		width: 0,
 		height: 0,
@@ -73,7 +79,10 @@ export function BlockMenu({
 				return;
 			}
 			const index = Number((e.source as HTMLButtonElement | null)?.value);
-			const item = engine.getCurrentBlock()?.items[index];
+			const el = itemElsRef.current[index];
+			// rebindされたブロックはblock.itemsを持たないため、
+			// 要素→ItemはelMap（Item.getInstance）で解決する
+			const item = el ? Item.getInstance(el) : undefined;
 			if (item) {
 				engine.uiState.openItemEditor(item);
 			}
@@ -127,9 +136,11 @@ export function BlockMenu({
 					.getComputedStyle(block.el)
 					.getPropertyValue('--bge-block-margin'),
 			});
+			const itemEls = [...block.el.querySelectorAll<HTMLElement>('[data-bgi]')];
+			itemElsRef.current = itemEls;
 			setItemRects(
-				block.items.map((item) => {
-					const itemRect = item.el.getBoundingClientRect();
+				itemEls.map((itemEl) => {
+					const itemRect = itemEl.getBoundingClientRect();
 					return {
 						x: itemRect.left - rect.left,
 						y: itemRect.top - rect.top,

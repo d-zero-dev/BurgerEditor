@@ -10,6 +10,19 @@ import {
 	TextField,
 } from '../react/form/index.js';
 
+/**
+ * label文字列から要素を型安全に取得する
+ * @param label
+ * @param ctor
+ */
+function getAs<T extends HTMLElement>(label: string, ctor: new () => T): T {
+	const el = screen.getByLabelText(label);
+	if (!(el instanceof ctor)) {
+		throw new TypeError(`unexpected element for: ${label}`);
+	}
+	return el;
+}
+
 describe('TextField', () => {
 	test('renders label > span + input and lifts changes', () => {
 		const onChange = vi.fn();
@@ -61,7 +74,7 @@ describe('SelectField', () => {
 			/>,
 		);
 
-		const select = screen.getByLabelText('区切り線の種類');
+		const select = getAs('区切り線の種類', HTMLSelectElement);
 		expect(select.options).toHaveLength(2);
 
 		fireEvent.change(select, { target: { value: 'dashed' } });
@@ -86,7 +99,7 @@ describe('RadioGroup', () => {
 		);
 
 		expect(screen.getByRole('radiogroup')).toBeTruthy();
-		const original = screen.getByLabelText('画像基準');
+		const original = getAs('画像基準', HTMLInputElement);
 		expect(original.checked).toBe(true);
 
 		fireEvent.click(screen.getByLabelText('コンテナ'));

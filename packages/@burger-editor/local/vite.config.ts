@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
 	build: {
 		target: 'esnext',
 		outDir: 'dist',
@@ -20,5 +20,8 @@ export default defineConfig({
 	},
 	define: {
 		__DEBUG__: true,
+		// Reactをバンドルするためprocess.env参照を静的に解決する
+		// （vitestではReactを開発モードのまま動かすためtestモードでは定義しない）
+		...(mode === 'test' ? {} : { 'process.env.NODE_ENV': JSON.stringify('production') }),
 	},
-});
+}));
