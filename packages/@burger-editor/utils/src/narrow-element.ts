@@ -8,6 +8,15 @@
  * @param context エラーメッセージに含める文脈（取得に使ったラベルなど）
  * @returns ナローイングされた要素
  * @throws {TypeError} 要素が期待する型のインスタンスでない場合
+ * @example
+ * ```ts
+ * const input = narrowElement(
+ * 	screen.getByLabelText('タイトル'),
+ * 	HTMLInputElement,
+ * 	'タイトル',
+ * );
+ * input.value; // HTMLInputElementとして型安全にアクセスできる
+ * ```
  */
 export function narrowElement<T extends Element>(
 	el: Element,
