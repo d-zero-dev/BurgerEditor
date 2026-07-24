@@ -1,0 +1,92 @@
+.bgeMenuBase {
+	position: absolute;
+	inset-block-start: var(--y);
+	inset-inline-start: var(--x);
+	inline-size: var(--width);
+	block-size: calc(var(--height) + var(--margin-block-end));
+	pointer-events: none;
+}
+
+.bgeMenuMargin {
+	--_line-color: rgb(from var(--bge-ui-primary-color) r g b / 10%);
+
+	position: absolute;
+	inset-block-end: 0;
+	inset-inline-start: 0;
+	z-index: 100;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: 100%;
+	block-size: var(--margin-block-end);
+	container: margin-view / size;
+	font-size: 0.8em;
+	font-weight: bold;
+	color: var(--bge-ui-primary-color);
+	pointer-events: none;
+	background: repeating-linear-gradient(
+		45deg,
+		transparent,
+		transparent 4px,
+		var(--_line-color) 4px,
+		var(--_line-color) 8px
+	);
+}
+
+@container margin-view (height < 1em) {
+	.bgeMenuMargin {
+		span {
+			padding-block: 0.2em;
+			padding-inline: 0.4em;
+			color: var(--bge-lightest-color);
+			background: var(--bge-ui-primary-color);
+			border-radius: 0.2em;
+		}
+	}
+}
+
+.bgeMenu {
+	--gap: 0.2em;
+
+	position: relative;
+
+	/* itemオーバーレイ(z-index: 50)より上に重ね、移動・削除・設定等の
+	   ボタンがクリックを奪われないようにする。ボタン以外の領域は
+	   pointer-events: none でオーバーレイへ透過する */
+	z-index: 60;
+	display: flex;
+	align-items: start;
+	justify-content: space-between;
+	inline-size: 100%;
+	block-size: 100%;
+	min-block-size: max-content;
+	pointer-events: none;
+	outline: 4px solid var(--bge-ui-primary-color);
+}
+
+/* アイテム編集用の透明オーバーレイボタン（旧: アイテム要素への直接クリック） */
+.bgeItemOverlay {
+	position: absolute;
+	z-index: 50;
+	padding: 0;
+	margin: 0;
+	appearance: none;
+	pointer-events: all;
+	cursor: pointer;
+	background: transparent;
+	border: none;
+
+	&:is(:hover, :focus-visible) {
+		outline: 2px dashed var(--bge-ui-primary-color);
+		outline-offset: -2px;
+	}
+}
+
+.bgeMoveGroup,
+.bgeStandardGroup {
+	inset-block-start: 0;
+	display: flex;
+	gap: var(--gap);
+	justify-content: center;
+	padding: var(--gap);
+}

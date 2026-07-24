@@ -1,6 +1,9 @@
 @charset "utf-8";
 
 :root {
+	/* block-menu等のダイアログ外UI（iframe内含む）の
+	   ボタン・入力の角丸が依存するグローバルトークン */
+	--border-radius: 0.5em;
 	--bge-lightest-color: #fff;
 	--bge-darkest-color: #000;
 	--bge-border-primary-color: #cfd1cf;

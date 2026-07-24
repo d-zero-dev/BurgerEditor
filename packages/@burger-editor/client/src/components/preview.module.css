@@ -1,0 +1,81 @@
+.img {
+	position: relative;
+	overflow: hidden;
+
+	img,
+	video,
+	audio,
+	object,
+	p {
+		position: relative;
+		z-index: 0;
+		display: block;
+		inline-size: 100%;
+		aspect-ratio: 16 / 9;
+		margin: 0;
+		object-fit: contain;
+	}
+
+	p {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgb(0 0 0 / 10%);
+	}
+
+	&.uploading img {
+		object-fit: cover;
+	}
+
+	.progress {
+		position: absolute;
+		inset-block-start: 0;
+		z-index: 10;
+		inline-size: 100%;
+		block-size: 100%;
+		background: rgb(0 0 0 / 50%);
+	}
+}
+
+.meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.3em;
+	justify-content: center;
+	padding: 0;
+	padding-block-end: 1em;
+	margin: 0;
+	margin-block-start: 0.5em;
+	font-family: monospace;
+	font-size: calc(12 / 16 * 1em);
+	opacity: 0.7;
+
+	li {
+		display: block;
+		padding: 0;
+		margin: 0;
+		list-style: none;
+	}
+
+	.path {
+		word-break: break-all;
+
+		a {
+			color: inherit;
+		}
+	}
+
+	.upload .progress {
+		font-style: italic;
+	}
+
+	.dimension {
+		&::before {
+			content: '(';
+		}
+
+		&::after {
+			content: ')';
+		}
+	}
+}

@@ -1,0 +1,98 @@
+.ctrl {
+	display: flex;
+	gap: 2em;
+	margin-block-end: 1em;
+}
+
+.pagination {
+	display: flex;
+	flex: 1 0 auto;
+	gap: 1em;
+	align-items: center;
+	justify-content: center;
+
+	button {
+		user-select: none;
+	}
+}
+
+.page {
+	display: flex;
+	gap: 0.5em;
+	align-items: center;
+}
+
+.list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5em;
+	padding: 0;
+	margin: 0;
+
+	li {
+		position: relative;
+		padding: 0;
+		margin: 0;
+		list-style: none;
+	}
+
+	li:is(:focus-within:has(:focus-visible), :hover) .delete {
+		opacity: 1;
+	}
+}
+
+.file {
+	z-index: 0;
+	display: flex;
+	gap: 1em;
+	align-items: center;
+	inline-size: 100%;
+	padding: 0.5em;
+	text-align: start;
+	border: none;
+
+	> span {
+		display: block;
+	}
+
+	> span.thumbnail {
+		display: block;
+		flex: 0 0 7em;
+		inline-size: 7em;
+		block-size: 7em;
+	}
+
+	> span.attr {
+		display: grid;
+		grid-template-columns: max-content 1fr;
+		gap: 0.2em 1em;
+		align-items: baseline;
+	}
+
+	> span.attr > span:nth-child(odd)::after {
+		content: ':';
+	}
+}
+
+.delete {
+	position: absolute;
+	inset-block-end: 0.7em;
+	inset-inline-end: 0.7em;
+	display: block;
+	padding: 0.5em;
+	font-size: 0.8em;
+	text-align: center;
+	opacity: 0;
+
+	&:hover {
+		--bge-border-color: var(--bge-ui-primary-color);
+	}
+}
+
+.file[aria-pressed='true'] + .delete {
+	--bge-outline-color: #fff;
+	--bge-border-color: #fff;
+
+	color: #fff;
+	background-color: var(--bge-ui-primary-color);
+}

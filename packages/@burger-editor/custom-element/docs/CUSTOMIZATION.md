@@ -156,9 +156,19 @@ class CustomWysiwygEditor extends BgeWysiwygEditorElement {
 		// 子要素の参照を取得
 		const wysiwygElement = this.querySelector('bge-wysiwyg');
 
-		// カスタムボタンを作成
+		// カスタムボタンを作成。起動はInvoker Commands（command/commandfor）で
+		// 宣言する — clickハンドラは規約で禁止されており、command属性が
+		// 無いとボタンは何も実行しない
 		const customButton = document.createElement('button');
+		customButton.type = 'button';
 		customButton.textContent = 'Custom';
+		customButton.setAttribute('command', '--custom-action');
+		customButton.setAttribute('commandfor', this.id);
+		this.addEventListener('command', (event) => {
+			if (event.command === '--custom-action') {
+				// カスタムアクションを実行
+			}
+		});
 
 		// イベントリスナーを登録（初期化前）
 		wysiwygElement.addEventListener('transaction', (event) => {

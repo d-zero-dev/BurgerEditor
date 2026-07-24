@@ -1,0 +1,5 @@
+.uploader {
+	input[type='file'] {
+		display: none;
+	}
+}

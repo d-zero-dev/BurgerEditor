@@ -2,29 +2,17 @@
 	"extends": [
 		"@d-zero/stylelint-config/scss",
 		"@d-zero/stylelint-config/base",
-		"@d-zero/stylelint-config/order",
-		"stylelint-config-html"
+		"@d-zero/stylelint-config/order"
 	],
 	"rules": {
 		"declaration-property-value-no-unknown": null,
 		"selector-type-no-unknown": [
 			true,
 			{
-				"ignoreTypes": ["/^bge-/"]
-			}
-		]
-	},
-	"overrides": [
-		{
-			"files": ["**/*.svelte"],
-			"rules": {
-				"selector-pseudo-class-no-unknown": [
-					true,
-					{
-						"ignorePseudoClasses": ["global"]
-					}
+				"ignoreTypes": [
+					"/^bge-/"
 				]
 			}
-		}
-	]
+		]
+	}
 }

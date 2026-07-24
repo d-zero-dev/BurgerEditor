@@ -1,18 +1,17 @@
 import type { ContainerType } from '../block/types.js';
-import type { DialogSettings } from '../editor-dialog.js';
 import type { ItemSeed } from '../item/types.js';
 import type {
 	BurgerEditorEngineOptions,
-	UIOptions,
+	BlockCatalog,
 	Config,
 	FileAPI,
 	BlockItem,
 	BlockData,
 } from '../types.js';
+import type { ConfirmCallback } from './copy-editable-area.js';
 
 import { BurgerBlock } from '../block/block.js';
-import { BlockCatalogDialog } from '../block-catalog-dialog.js';
-import { BlockOptionsDialog } from '../block-options-dialog.js';
+import { CommandBus } from '../command/command-bus.js';
 import { ComponentObserver } from '../component-observer.js';
 import { CSS_LAYER } from '../const.js';
 import { createComponentStylesheet } from '../dom-helpers/create-component-stylesheet.js';
@@ -27,15 +26,14 @@ import { getElement } from '../dom-helpers/get-element.js';
 import { EditableArea } from '../editable-area.js';
 import { createBgeEvent } from '../event/create-bge-event.js';
 import { HealthMonitor } from '../health-monitor.js';
-import { getItemEditorTemplate } from '../item/get-item-editor-template.js';
 import { Item } from '../item/item.js';
-import { ItemEditorDialog } from '../item-editor-dialog.js';
 
-type ConfirmCallback = () => Promise<boolean> | boolean;
+import { copyEditableArea } from './copy-editable-area.js';
+import { UIStateStore } from './ui-state.js';
 
 export class BurgerEditorEngine {
-	readonly blockCatalogDialog: BlockCatalogDialog;
-	readonly blockOptionsDialog: BlockOptionsDialog;
+	readonly catalog: BlockCatalog;
+	readonly commandBus = new CommandBus();
 	readonly componentObserver = new ComponentObserver();
 	readonly config: Config;
 	readonly css: {
@@ -47,13 +45,12 @@ export class BurgerEditorEngine {
 		readonly generalCSS: string;
 	};
 	readonly el: HTMLElement;
-	readonly itemEditorDialog: ItemEditorDialog<{}, {}>;
 	readonly items: Map<string, ItemSeed>;
 	readonly serverAPI: FileAPI;
 	readonly storageKey: {
 		readonly blockClipboard: string;
 	};
-	readonly ui: UIOptions;
+	readonly uiState = new UIStateStore();
 	readonly viewArea: HTMLElement;
 	#contentStylesheetCache: string | null = null;
 	#current!: EditableArea;
@@ -82,7 +79,7 @@ export class BurgerEditorEngine {
 		this.el = getElement(options.root);
 		this.config = options.config;
 		this.serverAPI = options.fileIO ?? {};
-		this.ui = options.ui ?? {};
+		this.catalog = options.catalog;
 		this.storageKey = {
 			blockClipboard: 'bge-copied-block',
 			...options.storageKey,
@@ -116,78 +113,6 @@ export class BurgerEditorEngine {
 			document.head.append(script);
 		}
 
-		const dialogSettings: DialogSettings = {
-			onClosed: () => {
-				this.componentObserver.off();
-				this.save();
-			},
-			onOpen: () => {
-				return this.isProcessed;
-			},
-			createEditorComponent: (el) => {
-				const editorComponentSubClassName = el.dataset.bgeEditorUi;
-				if (editorComponentSubClassName && this.#isUIName(editorComponentSubClassName)) {
-					const cleanUpHook = this.ui[editorComponentSubClassName]?.(el, this);
-					return cleanUpHook?.cleanUp;
-				}
-				return;
-			},
-			createDialogShell: options.dialogShell,
-		};
-
-		this.blockCatalogDialog = new BlockCatalogDialog(options.catalog, {
-			...dialogSettings,
-			addBlock: (blockData) => {
-				return this.addBlock(blockData);
-			},
-		});
-
-		this.blockOptionsDialog = new BlockOptionsDialog({
-			...dialogSettings,
-			onChangeBlock: (callback) => {
-				this.el.addEventListener('bge:block-change', (e) => {
-					callback(e.detail.block);
-				});
-			},
-			getCurrentBlock: () => {
-				return this.getCurrentBlock();
-			},
-		});
-
-		this.itemEditorDialog = new ItemEditorDialog({
-			...dialogSettings,
-			config: this.config,
-			onOpened: (data, editor) => {
-				this.componentObserver.notify('open-editor', {
-					data,
-					editor,
-				});
-			},
-			getComponentObserver: () => {
-				return this.componentObserver;
-			},
-			getTemplate: (itemName: string) => {
-				return getItemEditorTemplate(this, itemName);
-			},
-			getContentStylesheet: async () => {
-				if (this.#contentStylesheetCache) {
-					return this.#contentStylesheetCache;
-				}
-				const css = await Promise.all(
-					this.css.stylesheets
-						.filter((sheet) => sheet.layer == null)
-						.map(async (sheet) => {
-							const res = await fetch(sheet.path);
-							return res.text();
-						}),
-				);
-				// generalCSSを含める
-				const stylesheets = [this.css.generalCSS, ...css];
-				this.#contentStylesheetCache = stylesheets.join('\n');
-				return this.#contentStylesheetCache;
-			},
-		});
-
 		this.items = new Map();
 		if (options.items) {
 			for (const [name, seed] of Object.entries(options.items)) {
@@ -199,6 +124,8 @@ export class BurgerEditorEngine {
 		viewArea.classList.add(...(options.viewAreaClassList ?? []));
 		this.viewArea = viewArea;
 		this.el.append(viewArea);
+
+		this.commandBus.createReceiver(this.el);
 
 		this.el.addEventListener('bge:saved', (e) => {
 			const { main, draft } = e.detail;
@@ -226,6 +153,7 @@ export class BurgerEditorEngine {
 	 */
 	cleanUp() {
 		this.#healthMonitor.stop();
+		this.commandBus.destroy();
 	}
 
 	clearCurrentBlock() {
@@ -237,18 +165,35 @@ export class BurgerEditorEngine {
 			return false;
 		}
 
-		if (!(await confirm?.())) {
-			return false;
-		}
-
-		if (this.#draft.isEmpty() || this.#draft.isSame(this.#main)) {
-			await this.#draft.copyTo(this.#main);
+		if (await copyEditableArea(this.#draft, this.#main, confirm)) {
 			this.showMain();
 			return true;
 		}
 		return false;
 	}
 
+	/**
+	 * Resolve the CSS applied to the content (generalCSS plus non-layered
+	 * stylesheets), for injection into rich-text editors.
+	 * @returns The concatenated stylesheet text
+	 */
+	async getContentStylesheet(): Promise<string> {
+		if (this.#contentStylesheetCache) {
+			return this.#contentStylesheetCache;
+		}
+		const css = await Promise.all(
+			this.css.stylesheets
+				.filter((sheet) => sheet.layer == null)
+				.map(async (sheet) => {
+					const res = await fetch(sheet.path);
+					return res.text();
+				}),
+		);
+		// generalCSSを含める
+		const stylesheets = [this.css.generalCSS, ...css];
+		this.#contentStylesheetCache = stylesheets.join('\n');
+		return this.#contentStylesheetCache;
+	}
 	getCurrentBlock() {
 		if (!this.#currentBlock) {
 			// eslint-disable-next-line no-console
@@ -285,12 +230,7 @@ export class BurgerEditorEngine {
 			return false;
 		}
 
-		if (!(await confirm?.())) {
-			return false;
-		}
-
-		if (this.#main.isEmpty() || this.#main.isSame(this.#draft)) {
-			await this.#main.copyTo(this.#draft);
+		if (await copyEditableArea(this.#main, this.#draft, confirm)) {
 			this.showDraft();
 			return true;
 		}
@@ -373,7 +313,7 @@ export class BurgerEditorEngine {
 
 	async #createItemElement(itemData: BlockItem | HTMLElement) {
 		if (typeof itemData !== 'string' && 'localName' in itemData) {
-			const item = Item.rebind(itemData, this.items, this.itemEditorDialog);
+			const item = Item.rebind(itemData, this.items, this.config);
 			return item.el;
 		}
 
@@ -381,14 +321,10 @@ export class BurgerEditorEngine {
 		const item = await Item.create(
 			name,
 			this.items,
-			this.itemEditorDialog,
+			this.config,
 			typeof itemData === 'string' ? undefined : itemData.data,
 		);
 		return item.el;
-	}
-
-	#isUIName(name: string): name is keyof UIOptions {
-		return name in this.ui;
 	}
 
 	/**

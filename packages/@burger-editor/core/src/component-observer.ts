@@ -39,12 +39,20 @@ export class ComponentObserver {
 	 * @template A - The action type key
 	 * @param name - The action name to listen for
 	 * @param listener - Callback receiving the typed payload
+	 * @returns A function that removes this listener only
 	 */
-	on<A extends keyof Actions>(name: A, listener: (payload: Actions[A]) => void) {
+	on<A extends keyof Actions>(
+		name: A,
+		listener: (payload: Actions[A]) => void,
+	): () => void {
 		const wrapper: EventListener = (e) => {
 			listener((e as CustomEvent).detail);
 		};
 		this.#listeners.set(wrapper, name);
 		window.addEventListener(`bge:_${this.#instanceId}_:${name}`, wrapper);
+		return () => {
+			window.removeEventListener(`bge:_${this.#instanceId}_:${name}`, wrapper);
+			this.#listeners.delete(wrapper);
+		};
 	}
 }

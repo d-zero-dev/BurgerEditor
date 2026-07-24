@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/@burger-editor%2Flocal.svg)](https://badge.fury.io/js/@burger-editor%2Flocal)
 
-ローカルファイルシステム上の HTML を **開発者・編集者がブラウザ UI で WYSIWYG 編集** するための BurgerEditor CMS 実装。Hono ベースの HTTP サーバー + Vite でビルドした `@burger-editor/client` (Svelte) UI を `npx bge` 一発で起動する。
+ローカルファイルシステム上の HTML を **開発者・編集者がブラウザ UI で WYSIWYG 編集** するための BurgerEditor CMS 実装。Hono ベースの HTTP サーバー + Vite でビルドした `@burger-editor/client` (React) UI を `npx bge` 一発で起動する。
 
 ファイル I/O / 設定解決 / virtual-path-resolver / Front Matter の本体は [`@burger-editor/file-io`](../file-io/) に集約されており、`local` はそれを再エクスポートする薄いシムに痩身化されている。
 

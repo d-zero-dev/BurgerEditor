@@ -159,44 +159,49 @@ export default createItem<{
 			<img data-bge="image-url:src, image-alt:alt" />
 		</a>
 	`,
-	editor: `
-		<input data-bge="href" />
-		<input data-bge="image-url" />
-		<input data-bge="image-alt" />
-		<input data-bge="text" />
-	`,
+	Editor({ state, setState }) {
+		return (
+			<>
+				<TextField
+					label="リンク先"
+					value={state.href ?? ''}
+					onChange={(href) => setState({ ...state, href })}
+				/>
+				<TextField
+					label="テキスト"
+					value={state.text ?? ''}
+					onChange={(text) => setState({ ...state, text })}
+				/>
+			</>
+		);
+	},
 });
 ```
 
+`Editor` は React コンポーネント（型付き props: `state` / `setState` / `config` / `engine` / `item`）。フォーム部品は `@burger-editor/client/ui` の `TextField` / `SelectField` / `Checkbox` などを利用できる。ボタンを置く場合は Invoker Commands API（`command`/`commandfor`）で宣言する — click ハンドラは禁止。
+
 ### `createItem` の引数
 
-| プロパティ      | 型 / 役割                                               |
-| --------------- | ------------------------------------------------------- |
-| `version`       | `string` — アイテムのバージョン。`migrate` の判定に使う |
-| `name`          | `string` — アイテムの一意な名前                         |
-| `template`      | `string` — 表示用 HTML テンプレート                     |
-| `style`         | `string` — アイテム専用 CSS（オプション）               |
-| `editor`        | `string` — エディタ UI の HTML                          |
-| `editorOptions` | オブジェクト — ライフサイクルフック（下記）             |
-
-### `editorOptions` ライフサイクル
-
-| フック                                           | 呼ばれるタイミング                                                                          |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `beforeOpen(data, editor): T`                    | エディタを開く直前。保存データを UI 用に変換（例: 文字列フラグ → boolean、Markdown → HTML） |
-| `open(data, editor): Promise<void> \| void`      | エディタが開いた後。DOM へのイベント登録、プレビュー連動などの UI ロジック                  |
-| `beforeChange(newData, editor): Promise<T> \| T` | 保存ボタン押下時、データ反映直前。UI 上の値を保存形式に整形                                 |
-| `migrate(item): T`                               | `version` が古い時に呼ばれ、旧データを現行形式に変換                                        |
-| `isDisable(item): string`                        | 編集不可なら理由メッセージを返す。空文字列なら編集可能（例: API キー未設定時のロック）      |
+| プロパティ      | 型 / 役割                                                                             |
+| --------------- | ------------------------------------------------------------------------------------- |
+| プロパティ      | 型 / 役割                                                                             |
+| --------------- | ------------------------------------------------------------------------------------- |
+| `version`       | `string` — アイテムのバージョン                                                       |
+| `name`          | `string` — アイテムの一意な名前                                                       |
+| `template`      | `string` — 表示用 HTML テンプレート（`data-bge` バインディング）                      |
+| `style`         | `string` — アイテム専用 CSS（オプション）                                             |
+| `Editor`        | React コンポーネント — エディタ UI（controlled form）                                 |
+| `toEditorState` | `(data, config) => E` — エディタを開く際に保存データをエディタ状態へ変換する純関数    |
+| `toItemData`    | `(state, config) => T` — 保存時にエディタ状態を保存データへ変換する純関数             |
+| `editorOptions` | オブジェクト — 非エディタ系フック（現在は `isDisable(item): string` のみ）            |
 
 ### アイテムのライフサイクル
 
 1. **作成**: `Item.create()` または `render()` でアイテム生成
 2. **初期化**: `init()` で初期データ反映
-3. **エディタを開く**: `beforeOpen()` → `open()`
-4. **編集**: ユーザーがエディタで編集
-5. **保存**: `onSubmit()` → `beforeChange()` → データ更新 → `change` イベント
-6. **マイグレーション**: `version` が古ければ `migrate()` 実行
+3. **エディタを開く**: UI 層が `engine.uiState.openItemEditor(item)` → `toEditorState(data, config)` で初期状態を導出し `Editor` をレンダリング
+4. **編集**: controlled inputs で `state` を更新
+5. **保存**: 決定ボタン（フォーム submit）→ `toItemData(state, config)` → `item.import(data)` → 保存
 
 ### `dangerouslySetInnerHTML`
 

@@ -1,0 +1,104 @@
+.blockCatalog {
+	dl {
+		padding: 0;
+		margin: 0;
+	}
+
+	dt {
+		margin-block-end: 10px;
+		font-size: 1.1em;
+		font-weight: bold;
+		color: #333;
+		border-block-end: 1px #565a49 dotted;
+	}
+
+	dl > div {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(6em, 1fr));
+		gap: 0.5em;
+	}
+
+	dd {
+		padding: 0;
+		margin: 0;
+	}
+
+	dd button {
+		display: flex;
+		align-items: start;
+		inline-size: 100%;
+		block-size: 100%;
+		padding: 0.5em;
+		margin: 0;
+		appearance: none;
+	}
+
+	.figure {
+		display: block;
+		margin-block: 0;
+		margin-inline: auto;
+	}
+
+	.img {
+		display: block;
+	}
+
+	.img > * {
+		display: block;
+		inline-size: 71px;
+		block-size: 56px;
+		margin-block: 0;
+		margin-inline: auto;
+		background-repeat: no-repeat;
+		border-radius: 10px;
+	}
+
+	.figcaption {
+		display: block;
+		padding-block-start: 0.5em;
+		font-size: 0.6em;
+		font-weight: bold;
+		text-align: center;
+	}
+}
+
+/* ペーストセクション */
+.pasteSection {
+	padding-block-end: 1em;
+	margin-block-end: 1em;
+	border-block-end: 2px solid var(--bge-ui-primary-color, #4a90e2);
+}
+
+.pasteButton {
+	display: flex;
+	gap: 0.5em;
+	align-items: center;
+	justify-content: center;
+	inline-size: 100%;
+	padding-block: 0.8em;
+	padding-inline: 1em;
+	font-size: 1em;
+	font-weight: bold;
+	color: var(--bge-lightest-color, #fff);
+	cursor: pointer;
+	background-color: var(--bge-ui-primary-color, #4a90e2);
+	border: none;
+	border-radius: 4px;
+	transition: background-color 0.2s ease;
+}
+
+.pasteButton:hover {
+	background-color: color-mix(
+		in srgb,
+		var(--bge-ui-primary-color, #4a90e2) 80%,
+		var(--bge-darkest-color, #000) 20%
+	);
+}
+
+.pasteButton:active {
+	translate: 0 1px;
+}
+
+.pasteButton span {
+	font-size: 0.95em;
+}

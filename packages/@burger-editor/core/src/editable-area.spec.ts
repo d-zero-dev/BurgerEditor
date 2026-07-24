@@ -23,8 +23,11 @@ function createMockEngine() {
 			update: vi.fn(),
 		},
 		save: vi.fn(),
-		blockCatalogDialog: {
-			open: vi.fn(),
+		uiState: {
+			openBlockCatalog: vi.fn(),
+		},
+		commandBus: {
+			createReceiver: vi.fn(),
 		},
 		restoreBlockFromElement: vi.fn().mockResolvedValue({
 			el: document.createElement('div'),
