@@ -28,8 +28,7 @@ export function applyBlockOptions(block: BurgerBlock, formData: FormData) {
 	const id = formData.get('bge-options-id');
 	const linkarea = formData.get('bge-options-linkarea');
 	const repeatMinInlineSize = formData.get('bge-options-repeat-min-inline-size') as
-		| string
-		| null;
+		string | null;
 
 	const styles = formData
 		.keys()
@@ -52,13 +51,7 @@ export function applyBlockOptions(block: BurgerBlock, formData: FormData) {
 			columns: columns ? Number(columns) : null,
 			autoRepeat: (autoRepeat as 'fixed' | 'auto-fill' | 'auto-fit') ?? 'fixed',
 			justify: justify as
-				| 'center'
-				| 'start'
-				| 'end'
-				| 'between'
-				| 'around'
-				| 'evenly'
-				| null,
+				'center' | 'start' | 'end' | 'between' | 'around' | 'evenly' | null,
 			align: align as
 				| 'align-center'
 				| 'align-start'

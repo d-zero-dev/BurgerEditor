@@ -11,12 +11,7 @@ declare module '@tiptap/core' {
 }
 
 export type FlexBoxJustifyContent =
-	| 'start'
-	| 'end'
-	| 'center'
-	| 'between'
-	| 'around'
-	| 'evenly';
+	'start' | 'end' | 'center' | 'between' | 'around' | 'evenly';
 
 export const FlexBox = Node.create({
 	name: 'flexBox',

@@ -1,6 +1,2 @@
 export type Submitter =
-	| HTMLInputElement
-	| HTMLSelectElement
-	| HTMLTextAreaElement
-	| HTMLButtonElement
-	| null;
+	HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement | null;
