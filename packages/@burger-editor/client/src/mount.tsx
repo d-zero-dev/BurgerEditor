@@ -8,6 +8,12 @@ import { createRoot } from 'react-dom/client';
  * @param node - The React node to render
  * @param target - The DOM container
  * @returns An object whose `cleanUp` unmounts the root
+ * @example
+ * ```tsx
+ * const { cleanUp } = reactMount(<DraftSwitcher engine={engine} />, container);
+ * // When the UI is torn down:
+ * cleanUp();
+ * ```
  */
 export function reactMount(node: ReactNode, target: HTMLElement) {
 	const root = createRoot(target);

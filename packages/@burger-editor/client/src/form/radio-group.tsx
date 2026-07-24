@@ -5,6 +5,10 @@ import { useId } from 'react';
 /**
  * Controlled radio group following the editor form markup convention
  * (`div[role=radiogroup] > label > input + text`).
+ *
+ * The structure is a styling contract: `ui.css` lays out the group via
+ * `[role='radiogroup'] > label` (and appends `:` to the group label), so
+ * it must be preserved.
  * @param root0
  * @param root0.label
  * @param root0.value
@@ -12,6 +16,19 @@ import { useId } from 'react';
  * @param root0.options
  * @param root0.name
  * @param root0.disabled
+ * @example
+ * ```tsx
+ * <RadioGroup
+ * 	label="配置"
+ * 	name="bge-align"
+ * 	value={state.align ?? 'start'}
+ * 	options={[
+ * 		{ value: 'start', label: '左寄せ' },
+ * 		{ value: 'end', label: '右寄せ' },
+ * 	]}
+ * 	onChange={(align) => setState({ ...state, align })}
+ * />
+ * ```
  */
 export function RadioGroup({
 	label,

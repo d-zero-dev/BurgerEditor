@@ -3,6 +3,10 @@ import type { ReactNode } from 'react';
 /**
  * Controlled checkbox following the editor form markup convention
  * (`label > input + text`).
+ *
+ * The structure is a styling contract: `ui.css` turns
+ * `label:not([for]):has(input[type='checkbox'])` into a flex row, so it
+ * must be preserved.
  * @param root0
  * @param root0.label
  * @param root0.checked
@@ -10,6 +14,15 @@ import type { ReactNode } from 'react';
  * @param root0.name
  * @param root0.disabled
  * @param root0.describedBy
+ * @example
+ * ```tsx
+ * <Checkbox
+ * 	label={<span>横スクロール可能</span>}
+ * 	name="bge-scrollable"
+ * 	checked={state.scrollable ?? false}
+ * 	onChange={(scrollable) => setState({ ...state, scrollable })}
+ * />
+ * ```
  */
 export function Checkbox({
 	label,

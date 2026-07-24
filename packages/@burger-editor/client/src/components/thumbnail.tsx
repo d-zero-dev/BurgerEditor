@@ -15,8 +15,16 @@ import styles from './thumbnail.module.css';
 
 /**
  * File thumbnail. Renders an image/video preview or a file-type icon.
+ *
+ * The file type is inferred from the URL's extension (`getExt`) — the
+ * URL is the only information available here, so the extension decides
+ * whether the file can be previewed inline or needs a type icon.
  * @param root0
  * @param root0.src
+ * @example
+ * ```tsx
+ * <Thumbnail src={file.url} />
+ * ```
  */
 export function Thumbnail({ src }: { readonly src: string }) {
 	const [isLoaded, setIsLoaded] = useState(false);

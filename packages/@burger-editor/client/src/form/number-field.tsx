@@ -1,5 +1,9 @@
 /**
  * Controlled numeric input following the editor form markup convention.
+ *
+ * The `label > span + input` structure is a styling contract: `ui.css`
+ * lays out fields with structural selectors
+ * (`label:not([for]) > span:has(+ input)`), so it must be preserved.
  * @param root0
  * @param root0.label
  * @param root0.value
@@ -9,6 +13,16 @@
  * @param root0.max
  * @param root0.step
  * @param root0.disabled
+ * @example
+ * ```tsx
+ * <NumberField
+ * 	label="表示件数"
+ * 	name="bge-count"
+ * 	value={state.count ?? 1}
+ * 	min={1}
+ * 	onChange={(count) => setState({ ...state, count })}
+ * />
+ * ```
  */
 export function NumberField({
 	label,

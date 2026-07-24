@@ -21,6 +21,13 @@ type SubmitRef = RefObject<(() => Promise<void>) | null>;
  * @param root0
  * @param root0.engine
  * @param root0.item
+ * @example
+ * ```tsx
+ * <ItemEditorHost
+ * 	engine={engine}
+ * 	item={open?.type === 'item-editor' ? open.item : null}
+ * />
+ * ```
  */
 export function ItemEditorHost({
 	engine,

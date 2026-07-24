@@ -20,6 +20,17 @@ import './invoker-commands.js';
  * @param root0.buttons.close
  * @param root0.buttons.complete
  * @param root0.children
+ * @example
+ * ```tsx
+ * <EditorDialog
+ * 	name="options"
+ * 	open={block !== null}
+ * 	onClose={() => engine.uiState.closeDialog()}
+ * 	onComplete={(formData) => applyBlockOptions(block, formData)}
+ * 	buttons={{ close: 'キャンセル', complete: '決定' }}>
+ * 	{block ? <BlockOptions engine={engine} block={block} /> : null}
+ * </EditorDialog>
+ * ```
  */
 export function EditorDialog({
 	name,

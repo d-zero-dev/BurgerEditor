@@ -9,6 +9,11 @@ import { useCommand } from '../use-command.js';
 
 import styles from './table-editor.module.css';
 
+/**
+ * Row-aligned table cell text: `th[i]` and `td[i]` form one row. In the
+ * table item the `td` cells hold Markdown while editing (converted
+ * to/from HTML via `toEditorState`/`toItemData`); `th` cells stay plain.
+ */
 export interface TableEditorData {
 	readonly th: readonly string[];
 	readonly td: readonly string[];
@@ -20,6 +25,13 @@ export interface TableEditorData {
  * @param root0
  * @param root0.value
  * @param root0.onChange
+ * @example
+ * ```tsx
+ * <TableEditor
+ * 	value={{ th: state.th ?? [], td: state.td ?? [] }}
+ * 	onChange={({ th, td }) => setState({ ...state, th: [...th], td: [...td] })}
+ * />
+ * ```
  */
 export function TableEditor({
 	value,

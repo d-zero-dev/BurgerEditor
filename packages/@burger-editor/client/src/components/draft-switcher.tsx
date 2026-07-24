@@ -15,6 +15,12 @@ import styles from './draft-switcher.module.css';
  * targets single-click activation).
  * @param root0
  * @param root0.engine
+ * @example
+ * ```tsx
+ * const container = document.createElement('div');
+ * engine.viewArea.insertAdjacentElement('beforebegin', container);
+ * reactMount(<DraftSwitcher engine={engine} />, container);
+ * ```
  */
 export function DraftSwitcher({ engine }: { readonly engine: BurgerEditorEngine }) {
 	const [isMain, setIsMain] = useState(engine.content.type === 'main');

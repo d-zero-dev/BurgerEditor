@@ -1,6 +1,10 @@
 /**
  * Controlled single-line text input following the editor form markup
  * convention (`label > span + input`).
+ *
+ * The structure is a styling contract: `ui.css` lays out fields with
+ * structural selectors (`label:not([for]) > span:has(+ input)`) instead
+ * of `for`/`id` wiring, so it must be preserved.
  * @param root0
  * @param root0.label
  * @param root0.value
@@ -9,6 +13,15 @@
  * @param root0.name
  * @param root0.disabled
  * @param root0.placeholder
+ * @example
+ * ```tsx
+ * <TextField
+ * 	label="URL"
+ * 	name="bge-link"
+ * 	value={state.href ?? ''}
+ * 	onChange={(href) => setState({ ...state, href })}
+ * />
+ * ```
  */
 export function TextField({
 	label,

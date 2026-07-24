@@ -14,6 +14,13 @@ import styles from './tabs.module.css';
  * @param root0.contentId
  * @param root0.length
  * @param root0.createLabel
+ * @example
+ * ```tsx
+ * <Tabs current={currentIndex} onChange={setCurrentIndex} contentId="tab-content" />
+ * <div id="tab-content" role="tabpanel">
+ * 	{currentIndex === 0 ? <PcForm /> : <SpForm />}
+ * </div>
+ * ```
  */
 export function Tabs({
 	current,

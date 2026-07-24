@@ -16,6 +16,12 @@ import styles from './block-catalog.module.css';
  * @param root0
  * @param root0.engine
  * @param root0.catalog
+ * @example
+ * ```tsx
+ * <EditorDialog name="catalog" open={open} onClose={close} buttons={{ close: 'キャンセル' }}>
+ * 	<BlockCatalog engine={engine} catalog={engine.catalog} />
+ * </EditorDialog>
+ * ```
  */
 export function BlockCatalog({
 	engine,

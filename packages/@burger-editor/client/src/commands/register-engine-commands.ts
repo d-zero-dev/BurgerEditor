@@ -12,6 +12,11 @@ import { replaceElement } from '../replace-element.js';
  * declare them with `commandfor={COMMAND_BUS_ID}`. Call once per engine.
  * @param engine - The engine instance
  * @param catalog - The block catalog used by `--add-block`
+ * @example
+ * ```ts
+ * const engine = await BurgerEditorEngine.new(options);
+ * registerEngineCommands(engine, options.catalog);
+ * ```
  */
 export function registerEngineCommands(
 	engine: BurgerEditorEngine,

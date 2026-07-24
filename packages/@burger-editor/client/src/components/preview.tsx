@@ -14,6 +14,10 @@ import styles from './preview.module.css';
  * @param root0
  * @param root0.engine
  * @param root0.path
+ * @example
+ * ```tsx
+ * <Preview engine={engine} path={state.path ?? ''} />
+ * ```
  */
 export function Preview({
 	engine,

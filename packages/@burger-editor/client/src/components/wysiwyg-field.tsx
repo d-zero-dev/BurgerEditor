@@ -29,6 +29,14 @@ declare module 'react' {
  * @param root0.itemName
  * @param root0.commands
  * @param root0.label
+ * @example
+ * ```tsx
+ * <WysiwygField
+ * 	itemName="wysiwyg"
+ * 	value={state.wysiwyg ?? ''}
+ * 	onChange={(wysiwyg) => setState({ ...state, wysiwyg })}
+ * />
+ * ```
  */
 export function WysiwygField({
 	value,

@@ -17,6 +17,11 @@ import { Thumbnail } from './thumbnail.js';
  * @param root0
  * @param root0.engine
  * @param root0.fileType
+ * @example
+ * ```tsx
+ * <FileUploader engine={engine} fileType="image" />
+ * <FileList engine={engine} fileType="image" />
+ * ```
  */
 export function FileList({
 	engine,

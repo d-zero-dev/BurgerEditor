@@ -49,6 +49,17 @@ interface ItemOverlayRect {
  * @param root0.engine
  * @param root0.container
  * @param root0.onHide
+ * @example
+ * ```tsx
+ * reactMount(
+ * 	<BlockMenu
+ * 		engine={engine}
+ * 		container={container}
+ * 		onHide={() => engine.clearCurrentBlock()}
+ * 	/>,
+ * 	container,
+ * );
+ * ```
  */
 export function BlockMenu({
 	engine,

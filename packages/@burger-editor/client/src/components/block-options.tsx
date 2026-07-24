@@ -15,6 +15,17 @@ const containerTypeLabel = {
  * @param root0
  * @param root0.engine
  * @param root0.block
+ * @example
+ * ```tsx
+ * <EditorDialog
+ * 	name="options"
+ * 	open={block !== null}
+ * 	onClose={close}
+ * 	onComplete={(formData) => applyBlockOptions(block, formData)}
+ * 	buttons={{ close: 'キャンセル', complete: '決定' }}>
+ * 	{block ? <BlockOptions engine={engine} block={block} /> : null}
+ * </EditorDialog>
+ * ```
  */
 export function BlockOptions({
 	engine,

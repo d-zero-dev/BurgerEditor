@@ -3,6 +3,10 @@ import type { SelectableValue } from '@burger-editor/core';
 /**
  * Controlled select following the editor form markup convention
  * (`label > span + select`).
+ *
+ * The structure is a styling contract: `ui.css` lays out fields with
+ * structural selectors (`label:not([for]) > span:has(+ select)`), so it
+ * must be preserved.
  * @param root0
  * @param root0.label
  * @param root0.value
@@ -10,6 +14,19 @@ import type { SelectableValue } from '@burger-editor/core';
  * @param root0.options
  * @param root0.name
  * @param root0.disabled
+ * @example
+ * ```tsx
+ * <SelectField
+ * 	label="種類"
+ * 	name="bge-kind"
+ * 	value={state.kind ?? 'normal'}
+ * 	options={[
+ * 		{ value: 'normal', label: '通常' },
+ * 		{ value: 'wide', label: 'ワイド' },
+ * 	]}
+ * 	onChange={(kind) => setState({ ...state, kind })}
+ * />
+ * ```
  */
 export function SelectField({
 	label,

@@ -15,8 +15,17 @@ import './style/ui.css';
 export const version = __VERSION__;
 
 /**
+ * 本稿⇄下書き切替UIをビューエリアの直前にマウントする
  *
- * @param engine
+ * `createBurgerEditorClient` に含めず分離しているのは、配置位置
+ * （エディタの外側のどこに置くか）がアプリケーション側の判断のため。
+ * @param engine - 対象エンジン。下書きが無い構成では何もしない
+ * @returns マウントハンドル（`cleanUp`でアンマウント）。下書きが無い場合はnull
+ * @example
+ * ```ts
+ * const { engine } = await createBurgerEditorClient(options);
+ * attachDraftSwitcher(engine);
+ * ```
  */
 export function attachDraftSwitcher(engine: BurgerEditorEngine) {
 	if (engine.hasDraft()) {
@@ -30,8 +39,30 @@ export function attachDraftSwitcher(engine: BurgerEditorEngine) {
 }
 
 /**
+ * BurgerEditorのクライアントUIを組み立てるメインエントリ
  *
- * @param options
+ * headlessなエンジンを生成し、React製のUI（ブロックメニュー・初期挿入
+ * ボタン・ダイアログ群）とエンジン操作コマンドのディスパッチテーブルを
+ * 配線する。`blockMenu`/`initialInsertionButton` はこの関数が供給する
+ * ためオプションから除外している。
+ * @param options - エンジンオプション（UI供給分を除く）
+ * @returns 生成済みエンジンを含むハンドル
+ * @example
+ * ```ts
+ * import { createBurgerEditorClient, attachDraftSwitcher } from '@burger-editor/client';
+ * import itemSeeds from '@burger-editor/blocks';
+ *
+ * const { engine } = await createBurgerEditorClient({
+ * 	root: '#editor',
+ * 	config,
+ * 	catalog,
+ * 	items: itemSeeds,
+ * 	initialContents: { main, draft },
+ * 	generalCSS,
+ * 	fileIO: serverAPI,
+ * });
+ * attachDraftSwitcher(engine);
+ * ```
  */
 export async function createBurgerEditorClient(
 	options: Omit<BurgerEditorEngineOptions, 'blockMenu' | 'initialInsertionButton'>,

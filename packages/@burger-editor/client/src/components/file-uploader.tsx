@@ -13,6 +13,10 @@ import styles from './file-uploader.module.css';
  * @param root0
  * @param root0.engine
  * @param root0.fileType
+ * @example
+ * ```tsx
+ * <FileUploader engine={engine} fileType="image" />
+ * ```
  */
 export function FileUploader({
 	engine,

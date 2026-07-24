@@ -13,6 +13,15 @@ import styles from './block-menu-button.module.css';
  * @param root0.commandfor
  * @param root0.value
  * @param root0.children
+ * @example
+ * ```tsx
+ * <BlockMenuButton
+ * 	label="ブロックを削除"
+ * 	command={BGE_COMMAND.removeBlock}
+ * 	commandfor={COMMAND_BUS_ID}>
+ * 	<IconTrash />
+ * </BlockMenuButton>
+ * ```
  */
 export function BlockMenuButton({
 	label,
