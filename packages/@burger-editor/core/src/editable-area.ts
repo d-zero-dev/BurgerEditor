@@ -18,7 +18,7 @@ import { InsertionPoint } from './insertion-point.js';
 const CONTAINER_PADDING = 10;
 const CONTENT_ID = 'bge-editable-area';
 
-type EditableAreaType = 'main' | 'draft';
+export type EditableAreaType = 'main' | 'draft';
 
 export interface EditableAreaOptions<T extends EditableAreaType> {
 	readonly type: T;

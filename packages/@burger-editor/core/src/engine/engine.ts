@@ -8,6 +8,7 @@ import type {
 	BlockItem,
 	BlockData,
 } from '../types.js';
+import type { ConfirmCallback } from './copy-editable-area.js';
 
 import { BurgerBlock } from '../block/block.js';
 import { CommandBus } from '../command/command-bus.js';
@@ -27,9 +28,8 @@ import { createBgeEvent } from '../event/create-bge-event.js';
 import { HealthMonitor } from '../health-monitor.js';
 import { Item } from '../item/item.js';
 
+import { copyEditableArea } from './copy-editable-area.js';
 import { UIStateStore } from './ui-state.js';
-
-type ConfirmCallback = () => Promise<boolean> | boolean;
 
 export class BurgerEditorEngine {
 	readonly catalog: BlockCatalog;
@@ -165,12 +165,7 @@ export class BurgerEditorEngine {
 			return false;
 		}
 
-		if (!(await confirm?.())) {
-			return false;
-		}
-
-		if (this.#draft.isEmpty() || this.#draft.isSame(this.#main)) {
-			await this.#draft.copyTo(this.#main);
+		if (await copyEditableArea(this.#draft, this.#main, confirm)) {
 			this.showMain();
 			return true;
 		}
@@ -235,12 +230,7 @@ export class BurgerEditorEngine {
 			return false;
 		}
 
-		if (!(await confirm?.())) {
-			return false;
-		}
-
-		if (this.#main.isEmpty() || this.#main.isSame(this.#draft)) {
-			await this.#main.copyTo(this.#draft);
+		if (await copyEditableArea(this.#main, this.#draft, confirm)) {
 			this.showDraft();
 			return true;
 		}
