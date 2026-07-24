@@ -35,8 +35,8 @@ defineBgeWysiwygEditorElement();
 
 ```ts
 const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
-editor.value; // 現在の内容（getter）
-editor.value = '<p>新しい内容</p>'; // setter で内容を差し替え
+editor.value; // 現在の内容（getter、読み取り専用）
+editor.innerHTML = '<p>新しい内容</p>'; // innerHTML の独自 setter が TipTap に同期する
 editor.editor.chain().focus().toggleBold().run(); // TipTap への直接アクセス
 ```
 
@@ -61,8 +61,8 @@ editor.editor.chain().focus().toggleBold().run(); // TipTap への直接アク�
 
 ### `value` プロパティ
 
-- **getter**: 現在のエディタ内容を HTML 文字列で返す。TipTap の `editor.getHTML()` 相当だが、本要素の正規化（属性順序・改行など）を経た最終 HTML
-- **setter**: HTML 文字列を渡すと TipTap の内部状態に反映する。`innerHTML` で直接書き換えるのではなく必ず `value` 経由で設定すること（TipTap の document state と DOM の一貫性を保つため）
+- **getter のみ（読み取り専用）**: 現在のエディタ内容を HTML 文字列で返す。TipTap の `editor.getHTML()` 相当だが、本要素の正規化（属性順序・改行など）を経た最終 HTML
+- 内容の書き換えは `innerHTML` への代入で行う。本要素は `innerHTML` に独自 setter を定義しており、TipTap の document state に同期させる（詳細は `docs/API.md`）
 
 ### `name` / `item-name` 属性
 
@@ -118,12 +118,7 @@ defineBgeWysiwygEditorElement({
 
 ## ブラウザサポート
 
-Web Components（Custom Elements v1）をサポートするモダンブラウザで動作:
-
-- Chrome 54+
-- Firefox 63+
-- Safari 10.1+
-- Edge 79+
+ツールバーが Invoker Commands API（`command`/`commandfor`）を使用するため、対応ブラウザが下限（ポリフィルなし）。対応状況は https://caniuse.com/mdn-api_commandevent を参照。
 
 ## License
 

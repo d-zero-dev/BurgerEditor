@@ -23,7 +23,7 @@
 
 **責務**:
 
-- ユーザー操作（ボタンクリック、モード切り替え）の受付
+- ユーザー操作（ツールバーボタン、モード切り替え）の受付。ボタンはInvoker Commands（`command`/`commandfor`）で宣言し、`command`イベントで受ける（clickハンドラは使わない）
 - 子要素のイベントに基づくUI状態の同期
 
 ### 子要素: `<bge-wysiwyg>`
@@ -180,9 +180,9 @@ connectedCallback() {
 ### 例1: HTMLモードへの切り替え
 
 ```
-1. ユーザーがHTMLモードボタンをクリック
+1. ユーザーがHTMLモードボタン（command="--wysiwyg-html-mode"）を起動
    ↓
-2. 親要素: wysiwygElement.mode = 'html' を実行
+2. 親要素: commandイベントを受けて wysiwygElement.mode = 'html' を実行
    ↓
 3. 子要素: モードを変更し、bge:structure-change イベントを発火
    ↓
