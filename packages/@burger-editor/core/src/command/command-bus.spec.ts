@@ -88,4 +88,45 @@ describe('CommandBus', () => {
 		dispatchCommand(receiver, '--after-destroy');
 		expect(handler).not.toHaveBeenCalled();
 	});
+
+	test('destroy leaves externally-managed receivers in the DOM', () => {
+		const bus = new CommandBus();
+		const external = document.createElement('div');
+		external.id = 'external-receiver';
+		document.body.append(external);
+		bus.listen(external);
+
+		bus.destroy();
+
+		expect(external.isConnected).toBe(true);
+	});
+});
+
+describe('ネイティブInvoker Commands経路', () => {
+	beforeEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	// このプロジェクトのテストは実Chromiumで動く。合成イベントではなく
+	// button[commandfor]の実クリックでブラウザ本来のCommandEvent配送を
+	// 検証する（clickイベント禁止・ポリフィルなし方針の根幹の保証。
+	// CIのブラウザがInvoker Commands対応版であることの回帰検知を兼ねる）
+	test('commandfor付きボタンの実クリックでhiddenな受信要素にコマンドが届く', () => {
+		const bus = new CommandBus();
+		bus.createReceiver(document.body);
+
+		const received: { command: string; source: Element | null }[] = [];
+		bus.define('--native-check', (e) => {
+			received.push({ command: e.command, source: e.source });
+		});
+
+		document.body.insertAdjacentHTML(
+			'beforeend',
+			`<button type="button" command="--native-check" commandfor="${COMMAND_BUS_ID}">go</button>`,
+		);
+		const button = document.querySelector('button');
+		button?.click();
+
+		expect(received).toEqual([{ command: '--native-check', source: button }]);
+	});
 });
