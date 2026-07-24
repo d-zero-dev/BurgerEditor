@@ -6,6 +6,7 @@ export { DraftSwitcher } from './draft-switcher.js';
 export { FileList } from './file-list.js';
 export { FileUploader } from './file-uploader.js';
 export { InitialInsertionButton } from './initial-insertion-button.js';
+export { ItemEditorHost } from './item-editor-host.js';
 export { Preview } from './preview.js';
 export { TableEditor } from './table-editor.js';
 export type { TableEditorData } from './table-editor.js';
