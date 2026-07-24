@@ -2,6 +2,7 @@ import type { ImageData } from './index.js';
 import type { BurgerEditorEngine, ItemData, Item } from '@burger-editor/core';
 
 import { ComponentObserver } from '@burger-editor/core';
+import { narrowElement } from '@burger-editor/utils';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { useState } from 'react';
 import { test, expect, describe, beforeEach } from 'vitest';
@@ -105,11 +106,7 @@ function Harness({ engine }: { readonly engine: BurgerEditorEngine }) {
  * @param label
  */
 function getInput(label: string): HTMLInputElement {
-	const el = screen.getByLabelText(label);
-	if (!(el instanceof HTMLInputElement)) {
-		throw new TypeError(`input expected: ${label}`);
-	}
-	return el;
+	return narrowElement(screen.getByLabelText(label), HTMLInputElement, label);
 }
 
 describe('ImageEditor', () => {
