@@ -315,7 +315,7 @@ gridコンテナの `auto-fit`/`auto-fill` で使用する折り返し基準イ�
 - [get-custom-properties.ts](../packages/@burger-editor/core/src/dom-helpers/get-custom-properties.ts) - CSS変数の動的検出とカテゴリ分類
 - [export-style-options.ts](../packages/@burger-editor/core/src/block/export-style-options.ts) - ブロックからスタイルオプションのエクスポート
 - [import-style-options.ts](../packages/@burger-editor/core/src/block/import-style-options.ts) - スタイルオプションのブロックへの適用
-- [block-options-dialog.ts](../packages/@burger-editor/core/src/block-options-dialog.ts) - ブロックオプションダイアログの制御
+- [apply-block-options.ts](../packages/@burger-editor/core/src/block/apply-block-options.ts) - オプションフォーム値のブロックへの適用
 - [const.ts](../packages/@burger-editor/core/src/const.ts) - CSS変数のプレフィックス定義
 
 ### UI実装

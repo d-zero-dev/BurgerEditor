@@ -403,7 +403,7 @@ WYSIWYGエディタのテキスト編集モード機能は実験的機能とし�
 
 - `packages/@burger-editor/core/src/types.ts` - Config型定義
 - `packages/@burger-editor/core/src/engine/engine.ts` - 設定の伝搬
-- `packages/@burger-editor/client/src/index.ts` - カスタム要素への転送
+- `packages/@burger-editor/client/src/index.tsx` - カスタム要素への転送
 - `packages/@burger-editor/custom-element/src/bge-wysiwyg-editor-element/index.ts` - UI制御
 
 ### 実験的機能の追加ガイドライン
@@ -633,8 +633,10 @@ static defaultCommands = [
 - [ ] テンプレート内にボタンHTMLを追加
 
 ```typescript
+// ボタンの起動はInvoker Commands（command/commandfor）で宣言する。
+// clickハンドラは規約で禁止されているため、command属性が無いと動作しない
 ${commands.includes('subscript') ?
-  `<button type="button" data-bge-toolbar-button="subscript">${IconSubscript}</button>`
+  `<button type="button" command="--wysiwyg-toggle" commandfor="${this.id}" data-bge-toolbar-button="subscript">${IconSubscript}</button>`
   : ''}
 ```
 
