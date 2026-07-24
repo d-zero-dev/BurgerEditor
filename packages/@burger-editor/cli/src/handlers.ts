@@ -520,7 +520,18 @@ export function itemSchema(itemName: string) {
 	// agent can infer required keys without the removed editor HTML.
 	const fields = new Set<string>();
 	for (const match of (seed.template ?? '').matchAll(/data-bge="([^"]*)"/g)) {
-		for (const field of parseFields(match[1] ?? '')) {
+		const binding = match[1];
+		if (!binding) {
+			continue;
+		}
+		// 不正・空のバインディングでスキーマ取得全体を落とさない
+		let parsed;
+		try {
+			parsed = parseFields(binding);
+		} catch {
+			continue;
+		}
+		for (const field of parsed) {
 			if (field.fieldName) {
 				fields.add(field.fieldName);
 			}
