@@ -1,5 +1,12 @@
 import dz from '@d-zero/eslint-config';
 
+// @d-zero/eslint-config/base の no-restricted-syntax セレクタを複製せず継承する
+const baseNoRestrictedSyntax =
+	dz.configs.frontend
+		.map((config) => config.rules?.['no-restricted-syntax'])
+		.find(Boolean)
+		?.slice(1) ?? [];
+
 /**
  * @type {import('eslint').Linter.Config[]}
  */
@@ -27,30 +34,7 @@ export default [
 			// 受け手が command イベントを処理する
 			'no-restricted-syntax': [
 				2,
-				{
-					selector:
-						':matches(PropertyDefinition, MethodDefinition)[accessibility="private"]',
-					message: 'Use #private instead',
-				},
-				{
-					selector:
-						':matches(PropertyDefinition, MethodDefinition)[accessibility="public"]',
-					message: 'Remove public keyword',
-				},
-				{
-					selector: 'MethodDefinition[key.name=/^_/]:not([accessibility="protected"])',
-					message: 'Add protected keyword',
-				},
-				{
-					selector: 'MethodDefinition:not([key.name=/^_/])[accessibility="protected"]',
-					message: 'Start with `_` if you want to use protected',
-				},
-				{
-					selector:
-						"CallExpression[callee.property.name='addEventListener'][arguments.0.value='DOMContentLoaded']",
-					message:
-						"Avoid using 'DOMContentLoaded'. Use 'defer' or 'type=module' attribute instead.",
-				},
+				...baseNoRestrictedSyntax,
 				{
 					selector: "JSXAttribute[name.name='onClick']",
 					message:

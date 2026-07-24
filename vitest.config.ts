@@ -52,6 +52,28 @@ export default defineConfig({
 				},
 			},
 			{
+				// Reactエディタコンポーネントのテスト（jsdom + Testing Library）
+				test: {
+					name: 'blocks-editor',
+					include: ['packages/@burger-editor/blocks/**/*.spec.tsx'],
+					...jsdomConfig,
+				},
+				resolve: {
+					alias: {
+						// client distはReactを同梱するため、テストのReactと二重に
+						// ならないようソースを直接読む
+						'@burger-editor/client/react': path.resolve(
+							'./packages/@burger-editor/client/src/react/index.ts',
+						),
+					},
+				},
+				plugins: [cssAsRaw(), string({ include: ['**/*.html', '**/*.svg'] })],
+				define: {
+					__VERSION__: JSON.stringify(blocksPkg.version),
+					__DEBUG__: false,
+				},
+			},
+			{
 				test: {
 					name: 'blocks',
 					include: ['packages/@burger-editor/blocks/**/*.spec.ts'],
