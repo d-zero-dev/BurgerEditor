@@ -95,6 +95,7 @@ export function defineBgeWysiwygEditorElement(
 }
 
 export class BgeWysiwygEditorElement extends HTMLElement {
+	#initialized = false;
 	#wysiwygElement: BgeWysiwygElement | null = null;
 	get editor() {
 		if (!this.#wysiwygElement) {
@@ -124,70 +125,9 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 	constructor() {
 		super();
 
-		const initialValue = this.innerHTML.trim();
-		const label = this.getAttribute('label') ?? '内容';
-		const itemName = this.getAttribute('item-name');
-
-		if (!this.id) {
-			this.id = `bge-wysiwyg-editor-${BgeWysiwygEditorElement.#uid++}`;
-		}
-		const toggleCommand = `command="--wysiwyg-toggle" commandfor="${this.id}"`;
-
-		const commands: ReadonlyArray<string> =
-			// Get commands from attribute
-			this.getAttribute('commands')
-				?.split(',')
-				.map((command) => command.trim().toLowerCase()) ??
-			// Default commands
-			BgeWysiwygEditorElement.defaultCommands;
-
-		this.innerHTML = `
-			<fieldset>
-				<legend>${label}</legend>
-				<div data-bge-toolbar>
-					<div data-bge-toolbar-group>
-						${commands.includes('bold') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="bold">${IconBold}</button>` : ''}
-						${commands.includes('italic') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="italic">${IconItalic}</button>` : ''}
-						${commands.includes('strikethrough') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="strikethrough">${IconStrikethrough}</button>` : ''}
-						${commands.includes('underline') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="underline">${IconUnderline}</button>` : ''}
-						${commands.includes('subscript') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="subscript">${IconSubscript}</button>` : ''}
-						${commands.includes('superscript') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="superscript">${IconSuperscript}</button>` : ''}
-						${commands.includes('code') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="code">${IconCode}</button>` : ''}
-						${commands.includes('link') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="link">${IconLink}</button>` : ''}
-						${commands.includes('button-like-link') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="button-like-link">${IconCloud}</button>` : ''}
-						${commands.includes('blockquote') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="blockquote">${IconBlockquote}</button>` : ''}
-						${commands.includes('bullet-list') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="bullet-list">${IconBulletList}</button>` : ''}
-						${commands.includes('ordered-list') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="ordered-list">${IconOrderedList}</button>` : ''}
-						${commands.includes('note') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="note">${IconNotes}</button>` : ''}
-						${commands.includes('h1') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h1">${IconH1}</button>` : ''}
-						${commands.includes('h2') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h2">${IconH2}</button>` : ''}
-						${commands.includes('h3') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h3">${IconH3}</button>` : ''}
-						${commands.includes('h4') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h4">${IconH4}</button>` : ''}
-						${commands.includes('h5') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h5">${IconH5}</button>` : ''}
-						${commands.includes('h6') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h6">${IconH6}</button>` : ''}
-						${commands.includes('flex-box') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="flex-box"><span data-bge-rotate>${IconAlignBoxCenterStretch}</span></button>` : ''}
-						${commands.includes('align-start') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="align-start">${IconAlignLeft}</button>` : ''}
-						${commands.includes('align-center') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="align-center">${IconAlignCenter}</button>` : ''}
-						${commands.includes('align-end') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="align-end">${IconAlignRight}</button>` : ''}
-					</div>
-					<div data-bge-toolbar-group>
-						${
-							BgeWysiwygEditorElement.experimentalTextOnlyMode
-								? `<select data-bge-mode-selector>
-								<option value="wysiwyg">デザインモード</option>
-								<option value="text-only">テキスト編集モード</option>
-								<option value="html">HTMLモード</option>
-							</select>`
-								: `<button type="button" command="--wysiwyg-html-mode" commandfor="${this.id}" data-bge-toolbar-button="html-mode">HTML Mode</button>`
-						}
-					</div>
-				</div>
-				<bge-wysiwyg ${itemName ? `item-name="${itemName}"` : ''}>
-					${initialValue}
-				</bge-wysiwyg>
-			</fieldset>
-		`;
-
+		// 注意: カスタム要素のコンストラクタでは属性設定・子要素構築を
+		// 行ってはならない（document.createElement経由 = React JSX で
+		// NotSupportedError になる）。DOM構築は connectedCallback で行う。
 		const innerHTMLDescriptor = Object.getOwnPropertyDescriptor(
 			Element.prototype,
 			'innerHTML',
@@ -200,13 +140,24 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 			},
 			set: (value: string) => {
 				if (!this.#wysiwygElement) {
-					throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
+					// 初期化前はプレーンなinnerHTMLとして受け、初期値の源にする
+					innerHTMLDescriptor.set!.call(this, value);
+					return;
 				}
 				this.#wysiwygElement.value = value;
 			},
 		});
 	}
+
 	connectedCallback() {
+		// 再接続時の二重初期化・二重リスナー登録を防ぐ
+		if (this.#initialized) {
+			return;
+		}
+		this.#initialized = true;
+
+		this.#buildToolbar();
+
 		this.#wysiwygElement = this.querySelector<BgeWysiwygElement>('bge-wysiwyg')!;
 
 		if (!this.#wysiwygElement) {
@@ -376,6 +327,84 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 		}
 		this.#wysiwygElement.syncWysiwygToTextarea();
 	}
+	#buildToolbar() {
+		const initialValue = (
+			Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML')!.get!.call(
+				this,
+			) as string
+		).trim();
+		const label = this.getAttribute('label') ?? '内容';
+		const itemName = this.getAttribute('item-name');
+
+		if (!this.id) {
+			this.id = `bge-wysiwyg-editor-${BgeWysiwygEditorElement.#uid++}`;
+		}
+		const toggleCommand = `command="--wysiwyg-toggle" commandfor="${this.id}"`;
+
+		const setPlainInnerHTML = Object.getOwnPropertyDescriptor(
+			Element.prototype,
+			'innerHTML',
+		)!.set!;
+
+		const commands: ReadonlyArray<string> =
+			// Get commands from attribute
+			this.getAttribute('commands')
+				?.split(',')
+				.map((command) => command.trim().toLowerCase()) ??
+			// Default commands
+			BgeWysiwygEditorElement.defaultCommands;
+
+		setPlainInnerHTML.call(
+			this,
+			`
+			<fieldset>
+				<legend>${label}</legend>
+				<div data-bge-toolbar>
+					<div data-bge-toolbar-group>
+						${commands.includes('bold') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="bold">${IconBold}</button>` : ''}
+						${commands.includes('italic') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="italic">${IconItalic}</button>` : ''}
+						${commands.includes('strikethrough') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="strikethrough">${IconStrikethrough}</button>` : ''}
+						${commands.includes('underline') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="underline">${IconUnderline}</button>` : ''}
+						${commands.includes('subscript') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="subscript">${IconSubscript}</button>` : ''}
+						${commands.includes('superscript') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="superscript">${IconSuperscript}</button>` : ''}
+						${commands.includes('code') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="code">${IconCode}</button>` : ''}
+						${commands.includes('link') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="link">${IconLink}</button>` : ''}
+						${commands.includes('button-like-link') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="button-like-link">${IconCloud}</button>` : ''}
+						${commands.includes('blockquote') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="blockquote">${IconBlockquote}</button>` : ''}
+						${commands.includes('bullet-list') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="bullet-list">${IconBulletList}</button>` : ''}
+						${commands.includes('ordered-list') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="ordered-list">${IconOrderedList}</button>` : ''}
+						${commands.includes('note') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="note">${IconNotes}</button>` : ''}
+						${commands.includes('h1') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h1">${IconH1}</button>` : ''}
+						${commands.includes('h2') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h2">${IconH2}</button>` : ''}
+						${commands.includes('h3') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h3">${IconH3}</button>` : ''}
+						${commands.includes('h4') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h4">${IconH4}</button>` : ''}
+						${commands.includes('h5') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h5">${IconH5}</button>` : ''}
+						${commands.includes('h6') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h6">${IconH6}</button>` : ''}
+						${commands.includes('flex-box') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="flex-box"><span data-bge-rotate>${IconAlignBoxCenterStretch}</span></button>` : ''}
+						${commands.includes('align-start') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="align-start">${IconAlignLeft}</button>` : ''}
+						${commands.includes('align-center') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="align-center">${IconAlignCenter}</button>` : ''}
+						${commands.includes('align-end') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="align-end">${IconAlignRight}</button>` : ''}
+					</div>
+					<div data-bge-toolbar-group>
+						${
+							BgeWysiwygEditorElement.experimentalTextOnlyMode
+								? `<select data-bge-mode-selector>
+								<option value="wysiwyg">デザインモード</option>
+								<option value="text-only">テキスト編集モード</option>
+								<option value="html">HTMLモード</option>
+							</select>`
+								: `<button type="button" command="--wysiwyg-html-mode" commandfor="${this.id}" data-bge-toolbar-button="html-mode">HTML Mode</button>`
+						}
+					</div>
+				</div>
+				<bge-wysiwyg ${itemName ? `item-name="${itemName}"` : ''}>
+					${initialValue}
+				</bge-wysiwyg>
+			</fieldset>
+		`,
+		);
+	}
+
 	static #uid = 0;
 
 	static extensions: Extensions | null = null;
