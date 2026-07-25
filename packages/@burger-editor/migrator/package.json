@@ -36,6 +36,6 @@
 		"@burger-editor/core": "4.0.0-alpha.64",
 		"@burger-editor/legacy": "4.0.0-alpha.64",
 		"@burger-editor/utils": "4.0.0-alpha.64",
-		"semver": "7.7.4"
+		"semver": "7.8.5"
 	}
 }
