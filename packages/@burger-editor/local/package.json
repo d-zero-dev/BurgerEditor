@@ -66,14 +66,14 @@
 		"hono": "4.12.3",
 		"open": "11.0.0",
 		"prettier": "3.9.5",
-		"zod": "4.3.6"
+		"zod": "4.4.3"
 	},
 	"devDependencies": {
 		"@burger-editor/client": "4.0.0-alpha.64",
 		"@types/debug": "4.1.13",
 		"@types/node": "24.11.0",
 		"dotenv": "17.4.2",
-		"tsx": "4.21.0",
+		"tsx": "4.23.1",
 		"vite": "7.3.6"
 	},
 	"author": "D-ZERO",

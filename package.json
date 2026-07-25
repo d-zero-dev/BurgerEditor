@@ -39,7 +39,7 @@
 		"packages/@burger-editor/*"
 	],
 	"resolutions": {
-		"@burger-editor/mcp-server/zod": "4.3.6"
+		"@burger-editor/mcp-server/zod": "4.4.3"
 	},
 	"config": {
 		"commitizen": {
