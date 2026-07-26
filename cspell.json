@@ -12,6 +12,9 @@
 		"vbscript",
 		"xlarge",
 
+		// Shell keywords
+		"elif",
+
 		// Dependencies
 		"hono",
 		"pixelmatch",
