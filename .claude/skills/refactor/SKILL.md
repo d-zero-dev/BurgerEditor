@@ -1,5 +1,7 @@
 ---
+name: refactor
 description: テストファースト・リファクタリングワークフロー
+disable-model-invocation: true
 ---
 
 # リファクタリングワークフロー
@@ -18,9 +20,9 @@ description: テストファースト・リファクタリングワークフロ�
    - 新しいテストが現在の実装でパスすることを確認する
 
 3. **テストを先にコミット**
-   - `/git` コマンドでテスト変更をコミットする
-   - `.claude/commands/git.md` の全ルールに従うこと
-   - コミットメッセージ例: `test(package): add tests for X before refactoring`
+   - `/git` の手順でテスト変更をコミットする
+   - `.claude/skills/git/SKILL.md` の全ルールに従うこと
+   - コミットメッセージ例: `test(core): add tests for X before refactoring`
 
 ## フェーズ 2: リファクタリング実装（テストコミット後）
 
@@ -35,8 +37,8 @@ description: テストファースト・リファクタリングワークフロ�
    - lint を実行する: `yarn lint`
 
 6. **リファクタリングをコミット**
-   - `/git` コマンドでリファクタリング変更をコミットする
-   - コミットメッセージ例: `refactor(package): simplify X implementation`
+   - `/git` の手順でリファクタリング変更をコミットする
+   - コミットメッセージ例: `refactor(core): simplify X implementation`
 
 ## 基本原則
 
@@ -44,3 +46,5 @@ description: テストファースト・リファクタリングワークフロ�
 - **テストが先、リファクタリングが後**: 必ずテストをコミットしてからリファクタリング
 - **動作を維持する**: リファクタリングは外部動作を変えてはならない
 - **小さな増分**: 小さく検証可能な変更を行う
+- **`exports` を壊さない**: 公開 API のパスを変える場合はリファクタリングではなく破壊的変更として扱う
+- **UI に影響する場合は VR を確認する**: 見た目が変わっていないことの検証も「動作の維持」に含まれる
