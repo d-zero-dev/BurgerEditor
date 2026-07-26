@@ -94,9 +94,7 @@ const { engine } = await createBurgerEditorClient({
 **代替手段**: 起動時に得られる `engine.config` を直接参照すること。`engine` はそのプラットフォーム向けに型付けされた `config` を保持しているため、整合性が保たれる。
 
 ```ts
-const { engine } = await createBurgerEditorClient({
-	/* ... */
-});
+const { engine } = await createBurgerEditorClient({/* ... */});
 // 推奨: engine 経由で参照
 const stylesheets = engine.config.stylesheets;
 ```

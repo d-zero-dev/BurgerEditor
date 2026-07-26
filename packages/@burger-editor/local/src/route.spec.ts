@@ -152,8 +152,7 @@ describe('GET /api/tree', () => {
 		const fooDir = body.tree.find((n) => n.name === 'foo');
 		expect(fooDir?.id).toBeUndefined(); // dirs themselves carry no id
 		const barDir = fooDir?.files?.find((n) => n.name === 'bar') as
-			| { name: string; id?: string; files?: { name: string; id?: string }[] }
-			| undefined;
+			{ name: string; id?: string; files?: { name: string; id?: string }[] } | undefined;
 		const deepLeaf = barDir?.files?.find((n) => n.name === 'deep.html');
 		expect(deepLeaf?.id).toBe('7.html');
 	});
