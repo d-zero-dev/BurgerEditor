@@ -304,13 +304,20 @@ export function setRoute(
 					);
 				}
 
-				await saveContent(
-					targetFilePath,
-					data.content,
-					userConfig.editableArea,
-					data.frontMatter,
-					data.originalFrontMatter,
-				);
+				try {
+					await saveContent(
+						targetFilePath,
+						data.content,
+						userConfig.editableArea,
+						data.frontMatter,
+						data.originalFrontMatter,
+					);
+				} catch (error) {
+					if (error instanceof NoEditableAreaError) {
+						return c.json({ error: error.message }, 400);
+					}
+					throw error;
+				}
 
 				// 2-phase commit: only advance resolverState after the file write succeeds.
 				resolverState = nextResolverState;

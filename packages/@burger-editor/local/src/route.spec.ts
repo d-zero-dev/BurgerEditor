@@ -811,6 +811,33 @@ describe('POST /api/content (non-virtual passthrough)', () => {
 		expect(written).toContain('<h1>Plain</h1>');
 	});
 
+	test('returns 400 with a JSON error when editableArea selector is not found in the existing file', async () => {
+		await fs.writeFile(
+			path.join(documentRoot, 'no-match.html'),
+			'<body><main>old</main></body>\n',
+			'utf8',
+		);
+		const app = await buildApp(documentRoot, assetsRoot, {
+			virtualTreeEnabled: false,
+			editableArea: '.missing-class',
+		});
+
+		const res = await app.request('/api/content', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({
+				path: 'no-match.html',
+				content: '<p>new</p>',
+			}),
+		});
+		expect(res.status).toBe(400);
+		const body = (await res.json()) as { error: string };
+		expect(body.error).toBe('Editable area not found: .missing-class');
+
+		const written = await fs.readFile(path.join(documentRoot, 'no-match.html'), 'utf8');
+		expect(written).toBe('<body><main>old</main></body>\n');
+	});
+
 	test('preserves existing path-rename behavior with editableArea: "body"', async () => {
 		await fs.writeFile(
 			path.join(documentRoot, '1.html'),
