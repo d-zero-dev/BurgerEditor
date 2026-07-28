@@ -115,19 +115,57 @@ describe('InsertionPoint', () => {
 			expect(engine.content.update).toHaveBeenCalled();
 		});
 
-		test('should resolve after transitionend and unwrap insertion element', async () => {
+		test('should resolve after the insertion animation completes and unwrap insertion element', async () => {
+			const engine = createMockEngine();
+			// A short duration keeps this test fast; the point under test is
+			// that a non-zero-duration animation still resolves and unwraps,
+			// not the exact timing.
+			const ip = new InsertionPoint(engine, 10);
+			const insertionBlock = createMockBlock();
+
+			ip.set(null, false);
+			const result = await ip.insert(insertionBlock);
+
+			expect(result).toBe(insertionBlock);
+			expect(engine.isProcessed).toBe(false);
+			expect(engine.save).toHaveBeenCalled();
+		});
+
+		test('should resolve even when the browser reports prefers-reduced-motion (regression)', async () => {
+			// Element.animate()'s `finished` promise settles regardless of the
+			// animation's duration, so a 0ms animation (forced here via
+			// prefers-reduced-motion) must still resolve and clear
+			// engine.isProcessed instead of hanging forever.
+			const matchMediaSpy = vi
+				.spyOn(window, 'matchMedia')
+				.mockReturnValue({ matches: true } as MediaQueryList);
+
 			const engine = createMockEngine();
 			const ip = new InsertionPoint(engine);
 			const insertionBlock = createMockBlock();
 
 			ip.set(null, false);
+			const result = await ip.insert(insertionBlock);
+
+			expect(result).toBe(insertionBlock);
+			expect(engine.isProcessed).toBe(false);
+			expect(engine.save).toHaveBeenCalled();
+
+			matchMediaSpy.mockRestore();
+		});
+
+		test('should still resolve and reset isProcessed if the insertion animation is canceled', async () => {
+			const engine = createMockEngine();
+			// A long duration that we cancel before it would naturally finish,
+			// so the test exercises the `finished` promise's rejection path.
+			const ip = new InsertionPoint(engine, 10_000);
+			const insertionBlock = createMockBlock();
+
+			ip.set(null, false);
 			const promise = ip.insert(insertionBlock);
 
-			// Wait for rAF to set up the transitionend listener
-			await new Promise((resolve) => requestAnimationFrame(resolve));
-
-			// Dispatch transitionend to complete the insertion
-			ip.el.dispatchEvent(new Event('transitionend'));
+			const [animation] = ip.el.getAnimations();
+			animation?.cancel();
 
 			const result = await promise;
 
