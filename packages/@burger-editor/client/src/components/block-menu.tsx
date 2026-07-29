@@ -18,7 +18,15 @@ import {
 	IconSettings,
 	IconTrash,
 } from '@tabler/icons-react';
-import { useId, useEffect, useRef, useState } from 'react';
+import {
+	useId,
+	useEffect,
+	useRef,
+	useState,
+	useCallback,
+	useImperativeHandle,
+	forwardRef,
+} from 'react';
 
 import { useCommand } from '../use-command.js';
 
@@ -42,34 +50,56 @@ interface ItemOverlayRect {
 }
 
 /**
+ * Imperative handle exposed via ref so callers (e.g. `engine.isProcessed`'s
+ * setter) can force the menu hidden through React state instead of poking
+ * the DOM directly. A direct DOM write leaves React's own `visible` state
+ * unaware of the change, so a later `setVisible(true)` with the same value
+ * it already held gets skipped as a no-op re-render — the menu then stays
+ * stuck hidden even though the user is hovering a block.
+ * @example
+ * ```ts
+ * const menuRef = createRef<BlockMenuHandle>();
+ * // ... mount <BlockMenu ref={menuRef} .../> ...
+ * menuRef.current?.hide();
+ * ```
+ */
+export interface BlockMenuHandle {
+	readonly hide: () => void;
+}
+
+/**
  * Hover menu over the selected block inside the editable area iframe.
  * Block operations are declared as engine commands; positioning and
- * visibility stay local to this component.
+ * visibility stay local to this component. Exposes {@link BlockMenuHandle}
+ * via ref so external code can hide it without racing React's own state.
  * @param root0
  * @param root0.engine
  * @param root0.container
  * @param root0.onHide
+ * @param ref - Imperative handle; see {@link BlockMenuHandle}
  * @example
  * ```tsx
+ * const menuRef = createRef<BlockMenuHandle>();
  * reactMount(
  * 	<BlockMenu
+ * 		ref={menuRef}
  * 		engine={engine}
  * 		container={container}
  * 		onHide={() => engine.clearCurrentBlock()}
  * 	/>,
  * 	container,
  * );
+ * menuRef.current?.hide();
  * ```
  */
-export function BlockMenu({
-	engine,
-	container,
-	onHide,
-}: {
-	readonly engine: BurgerEditorEngine;
-	readonly container: HTMLElement;
-	readonly onHide: () => void;
-}) {
+export const BlockMenu = forwardRef<
+	BlockMenuHandle,
+	{
+		readonly engine: BurgerEditorEngine;
+		readonly container: HTMLElement;
+		readonly onHide: () => void;
+	}
+>(function BlockMenu({ engine, container, onHide }, ref) {
 	const menuId = useId();
 	const [currentBlock, setCurrentBlock] = useState<BurgerBlock | null>(null);
 	const [visible, setVisible] = useState(false);
@@ -100,6 +130,14 @@ export function BlockMenu({
 		},
 	});
 
+	const hide = useCallback(() => {
+		setVisible(false);
+		setCurrentBlock(null);
+		onHide();
+	}, [onHide]);
+
+	useImperativeHandle(ref, () => ({ hide }), [hide]);
+
 	useEffect(() => {
 		const onBlockChange = (e: CustomEvent<{ readonly block: BurgerBlock }>) => {
 			setCurrentBlock(e.detail.block);
@@ -118,12 +156,6 @@ export function BlockMenu({
 		let mouseX = 0;
 		let mouseY = 0;
 		let raf = 0;
-
-		const hide = () => {
-			setVisible(false);
-			setCurrentBlock(null);
-			onHide();
-		};
 
 		const updatePosition = () => {
 			const selected = getBlockAtPosition(doc, mouseX, mouseY);
@@ -234,7 +266,7 @@ export function BlockMenu({
 			observer.disconnect();
 			cancelAnimationFrame(raf);
 		};
-	}, [engine, container, onHide]);
+	}, [engine, container, hide]);
 
 	const isMutable = currentBlock?.isMutable();
 
@@ -346,4 +378,4 @@ export function BlockMenu({
 			</div>
 		</div>
 	);
-}
+});
