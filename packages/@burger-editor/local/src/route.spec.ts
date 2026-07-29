@@ -795,6 +795,25 @@ describe('POST /api/content (non-virtual passthrough)', () => {
 		expect(after.toSorted()).toEqual(before.toSorted());
 	});
 
+	test('returns 404 with a JSON error when the target file does not exist yet', async () => {
+		const app = await buildApp(documentRoot, assetsRoot, {
+			virtualTreeEnabled: false,
+			editableArea: 'body',
+		});
+
+		const res = await app.request('/api/content', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({
+				path: 'missing.html',
+				content: '<body>new</body>',
+			}),
+		});
+		expect(res.status).toBe(404);
+		const body = (await res.json()) as { error: string };
+		expect(body.error).toBe(`File not found: ${path.join(documentRoot, 'missing.html')}`);
+	});
+
 	test('writes file at the requested disk path when virtualTree is disabled', async () => {
 		const app = await buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: false });
 
@@ -809,6 +828,33 @@ describe('POST /api/content (non-virtual passthrough)', () => {
 		expect(res.status).toBe(200);
 		const written = await fs.readFile(path.join(documentRoot, 'plain.html'), 'utf8');
 		expect(written).toContain('<h1>Plain</h1>');
+	});
+
+	test('returns 400 with a JSON error when editableArea selector is not found in the existing file', async () => {
+		await fs.writeFile(
+			path.join(documentRoot, 'no-match.html'),
+			'<body><main>old</main></body>\n',
+			'utf8',
+		);
+		const app = await buildApp(documentRoot, assetsRoot, {
+			virtualTreeEnabled: false,
+			editableArea: '.missing-class',
+		});
+
+		const res = await app.request('/api/content', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({
+				path: 'no-match.html',
+				content: '<p>new</p>',
+			}),
+		});
+		expect(res.status).toBe(400);
+		const body = (await res.json()) as { error: string };
+		expect(body.error).toBe('Editable area not found: .missing-class');
+
+		const written = await fs.readFile(path.join(documentRoot, 'no-match.html'), 'utf8');
+		expect(written).toBe('<body><main>old</main></body>\n');
 	});
 
 	test('preserves existing path-rename behavior with editableArea: "body"', async () => {
@@ -839,6 +885,73 @@ describe('POST /api/content (non-virtual passthrough)', () => {
 		const treeRes = await app.request('/api/tree');
 		const body = (await treeRes.json()) as { tree: { name: string }[] };
 		expect(body.tree.map((n) => n.name)).toContain('company');
+	});
+});
+
+describe('GET / (site root)', () => {
+	let documentRoot: string;
+	let assetsRoot: string;
+
+	beforeEach(async () => {
+		({ documentRoot, assetsRoot } = await makeTmpDocumentRoot());
+	});
+
+	afterEach(async () => {
+		await fs.rm(path.dirname(documentRoot), { recursive: true, force: true });
+	});
+
+	test('creates and serves index.html on first visit when virtualTree is disabled', async () => {
+		const app = await buildApp(documentRoot, assetsRoot, {
+			virtualTreeEnabled: false,
+			editableArea: 'body',
+		});
+
+		const res = await app.request('/');
+		expect(res.status).toBe(200);
+
+		const written = await fs.readFile(path.join(documentRoot, 'index.html'), 'utf8');
+		expect(written).toBe('<!doctype html><html><body></body></html>');
+	});
+
+	test('allows saving the site root after it has been visited once (regression: FileNotFoundError)', async () => {
+		const app = await buildApp(documentRoot, assetsRoot, {
+			virtualTreeEnabled: false,
+			editableArea: 'body',
+		});
+
+		await app.request('/');
+
+		const res = await app.request('/api/content', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({
+				path: '/',
+				content: '<h1>Home</h1>',
+			}),
+		});
+		expect(res.status).toBe(200);
+
+		const written = await fs.readFile(path.join(documentRoot, 'index.html'), 'utf8');
+		expect(written).toContain('<h1>Home</h1>');
+	});
+
+	test('serves the file mapped to indexFileName when virtualTree is enabled', async () => {
+		await fs.writeFile(
+			path.join(documentRoot, '1.html'),
+			'---\npath: index.html\n---\n<h1>Home</h1>\n',
+			'utf8',
+		);
+		const app = await buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: true });
+
+		const res = await app.request('/');
+		expect(res.status).toBe(200);
+	});
+
+	test('returns 404 when virtualTree is enabled and no file maps to indexFileName', async () => {
+		const app = await buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: true });
+
+		const res = await app.request('/');
+		expect(res.status).toBe(404);
 	});
 });
 
