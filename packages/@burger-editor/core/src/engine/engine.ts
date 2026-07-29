@@ -66,7 +66,9 @@ export class BurgerEditorEngine {
 	}
 
 	set isProcessed(isProcessed: boolean) {
-		this.content.blockMenu.hide();
+		if (isProcessed) {
+			this.content.blockMenu.hide();
+		}
 		this.#isProcessed = isProcessed;
 	}
 

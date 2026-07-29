@@ -41,7 +41,7 @@ function createMockEngine() {
  *
  */
 function createMockBlockMenuCreator() {
-	return vi.fn().mockReturnValue({ cleanUp: vi.fn() });
+	return vi.fn().mockReturnValue({ cleanUp: vi.fn(), hide: vi.fn() });
 }
 
 describe('EditableArea', () => {
@@ -107,6 +107,19 @@ describe('EditableArea', () => {
 			const ea = new EditableArea('main', '', engine, createMockBlockMenuCreator());
 
 			expect(ea.blockMenu).toBeDefined();
+		});
+
+		test("blockMenu.hide() delegates to the creator's hide without touching the DOM directly", () => {
+			const engine = createMockEngine();
+			const blockMenuCreator = createMockBlockMenuCreator();
+			const ea = new EditableArea('main', '', engine, blockMenuCreator);
+			const { hide: createdHide } = blockMenuCreator.mock.results[0]?.value as {
+				hide: ReturnType<typeof vi.fn>;
+			};
+
+			ea.blockMenu.hide();
+
+			expect(createdHide).toHaveBeenCalledTimes(1);
 		});
 	});
 
