@@ -112,10 +112,11 @@ export class EditableArea<T extends EditableAreaType = 'main'> extends EditorUI 
 		const { hide: blockMenuHide } = createBlockMenu(blockMenuEl, engine);
 		this.blockMenu = {
 			el: blockMenuEl,
-			hide: () => {
-				blockMenuEl.hidden = true;
-				blockMenuHide();
-			},
+			// blockMenuHide はReactのvisible状態を経由してhidden属性を更新する
+			// （DOMを直接書き換えない）。真実の源をReactの状態1つに保つことで、
+			// 外部からの強制非表示とホバー時の再表示が食い違って永久に隠れた
+			// ままになる不整合を構造的に防ぐ
+			hide: blockMenuHide,
 		};
 
 		this.insertionPoint = new InsertionPoint(this.#engine);
