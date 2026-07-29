@@ -3,7 +3,10 @@ import type { BurgerEditorEngine } from './engine/engine.js';
 
 import { EditorUI } from './editor-ui.js';
 
+const INSERTION_ANIMATION_DURATION_MS = 400;
+
 export class InsertionPoint extends EditorUI {
+	#animationDurationMs: number;
 	#engine: BurgerEditorEngine;
 
 	#insertTarget: {
@@ -11,9 +14,13 @@ export class InsertionPoint extends EditorUI {
 		toTop: boolean;
 	} | null = null;
 
-	constructor(engine: BurgerEditorEngine) {
+	constructor(
+		engine: BurgerEditorEngine,
+		animationDurationMs: number = INSERTION_ANIMATION_DURATION_MS,
+	) {
 		super('insert-point', document.createElement('div'));
 		this.#engine = engine;
+		this.#animationDurationMs = animationDurationMs;
 	}
 
 	insert(insertionBlock: BurgerBlock) {
@@ -38,43 +45,36 @@ export class InsertionPoint extends EditorUI {
 			this.el.append(insertionBlock.el);
 			this.#engine.content.update();
 			this.el.style.height = 'auto';
-			this.el.style.height = `${this.el.getBoundingClientRect().height}px`;
-
-			// 要素を非表示にする
-			this.el.style.display = 'none';
-
-			// アニメーションの準備
+			const targetHeight = this.el.getBoundingClientRect().height;
 			this.el.style.overflow = 'hidden';
-			this.el.style.transition = 'height 0.4s ease';
-			this.el.style.height = '0';
 
-			// 表示してアニメーション開始
-			this.el.style.display = '';
+			// unwrap相当の処理: 親要素の前に要素を挿入し、親要素を削除
+			const finish = () => {
+				const parent = this.el;
+				const child = insertionBlock.el;
 
-			// 次のフレームでアニメーション実行（表示状態に）
-			requestAnimationFrame(() => {
-				this.el.style.height = `${this.el.scrollHeight}px`;
+				if (parent.parentNode) {
+					parent.parentNode.insertBefore(child, parent);
+				}
 
-				// アニメーション完了後の処理
-				this.el.addEventListener(
-					'transitionend',
-					() => {
-						// unwrap相当の処理: 親要素の前に要素を挿入し、親要素を削除
-						const parent = this.el;
-						const child = insertionBlock.el;
+				this.el.remove();
+				this.#engine.save();
+				this.#engine.isProcessed = false;
+				resolve(insertionBlock);
+			};
 
-						if (parent.parentNode) {
-							parent.parentNode.insertBefore(child, parent);
-						}
-
-						this.el.remove();
-						this.#engine.save();
-						this.#engine.isProcessed = false;
-						resolve(insertionBlock);
-					},
-					{ once: true },
-				);
-			});
+			// CSSトランジション + transitionend は、トランジション時間が0の場合
+			// （prefers-reduced-motion 等）にイベントが発火せず isProcessed が
+			// 固着するため使わない。Web Animations API の finished は duration
+			// に関わらず必ず解決するので、それを完了検知に使う
+			const reducedMotion = window.matchMedia?.(
+				'(prefers-reduced-motion: reduce)',
+			).matches;
+			const animation = this.el.animate(
+				[{ height: '0px' }, { height: `${targetHeight}px` }],
+				{ duration: reducedMotion ? 0 : this.#animationDurationMs, easing: 'ease' },
+			);
+			animation.finished.then(finish, finish);
 		});
 	}
 
