@@ -416,40 +416,37 @@ export class BurgerEditorEngine {
 
 		engine.#view = options.view ?? createDefaultView();
 
-		const mainHost = await engine.#view.createAreaHost({
-			type: 'main',
-			engine,
-			initialContent: mainInitialContent,
-			stylesheets,
-			classList: options.config.classList,
-		});
-		engine.#main = await EditableContent.new(
-			'main',
-			mainInitialContent,
-			engine,
-			mainHost,
-		);
-
 		const draftInitialContent =
 			typeof options.initialContents === 'string' ? null : options.initialContents.draft;
 
-		if (draftInitialContent == null) {
-			engine.#draft = null;
-		} else {
-			const draftHost = await engine.#view.createAreaHost({
+		// main/draftのホスト生成〜コンテンツ復元は互いに依存しない
+		// 別々のDOMサブツリー・Reactルートなので並列に走らせる
+		const createMain = async () => {
+			const host = await engine.#view.createAreaHost({
+				type: 'main',
+				engine,
+				initialContent: mainInitialContent,
+				stylesheets,
+				classList: options.config.classList,
+			});
+			return EditableContent.new('main', mainInitialContent, engine, host);
+		};
+
+		const createDraft = async () => {
+			if (draftInitialContent == null) {
+				return null;
+			}
+			const host = await engine.#view.createAreaHost({
 				type: 'draft',
 				engine,
 				initialContent: draftInitialContent,
 				stylesheets,
 				classList: options.config.classList,
 			});
-			engine.#draft = await EditableContent.new(
-				'draft',
-				draftInitialContent,
-				engine,
-				draftHost,
-			);
-		}
+			return EditableContent.new('draft', draftInitialContent, engine, host);
+		};
+
+		[engine.#main, engine.#draft] = await Promise.all([createMain(), createDraft()]);
 
 		engine.#current = engine.#main;
 		engine.showMain();
