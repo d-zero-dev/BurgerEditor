@@ -26,7 +26,6 @@ test('render', async () => {
 				text: {
 					version: '1.0.0',
 					style: '',
-					editor: '',
 					name: 'text',
 					template: '<div data-bge="text">text</div>',
 				},

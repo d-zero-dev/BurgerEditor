@@ -18,6 +18,8 @@ import { createWidthState } from './width.js';
 
 const TABS_CONTENT_ID = 'bgi-image__tabs-content';
 
+const tabLabel = (index: number) => `画像${index + 1}`;
+
 type LoadedImage = {
 	width: number;
 	height: number;
@@ -25,8 +27,8 @@ type LoadedImage = {
 };
 
 /**
- * imageアイテムのエディタ。旧 `editorOptions.open()` の命令的配線を
- * React stateとcontrolled inputsに置き換えたもの。
+ * imageアイテムのエディタ。PC/SP 2枚の画像タブ・サイズ・リンク設定を
+ * React stateとcontrolled inputsで編集する。
  * @param root0
  * @param root0.state
  * @param root0.setState
@@ -168,9 +170,14 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 		<div data-bge-dialog="2col">
 			<div data-bge-dialog-ui="sticky">
 				<div>
-					<Tabs current={currentIndex} onChange={selectTab} contentId={TABS_CONTENT_ID} />
+					<Tabs
+						current={currentIndex}
+						onChange={selectTab}
+						contentId={TABS_CONTENT_ID}
+						createLabel={tabLabel}
+					/>
 
-					<div id={TABS_CONTENT_ID} role="tabpanel" aria-label="画像">
+					<div id={TABS_CONTENT_ID} role="tabpanel" aria-label={tabLabel(currentIndex)}>
 						<Preview engine={engine} path={currentPath} />
 						{loadError ? <p role="alert">{loadError}</p> : null}
 						<div>

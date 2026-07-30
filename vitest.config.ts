@@ -156,9 +156,19 @@ export default defineConfig({
 				extends: './packages/@burger-editor/local/vite.config.ts',
 				test: {
 					name: 'local/client',
-					include: ['packages/@burger-editor/local/src/client/**/*.spec.ts'],
+					include: ['packages/@burger-editor/local/src/client/**/*.spec.{ts,tsx}'],
 					...jsdomConfig,
 				},
+				resolve: {
+					alias: {
+						// clientはUIエントリをdist経由で提供するため、テストでは
+						// ソースを直接読んでReactインスタンスを揃える
+						'@burger-editor/client/ui': path.resolve(
+							'./packages/@burger-editor/client/src/ui.ts',
+						),
+					},
+				},
+				plugins: [cssAsRaw()],
 			},
 			{
 				test: {

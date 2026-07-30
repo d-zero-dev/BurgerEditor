@@ -123,7 +123,7 @@ CSS カスタムプロパティ `--bge-repeat-min-inline-size--<variant>` で折
 
 ### `data-bge` バインディング DSL
 
-アイテムのテンプレート / エディタ HTML とデータを `data-bge` 属性で紐付ける。**テンプレート内のフィールド名はケバブケース、TypeScript の型ではキャメルケースに自動変換される**（例: `image-url` ↔ `imageUrl`）。
+アイテムのテンプレート HTML（`template`）とデータを `data-bge` 属性で紐付ける。エディタ UI は `Editor`（React コンポーネント）が担い、`data-bge` バインディングは使わない。**テンプレート内のフィールド名はケバブケース、TypeScript の型ではキャメルケースに自動変換される**（例: `image-url` ↔ `imageUrl`）。
 
 | 記法                      | 意味                                           |
 | ------------------------- | ---------------------------------------------- |
@@ -182,18 +182,16 @@ export default createItem<{
 
 ### `createItem` の引数
 
-| プロパティ      | 型 / 役割                                                                             |
-| --------------- | ------------------------------------------------------------------------------------- |
-| プロパティ      | 型 / 役割                                                                             |
-| --------------- | ------------------------------------------------------------------------------------- |
-| `version`       | `string` — アイテムのバージョン                                                       |
-| `name`          | `string` — アイテムの一意な名前                                                       |
-| `template`      | `string` — 表示用 HTML テンプレート（`data-bge` バインディング）                      |
-| `style`         | `string` — アイテム専用 CSS（オプション）                                             |
-| `Editor`        | React コンポーネント — エディタ UI（controlled form）                                 |
-| `toEditorState` | `(data, config) => E` — エディタを開く際に保存データをエディタ状態へ変換する純関数    |
-| `toItemData`    | `(state, config) => T` — 保存時にエディタ状態を保存データへ変換する純関数             |
-| `editorOptions` | オブジェクト — 非エディタ系フック（現在は `isDisable(item): string` のみ）            |
+| プロパティ      | 型 / 役割                                                                          |
+| --------------- | ---------------------------------------------------------------------------------- |
+| `version`       | `string` — アイテムのバージョン                                                    |
+| `name`          | `string` — アイテムの一意な名前                                                    |
+| `template`      | `string` — 表示用 HTML テンプレート（`data-bge` バインディング）                   |
+| `style`         | `string` — アイテム専用 CSS（オプション）                                          |
+| `Editor`        | React コンポーネント — エディタ UI（controlled form）                              |
+| `toEditorState` | `(data, config) => E` — エディタを開く際に保存データをエディタ状態へ変換する純関数 |
+| `toItemData`    | `(state, config) => T` — 保存時にエディタ状態を保存データへ変換する純関数          |
+| `editorOptions` | オブジェクト — 非エディタ系フック（現在は `isDisable(item): string` のみ）         |
 
 ### アイテムのライフサイクル
 
@@ -227,7 +225,7 @@ export default createItem<{
 import { BurgerEditorEngine } from '@burger-editor/core';
 ```
 
-UI 抽象（`ui` / `blockMenu` / `initialInsertionButton` / `defineCustomElement`）を差し替え可能にして、プラットフォームごとに別の UI を載せられる設計（ブラウザ用は [`@burger-editor/client`](../client/)）。
+UI 抽象（`BurgerEditorEngineOptions.view` / `defineCustomElement`）を差し替え可能にして、プラットフォームごとに別の UI を載せられる設計（ブラウザ用は [`@burger-editor/client`](../client/)）。`view`（`BurgerEditorView`）はエンジンが UI に要求する唯一の注入点で、`createAreaHost()` が編集エリアごとのホスト UI を生成し、コンテンツを載せる `containerElement` だけをエンジンに返す。詳細は [ARCHITECTURE.md](../../ARCHITECTURE.md) の「headless core と宣言的 UI」を参照。
 
 ### `config`
 

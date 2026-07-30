@@ -19,9 +19,7 @@ export interface BurgerEditorEngineOptions {
 	readonly items: Record<string, ItemSeed>;
 	readonly catalog: BlockCatalog;
 	readonly generalCSS: string;
-	readonly blockMenu: BlockMenuCreator;
-	readonly initialInsertionButton?: InitialInsertionButtonCreator;
-	readonly editableAreaShell?: EditableAreaShellCreator;
+	readonly view?: BurgerEditorView;
 	readonly storageKey?: {
 		readonly blockClipboard?: string;
 	};
@@ -39,39 +37,72 @@ export interface BurgerEditorEngineOptions {
 	};
 }
 
-export interface BlockMenuCreator {
-	(
-		container: HTMLElement,
-		engine: BurgerEditorEngine,
-	): {
-		hide(): void;
-		readonly cleanUp: () => void;
-	};
+export type EditableAreaType = 'main' | 'draft';
+
+/**
+ * The single injection point through which the engine obtains its UI.
+ *
+ * The engine never receives references to UI-owned DOM (iframes,
+ * textareas, menus) and therefore cannot mutate their attributes — the
+ * only element crossing the boundary is the {@link EditableAreaHost}'s
+ * `containerElement`, whose contents the engine owns. All presentation
+ * state (visibility, visual/source mode, sizing) is rendered by the UI
+ * layer from `engine.uiState` and engine events instead of being driven
+ * imperatively from the engine.
+ * @example
+ * ```ts
+ * const view: BurgerEditorView = {
+ * 	async createAreaHost({ engine, stylesheets, classList }) {
+ * 		// Build the area UI (e.g. mount a React component) and resolve
+ * 		// once the content container exists.
+ * 		return { containerElement };
+ * 	},
+ * 	destroy() {
+ * 		// Unmount everything created by createAreaHost.
+ * 	},
+ * };
+ * const engine = await BurgerEditorEngine.new({ ...options, view });
+ * ```
+ */
+export interface BurgerEditorView {
+	/**
+	 * Create the host UI for one editable area (`main` or `draft`) and
+	 * resolve with the content container the engine will own.
+	 * @param context - The area being created and the resources to render it
+	 */
+	createAreaHost(context: EditableAreaHostContext): Promise<EditableAreaHost>;
+
+	/**
+	 * Tear down everything created by `createAreaHost`. Called from
+	 * `engine.cleanUp()`.
+	 */
+	destroy(): void;
 }
 
-export interface InitialInsertionButtonCreator {
-	(
-		container: HTMLElement,
-		onInsert: () => void,
-	): {
-		readonly cleanUp: () => void;
-	};
+export interface EditableAreaHostContext {
+	readonly type: EditableAreaType;
+	readonly engine: BurgerEditorEngine;
+	/** The serialized content the area starts with */
+	readonly initialContent: string;
+	/** Resolved stylesheet blob URLs to load into the area's document */
+	readonly stylesheets: readonly { readonly path: string; readonly id: string }[];
+	readonly classList: readonly string[];
 }
 
-export interface EditableAreaShell {
-	readonly viewNode: HTMLElement;
-	readonly frameElement: HTMLIFrameElement;
-	readonly sourceTextarea: HTMLTextAreaElement;
+export interface EditableAreaHost {
+	/**
+	 * The element the edited blocks live in. This is the only UI-provided
+	 * element the engine holds a reference to; the engine owns its
+	 * contents from here on (the UI layer must not manage them).
+	 */
 	readonly containerElement: HTMLElement;
-}
 
-export interface EditableAreaShellCreator {
-	(options: {
-		readonly type: string;
-		readonly initialContent: string;
-		readonly stylesheets: readonly { readonly path: string; readonly id: string }[];
-		readonly classList: readonly string[];
-	}): EditableAreaShell;
+	/**
+	 * Animate the block-insertion marker. Optional presentation hook —
+	 * when absent the engine treats the insertion as instantly complete.
+	 * @param markerEl - The marker element wrapping the inserted block
+	 */
+	readonly animateInsertion?: (markerEl: HTMLElement) => Promise<void>;
 }
 
 export interface BlockCatalog {

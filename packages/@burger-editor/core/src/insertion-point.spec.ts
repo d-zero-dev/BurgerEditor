@@ -3,9 +3,11 @@ import { test, expect, beforeEach, describe, vi } from 'vitest';
 import { InsertionPoint } from './insertion-point.js';
 
 /**
- *
+ * @param animateInsertion - hostの演出フックを模したモック
  */
-function createMockEngine() {
+function createMockEngine(
+	animateInsertion: (markerEl: HTMLElement) => Promise<void> = () => Promise.resolve(),
+) {
 	const containerElement = document.createElement('div');
 	document.body.append(containerElement);
 
@@ -13,7 +15,7 @@ function createMockEngine() {
 		isProcessed: false,
 		content: {
 			containerElement,
-			update: vi.fn(),
+			animateInsertion,
 		},
 		save: vi.fn(),
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -63,23 +65,12 @@ describe('InsertionPoint', () => {
 	});
 
 	describe('insert', () => {
-		test('should throw when insert target is not set', () => {
+		test('should reject when insert target is not set', async () => {
 			const engine = createMockEngine();
 			const ip = new InsertionPoint(engine);
 			const block = createMockBlock();
 
-			expect(() => ip.insert(block)).toThrow('InsertionPoint is not set');
-		});
-
-		test('should return a Promise', () => {
-			const engine = createMockEngine();
-			const ip = new InsertionPoint(engine);
-			const insertionBlock = createMockBlock();
-
-			ip.set(null, false);
-			const result = ip.insert(insertionBlock);
-
-			expect(result).toBeInstanceOf(Promise);
+			await expect(ip.insert(block)).rejects.toThrow('InsertionPoint is not set');
 		});
 
 		test('should append element to container when target is null', () => {
@@ -104,42 +95,19 @@ describe('InsertionPoint', () => {
 			expect(engine.isProcessed).toBe(true);
 		});
 
-		test('should call content.update during insertion', () => {
-			const engine = createMockEngine();
+		test('should run the host animation with the marker element', async () => {
+			const animateInsertion = vi.fn().mockResolvedValue();
+			const engine = createMockEngine(animateInsertion);
 			const ip = new InsertionPoint(engine);
 			const insertionBlock = createMockBlock();
 
 			ip.set(null, false);
-			void ip.insert(insertionBlock);
+			await ip.insert(insertionBlock);
 
-			expect(engine.content.update).toHaveBeenCalled();
+			expect(animateInsertion).toHaveBeenCalledWith(ip.el);
 		});
 
-		test('should resolve after the insertion animation completes and unwrap insertion element', async () => {
-			const engine = createMockEngine();
-			// A short duration keeps this test fast; the point under test is
-			// that a non-zero-duration animation still resolves and unwraps,
-			// not the exact timing.
-			const ip = new InsertionPoint(engine, 10);
-			const insertionBlock = createMockBlock();
-
-			ip.set(null, false);
-			const result = await ip.insert(insertionBlock);
-
-			expect(result).toBe(insertionBlock);
-			expect(engine.isProcessed).toBe(false);
-			expect(engine.save).toHaveBeenCalled();
-		});
-
-		test('should resolve even when the browser reports prefers-reduced-motion (regression)', async () => {
-			// Element.animate()'s `finished` promise settles regardless of the
-			// animation's duration, so a 0ms animation (forced here via
-			// prefers-reduced-motion) must still resolve and clear
-			// engine.isProcessed instead of hanging forever.
-			const matchMediaSpy = vi
-				.spyOn(window, 'matchMedia')
-				.mockReturnValue({ matches: true } as MediaQueryList);
-
+		test('should resolve after the animation completes and unwrap the insertion element', async () => {
 			const engine = createMockEngine();
 			const ip = new InsertionPoint(engine);
 			const insertionBlock = createMockBlock();
@@ -148,30 +116,36 @@ describe('InsertionPoint', () => {
 			const result = await ip.insert(insertionBlock);
 
 			expect(result).toBe(insertionBlock);
+			expect(engine.content.containerElement.contains(insertionBlock.el)).toBe(true);
+			expect(ip.el.isConnected).toBe(false);
 			expect(engine.isProcessed).toBe(false);
 			expect(engine.save).toHaveBeenCalled();
-
-			matchMediaSpy.mockRestore();
 		});
 
-		test('should still resolve and reset isProcessed if the insertion animation is canceled', async () => {
-			const engine = createMockEngine();
-			// A long duration that we cancel before it would naturally finish,
-			// so the test exercises the `finished` promise's rejection path.
-			const ip = new InsertionPoint(engine, 10_000);
+		test('should not resolve before the host animation settles', async () => {
+			let finish!: () => void;
+			const engine = createMockEngine(
+				() =>
+					new Promise<void>((resolve) => {
+						finish = resolve;
+					}),
+			);
+			const ip = new InsertionPoint(engine);
 			const insertionBlock = createMockBlock();
 
 			ip.set(null, false);
 			const promise = ip.insert(insertionBlock);
 
-			const [animation] = ip.el.getAnimations();
-			animation?.cancel();
+			// アニメーション完了前はマーカーがDOMに残りisProcessedもtrueのまま
+			await Promise.resolve();
+			expect(ip.el.isConnected).toBe(true);
+			expect(engine.isProcessed).toBe(true);
 
-			const result = await promise;
+			finish();
+			await promise;
 
-			expect(result).toBe(insertionBlock);
+			expect(ip.el.isConnected).toBe(false);
 			expect(engine.isProcessed).toBe(false);
-			expect(engine.save).toHaveBeenCalled();
 		});
 
 		test('should insert before target block when toTop is true', () => {
@@ -185,7 +159,6 @@ describe('InsertionPoint', () => {
 			ip.set(existingBlock, true);
 			void ip.insert(insertionBlock);
 
-			// ip.el should be inserted before existingBlock.el
 			const children = [...engine.content.containerElement.children];
 			const ipIndex = children.indexOf(ip.el);
 			const existingIndex = children.indexOf(existingBlock.el);
@@ -203,7 +176,6 @@ describe('InsertionPoint', () => {
 			ip.set(existingBlock, false);
 			void ip.insert(insertionBlock);
 
-			// ip.el should be after existingBlock.el
 			const children = [...engine.content.containerElement.children];
 			const ipIndex = children.indexOf(ip.el);
 			const existingIndex = children.indexOf(existingBlock.el);

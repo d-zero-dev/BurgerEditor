@@ -1,16 +1,13 @@
-import type { BlockMenuHandle } from './components/block-menu.js';
 import type { BurgerEditorEngineOptions } from '@burger-editor/core';
 
 import { BurgerEditorEngine } from '@burger-editor/core';
 import { defineBgeWysiwygEditorElement } from '@burger-editor/custom-element';
-import { createRef } from 'react';
 
 import { BurgerEditorRoot } from './burger-editor-root.js';
 import { registerEngineCommands } from './commands/register-engine-commands.js';
-import { BlockMenu } from './components/block-menu.js';
 import { DraftSwitcher } from './components/draft-switcher.js';
-import { InitialInsertionButton } from './components/initial-insertion-button.js';
 import { reactMount } from './mount.js';
+import { createReactView } from './view/create-react-view.js';
 
 import './style/ui.css';
 
@@ -43,10 +40,10 @@ export function attachDraftSwitcher(engine: BurgerEditorEngine) {
 /**
  * BurgerEditorのクライアントUIを組み立てるメインエントリ
  *
- * headlessなエンジンを生成し、React製のUI（ブロックメニュー・初期挿入
- * ボタン・ダイアログ群）とエンジン操作コマンドのディスパッチテーブルを
- * 配線する。`blockMenu`/`initialInsertionButton` はこの関数が供給する
- * ためオプションから除外している。
+ * headlessなエンジンを生成し、React製のUI（編集エリア・ブロックメニュー・
+ * 初期挿入ボタン・ダイアログ群）とエンジン操作コマンドのディスパッチ
+ * テーブルを配線する。エンジンへのUI注入点は `view` ひとつで、この関数が
+ * React実装を供給するためオプションから除外している。
  * @param options - エンジンオプション（UI供給分を除く）
  * @returns 生成済みエンジンを含むハンドル
  * @example
@@ -67,44 +64,11 @@ export function attachDraftSwitcher(engine: BurgerEditorEngine) {
  * ```
  */
 export async function createBurgerEditorClient(
-	options: Omit<BurgerEditorEngineOptions, 'blockMenu' | 'initialInsertionButton'>,
+	options: Omit<BurgerEditorEngineOptions, 'view'>,
 ) {
 	const engine = await BurgerEditorEngine.new({
 		...options,
-		initialInsertionButton: (container) => {
-			return reactMount(<InitialInsertionButton />, container);
-		},
-		blockMenu: (container, engine) => {
-			const menuRef = createRef<BlockMenuHandle>();
-			const { cleanUp } = reactMount(
-				<BlockMenu
-					ref={menuRef}
-					engine={engine}
-					container={container}
-					onHide={() => engine.clearCurrentBlock()}
-				/>,
-				container,
-			);
-
-			return {
-				// ref経由でReactのvisible状態を更新する。DOMのhidden属性を直接
-				// 書き換えるとReactの内部状態と食い違い、以後の同値setState
-				// （例: 再ホバーでの setVisible(true)）がReactの再描画をスキップ
-				// し続けて永久に隠れたままになる。engine.clearCurrentBlock() は
-				// BlockMenu の onHide 経由で呼ばれるため、ここでは呼ばない
-				hide: () => {
-					if (!menuRef.current) {
-						// eslint-disable-next-line no-console
-						console.warn(
-							'blockMenu.hide() called before the BlockMenu ref was attached; the menu could not be hidden.',
-						);
-						return;
-					}
-					menuRef.current.hide();
-				},
-				cleanUp,
-			};
-		},
+		view: createReactView(),
 		defineCustomElement(context) {
 			defineBgeWysiwygEditorElement({
 				wrapperElement: {

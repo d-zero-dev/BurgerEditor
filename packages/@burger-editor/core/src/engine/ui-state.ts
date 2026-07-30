@@ -30,6 +30,21 @@ export type OpenDialogState =
  */
 export interface UIState {
 	readonly openDialog: OpenDialogState;
+
+	/**
+	 * ブロックの挿入・移動などの処理が進行中かどうか。UI層はこれを
+	 * 購読してホバーメニュー等を自律的に非表示にする — エンジンが
+	 * UI要素のDOMを直接隠すことはない（真実の源はこの値ひとつ）
+	 */
+	readonly processing: boolean;
+
+	/**
+	 * 編集エリアごとのHTMLソース編集モード。`false` はビジュアル編集
+	 */
+	readonly sourceMode: {
+		readonly main: boolean;
+		readonly draft: boolean;
+	};
 }
 
 type Listener = () => void;
@@ -54,7 +69,11 @@ type Listener = () => void;
  */
 export class UIStateStore {
 	#listeners = new Set<Listener>();
-	#state: UIState = { openDialog: null };
+	#state: UIState = {
+		openDialog: null,
+		processing: false,
+		sourceMode: { main: false, draft: false },
+	};
 
 	/**
 	 * Close the currently open dialog, if any.
@@ -97,6 +116,31 @@ export class UIStateStore {
 	}
 
 	/**
+	 * Mark an engine mutation (block insertion, move, etc.) as in
+	 * progress or finished.
+	 * @param processing - Whether a mutation is in progress
+	 */
+	setProcessing(processing: boolean) {
+		if (this.#state.processing === processing) {
+			return;
+		}
+		this.#set({ processing });
+	}
+
+	/**
+	 * Switch an editable area between the visual editor and the HTML
+	 * source editor.
+	 * @param type - The editable area to switch
+	 * @param sourceMode - `true` for the HTML source editor
+	 */
+	setSourceMode(type: 'main' | 'draft', sourceMode: boolean) {
+		if (this.#state.sourceMode[type] === sourceMode) {
+			return;
+		}
+		this.#set({ sourceMode: { ...this.#state.sourceMode, [type]: sourceMode } });
+	}
+
+	/**
 	 * Register a change listener.
 	 * @param listener - Invoked after every state transition
 	 * @returns A function that removes the listener
@@ -108,8 +152,16 @@ export class UIStateStore {
 		};
 	}
 
-	#set(state: UIState) {
-		this.#state = state;
+	/**
+	 * Toggle an editable area between visual and HTML source editing.
+	 * @param type - The editable area to toggle
+	 */
+	toggleSourceMode(type: 'main' | 'draft') {
+		this.setSourceMode(type, !this.#state.sourceMode[type]);
+	}
+
+	#set(patch: Partial<UIState>) {
+		this.#state = { ...this.#state, ...patch };
 		for (const listener of this.#listeners) {
 			listener();
 		}

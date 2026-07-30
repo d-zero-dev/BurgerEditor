@@ -16,10 +16,40 @@ import { useEffect, useRef, useSyncExternalStore } from 'react';
  * return <ItemEditorHost engine={engine} item={openDialog?.type === 'item-editor' ? openDialog.item : null} />;
  * ```
  */
-export function useUIState(engine: BurgerEditorEngine): UIState {
+export function useUIState(engine: BurgerEditorEngine): UIState;
+/**
+ * Subscribe to a projection of the engine's UI state store.
+ *
+ * 選択的な状態（`processing` や `sourceMode[type]` など）だけを読む
+ * コンポーネントは、`selector` でそのフィールドだけを取り出すと無関係な
+ * 状態変化（例: ダイアログの開閉）での再レンダーを避けられる。selector
+ * が返す値はプリミティブか、`UIStateStore` 内部で不変のうちは同一参照を
+ * 保つネスト構造（`sourceMode` など）に限る — selector 内でオブジェクト
+ * を新規生成すると `useSyncExternalStore` が毎回「変化した」と判定して
+ * 無限レンダーを引き起こす。
+ * @param engine - The engine instance
+ * @param selector - Projection of the snapshot
+ * @returns The selected value
+ * @example
+ * ```tsx
+ * // 無関係な状態変化での再レンダーを避ける
+ * const processing = useUIState(engine, (s) => s.processing);
+ * ```
+ */
+export function useUIState<T>(
+	engine: BurgerEditorEngine,
+	selector: (state: UIState) => T,
+): T;
+export function useUIState<T = UIState>(
+	engine: BurgerEditorEngine,
+	selector?: (state: UIState) => T,
+): T {
 	return useSyncExternalStore(
 		(onStoreChange) => engine.uiState.subscribe(onStoreChange),
-		() => engine.uiState.getSnapshot(),
+		() => {
+			const snapshot = engine.uiState.getSnapshot();
+			return selector ? selector(snapshot) : (snapshot as unknown as T);
+		},
 	);
 }
 

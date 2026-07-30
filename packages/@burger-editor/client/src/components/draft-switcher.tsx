@@ -3,12 +3,15 @@ import type { BurgerEditorEngine } from '@burger-editor/core';
 import { BGE_COMMAND, COMMAND_BUS_ID } from '@burger-editor/core';
 import { useEffect, useState } from 'react';
 
+import { useUIState } from '../use-engine.js';
+
 import styles from './draft-switcher.module.css';
 
 /**
  * Main/draft content switcher. Switching and copying are declared as
  * engine commands; the pressed state follows the engine's
- * `bge:switch-content` event.
+ * `bge:switch-content` event and the source-view indicator follows
+ * `engine.uiState.sourceMode` — no state is duplicated locally.
  *
  * The alt+double-click source-view toggle is kept as a DOM event —
  * double-click has no Invoker Commands equivalent (the no-click rule
@@ -23,13 +26,12 @@ import styles from './draft-switcher.module.css';
  * ```
  */
 export function DraftSwitcher({ engine }: { readonly engine: BurgerEditorEngine }) {
+	const sourceMode = useUIState(engine, (s) => s.sourceMode);
 	const [isMain, setIsMain] = useState(engine.content.type === 'main');
-	const [isVisualMode, setIsVisualMode] = useState(engine.content.isVisualMode);
 
 	useEffect(() => {
 		const update = () => {
 			setIsMain(engine.content.type === 'main');
-			setIsVisualMode(engine.content.isVisualMode);
 		};
 		engine.el.addEventListener('bge:switch-content', update);
 		return () => {
@@ -37,10 +39,10 @@ export function DraftSwitcher({ engine }: { readonly engine: BurgerEditorEngine 
 		};
 	}, [engine]);
 
+	const isVisualMode = !sourceMode[isMain ? 'main' : 'draft'];
+
 	const toggleDisplayMode = () => {
-		engine.content.toggleDisplayMode();
-		setIsMain(engine.content.type === 'main');
-		setIsVisualMode(engine.content.isVisualMode);
+		engine.uiState.toggleSourceMode(engine.content.type);
 	};
 
 	const onDblClickMain = (e: React.MouseEvent) => {

@@ -40,7 +40,7 @@ const { engine } = await createBurgerEditorClient({
 });
 ```
 
-`options` は `BurgerEditorEngineOptions` から `blockMenu` / `initialInsertionButton` を除いた型。これらは client が **React 実装で内部的に上書き**するため、利用側で渡してはいけない。加えて client はエンジンコマンドのディスパッチテーブル（`registerEngineCommands`）を登録し、ダイアログ群を `engine.uiState` から宣言的にレンダリングするルートをマウントする。
+`options` は `BurgerEditorEngineOptions` から `view` を除いた型。`view`（`BurgerEditorView`）は client が **React 実装で内部的に注入**するため、利用側で渡してはいけない。加えて client はエンジンコマンドのディスパッチテーブル（`registerEngineCommands`）を登録し、ダイアログ群を `engine.uiState` から宣言的にレンダリングするルートをマウントする。
 
 ## `createBurgerEditorClient` オプション
 

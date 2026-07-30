@@ -133,17 +133,20 @@ describe('ImageEditor', () => {
 		const altInput = getInput('画像の代替テキスト(alt)');
 		const mediaInput = getInput('メディアクエリー');
 		expect(altInput.value).toBe('Aの説明');
+		expect(screen.getByRole('tabpanel', { name: '画像1' })).toBeTruthy();
 
 		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
 
 		expect(altInput.value).toBe('Bの説明');
 		expect(mediaInput.value).toBe('(min-width: 768px)');
 		expect(mediaInput.disabled).toBe(false);
+		expect(screen.getByRole('tabpanel', { name: '画像2' })).toBeTruthy();
 
 		invokeCommand(screen.getByRole('tab', { name: '画像1' }));
 
 		expect(altInput.value).toBe('Aの説明');
 		expect(mediaInput.disabled).toBe(true);
+		expect(screen.getByRole('tabpanel', { name: '画像1' })).toBeTruthy();
 	});
 
 	test('タブ2でaltを編集してもタブ1のaltは破壊されない', () => {

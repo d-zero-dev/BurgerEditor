@@ -144,7 +144,7 @@ export interface ItemSeed<
 
 	/**
 	 * Derive the editor state from the item data when the editor opens.
-	 * Pure function — replaces the data-transform half of `beforeOpen`.
+	 * Pure function — no DOM access; called once per dialog open.
 	 * @param data - The item data being edited
 	 * @param config - Engine configuration
 	 * @returns The initial editor state
@@ -153,7 +153,7 @@ export interface ItemSeed<
 
 	/**
 	 * Derive the item data to persist from the editor state on submit.
-	 * Pure function — replaces `beforeChange`.
+	 * Pure function — no DOM access; called when the editor form is submitted.
 	 * @param state - The editor state at submit time
 	 * @param config - Engine configuration
 	 * @returns The item data to import into the content
