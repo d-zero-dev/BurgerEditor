@@ -118,7 +118,7 @@ graph TD
 
 - ReactベースのクライアントUI
 - 依存関係: core, custom-element, migrator, utils, react
-- 責任: ブロック選択UI、ファイル管理UI、エディタUI（ダイアログ群を `engine.uiState` から宣言的にレンダリング）、エンジンコマンドのディスパッチテーブル、アイテムエディタ用フォーム部品（`@burger-editor/client/ui`）
+- 責任: 編集エリアシェル（iframe/ソース表示・高さ追従を担う `EditableAreaView`）、ブロック選択UI、ファイル管理UI、エディタUI（ダイアログ群を `engine.uiState` から宣言的にレンダリング）、エンジンコマンドのディスパッチテーブル、アイテムエディタ用フォーム部品（`@burger-editor/client/ui`）
 
 **`@burger-editor/custom-element`**
 
@@ -302,18 +302,20 @@ core パッケージは UI フレームワークに依存しない headless エ�
 
 **UIStateStore（`engine.uiState`）:**
 
-「どのダイアログが開いているか」を表す外部ストア（`subscribe`/`getSnapshot`）。React 側は `useSyncExternalStore` で購読し、ブロックカタログ・ブロックオプション・アイテムエディタの各 `<dialog>` を宣言的にレンダリングします。エンジンを操作する側は `uiState.openBlockCatalog()` などの状態遷移を呼ぶだけで、ダイアログを命令的に開閉しません。
+「どのダイアログが開いているか」「エンジンが処理中か（`processing`）」「各編集エリアがソース編集モードか（`sourceMode`）」を表す外部ストア（`subscribe`/`getSnapshot`）。React 側は `useSyncExternalStore` で購読し、各 `<dialog>` やメニューの可視状態を宣言的にレンダリングします。エンジンを操作する側は `uiState.openBlockCatalog()` などの状態遷移を呼ぶだけで、UI を命令的に開閉しません。
 
-**ファクトリインタフェース（iframe 内の実DOM島向け）:**
+**view port（単一の UI 注入点）:**
 
-- `BlockMenuCreator` — ブロックメニューUI生成（EditableArea の iframe 文書内にマウント）
-- `InitialInsertionButtonCreator` — 初期挿入ボタンUI生成
-- `EditableAreaShellCreator` — 編集エリアシェル生成
+core が UI に要求する接点は `BurgerEditorView` ひとつです。`createAreaHost()` が編集エリア（main / draft）ごとのホスト UI を生成し、core には編集対象コンテンツの `containerElement`（と任意の挿入アニメーションフック）だけを返します。core は iframe・textarea・メニューなど UI 所有の DOM への参照を一切持たないため、「エンジンが React の描画対象属性を直接書き換えて状態が食い違う」類のバグは型レベルで表現できません。
+
+- core 側: `EditableContent` がコンテンツ操作（ブロック復元・シリアライズ・サニタイズ）を担う。`view` 未指定時は素の div を返す headless フォールバックを使う
+- client 側: `createReactView()` が port を実装し、`EditableAreaView`（iframe/ソース textarea のシェル、ResizeObserver による高さ追従）を React root としてマウント。ブロックメニューと初期挿入ボタンは createPortal で iframe 文書内に描画する
+- 表示状態（main/draft の切替・visual/source モード・processing 中のメニュー非表示）は `engine.uiState` とエンジンイベント（`bge:switch-content` / `bge:saved`）を UI 層が購読して宣言的に描画する。core から UI への命令的呼び出しは存在しない
 
 **依存関係の流れ:**
 
 ```
-core（uiState ストア + インタフェース定義） ← client（React 実装を注入）
+core（uiState ストア + view port 定義） ← client（React 実装を注入）
 ```
 
 ### 5. Invoker Commands API とコマンドバス
@@ -322,7 +324,7 @@ core（uiState ストア + インタフェース定義） ← client（React 実
 
 **中央コマンドバス（`engine.commandBus`）:**
 
-エンジン・文書・サーバー状態を変えるコマンド（`BGE_COMMAND`: ブロック移動・追加・削除・コピー、下書き切替、アイテムエディタ起動など）は、単一のディスパッチテーブルで処理されます。`commandfor` は同一 document 内の ID 参照であり `CommandEvent` はバブリングしないため、受信エレメント（`#bge-command-bus`）は親 document と各 EditableArea iframe の両方に設置されます。ディスパッチテーブルの実装は client の `registerEngineCommands()` にあり、「エンジンを動かす唯一の経路 = コマンド語彙」として一箇所で監査できます。
+エンジン・文書・サーバー状態を変えるコマンド（`BGE_COMMAND`: ブロック移動・追加・削除・コピー、下書き切替、アイテムエディタ起動など）は、単一のディスパッチテーブルで処理されます。`commandfor` は同一 document 内の ID 参照であり `CommandEvent` はバブリングしないため、受信エレメント（`#bge-command-bus`）は親 document と各編集エリアの iframe の両方に設置されます。ディスパッチテーブルの実装は client の `registerEngineCommands()` にあり、「エンジンを動かす唯一の経路 = コマンド語彙」として一箇所で監査できます。
 
 **ローカルコマンド:**
 
