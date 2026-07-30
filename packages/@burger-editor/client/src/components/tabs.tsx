@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react';
+import { useId, useRef } from 'react';
 
 import { useCommand } from '../use-command.js';
 
@@ -7,7 +7,8 @@ import styles from './tabs.module.css';
 /**
  * Controlled tab list. Selection is lifted to the parent via
  * `current`/`onChange`; tab buttons declare a local command instead of a
- * click handler. Arrow keys move the selection.
+ * click handler. Arrow keys move the selection. The tab panel itself is
+ * rendered by the parent, which also owns its `aria-label`.
  * @param root0
  * @param root0.current
  * @param root0.onChange
@@ -17,7 +18,7 @@ import styles from './tabs.module.css';
  * @example
  * ```tsx
  * <Tabs current={currentIndex} onChange={setCurrentIndex} contentId="tab-content" />
- * <div id="tab-content" role="tabpanel">
+ * <div id="tab-content" role="tabpanel" aria-label={`画像${currentIndex + 1}`}>
  * 	{currentIndex === 0 ? <PcForm /> : <SpForm />}
  * </div>
  * ```
@@ -49,14 +50,6 @@ export function Tabs({
 			update(Number(value));
 		},
 	});
-
-	useEffect(() => {
-		const tabPanel = document.getElementById(contentId);
-		if (!tabPanel) {
-			throw new Error('Tab panel not found');
-		}
-		tabPanel.setAttribute('aria-label', createLabel(current));
-	}, [contentId, current, createLabel]);
 
 	const onKeyDown = (event: React.KeyboardEvent) => {
 		if (event.key === 'ArrowLeft') {

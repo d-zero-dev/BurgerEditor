@@ -74,18 +74,6 @@ export function FileList({
 				...prev.filter((file) => !file.url.startsWith('blob:')),
 			]);
 		}
-
-		const selectedButton = await awaitUntilFound(() =>
-			document.querySelector<HTMLButtonElement>(
-				`button[aria-pressed="true"]:has(img[src="${path}"])`,
-			),
-		);
-		if (selectedButton) {
-			selectedButton.scrollIntoView({
-				behavior: 'smooth',
-				block: 'nearest',
-			});
-		}
 	});
 
 	useComponentEvent(engine, 'file-upload-progress', (p) => {
@@ -234,6 +222,7 @@ export function FileList({
 				{fileList.map((file) => (
 					<li key={file.url}>
 						<button
+							ref={file.url === selectedPath ? scrollToSelected : undefined}
 							className={styles['file']}
 							type="button"
 							aria-pressed={file.url === selectedPath}
@@ -280,17 +269,15 @@ export function FileList({
 }
 
 /**
- * Poll with requestAnimationFrame until the callback returns a truthy
- * value (matches the legacy behavior).
- * @param callback - Returns the searched value or null
+ * Callback ref attached only to the currently selected file button, so the
+ * list scrolls to it when the selection mounts or changes. Kept at module
+ * scope for a stable identity — an inline arrow would re-attach (and
+ * re-scroll) on every unrelated re-render such as upload progress updates.
+ * @param el - The selected button, or null on detach
  */
-async function awaitUntilFound<T>(callback: () => T): Promise<T> {
-	const result = callback();
-	if (result) {
-		return result;
-	}
-	await new Promise((resolve) => {
-		requestAnimationFrame(resolve);
+function scrollToSelected(el: HTMLButtonElement | null) {
+	el?.scrollIntoView({
+		behavior: 'smooth',
+		block: 'nearest',
 	});
-	return awaitUntilFound(callback);
 }

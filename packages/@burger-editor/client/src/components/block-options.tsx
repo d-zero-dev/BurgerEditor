@@ -101,9 +101,7 @@ export function BlockOptions({
 							name="bge-options-frame-semantics"
 							value={currentFrameSemantics}
 							onChange={(e) => {
-								const newSemantics = e.currentTarget.value as 'div' | 'ul' | 'ol';
-								currentBlock.changeFrameSemantics(newSemantics);
-								setCurrentFrameSemantics(newSemantics);
+								setCurrentFrameSemantics(e.currentTarget.value as 'div' | 'ul' | 'ol');
 							}}>
 							<option value="div">div（汎用）</option>
 							<option value="ul">ul（順序なしリスト）</option>
