@@ -221,6 +221,34 @@ describe('フィールドの追加と削除', () => {
 		expect(handle.getData()).toEqual({ body: 'B' });
 		expect(onUpdated).toHaveBeenCalledWith({ body: 'B' });
 	});
+
+	test('削除したJSONフィールドの未確定ドラフトは同名で再追加しても復活しない（regression）', () => {
+		mount({ tags: ['a'] });
+		const textarea = screen.getByLabelText<HTMLTextAreaElement>('tags');
+
+		// 不正なJSONを入力してドラフトを残す
+		fireEvent.change(textarea, { target: { value: '["a",' } });
+		expect(textarea.classList.contains('fm-editor-error')).toBe(true);
+
+		// tagsフィールドを削除
+		invokeCommand(screen.getByRole('button', { name: '×' }));
+		expect(screen.queryByLabelText('tags')).toBeNull();
+
+		// 同名のjsonフィールドを再追加
+		invokeCommand(screen.getByRole('button', { name: '+ 追加' }));
+		fireEvent.change(screen.getByLabelText('キー名'), { target: { value: 'tags' } });
+		fireEvent.change(screen.getByLabelText('型'), { target: { value: 'json' } });
+		act(() => {
+			fireEvent.submit(
+				screen.getByLabelText('キー名').closest('form') as HTMLFormElement,
+			);
+		});
+
+		const newTextarea = screen.getByLabelText<HTMLTextAreaElement>('tags');
+		// 古い（無効な）ドラフト文字列ではなく、新フィールドの既定値が出る
+		expect(newTextarea.value).toBe('[]');
+		expect(newTextarea.classList.contains('fm-editor-error')).toBe(false);
+	});
 });
 
 describe('handle', () => {

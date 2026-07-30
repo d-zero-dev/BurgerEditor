@@ -149,6 +149,12 @@ function FrontMatterEditorView({
 				return;
 			}
 			applyFields(fields.filter((f) => f.key !== key));
+			// 未確定のJSONドラフトも削除する。残すと同名キーを再追加した
+			// ときに古い（無効な場合もある）テキストが復活してしまう
+			setJsonDrafts((prev) => {
+				const { [key]: _removed, ...rest } = prev;
+				return rest;
+			});
 		},
 	});
 
