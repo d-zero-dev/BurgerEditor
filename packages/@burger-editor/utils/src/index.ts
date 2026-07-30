@@ -1,3 +1,4 @@
+export * from './append-stylesheet-to.js';
 export * from './camel-case.js';
 export * from './kebab-case.js';
 export * from './markdown.js';
