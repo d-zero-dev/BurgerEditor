@@ -91,6 +91,9 @@ export function EditableAreaView({
 		}
 		const frameDoc = frameWindow.document;
 		frameDoc.open();
+		// ブラウザはopen/closeだけでhtml/head/bodyの骨組みを自動生成するが、
+		// jsdomは生成しないため明示的に書き込む（実ブラウザでは等価）
+		frameDoc.write('<!doctype html><html><head></head><body></body></html>');
 		frameDoc.close();
 
 		for (const { path, id } of stylesheets) {
