@@ -238,10 +238,10 @@ test('アンマウントでResizeObserverが解除される', () => {
 	const { unmount } = renderView(engine);
 
 	expect(ResizeObserverStub.instances.length).toBe(1);
-	const observer = ResizeObserverStub.instances[0];
-	expect(observer.observe).toHaveBeenCalled();
+	const observer = ResizeObserverStub.instances.at(0);
+	expect(observer?.observe).toHaveBeenCalled();
 
 	unmount();
 
-	expect(observer.disconnect).toHaveBeenCalled();
+	expect(observer?.disconnect).toHaveBeenCalled();
 });
