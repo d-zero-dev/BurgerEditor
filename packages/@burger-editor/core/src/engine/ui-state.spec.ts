@@ -59,4 +59,58 @@ describe('UIStateStore', () => {
 		store.openBlockCatalog();
 		expect(listener).toHaveBeenCalledTimes(2);
 	});
+
+	test('initial state is not processing and both areas are in visual mode', () => {
+		const store = new UIStateStore();
+		expect(store.getSnapshot().processing).toBe(false);
+		expect(store.getSnapshot().sourceMode).toEqual({ main: false, draft: false });
+	});
+
+	test('setProcessing replaces the snapshot and is a no-op on the same value', () => {
+		const store = new UIStateStore();
+		const listener = vi.fn();
+		store.subscribe(listener);
+
+		store.setProcessing(true);
+		expect(store.getSnapshot().processing).toBe(true);
+		expect(listener).toHaveBeenCalledTimes(1);
+
+		store.setProcessing(true);
+		expect(listener).toHaveBeenCalledTimes(1);
+
+		store.setProcessing(false);
+		expect(store.getSnapshot().processing).toBe(false);
+		expect(listener).toHaveBeenCalledTimes(2);
+	});
+
+	test('setSourceMode only changes the given area and keeps other state', () => {
+		const store = new UIStateStore();
+		store.openBlockCatalog();
+
+		store.setSourceMode('draft', true);
+
+		const state = store.getSnapshot();
+		expect(state.sourceMode).toEqual({ main: false, draft: true });
+		expect(state.openDialog).toEqual({ type: 'block-catalog' });
+	});
+
+	test('setSourceMode is a no-op on the same value', () => {
+		const store = new UIStateStore();
+		const listener = vi.fn();
+		store.subscribe(listener);
+
+		store.setSourceMode('main', false);
+
+		expect(listener).not.toHaveBeenCalled();
+	});
+
+	test('toggleSourceMode flips the given area back and forth', () => {
+		const store = new UIStateStore();
+
+		store.toggleSourceMode('main');
+		expect(store.getSnapshot().sourceMode.main).toBe(true);
+
+		store.toggleSourceMode('main');
+		expect(store.getSnapshot().sourceMode.main).toBe(false);
+	});
 });

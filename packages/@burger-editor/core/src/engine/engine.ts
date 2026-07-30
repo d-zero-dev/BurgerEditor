@@ -57,19 +57,18 @@ export class BurgerEditorEngine {
 	#currentBlock: BurgerBlock | null = null;
 	#draft!: EditableArea<'draft'> | null;
 	readonly #healthMonitor: HealthMonitor;
-	#isProcessed: boolean = false;
 	#main!: EditableArea<'main'>;
 	#migrationCheck: ((dom: HTMLElement) => void) | null = null;
 
 	get isProcessed() {
-		return this.#isProcessed;
+		return this.uiState.getSnapshot().processing;
 	}
 
 	set isProcessed(isProcessed: boolean) {
 		if (isProcessed) {
 			this.content.blockMenu.hide();
 		}
-		this.#isProcessed = isProcessed;
+		this.uiState.setProcessing(isProcessed);
 	}
 
 	get content() {
