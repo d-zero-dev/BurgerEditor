@@ -2,7 +2,7 @@ import type { BurgerEditorEngine } from './engine.js';
 
 import { test, expect, beforeEach, describe, vi } from 'vitest';
 
-import { EditableArea } from '../editable-area.js';
+import { EditableContent } from '../editable-content.js';
 
 import { copyEditableArea } from './copy-editable-area.js';
 
@@ -10,67 +10,33 @@ import { copyEditableArea } from './copy-editable-area.js';
  *
  */
 function createMockEngine() {
-	const viewArea = document.createElement('div');
-	document.body.append(viewArea);
-
 	return {
-		viewArea,
 		isProcessed: false,
-		componentObserver: {
-			on: vi.fn(),
-			off: vi.fn(),
-			notify: vi.fn(),
-		},
-		clearCurrentBlock: vi.fn(),
-		content: {
-			containerElement: document.createElement('div'),
-			update: vi.fn(),
-		},
 		save: vi.fn(),
-		uiState: {
-			openBlockCatalog: vi.fn(),
-		},
-		commandBus: {
-			createReceiver: vi.fn(),
-		},
 		restoreBlockFromElement: vi.fn().mockResolvedValue({
 			el: document.createElement('div'),
 		}),
 		migrationCheck: vi.fn(),
-		el: document.createElement('div'),
 	} as unknown as BurgerEditorEngine;
 }
 
 /**
- *
- */
-function createMockBlockMenuCreator() {
-	return vi.fn().mockReturnValue({ cleanUp: vi.fn() });
-}
-
-/**
- * main/draftの編集エリアペアを作る
+ * main/draftの編集コンテンツペアを作る
  * @param mainContent
  * @param draftContent
  */
 function createAreas(mainContent: string, draftContent: string) {
 	const engine = createMockEngine();
-	const main = new EditableArea(
-		'main',
-		mainContent,
-		engine,
-		createMockBlockMenuCreator(),
-	);
-	const draft = new EditableArea<'draft'>(
-		'draft',
-		draftContent,
-		engine,
-		createMockBlockMenuCreator(),
-	);
+	const main = new EditableContent('main', mainContent, engine, {
+		containerElement: document.createElement('div'),
+	});
+	const draft = new EditableContent('draft', draftContent, engine, {
+		containerElement: document.createElement('div'),
+	});
 	return { main, draft };
 }
 
-// data-bgb付きのブロック形式にしないとEditableAreaの#initが
+// data-bgb付きのブロック形式にしないとEditableContentの#initが
 // 「ブロック無しコンテンツ」とみなしrestoreBlockFromElement（モック）の
 // 戻り値でコンテンツを置換してしまう
 const MAIN_CONTENT = '<div data-bgb="text"><p>本稿</p></div>';

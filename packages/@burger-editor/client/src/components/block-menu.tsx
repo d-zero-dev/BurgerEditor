@@ -18,15 +18,7 @@ import {
 	IconSettings,
 	IconTrash,
 } from '@tabler/icons-react';
-import {
-	useId,
-	useEffect,
-	useRef,
-	useState,
-	useCallback,
-	useImperativeHandle,
-	forwardRef,
-} from 'react';
+import { useId, useEffect, useRef, useState, useCallback } from 'react';
 
 import { useCommand } from '../use-command.js';
 
@@ -50,56 +42,29 @@ interface ItemOverlayRect {
 }
 
 /**
- * Imperative handle exposed via ref so callers (e.g. `engine.isProcessed`'s
- * setter) can force the menu hidden through React state instead of poking
- * the DOM directly. A direct DOM write leaves React's own `visible` state
- * unaware of the change, so a later `setVisible(true)` with the same value
- * it already held gets skipped as a no-op re-render — the menu then stays
- * stuck hidden even though the user is hovering a block.
- * @example
- * ```ts
- * const menuRef = createRef<BlockMenuHandle>();
- * // ... mount <BlockMenu ref={menuRef} .../> ...
- * menuRef.current?.hide();
- * ```
- */
-export interface BlockMenuHandle {
-	readonly hide: () => void;
-}
-
-/**
  * Hover menu over the selected block inside the editable area iframe.
  * Block operations are declared as engine commands; positioning and
- * visibility stay local to this component. Exposes {@link BlockMenuHandle}
- * via ref so external code can hide it without racing React's own state.
+ * visibility are React state owned entirely by this component — the
+ * single source of truth. While `engine.uiState.processing` is true the
+ * menu hides itself by subscribing to the store; nothing outside React
+ * ever writes this component's `hidden` attribute (a direct DOM write
+ * would leave React's `visible` state out of sync and a later same-value
+ * `setVisible(true)` would be skipped, leaving the menu stuck hidden).
  * @param root0
  * @param root0.engine
  * @param root0.container
- * @param root0.onHide
- * @param ref - Imperative handle; see {@link BlockMenuHandle}
  * @example
  * ```tsx
- * const menuRef = createRef<BlockMenuHandle>();
- * reactMount(
- * 	<BlockMenu
- * 		ref={menuRef}
- * 		engine={engine}
- * 		container={container}
- * 		onHide={() => engine.clearCurrentBlock()}
- * 	/>,
- * 	container,
- * );
- * menuRef.current?.hide();
+ * <BlockMenu engine={engine} container={frameBody} />
  * ```
  */
-export const BlockMenu = forwardRef<
-	BlockMenuHandle,
-	{
-		readonly engine: BurgerEditorEngine;
-		readonly container: HTMLElement;
-		readonly onHide: () => void;
-	}
->(function BlockMenu({ engine, container, onHide }, ref) {
+export function BlockMenu({
+	engine,
+	container,
+}: {
+	readonly engine: BurgerEditorEngine;
+	readonly container: HTMLElement;
+}) {
 	const menuId = useId();
 	const [currentBlock, setCurrentBlock] = useState<BurgerBlock | null>(null);
 	const [visible, setVisible] = useState(false);
@@ -133,10 +98,19 @@ export const BlockMenu = forwardRef<
 	const hide = useCallback(() => {
 		setVisible(false);
 		setCurrentBlock(null);
-		onHide();
-	}, [onHide]);
+		engine.clearCurrentBlock();
+	}, [engine]);
 
-	useImperativeHandle(ref, () => ({ hide }), [hide]);
+	// エンジン処理中（ブロック移動・挿入など）はメニューを自律的に隠す。
+	// uiStateストアを購読し、processingへの遷移でReact自身のstateを畳む
+	// （外部からこのコンポーネントのDOMを書き込む経路は存在しない）
+	useEffect(() => {
+		return engine.uiState.subscribe(() => {
+			if (engine.uiState.getSnapshot().processing) {
+				hide();
+			}
+		});
+	}, [engine, hide]);
 
 	useEffect(() => {
 		const onBlockChange = (e: CustomEvent<{ readonly block: BurgerBlock }>) => {
@@ -378,4 +352,4 @@ export const BlockMenu = forwardRef<
 			</div>
 		</div>
 	);
-});
+}

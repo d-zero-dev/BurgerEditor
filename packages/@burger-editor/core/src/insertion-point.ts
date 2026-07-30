@@ -1,12 +1,8 @@
 import type { BurgerBlock } from './block/block.js';
 import type { BurgerEditorEngine } from './engine/engine.js';
 
-import { EditorUI } from './editor-ui.js';
-
-const INSERTION_ANIMATION_DURATION_MS = 400;
-
-export class InsertionPoint extends EditorUI {
-	#animationDurationMs: number;
+export class InsertionPoint {
+	readonly el: HTMLElement;
 	#engine: BurgerEditorEngine;
 
 	#insertTarget: {
@@ -14,16 +10,13 @@ export class InsertionPoint extends EditorUI {
 		toTop: boolean;
 	} | null = null;
 
-	constructor(
-		engine: BurgerEditorEngine,
-		animationDurationMs: number = INSERTION_ANIMATION_DURATION_MS,
-	) {
-		super('insert-point', document.createElement('div'));
+	constructor(engine: BurgerEditorEngine) {
+		this.el = document.createElement('div');
+		this.el.dataset.bgeComponent = 'insert-point';
 		this.#engine = engine;
-		this.#animationDurationMs = animationDurationMs;
 	}
 
-	insert(insertionBlock: BurgerBlock) {
+	async insert(insertionBlock: BurgerBlock) {
 		if (this.#insertTarget === null) {
 			throw new Error(`InsertionPoint is not set`);
 		}
@@ -37,45 +30,24 @@ export class InsertionPoint extends EditorUI {
 			this.#engine.content.containerElement.insertBefore(this.el, targetElement);
 		}
 
-		return new Promise<BurgerBlock>((resolve) => {
-			this.#engine.isProcessed = true;
-			if (this.el.parentElement === null) {
-				throw new Error(`InsertionPoint is not added to the DOM tree`);
-			}
-			this.el.append(insertionBlock.el);
-			this.#engine.content.update();
-			this.el.style.height = 'auto';
-			const targetHeight = this.el.getBoundingClientRect().height;
-			this.el.style.overflow = 'hidden';
+		this.#engine.isProcessed = true;
+		if (this.el.parentElement === null) {
+			throw new Error(`InsertionPoint is not added to the DOM tree`);
+		}
+		this.el.append(insertionBlock.el);
 
-			// unwrap相当の処理: 親要素の前に要素を挿入し、親要素を削除
-			const finish = () => {
-				const parent = this.el;
-				const child = insertionBlock.el;
+		// 演出（マーカーの展開アニメーション）はUI層のhostに委譲する。
+		// host が演出を持たない場合は即時完了として扱う
+		await this.#engine.content.animateInsertion(this.el);
 
-				if (parent.parentNode) {
-					parent.parentNode.insertBefore(child, parent);
-				}
-
-				this.el.remove();
-				this.#engine.save();
-				this.#engine.isProcessed = false;
-				resolve(insertionBlock);
-			};
-
-			// CSSトランジション + transitionend は、トランジション時間が0の場合
-			// （prefers-reduced-motion 等）にイベントが発火せず isProcessed が
-			// 固着するため使わない。Web Animations API の finished は duration
-			// に関わらず必ず解決するので、それを完了検知に使う
-			const reducedMotion = window.matchMedia?.(
-				'(prefers-reduced-motion: reduce)',
-			).matches;
-			const animation = this.el.animate(
-				[{ height: '0px' }, { height: `${targetHeight}px` }],
-				{ duration: reducedMotion ? 0 : this.#animationDurationMs, easing: 'ease' },
-			);
-			animation.finished.then(finish, finish);
-		});
+		// unwrap相当の処理: 親要素の前に要素を挿入し、親要素を削除
+		if (this.el.parentNode) {
+			this.el.parentNode.insertBefore(insertionBlock.el, this.el);
+		}
+		this.el.remove();
+		this.#engine.save();
+		this.#engine.isProcessed = false;
+		return insertionBlock;
 	}
 
 	set(targetBlock: BurgerBlock | null, toTop: boolean) {

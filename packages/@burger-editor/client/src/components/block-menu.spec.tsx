@@ -1,11 +1,11 @@
 import type { BurgerBlock } from '@burger-editor/core';
 
-import { getBlockAtPosition } from '@burger-editor/core';
+import { getBlockAtPosition, UIStateStore } from '@burger-editor/core';
 import { cleanup, render } from '@testing-library/react';
-import { act, createRef } from 'react';
+import { act } from 'react';
 import { test, expect, afterEach, vi } from 'vitest';
 
-import { BlockMenu, type BlockMenuHandle } from './block-menu.js';
+import { BlockMenu } from './block-menu.js';
 
 // vi.mock calls are hoisted above these imports by vitest's transform.
 vi.mock('@burger-editor/core', async (importOriginal) => {
@@ -46,15 +46,20 @@ function dispatchMouseMove(target: EventTarget, pageX: number, pageY: number) {
 }
 
 /**
- *
+ * 実際のUIStateStoreを持つengineモック。isProcessedは本物のengineと
+ * 同じくストアのprocessingへ委譲する
  */
 function createMockEngine() {
 	const el = document.createElement('div');
+	const uiState = new UIStateStore();
 	return {
 		el,
-		isProcessed: false,
+		uiState,
+		get isProcessed() {
+			return uiState.getSnapshot().processing;
+		},
+		clearCurrentBlock: vi.fn(),
 		componentObserver: { notify: vi.fn() },
-		uiState: { openItemEditor: vi.fn() },
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} as any;
 }
@@ -73,11 +78,21 @@ function createMockBlock(): BurgerBlock {
 	return block;
 }
 
-test('ref.hide() forces the menu hidden even when React state already marked it visible', async () => {
+/**
+ * ホバーを合成してメニューを表示状態にする
+ * @param body
+ */
+async function hover(body: HTMLElement) {
+	await act(async () => {
+		dispatchMouseMove(body, 10, 10);
+		await new Promise((resolve) => requestAnimationFrame(resolve));
+	});
+}
+
+test('uiState.processing中はメニューが隠れ、解除後の再ホバーで復帰する', async () => {
 	const engine = createMockEngine();
 	const container = document.createElement('div');
 	document.body.append(container);
-	const ref = createRef<BlockMenuHandle>();
 	const block = createMockBlock();
 
 	vi.mocked(getBlockAtPosition).mockReturnValue({
@@ -94,41 +109,39 @@ test('ref.hide() forces the menu hidden even when React state already marked it 
 	});
 
 	const { container: renderedRoot } = render(
-		<BlockMenu ref={ref} engine={engine} container={container} onHide={vi.fn()} />,
+		<BlockMenu engine={engine} container={container} />,
 	);
 	const menuEl = renderedRoot.firstElementChild as HTMLElement;
 
 	// A real hover makes the menu visible via React state (not a raw DOM write).
-	await act(async () => {
-		dispatchMouseMove(document.body, 10, 10);
-		await new Promise((resolve) => requestAnimationFrame(resolve));
-	});
+	await hover(document.body);
 	expect(menuEl.hidden).toBe(false);
 
-	// The regression: previously, an external caller forced `hidden = true`
+	// The regression class: previously, external code forced `hidden = true`
 	// directly on the DOM without updating React's `visible` state. A later
 	// hover calling `setVisible(true)` with the value React already believed
 	// to be true was then skipped as a no-op, leaving the menu stuck hidden.
+	// Now the menu subscribes to `uiState.processing` and hides through its
+	// own state — the single source of truth.
 	act(() => {
-		ref.current?.hide();
+		engine.uiState.setProcessing(true);
 	});
 	expect(menuEl.hidden).toBe(true);
 
-	// A subsequent hover must still be able to show the menu again — proving
-	// ref.hide() reset React's own state rather than only the DOM attribute.
-	await act(async () => {
-		dispatchMouseMove(document.body, 10, 10);
-		await new Promise((resolve) => requestAnimationFrame(resolve));
+	act(() => {
+		engine.uiState.setProcessing(false);
 	});
+
+	// A subsequent hover must show the menu again — proving the hide went
+	// through React's own state rather than only the DOM attribute.
+	await hover(document.body);
 	expect(menuEl.hidden).toBe(false);
 });
 
-test('ref.hide() clears the currently selected block', async () => {
+test('processingによる非表示で選択中ブロックがクリアされる', async () => {
 	const engine = createMockEngine();
 	const container = document.createElement('div');
 	document.body.append(container);
-	const ref = createRef<BlockMenuHandle>();
-	const onHide = vi.fn();
 	const block = createMockBlock();
 
 	vi.mocked(getBlockAtPosition).mockReturnValue({
@@ -144,15 +157,12 @@ test('ref.hide() clears the currently selected block', async () => {
 		marginBlockEnd: 0,
 	});
 
-	render(<BlockMenu ref={ref} engine={engine} container={container} onHide={onHide} />);
+	render(<BlockMenu engine={engine} container={container} />);
 
-	await act(async () => {
-		dispatchMouseMove(document.body, 10, 10);
-		await new Promise((resolve) => requestAnimationFrame(resolve));
-	});
+	await hover(document.body);
 
 	act(() => {
-		ref.current?.hide();
+		engine.uiState.setProcessing(true);
 	});
-	expect(onHide).toHaveBeenCalledTimes(1);
+	expect(engine.clearCurrentBlock).toHaveBeenCalled();
 });

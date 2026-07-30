@@ -2,8 +2,10 @@ import type { ContainerType } from '../block/types.js';
 import type { ItemSeed } from '../item/types.js';
 import type {
 	BurgerEditorEngineOptions,
+	BurgerEditorView,
 	BlockCatalog,
 	Config,
+	EditableAreaType,
 	FileAPI,
 	BlockItem,
 	BlockData,
@@ -23,12 +25,13 @@ import {
 	getRepeatMinInlineSizeVariants,
 } from '../dom-helpers/get-custom-properties.js';
 import { getElement } from '../dom-helpers/get-element.js';
-import { EditableArea } from '../editable-area.js';
+import { EditableContent } from '../editable-content.js';
 import { createBgeEvent } from '../event/create-bge-event.js';
 import { HealthMonitor } from '../health-monitor.js';
 import { Item } from '../item/item.js';
 
 import { copyEditableArea } from './copy-editable-area.js';
+import { createDefaultView } from './default-view.js';
 import { UIStateStore } from './ui-state.js';
 
 export class BurgerEditorEngine {
@@ -53,21 +56,19 @@ export class BurgerEditorEngine {
 	readonly uiState = new UIStateStore();
 	readonly viewArea: HTMLElement;
 	#contentStylesheetCache: string | null = null;
-	#current!: EditableArea;
+	#current!: EditableContent<EditableAreaType>;
 	#currentBlock: BurgerBlock | null = null;
-	#draft!: EditableArea<'draft'> | null;
+	#draft!: EditableContent<'draft'> | null;
 	readonly #healthMonitor: HealthMonitor;
-	#main!: EditableArea<'main'>;
+	#main!: EditableContent<'main'>;
 	#migrationCheck: ((dom: HTMLElement) => void) | null = null;
+	#view!: BurgerEditorView;
 
 	get isProcessed() {
 		return this.uiState.getSnapshot().processing;
 	}
 
 	set isProcessed(isProcessed: boolean) {
-		if (isProcessed) {
-			this.content.blockMenu.hide();
-		}
 		this.uiState.setProcessing(isProcessed);
 	}
 
@@ -155,6 +156,7 @@ export class BurgerEditorEngine {
 	cleanUp() {
 		this.#healthMonitor.stop();
 		this.commandBus.destroy();
+		this.#view.destroy();
 	}
 
 	clearCurrentBlock() {
@@ -209,9 +211,20 @@ export class BurgerEditorEngine {
 			containerType,
 		);
 	}
-
 	getCustomProperty(property: string | RegExp) {
 		return getCustomProperty(this.#current.containerElement.ownerDocument, property);
+	}
+	/**
+	 * Look up an editable content by area type.
+	 * @param type - The editable area type
+	 * @returns The editable content, or `null` when the page has no draft
+	 * @example
+	 * ```ts
+	 * const html = engine.getEditableContent('draft')?.getContentsAsString();
+	 * ```
+	 */
+	getEditableContent(type: EditableAreaType): EditableContent<EditableAreaType> | null {
+		return type === 'main' ? this.#main : this.#draft;
 	}
 
 	getRepeatMinInlineSizeVariants() {
@@ -341,16 +354,14 @@ export class BurgerEditorEngine {
 		});
 	}
 
-	#show(to: EditableArea) {
+	#show(to: EditableContent<EditableAreaType>) {
 		if (this.#current === to) {
 			return;
 		}
-		this.#main.hide();
-		this.#draft?.hide();
-		to.show();
 		this.#current = to;
-		this.#current.update();
 		this.migrationCheck(to.containerElement);
+		// 各エリアの表示・非表示はUI層がこのイベントを購読して宣言的に
+		// 描画する。エンジンはUI要素の属性を書き換えない
 		this.el.dispatchEvent(
 			createBgeEvent('bge:switch-content', {
 				content: this.#current.type,
@@ -403,35 +414,42 @@ export class BurgerEditorEngine {
 				? options.initialContents
 				: options.initialContents.main;
 
-		engine.#main =
-			//
-			await EditableArea.new(
-				'main',
-				mainInitialContent,
-				engine,
-				options.blockMenu,
-				options.initialInsertionButton,
-				stylesheets,
-				options.config.classList,
-				options.editableAreaShell,
-			);
+		engine.#view = options.view ?? createDefaultView();
+
+		const mainHost = await engine.#view.createAreaHost({
+			type: 'main',
+			engine,
+			initialContent: mainInitialContent,
+			stylesheets,
+			classList: options.config.classList,
+		});
+		engine.#main = await EditableContent.new(
+			'main',
+			mainInitialContent,
+			engine,
+			mainHost,
+		);
 
 		const draftInitialContent =
 			typeof options.initialContents === 'string' ? null : options.initialContents.draft;
 
-		engine.#draft =
-			draftInitialContent == null
-				? null
-				: await EditableArea.new(
-						'draft',
-						draftInitialContent,
-						engine,
-						options.blockMenu,
-						options.initialInsertionButton,
-						stylesheets,
-						options.config.classList,
-						options.editableAreaShell,
-					);
+		if (draftInitialContent == null) {
+			engine.#draft = null;
+		} else {
+			const draftHost = await engine.#view.createAreaHost({
+				type: 'draft',
+				engine,
+				initialContent: draftInitialContent,
+				stylesheets,
+				classList: options.config.classList,
+			});
+			engine.#draft = await EditableContent.new(
+				'draft',
+				draftInitialContent,
+				engine,
+				draftHost,
+			);
+		}
 
 		engine.#current = engine.#main;
 		engine.showMain();

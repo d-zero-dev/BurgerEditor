@@ -1,4 +1,5 @@
-import type { EditableArea, EditableAreaType } from '../editable-area.js';
+import type { EditableContent } from '../editable-content.js';
+import type { EditableAreaType } from '../types.js';
 
 export type ConfirmCallback = () => Promise<boolean> | boolean;
 
@@ -16,8 +17,8 @@ export async function copyEditableArea<
 	T extends EditableAreaType,
 	T2 extends Exclude<EditableAreaType, T>,
 >(
-	source: EditableArea<T>,
-	destination: EditableArea<T2>,
+	source: EditableContent<T>,
+	destination: EditableContent<T2>,
 	confirm?: ConfirmCallback,
 ): Promise<boolean> {
 	if (source.isEmpty() || source.isSame(destination)) {
