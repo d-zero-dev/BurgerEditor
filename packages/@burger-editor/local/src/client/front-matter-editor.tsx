@@ -1,4 +1,4 @@
-/** @jsxImportSource react */
+/* @jsxImportSource react */
 import type { ReactNode } from 'react';
 
 import { useCommand } from '@burger-editor/client/ui';

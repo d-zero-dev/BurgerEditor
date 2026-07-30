@@ -1,4 +1,4 @@
-/** @jsxImportSource react */
+/* @jsxImportSource react */
 import type { FrontMatterEditorHandle } from './front-matter-editor.js';
 
 import { fireEvent, screen } from '@testing-library/react';
@@ -84,7 +84,7 @@ function invokeCommand(button: HTMLElement) {
  * @param label
  */
 function getField(label: string) {
-	return screen.getByLabelText(label);
+	return screen.getByLabelText<HTMLInputElement>(label);
 }
 
 describe('レンダリング', () => {
@@ -105,7 +105,7 @@ describe('レンダリング', () => {
 		expect(getField('published').checked).toBe(true);
 		expect(getField('date').type).toBe('date');
 		expect(getField('date').value).toBe('2026-01-15');
-		const tags = screen.getByLabelText('tags');
+		const tags = screen.getByLabelText<HTMLTextAreaElement>('tags');
 		expect(tags.tagName).toBe('TEXTAREA');
 		expect(JSON.parse(tags.value)).toEqual(['a', 'b']);
 	});
@@ -165,7 +165,7 @@ describe('編集', () => {
 
 	test('不正なJSONの間は確定値を変えずエラー表示し、修正すると反映される', () => {
 		const handle = mount({ tags: ['a'] });
-		const textarea = screen.getByLabelText('tags');
+		const textarea = screen.getByLabelText<HTMLTextAreaElement>('tags');
 
 		fireEvent.change(textarea, { target: { value: '["a",' } });
 
