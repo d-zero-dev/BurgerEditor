@@ -10,7 +10,7 @@ import { $upload } from '../helpers/$upload.js';
 
 import {
 	createFrontMatterEditor,
-	type FrontMatterEditor,
+	type FrontMatterEditorHandle,
 } from './front-matter-editor.js';
 import { saveContentRequest } from './save-content-request.js';
 
@@ -70,7 +70,7 @@ export async function createEditor() {
 		'has-front-matter',
 	) as HTMLInputElement | null;
 
-	let frontMatterEditor: FrontMatterEditor | null = null;
+	let frontMatterEditor: FrontMatterEditorHandle | null = null;
 
 	/**
 	 * Save content to server
