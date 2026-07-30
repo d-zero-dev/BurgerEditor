@@ -44,7 +44,9 @@ afterEach(() => {
 });
 
 /**
- * EditableAreaViewの描画に必要な最小のengineモック。uiStateは実物を使う
+ * EditableAreaViewの描画に必要な最小のengineモック。uiStateは実物を使う。
+ * `contents.save`はコンテンツの内部状態を書き換えないため、テスト側で
+ * `getContentsAsString`が返す値を差し替えて「保存後の正規化結果」を模す
  * @param contents - getEditableContentが返すコンテンツモック
  * @param contents.getContentsAsString
  * @param contents.save
@@ -231,6 +233,58 @@ test('初期挿入ボタンは空のときだけ表示されbge:savedで追従�
 		engine.uiState.setProcessing(true);
 	});
 	expect(button.hidden).toBe(true);
+});
+
+test('ソース編集で空にしてビジュアルモードへ戻ると初期挿入ボタンが復活する（regression）', () => {
+	// content.save()自体はコンテンツの内部状態を変えないモックなので、
+	// 保存後の正規化結果をgetContentsAsStringの差し替えで模す
+	let currentContent = '<p>content</p>';
+	const engine = createMockEngine({
+		getContentsAsString: () => currentContent,
+		save: (value) => {
+			currentContent = value ?? '';
+		},
+	});
+	const { container } = renderView(engine, 'main', currentContent);
+
+	act(() => {
+		engine.uiState.setSourceMode('main', true);
+	});
+	const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+	fireEvent.change(textarea, { target: { value: '' } });
+
+	// ソースモードを抜ける（トグル経由でも、textareaのblur経由でも
+	// isEmptyがコンテンツの実際の状態に揃うことを検証する）
+	act(() => {
+		engine.uiState.setSourceMode('main', false);
+	});
+
+	const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+	const button = iframe.contentDocument?.querySelector(
+		'[data-bge-component="initial-insertion"]',
+	) as HTMLElement;
+	expect(button.hidden).toBe(false);
+});
+
+test('初期挿入ボタンはダイアログが開いている間は隠れる', () => {
+	const engine = createMockEngine();
+	const { container } = renderView(engine, 'main', '');
+
+	const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+	const button = iframe.contentDocument?.querySelector(
+		'[data-bge-component="initial-insertion"]',
+	) as HTMLElement;
+	expect(button.hidden).toBe(false);
+
+	act(() => {
+		engine.uiState.openBlockCatalog();
+	});
+	expect(button.hidden).toBe(true);
+
+	act(() => {
+		engine.uiState.closeDialog();
+	});
+	expect(button.hidden).toBe(false);
 });
 
 test('アンマウントでResizeObserverが解除される', () => {

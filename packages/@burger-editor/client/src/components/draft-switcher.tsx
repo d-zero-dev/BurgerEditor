@@ -26,7 +26,7 @@ import styles from './draft-switcher.module.css';
  * ```
  */
 export function DraftSwitcher({ engine }: { readonly engine: BurgerEditorEngine }) {
-	const uiState = useUIState(engine);
+	const sourceMode = useUIState(engine, (s) => s.sourceMode);
 	const [isMain, setIsMain] = useState(engine.content.type === 'main');
 
 	useEffect(() => {
@@ -39,7 +39,7 @@ export function DraftSwitcher({ engine }: { readonly engine: BurgerEditorEngine 
 		};
 	}, [engine]);
 
-	const isVisualMode = !uiState.sourceMode[isMain ? 'main' : 'draft'];
+	const isVisualMode = !sourceMode[isMain ? 'main' : 'draft'];
 
 	const toggleDisplayMode = () => {
 		engine.uiState.toggleSourceMode(engine.content.type);

@@ -5,6 +5,7 @@ import type {
 } from '@burger-editor/core';
 
 import { CSS_LAYER } from '@burger-editor/core';
+import { appendStylesheetTo } from '@burger-editor/utils';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -63,9 +64,9 @@ export function EditableAreaView({
 	readonly classList: readonly string[];
 	readonly onReady: (host: EditableAreaHost) => void;
 }) {
-	const uiState = useUIState(engine);
-	const sourceMode = uiState.sourceMode[type];
-	const processing = uiState.processing;
+	const sourceMode = useUIState(engine, (s) => s.sourceMode[type]);
+	const processing = useUIState(engine, (s) => s.processing);
+	const dialogOpen = useUIState(engine, (s) => s.openDialog !== null);
 
 	const [active, setActive] = useState(type === 'main');
 	const [sourceText, setSourceText] = useState(initialContent);
@@ -97,11 +98,7 @@ export function EditableAreaView({
 		frameDoc.close();
 
 		for (const { path, id } of stylesheets) {
-			const link = frameDoc.createElement('link');
-			link.rel = 'stylesheet';
-			link.crossOrigin = 'anonymous';
-			link.href = `${path}#${id}`;
-			frameDoc.head.append(link);
+			appendStylesheetTo(frameDoc, path, id);
 		}
 
 		// ポータルで差し込むブロックメニュー層の位置決め。client本体の
@@ -178,6 +175,17 @@ export function EditableAreaView({
 		sourceTextRef.current = sourceText;
 	});
 
+	// textareaの表示値だけでなくisEmptyもコンテンツの実際の状態に揃える。
+	// ここを揃えないと、ソース編集で空にした直後にビジュアルモードへ戻って
+	// も初期挿入ボタンが復活しない（次のbge:savedまで固着する）
+	const syncFromContent = (
+		content: NonNullable<ReturnType<typeof engine.getEditableContent>>,
+	) => {
+		const value = content.getContentsAsString();
+		setSourceText(value);
+		setIsEmpty(value.trim() === '');
+	};
+
 	// ソースモードに入るときはコンテンツから最新のHTMLを引き直し、
 	// 抜けるときはtextareaの内容をコンテンツへコミットする。uiState
 	// ストアの購読コールバックで遷移を検知してReact stateを更新する
@@ -194,7 +202,9 @@ export function EditableAreaView({
 				setSourceText(content?.getContentsAsString() ?? '');
 			} else if (content) {
 				content.save(sourceTextRef.current);
-				setSourceText(content.getContentsAsString());
+				const value = content.getContentsAsString();
+				setSourceText(value);
+				setIsEmpty(value.trim() === '');
 			}
 		});
 	}, [engine, type]);
@@ -205,7 +215,7 @@ export function EditableAreaView({
 			return;
 		}
 		content.save(value);
-		setSourceText(content.getContentsAsString());
+		syncFromContent(content);
 	};
 
 	return (
@@ -240,7 +250,7 @@ export function EditableAreaView({
 							</div>
 							<div
 								data-bge-component="initial-insertion"
-								hidden={!(isEmpty && !processing)}>
+								hidden={!(isEmpty && !processing && !dialogOpen)}>
 								<InitialInsertionButton />
 							</div>
 						</>,

@@ -20,7 +20,7 @@ import { EditableAreaView } from '../components/editable-area-view.js';
  * ```
  */
 export function createReactView(): BurgerEditorView {
-	const roots = new Set<Root>();
+	const mounts = new Map<Root, HTMLElement>();
 
 	return {
 		createAreaHost(context) {
@@ -29,7 +29,7 @@ export function createReactView(): BurgerEditorView {
 				const mountEl = doc.createElement('div');
 				context.engine.viewArea.append(mountEl);
 				const root = createRoot(mountEl);
-				roots.add(root);
+				mounts.set(root, mountEl);
 				root.render(
 					<EditableAreaView
 						engine={context.engine}
@@ -43,10 +43,11 @@ export function createReactView(): BurgerEditorView {
 			});
 		},
 		destroy() {
-			for (const root of roots) {
+			for (const [root, mountEl] of mounts) {
 				root.unmount();
+				mountEl.remove();
 			}
-			roots.clear();
+			mounts.clear();
 		},
 	};
 }
