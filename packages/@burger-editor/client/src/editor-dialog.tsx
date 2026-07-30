@@ -5,12 +5,12 @@ import { useEffect, useRef } from 'react';
 import './invoker-commands.js';
 
 /**
- * Declarative `<dialog>` shell replacing the class-based EditorDialog.
+ * Declarative `<dialog>` shell.
  *
- * The markup mirrors the legacy `createDefaultDialogShell` structure
- * (`dialog.bge-dialog > div > form > div` + `footer`) so the existing
- * `ui.css` keeps applying. Opening/closing is driven by the `open` prop;
- * the close button uses the built-in `close` command — no click handlers.
+ * The markup follows the `dialog.bge-dialog > div > form > div` + `footer`
+ * structure that `ui.css` styles. Opening/closing is driven by the `open`
+ * prop; the close button uses the built-in `close` command — no click
+ * handlers.
  * @param root0
  * @param root0.name
  * @param root0.open
