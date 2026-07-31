@@ -63,7 +63,7 @@ const { engine } = await createBurgerEditorClient({
 | `blocks`            | `BlockDefinition[]`                                       | カスタムブロック定義                           |
 | `storageKey`        | `{ blockClipboard?: string; ... }`                        | ストレージキー設定（ブロッククリップボード等） |
 | `onUpdated`         | `(main: string, draft?: string) => void \| Promise<void>` | コンテンツ更新時のコールバック                 |
-| `fileAPI`           | `FileAPI`                                                 | ファイル I/O API 実装（後述）                  |
+| `fileIO`            | `FileAPI`                                                 | ファイル I/O API 実装（後述）                  |
 | `healthCheck`       | `HealthCheckOptions`                                      | ヘルスチェックの設定                           |
 | `experimental`      | `ExperimentalOptions`                                     | 実験的機能の設定                               |
 
@@ -101,12 +101,12 @@ const stylesheets = engine.config.stylesheets;
 
 ## `FileAPI` の実装例
 
-ファイルアップロード機能を有効にする場合、`fileAPI` プロパティに以下のインタフェースを満たす実装を渡す。各メソッドはすべて optional で、提供したメソッドに対応する UI 機能（ファイル一覧表示・アップロード・削除）だけが有効になる。
+ファイルアップロード機能を有効にする場合、`fileIO` プロパティに以下のインタフェースを満たす実装を渡す。各メソッドはすべて optional で、提供したメソッドに対応する UI 機能（ファイル一覧表示・アップロード・削除）だけが有効になる。
 
 ```ts
 import type { FileAPI } from '@burger-editor/core';
 
-const fileAPI: FileAPI = {
+const fileIO: FileAPI = {
 	async getFileList(fileType, options) {
 		const res = await fetch(`/api/files/${fileType}?page=${options.page}`);
 		return res.json();
