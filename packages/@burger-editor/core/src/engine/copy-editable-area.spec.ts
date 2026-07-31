@@ -13,6 +13,9 @@ function createMockEngine() {
 	return {
 		isProcessed: false,
 		save: vi.fn(),
+		createFallbackBlockFromHTML: vi.fn().mockResolvedValue({
+			el: document.createElement('div'),
+		}),
 		restoreBlockFromElement: vi.fn().mockResolvedValue({
 			el: document.createElement('div'),
 		}),
@@ -37,7 +40,7 @@ function createAreas(mainContent: string, draftContent: string) {
 }
 
 // data-bgb付きのブロック形式にしないとEditableContentの#initが
-// 「ブロック無しコンテンツ」とみなしrestoreBlockFromElement（モック）の
+// 「ブロック無しコンテンツ」とみなしcreateFallbackBlockFromHTML（モック）の
 // 戻り値でコンテンツを置換してしまう
 const MAIN_CONTENT = '<div data-bgb="text"><p>本稿</p></div>';
 const DRAFT_CONTENT = '<div data-bgb="text"><p>下書き</p></div>';

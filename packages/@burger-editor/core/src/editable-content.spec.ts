@@ -12,6 +12,9 @@ function createMockEngine() {
 	return {
 		isProcessed: false,
 		save: vi.fn(),
+		createFallbackBlockFromHTML: vi.fn().mockResolvedValue({
+			el: document.createElement('div'),
+		}),
 		restoreBlockFromElement: vi.fn().mockResolvedValue({
 			el: document.createElement('div'),
 		}),
@@ -178,6 +181,20 @@ describe('EditableContent', () => {
 			content.setContentsAsDOM(newEl);
 
 			expect(content.containerElement.contains(newEl)).toBe(true);
+		});
+	});
+
+	describe('static new', () => {
+		test('should build a fallback block from raw HTML with no block markers, without replacing containerElement itself', async () => {
+			const { host, containerElement } = createFakeHost();
+			const engine = createMockEngine();
+
+			const content = await EditableContent.new('main', '<p>hello</p>', engine, host);
+
+			expect(engine.createFallbackBlockFromHTML).toHaveBeenCalledWith('<p>hello</p>');
+			expect(engine.restoreBlockFromElement).not.toHaveBeenCalled();
+			expect(content.containerElement).toBe(containerElement);
+			expect(document.body.contains(content.containerElement)).toBe(true);
 		});
 	});
 

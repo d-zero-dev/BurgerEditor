@@ -163,6 +163,19 @@ export class BurgerEditorEngine {
 		this.#currentBlock = null;
 	}
 
+	/**
+	 * ブロックマーカーを持たない生HTMLを、1つのwysiwygアイテムとして
+	 * ラップしたフォールバックブロックに変換する
+	 * @param html 生HTML
+	 * @returns 生成されたフォールバックのBurgerBlock
+	 * @example
+	 * ```ts
+	 * const block = await engine.createFallbackBlockFromHTML('<p>hello</p>');
+	 * ```
+	 */
+	createFallbackBlockFromHTML(html: string) {
+		return BurgerBlock.createFallback(html, this.#createItemElement.bind(this));
+	}
 	async draftToMain(confirm?: ConfirmCallback) {
 		if (!this.#draft) {
 			return false;
@@ -263,7 +276,14 @@ export class BurgerEditorEngine {
 	/**
 	 * HTML要素からブロックを復元する
 	 * HTML要素から完全にBlockDefinitionを解析してブロック作成
-	 * @param element HTML要素
+	 *
+	 * `element`がburger blockと認識されない場合、`element`はその場でフォールバック
+	 * ブロックに置換される（DOM上の親からの参照は`element`のまま無効になる）。
+	 * そのため`element`には常にコンテナの子要素を渡すこと。コンテナ自身を渡すと、
+	 * コンテナがDOMツリーから切り離される（ブロックマーカーを持たない生HTMLを
+	 * 初期コンテンツとして扱いたい場合は代わりに{@link createFallbackBlockFromHTML}
+	 * を使う）
+	 * @param element ブロックの子要素として渡すHTML要素（コンテナ自身は不可）
 	 * @returns 復元されたBurgerBlock
 	 */
 	restoreBlockFromElement(element: HTMLElement) {

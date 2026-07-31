@@ -89,13 +89,14 @@ export class EditableContent<T extends EditableAreaType = 'main'> {
 	}
 
 	async #init() {
+		const contentString = this.getContentsAsString();
 		if (
-			!this.isEmpty() &&
+			contentString !== '' &&
 			this.containerElement.querySelectorAll(
 				'[data-bge-name], [data-bgb], .bgb-container, .bg-editor-block-container, .cb-editor-block-container',
 			).length === 0
 		) {
-			const block = await this.#engine.restoreBlockFromElement(this.containerElement);
+			const block = await this.#engine.createFallbackBlockFromHTML(contentString);
 			this.setContentsAsDOM(block.el);
 		} else {
 			for (const el of this.containerElement.children) {
