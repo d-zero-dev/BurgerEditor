@@ -52,6 +52,40 @@ describe('BurgerEditorEngine.new', () => {
 		expect(engine.content.getContentsAsString()).toBe(MINIMAL_BLOCK_CONTENT);
 	});
 
+	test('ブロックマーカーを一つも持たない生HTMLを渡してもcontainerElementがviewArea配下に残り続ける（#838回帰）', async () => {
+		const engine = await BurgerEditorEngine.new(
+			createOptions({
+				initialContents: '<p>hello</p>',
+				items: {
+					wysiwyg: {
+						version: '1',
+						name: 'wysiwyg',
+						template: '<div data-bge="wysiwyg"><p>placeholder</p></div>',
+						style: '',
+					},
+				},
+			}),
+		);
+
+		const container = engine.viewArea.querySelector<HTMLElement>(
+			'[data-bge-component="editable-area"]',
+		);
+		expect(container).not.toBeNull();
+		expect(engine.content.containerElement).toBe(container);
+		expect(container?.isConnected).toBe(true);
+
+		const fallbackBlock = engine.content.containerElement.querySelector(
+			'[data-bge-name="text"]',
+		);
+		expect(fallbackBlock).not.toBeNull();
+
+		// containerElement.outerHTMLではなくinnerHTMLが使われ、余分なラップなしで
+		// 元コンテンツがそのままwysiwygアイテムに渡っていることを確認する
+		const wysiwygEl =
+			engine.content.containerElement.querySelector('[data-bge="wysiwyg"]');
+		expect(wysiwygEl?.innerHTML).toBe('<p>hello</p>');
+	});
+
 	test('cleanUp()でフォールバックviewが生成したコンテナが除去される', async () => {
 		const engine = await BurgerEditorEngine.new(createOptions());
 		const container = engine.viewArea.querySelector(
