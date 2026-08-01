@@ -29,10 +29,13 @@ type CliResult = {
  * signals. {@link tsxCli} lets us run the source `.ts` entry without first
  * building, so the test stays self-contained.
  * @param cwd
- * @param timeoutMs
+ * @param timeoutMs Defaults to 20_000ms — generous enough to absorb tsx's
+ *   cold-start compile cost under Docker/QEMU CPU contention with the other
+ *   projects' concurrently-running Playwright browser instances (#841).
  */
-function runCli(cwd: string, timeoutMs = 8000): Promise<CliResult> {
+function runCli(cwd: string, timeoutMs = 20_000): Promise<CliResult> {
 	return new Promise<CliResult>((resolve, reject) => {
+		const startedAt = Date.now();
 		const child: ChildProcess = spawn(process.execPath, [tsxCli, cliEntry], {
 			cwd,
 			env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' },
@@ -52,6 +55,14 @@ function runCli(cwd: string, timeoutMs = 8000): Promise<CliResult> {
 		}, timeoutMs);
 		child.on('exit', (code, signal) => {
 			clearTimeout(timer);
+			// Logged unconditionally (not just on near-timeout runs) so CI
+			// history builds a real latency distribution for this spawn+tsx
+			// path. Without it, a future timeout (#841) only tells us "> N
+			// ms", never how much margin was actually needed.
+			// eslint-disable-next-line no-console
+			console.info(
+				`[server.spec] runCli(${cwd}) exited in ${Date.now() - startedAt}ms (code=${code}, signal=${signal})`,
+			);
 			resolve({ code, signal, stdout, stderr });
 		});
 		child.on('error', (error) => {
@@ -112,7 +123,7 @@ describe('runServerCommand boot (virtualTree)', () => {
 		// stack frames) must not be the source of the output.
 		expect(result.stderr).not.toContain('PathConflictError:');
 		expect(result.stderr).not.toMatch(/^\s+at\s/m);
-	}, 15_000);
+	}, 25_000);
 
 	test('exits 1 with file name when a frontmatter pathKey is missing (regression: #754)', async () => {
 		await fs.writeFile(
@@ -136,5 +147,5 @@ describe('runServerCommand boot (virtualTree)', () => {
 		expect(result.code).toBe(1);
 		expect(result.stderr).toContain('Failed to load virtualTree resolver state');
 		expect(result.stderr).toContain('7.html');
-	}, 15_000);
+	}, 25_000);
 });
