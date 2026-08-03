@@ -29,7 +29,7 @@
 	"devDependencies": {
 		"@burger-editor/blocks": "4.0.0-alpha.64",
 		"glob": "13.0.6",
-		"postcss": "8.5.20",
+		"postcss": "8.5.23",
 		"vitest": "4.1.0"
 	}
 }
