@@ -505,7 +505,7 @@ __metadata:
     ansi-colors: "npm:4.1.3"
     debug: "npm:4.4.3"
     dotenv: "npm:17.4.2"
-    hono: "npm:4.12.27"
+    hono: "npm:4.12.34"
     open: "npm:11.0.0"
     prettier: "npm:3.9.5"
     react: "npm:19.2.7"
@@ -10184,10 +10184,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"hono@npm:4.12.27":
-  version: 4.12.27
-  resolution: "hono@npm:4.12.27"
-  checksum: 10c0/1c62a52ccafde751656d065bbdacffbd421d3cfaedfbffefe80ecdb8ccf96c2209af732a74064cd33ac6d187a91ec32b1dc7ddde2416a53052fe7c0a94352a89
+"hono@npm:4.12.34":
+  version: 4.12.34
+  resolution: "hono@npm:4.12.34"
+  checksum: 10c0/9d184cb95bc630622d3a8885706feb8e98170556650ce139f09e54c96b9429b3194a296ad4fb0791e7b642a21a03acbf592cb0d19d906ab5e8b78a13337d61bc
   languageName: node
   linkType: hard
 
