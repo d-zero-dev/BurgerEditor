@@ -1,0 +1,22 @@
+.thumbnail {
+	display: block;
+	inline-size: 100%;
+	block-size: 100%;
+
+	img,
+	video {
+		display: block;
+		inline-size: 100%;
+		block-size: 100%;
+		object-fit: cover;
+		transition: opacity 300ms linear;
+	}
+
+	&[data-loaded='false'] img {
+		opacity: 0;
+	}
+
+	&[data-loaded='true'] img {
+		opacity: 1;
+	}
+}

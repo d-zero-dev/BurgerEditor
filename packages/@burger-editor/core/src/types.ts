@@ -2,10 +2,7 @@ import type { BurgerBlock } from './block/block.js';
 import type { ContainerProps } from './block/types.js';
 import type { BurgerEditorEngine } from './engine/engine.js';
 import type { HealthCheckFunction } from './health-monitor.js';
-import type { ItemEditorService } from './item/item-editor-service.js';
-import type { Item } from './item/item.js';
 import type { ItemData, ItemSeed } from './item/types.js';
-import type { ItemEditorDialog } from './item-editor-dialog.js';
 import type { Mergeable } from '@burger-editor/utils';
 
 export interface BurgerEditorEngineOptions {
@@ -22,11 +19,7 @@ export interface BurgerEditorEngineOptions {
 	readonly items: Record<string, ItemSeed>;
 	readonly catalog: BlockCatalog;
 	readonly generalCSS: string;
-	readonly ui: UIOptions;
-	readonly blockMenu: BlockMenuCreator;
-	readonly initialInsertionButton?: InitialInsertionButtonCreator;
-	readonly dialogShell?: EditorDialogShellCreator;
-	readonly editableAreaShell?: EditableAreaShellCreator;
+	readonly view?: BurgerEditorView;
 	readonly storageKey?: {
 		readonly blockClipboard?: string;
 	};
@@ -44,76 +37,72 @@ export interface BurgerEditorEngineOptions {
 	};
 }
 
-export interface UIOptions {
-	readonly blockCatalog?: UICreator;
-	readonly blockOptions?: UICreator;
-	readonly imageList?: UICreator;
-	readonly fileList?: UICreator;
-	readonly imageUploader?: UICreator;
-	readonly fileUploader?: UICreator;
-	readonly preview?: UICreator;
-	readonly tabs?: UICreator;
-	readonly tableEditor?: UICreator;
+export type EditableAreaType = 'main' | 'draft';
+
+/**
+ * The single injection point through which the engine obtains its UI.
+ *
+ * The engine never receives references to UI-owned DOM (iframes,
+ * textareas, menus) and therefore cannot mutate their attributes — the
+ * only element crossing the boundary is the {@link EditableAreaHost}'s
+ * `containerElement`, whose contents the engine owns. All presentation
+ * state (visibility, visual/source mode, sizing) is rendered by the UI
+ * layer from `engine.uiState` and engine events instead of being driven
+ * imperatively from the engine.
+ * @example
+ * ```ts
+ * const view: BurgerEditorView = {
+ * 	async createAreaHost({ engine, stylesheets, classList }) {
+ * 		// Build the area UI (e.g. mount a React component) and resolve
+ * 		// once the content container exists.
+ * 		return { containerElement };
+ * 	},
+ * 	destroy() {
+ * 		// Unmount everything created by createAreaHost.
+ * 	},
+ * };
+ * const engine = await BurgerEditorEngine.new({ ...options, view });
+ * ```
+ */
+export interface BurgerEditorView {
+	/**
+	 * Create the host UI for one editable area (`main` or `draft`) and
+	 * resolve with the content container the engine will own.
+	 * @param context - The area being created and the resources to render it
+	 */
+	createAreaHost(context: EditableAreaHostContext): Promise<EditableAreaHost>;
+
+	/**
+	 * Tear down everything created by `createAreaHost`. Called from
+	 * `engine.cleanUp()`.
+	 */
+	destroy(): void;
 }
 
-export interface UICreator {
-	(
-		el: HTMLElement,
-		engine: BurgerEditorEngine,
-	): {
-		readonly cleanUp: () => void;
-	};
+export interface EditableAreaHostContext {
+	readonly type: EditableAreaType;
+	readonly engine: BurgerEditorEngine;
+	/** The serialized content the area starts with */
+	readonly initialContent: string;
+	/** Resolved stylesheet blob URLs to load into the area's document */
+	readonly stylesheets: readonly { readonly path: string; readonly id: string }[];
+	readonly classList: readonly string[];
 }
 
-export interface BlockMenuCreator {
-	(
-		container: HTMLElement,
-		engine: BurgerEditorEngine,
-	): {
-		hide(): void;
-		readonly cleanUp: () => void;
-	};
-}
-
-export interface InitialInsertionButtonCreator {
-	(
-		container: HTMLElement,
-		onInsert: () => void,
-	): {
-		readonly cleanUp: () => void;
-	};
-}
-
-export interface EditorDialogShell {
-	readonly dialogElement: HTMLDialogElement;
+export interface EditableAreaHost {
+	/**
+	 * The element the edited blocks live in. This is the only UI-provided
+	 * element the engine holds a reference to; the engine owns its
+	 * contents from here on (the UI layer must not manage them).
+	 */
 	readonly containerElement: HTMLElement;
-	readonly formElement: HTMLFormElement;
-}
 
-export interface EditorDialogShellCreator {
-	(options: {
-		readonly name: string;
-		readonly buttons?: {
-			readonly close?: string;
-			readonly complete?: string;
-		};
-	}): EditorDialogShell;
-}
-
-export interface EditableAreaShell {
-	readonly viewNode: HTMLElement;
-	readonly frameElement: HTMLIFrameElement;
-	readonly sourceTextarea: HTMLTextAreaElement;
-	readonly containerElement: HTMLElement;
-}
-
-export interface EditableAreaShellCreator {
-	(options: {
-		readonly type: string;
-		readonly initialContent: string;
-		readonly stylesheets: readonly { readonly path: string; readonly id: string }[];
-		readonly classList: readonly string[];
-	}): EditableAreaShell;
+	/**
+	 * Animate the block-insertion marker. Optional presentation hook —
+	 * when absent the engine treats the insertion as instantly complete.
+	 * @param markerEl - The marker element wrapping the inserted block
+	 */
+	readonly animateInsertion?: (markerEl: HTMLElement) => Promise<void>;
 }
 
 export interface BlockCatalog {
@@ -167,10 +156,6 @@ export interface Actions {
 		readonly uploaded: FileListItem;
 		readonly data: readonly FileListItem[];
 	};
-	'open-editor': {
-		readonly data: Readonly<ItemData>;
-		readonly editor: ItemEditorDialog<{}>;
-	};
 	'select-block': {
 		readonly block: BurgerBlock;
 		readonly width: number;
@@ -178,9 +163,6 @@ export interface Actions {
 		readonly x: number;
 		readonly y: number;
 		readonly marginBlockEnd: number;
-	};
-	'select-tab-in-item-editor': {
-		readonly index: number;
 	};
 	// Use on test
 	'update-css-width': {
@@ -239,19 +221,6 @@ export interface FileListItem {
 		readonly original?: string | null;
 		readonly small?: string | null;
 	};
-}
-
-export interface ItemEditorCustomFunctions<
-	T extends ItemData,
-	C extends { [key: string]: unknown },
-> {
-	[funcName: string]: (
-		this: ItemEditorService<T, C>,
-		e: CustomEvent<HTMLElement>,
-		editorDialog: ItemEditorDialog<T, C>,
-		item: Item<T, C>,
-		...args: unknown[]
-	) => unknown;
 }
 
 export interface BlockData {

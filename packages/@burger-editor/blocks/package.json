@@ -30,14 +30,22 @@
 		"dev": "rollup -c -w"
 	},
 	"dependencies": {
+		"@burger-editor/client": "4.0.0-alpha.70",
 		"@burger-editor/core": "4.0.0-alpha.70",
 		"@burger-editor/utils": "4.0.0-alpha.70",
-		"@d-zero/shared": "0.21.1"
+		"@d-zero/shared": "0.22.5"
+	},
+	"peerDependencies": {
+		"react": "19.2.8"
 	},
 	"devDependencies": {
 		"@burger-editor/custom-element": "4.0.0-alpha.70",
-		"@types/google.maps": "3.58.1",
-		"rollup": "4.59.0",
+		"@testing-library/dom": "10.4.1",
+		"@testing-library/react": "16.3.2",
+		"@types/google.maps": "3.65.2",
+		"@types/react": "19.2.18",
+		"react": "19.2.8",
+		"rollup": "4.62.2",
 		"rollup-plugin-esbuild": "6.2.1",
 		"rollup-plugin-string": "3.0.0"
 	}

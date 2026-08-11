@@ -1,18 +1,19 @@
 import type { ContainerType } from '../block/types.js';
-import type { DialogSettings } from '../editor-dialog.js';
 import type { ItemSeed } from '../item/types.js';
 import type {
 	BurgerEditorEngineOptions,
-	UIOptions,
+	BurgerEditorView,
+	BlockCatalog,
 	Config,
+	EditableAreaType,
 	FileAPI,
 	BlockItem,
 	BlockData,
 } from '../types.js';
+import type { ConfirmCallback } from './copy-editable-area.js';
 
 import { BurgerBlock } from '../block/block.js';
-import { BlockCatalogDialog } from '../block-catalog-dialog.js';
-import { BlockOptionsDialog } from '../block-options-dialog.js';
+import { CommandBus } from '../command/command-bus.js';
 import { ComponentObserver } from '../component-observer.js';
 import { CSS_LAYER } from '../const.js';
 import { createComponentStylesheet } from '../dom-helpers/create-component-stylesheet.js';
@@ -24,18 +25,18 @@ import {
 	getRepeatMinInlineSizeVariants,
 } from '../dom-helpers/get-custom-properties.js';
 import { getElement } from '../dom-helpers/get-element.js';
-import { EditableArea } from '../editable-area.js';
+import { EditableContent } from '../editable-content.js';
 import { createBgeEvent } from '../event/create-bge-event.js';
 import { HealthMonitor } from '../health-monitor.js';
-import { getItemEditorTemplate } from '../item/get-item-editor-template.js';
 import { Item } from '../item/item.js';
-import { ItemEditorDialog } from '../item-editor-dialog.js';
 
-type ConfirmCallback = () => Promise<boolean> | boolean;
+import { copyEditableArea } from './copy-editable-area.js';
+import { createDefaultView } from './default-view.js';
+import { UIStateStore } from './ui-state.js';
 
 export class BurgerEditorEngine {
-	readonly blockCatalogDialog: BlockCatalogDialog;
-	readonly blockOptionsDialog: BlockOptionsDialog;
+	readonly catalog: BlockCatalog;
+	readonly commandBus = new CommandBus();
 	readonly componentObserver = new ComponentObserver();
 	readonly config: Config;
 	readonly css: {
@@ -47,30 +48,28 @@ export class BurgerEditorEngine {
 		readonly generalCSS: string;
 	};
 	readonly el: HTMLElement;
-	readonly itemEditorDialog: ItemEditorDialog<{}, {}>;
 	readonly items: Map<string, ItemSeed>;
 	readonly serverAPI: FileAPI;
 	readonly storageKey: {
 		readonly blockClipboard: string;
 	};
-	readonly ui: UIOptions;
+	readonly uiState = new UIStateStore();
 	readonly viewArea: HTMLElement;
 	#contentStylesheetCache: string | null = null;
-	#current!: EditableArea;
+	#current!: EditableContent<EditableAreaType>;
 	#currentBlock: BurgerBlock | null = null;
-	#draft!: EditableArea<'draft'> | null;
+	#draft!: EditableContent<'draft'> | null;
 	readonly #healthMonitor: HealthMonitor;
-	#isProcessed: boolean = false;
-	#main!: EditableArea<'main'>;
+	#main!: EditableContent<'main'>;
 	#migrationCheck: ((dom: HTMLElement) => void) | null = null;
+	#view!: BurgerEditorView;
 
 	get isProcessed() {
-		return this.#isProcessed;
+		return this.uiState.getSnapshot().processing;
 	}
 
 	set isProcessed(isProcessed: boolean) {
-		this.content.blockMenu.hide();
-		this.#isProcessed = isProcessed;
+		this.uiState.setProcessing(isProcessed);
 	}
 
 	get content() {
@@ -82,7 +81,7 @@ export class BurgerEditorEngine {
 		this.el = getElement(options.root);
 		this.config = options.config;
 		this.serverAPI = options.fileIO ?? {};
-		this.ui = options.ui ?? {};
+		this.catalog = options.catalog;
 		this.storageKey = {
 			blockClipboard: 'bge-copied-block',
 			...options.storageKey,
@@ -116,78 +115,6 @@ export class BurgerEditorEngine {
 			document.head.append(script);
 		}
 
-		const dialogSettings: DialogSettings = {
-			onClosed: () => {
-				this.componentObserver.off();
-				this.save();
-			},
-			onOpen: () => {
-				return this.isProcessed;
-			},
-			createEditorComponent: (el) => {
-				const editorComponentSubClassName = el.dataset.bgeEditorUi;
-				if (editorComponentSubClassName && this.#isUIName(editorComponentSubClassName)) {
-					const cleanUpHook = this.ui[editorComponentSubClassName]?.(el, this);
-					return cleanUpHook?.cleanUp;
-				}
-				return;
-			},
-			createDialogShell: options.dialogShell,
-		};
-
-		this.blockCatalogDialog = new BlockCatalogDialog(options.catalog, {
-			...dialogSettings,
-			addBlock: (blockData) => {
-				return this.addBlock(blockData);
-			},
-		});
-
-		this.blockOptionsDialog = new BlockOptionsDialog({
-			...dialogSettings,
-			onChangeBlock: (callback) => {
-				this.el.addEventListener('bge:block-change', (e) => {
-					callback(e.detail.block);
-				});
-			},
-			getCurrentBlock: () => {
-				return this.getCurrentBlock();
-			},
-		});
-
-		this.itemEditorDialog = new ItemEditorDialog({
-			...dialogSettings,
-			config: this.config,
-			onOpened: (data, editor) => {
-				this.componentObserver.notify('open-editor', {
-					data,
-					editor,
-				});
-			},
-			getComponentObserver: () => {
-				return this.componentObserver;
-			},
-			getTemplate: (itemName: string) => {
-				return getItemEditorTemplate(this, itemName);
-			},
-			getContentStylesheet: async () => {
-				if (this.#contentStylesheetCache) {
-					return this.#contentStylesheetCache;
-				}
-				const css = await Promise.all(
-					this.css.stylesheets
-						.filter((sheet) => sheet.layer == null)
-						.map(async (sheet) => {
-							const res = await fetch(sheet.path);
-							return res.text();
-						}),
-				);
-				// generalCSSを含める
-				const stylesheets = [this.css.generalCSS, ...css];
-				this.#contentStylesheetCache = stylesheets.join('\n');
-				return this.#contentStylesheetCache;
-			},
-		});
-
 		this.items = new Map();
 		if (options.items) {
 			for (const [name, seed] of Object.entries(options.items)) {
@@ -199,6 +126,8 @@ export class BurgerEditorEngine {
 		viewArea.classList.add(...(options.viewAreaClassList ?? []));
 		this.viewArea = viewArea;
 		this.el.append(viewArea);
+
+		this.commandBus.createReceiver(this.el);
 
 		this.el.addEventListener('bge:saved', (e) => {
 			const { main, draft } = e.detail;
@@ -226,29 +155,61 @@ export class BurgerEditorEngine {
 	 */
 	cleanUp() {
 		this.#healthMonitor.stop();
+		this.commandBus.destroy();
+		this.#view.destroy();
 	}
 
 	clearCurrentBlock() {
 		this.#currentBlock = null;
 	}
 
+	/**
+	 * ブロックマーカーを持たない生HTMLを、1つのwysiwygアイテムとして
+	 * ラップしたフォールバックブロックに変換する
+	 * @param html 生HTML
+	 * @returns 生成されたフォールバックのBurgerBlock
+	 * @example
+	 * ```ts
+	 * const block = await engine.createFallbackBlockFromHTML('<p>hello</p>');
+	 * ```
+	 */
+	createFallbackBlockFromHTML(html: string) {
+		return BurgerBlock.createFallback(html, this.#createItemElement.bind(this));
+	}
 	async draftToMain(confirm?: ConfirmCallback) {
 		if (!this.#draft) {
 			return false;
 		}
 
-		if (!(await confirm?.())) {
-			return false;
-		}
-
-		if (this.#draft.isEmpty() || this.#draft.isSame(this.#main)) {
-			await this.#draft.copyTo(this.#main);
+		if (await copyEditableArea(this.#draft, this.#main, confirm)) {
 			this.showMain();
 			return true;
 		}
 		return false;
 	}
 
+	/**
+	 * Resolve the CSS applied to the content (generalCSS plus non-layered
+	 * stylesheets), for injection into rich-text editors.
+	 * @returns The concatenated stylesheet text
+	 */
+	async getContentStylesheet(): Promise<string> {
+		if (this.#contentStylesheetCache) {
+			return this.#contentStylesheetCache;
+		}
+		const css = await Promise.all(
+			this.css.stylesheets
+				.filter((sheet) => sheet.layer == null)
+				.map(async (sheet) => {
+					const res = await fetch(sheet.path);
+					return res.text();
+				}),
+		);
+		// generalCSSを含める
+		const stylesheets = [this.css.generalCSS, ...css];
+		this.#contentStylesheetCache = stylesheets.join('\n');
+		return this.#contentStylesheetCache;
+	}
 	getCurrentBlock() {
 		if (!this.#currentBlock) {
 			// eslint-disable-next-line no-console
@@ -263,9 +224,20 @@ export class BurgerEditorEngine {
 			containerType,
 		);
 	}
-
 	getCustomProperty(property: string | RegExp) {
 		return getCustomProperty(this.#current.containerElement.ownerDocument, property);
+	}
+	/**
+	 * Look up an editable content by area type.
+	 * @param type - The editable area type
+	 * @returns The editable content, or `null` when the page has no draft
+	 * @example
+	 * ```ts
+	 * const html = engine.getEditableContent('draft')?.getContentsAsString();
+	 * ```
+	 */
+	getEditableContent(type: EditableAreaType): EditableContent<EditableAreaType> | null {
+		return type === 'main' ? this.#main : this.#draft;
 	}
 
 	getRepeatMinInlineSizeVariants() {
@@ -285,12 +257,7 @@ export class BurgerEditorEngine {
 			return false;
 		}
 
-		if (!(await confirm?.())) {
-			return false;
-		}
-
-		if (this.#main.isEmpty() || this.#main.isSame(this.#draft)) {
-			await this.#main.copyTo(this.#draft);
+		if (await copyEditableArea(this.#main, this.#draft, confirm)) {
 			this.showDraft();
 			return true;
 		}
@@ -309,7 +276,14 @@ export class BurgerEditorEngine {
 	/**
 	 * HTML要素からブロックを復元する
 	 * HTML要素から完全にBlockDefinitionを解析してブロック作成
-	 * @param element HTML要素
+	 *
+	 * `element`がburger blockと認識されない場合、`element`はその場でフォールバック
+	 * ブロックに置換される（DOM上の親からの参照は`element`のまま無効になる）。
+	 * そのため`element`には常にコンテナの子要素を渡すこと。コンテナ自身を渡すと、
+	 * コンテナがDOMツリーから切り離される（ブロックマーカーを持たない生HTMLを
+	 * 初期コンテンツとして扱いたい場合は代わりに{@link createFallbackBlockFromHTML}
+	 * を使う）
+	 * @param element ブロックの子要素として渡すHTML要素（コンテナ自身は不可）
 	 * @returns 復元されたBurgerBlock
 	 */
 	restoreBlockFromElement(element: HTMLElement) {
@@ -373,7 +347,7 @@ export class BurgerEditorEngine {
 
 	async #createItemElement(itemData: BlockItem | HTMLElement) {
 		if (typeof itemData !== 'string' && 'localName' in itemData) {
-			const item = Item.rebind(itemData, this.items, this.itemEditorDialog);
+			const item = Item.rebind(itemData, this.items, this.config);
 			return item.el;
 		}
 
@@ -381,14 +355,10 @@ export class BurgerEditorEngine {
 		const item = await Item.create(
 			name,
 			this.items,
-			this.itemEditorDialog,
+			this.config,
 			typeof itemData === 'string' ? undefined : itemData.data,
 		);
 		return item.el;
-	}
-
-	#isUIName(name: string): name is keyof UIOptions {
-		return name in this.ui;
 	}
 
 	/**
@@ -404,16 +374,14 @@ export class BurgerEditorEngine {
 		});
 	}
 
-	#show(to: EditableArea) {
+	#show(to: EditableContent<EditableAreaType>) {
 		if (this.#current === to) {
 			return;
 		}
-		this.#main.hide();
-		this.#draft?.hide();
-		to.show();
 		this.#current = to;
-		this.#current.update();
 		this.migrationCheck(to.containerElement);
+		// 各エリアの表示・非表示はUI層がこのイベントを購読して宣言的に
+		// 描画する。エンジンはUI要素の属性を書き換えない
 		this.el.dispatchEvent(
 			createBgeEvent('bge:switch-content', {
 				content: this.#current.type,
@@ -466,35 +434,39 @@ export class BurgerEditorEngine {
 				? options.initialContents
 				: options.initialContents.main;
 
-		engine.#main =
-			//
-			await EditableArea.new(
-				'main',
-				mainInitialContent,
-				engine,
-				options.blockMenu,
-				options.initialInsertionButton,
-				stylesheets,
-				options.config.classList,
-				options.editableAreaShell,
-			);
+		engine.#view = options.view ?? createDefaultView();
 
 		const draftInitialContent =
 			typeof options.initialContents === 'string' ? null : options.initialContents.draft;
 
-		engine.#draft =
-			draftInitialContent == null
-				? null
-				: await EditableArea.new(
-						'draft',
-						draftInitialContent,
-						engine,
-						options.blockMenu,
-						options.initialInsertionButton,
-						stylesheets,
-						options.config.classList,
-						options.editableAreaShell,
-					);
+		// main/draftのホスト生成〜コンテンツ復元は互いに依存しない
+		// 別々のDOMサブツリー・Reactルートなので並列に走らせる
+		const createMain = async () => {
+			const host = await engine.#view.createAreaHost({
+				type: 'main',
+				engine,
+				initialContent: mainInitialContent,
+				stylesheets,
+				classList: options.config.classList,
+			});
+			return EditableContent.new('main', mainInitialContent, engine, host);
+		};
+
+		const createDraft = async () => {
+			if (draftInitialContent == null) {
+				return null;
+			}
+			const host = await engine.#view.createAreaHost({
+				type: 'draft',
+				engine,
+				initialContent: draftInitialContent,
+				stylesheets,
+				classList: options.config.classList,
+			});
+			return EditableContent.new('draft', draftInitialContent, engine, host);
+		};
+
+		[engine.#main, engine.#draft] = await Promise.all([createMain(), createDraft()]);
 
 		engine.#current = engine.#main;
 		engine.showMain();

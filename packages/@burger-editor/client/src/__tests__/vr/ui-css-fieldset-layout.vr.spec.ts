@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { commands, page } from 'vitest/browser';
 
-import { buttonHtml } from './fixtures.js';
 import { cleanUp, injectCSS, renderDialog, waitForRender } from './vr-helper.js';
 
 describe('Fieldset + Radiogroup Layout', () => {
@@ -99,7 +98,47 @@ describe('Fieldset + Radiogroup Layout', () => {
 	});
 
 	test('consecutive label separator', async () => {
-		const dialog = renderDialog(buttonHtml);
+		// buttonアイテムのエディタ（React版）が描画するマークアップと同等
+		const buttonEditorHtml = `<div>
+			<fieldset>
+				<legend>リンク</legend>
+				<label><span>URL</span><input type="text" name="bge-link" /></label>
+				<label><span>ターゲット</span>
+					<select name="bge-target">
+						<option value="">指定なし</option>
+						<option value="_blank">新しいウィンドウ(_blank)</option>
+						<option value="_top">最上部ウィンドウ(_top)</option>
+						<option value="_self">同じウィンドウ(_self)</option>
+					</select>
+				</label>
+			</fieldset>
+			<label><span>テキスト</span><input type="text" name="bge-text" /></label>
+			<label><span>サブテキスト</span><input type="text" name="bge-subtext" /></label>
+			<label><span>ボタンのスタイル</span>
+				<select name="bge-kind">
+					<option value="primary">プライマリボタン</option>
+					<option value="secondary">セカンダリボタン</option>
+					<option value="tertiary">ターシャリボタン</option>
+					<option value="text">テキストリンク</option>
+				</select>
+			</label>
+			<fieldset>
+				<legend>アイコン</legend>
+				<label><span>前</span>
+					<select name="bge-before-icon">
+						<option value="none">なし</option>
+						<option value="arrow-left">左矢印</option>
+					</select>
+				</label>
+				<label><span>後</span>
+					<select name="bge-after-icon">
+						<option value="none">なし</option>
+						<option value="arrow-right">右矢印</option>
+					</select>
+				</label>
+			</fieldset>
+		</div>`;
+		const dialog = renderDialog(buttonEditorHtml);
 		await waitForRender();
 		const base64 = await page.screenshot({ element: dialog, save: false });
 		const result = await commands.matchScreenshot(

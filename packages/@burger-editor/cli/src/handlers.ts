@@ -24,6 +24,7 @@ import {
 	resolvePathInput,
 	saveContent,
 } from '@burger-editor/file-io';
+import { parseFields } from '@burger-editor/frozen-patty/parse-fields';
 
 import { renderBlockHtml } from './block-builder.js';
 
@@ -636,18 +637,40 @@ export function itemSchema(itemName: string) {
 	const seed = item as {
 		name: string;
 		template?: string;
-		editor?: string;
 		exportData?: (el: HTMLElement) => ItemData;
 	};
+	// The data-bge bindings in the template define the item data keys.
+	// Surface them (camelCased, as they appear in the JSON data) so the
+	// agent can infer required keys without the removed editor HTML.
+	const fields = new Set<string>();
+	for (const match of (seed.template ?? '').matchAll(/data-bge="([^"]*)"/g)) {
+		const binding = match[1];
+		if (!binding) {
+			continue;
+		}
+		// 不正・空のバインディングでスキーマ取得全体を落とさない
+		let parsed;
+		try {
+			parsed = parseFields(binding);
+		} catch {
+			continue;
+		}
+		for (const field of parsed) {
+			if (field.fieldName) {
+				fields.add(field.fieldName);
+			}
+		}
+	}
 	// `dataKeys` is the camelCased key set the runtime data record uses —
 	// derived from the item's *template* via frozen-patty (itemExport). The
 	// template's `data-bge=*` attributes are the source of truth at render
-	// time; the editor form's `name=` attributes happen to align for simple
-	// items but DIVERGE for wysiwyg / image (`bge-path[]`) / details etc.
+	// time. `fields` (parseFields on each binding) and `dataKeys`
+	// (itemExport over the whole template) answer the same question through
+	// two independent parsers; both are part of the published contract.
 	return {
 		name: seed.name,
 		template: seed.template,
-		editor: seed.editor,
+		fields: [...fields],
 		dataKeys: extractDataKeys(seed.template),
 	};
 }

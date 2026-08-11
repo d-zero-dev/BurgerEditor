@@ -219,11 +219,11 @@ describe('item handlers', () => {
 		expect(result.items).toContain('image');
 	});
 
-	test('itemSchema returns template and editor for a known item', () => {
+	test('itemSchema returns template and data fields for a known item', () => {
 		const result = itemSchema('title-h2');
 		expect(result.name).toBe('title-h2');
 		expect(result.template).toContain('data-bge="title-h2"');
-		expect(result.editor).toContain('name="bge-title-h2"');
+		expect(result.fields).toContain('titleH2');
 	});
 
 	test('itemSchema dataKeys derives from template data-bge attrs (the runtime contract)', () => {
@@ -386,27 +386,37 @@ describe('page handlers', () => {
 		).resolves.toBeUndefined();
 	});
 
-	test('pageRename cleans up freshly-created target directories when rename fails', async () => {
-		// chmod 0o555 makes the parent dir read+execute-only — mkdir succeeds
-		// (we create children of THAT parent's children, which is allowed
-		// because mkdir checks ancestor permission), but rename INTO a path
-		// under the readonly tree fails with EACCES. Verifies rollback even
-		// in the EACCES branch (not just EXDEV).
-		const readonlyParent = path.join(docRoot, 'readonly');
-		await fs.mkdir(readonlyParent);
-		await fs.chmod(readonlyParent, 0o555);
-		try {
-			await expect(
-				pageRename(ctx, 'about.html', 'readonly/nested/deeper/new.html'),
-			).rejects.toThrow();
-			// `readonly/nested/deeper` must NOT remain on disk.
-			await expect(fs.access(path.join(readonlyParent, 'nested'))).rejects.toMatchObject({
-				code: 'ENOENT',
-			});
-		} finally {
-			await fs.chmod(readonlyParent, 0o755);
-		}
-	});
+	// chmod 0o555 has no effect for the root user (CI runs as root in some
+	// containers), so the rename would succeed instead of throwing EACCES.
+	// Skip the cleanup-on-EACCES check in that case — the EXDEV branch is
+	// still covered by other rename tests.
+	const isRoot = process.getuid?.() === 0;
+	test.skipIf(isRoot)(
+		'pageRename cleans up freshly-created target directories when rename fails',
+		async () => {
+			// chmod 0o555 makes the parent dir read+execute-only — mkdir succeeds
+			// (we create children of THAT parent's children, which is allowed
+			// because mkdir checks ancestor permission), but rename INTO a path
+			// under the readonly tree fails with EACCES. Verifies rollback even
+			// in the EACCES branch (not just EXDEV).
+			const readonlyParent = path.join(docRoot, 'readonly');
+			await fs.mkdir(readonlyParent);
+			await fs.chmod(readonlyParent, 0o555);
+			try {
+				await expect(
+					pageRename(ctx, 'about.html', 'readonly/nested/deeper/new.html'),
+				).rejects.toThrow();
+				// `readonly/nested/deeper` must NOT remain on disk.
+				await expect(
+					fs.access(path.join(readonlyParent, 'nested')),
+				).rejects.toMatchObject({
+					code: 'ENOENT',
+				});
+			} finally {
+				await fs.chmod(readonlyParent, 0o755);
+			}
+		},
+	);
 
 	test('pageCopy duplicates the file', async () => {
 		await pageCopy(ctx, 'about.html', 'about-copy.html');

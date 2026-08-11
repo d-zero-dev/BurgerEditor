@@ -31,12 +31,12 @@
 		"@burger-editor/blocks": "4.0.0-alpha.70",
 		"@burger-editor/core": "4.0.0-alpha.70",
 		"@burger-editor/utils": "4.0.0-alpha.70",
-		"cosmiconfig": "9.0.0",
+		"cosmiconfig": "9.0.2",
 		"jsdom": "28.1.0",
-		"prettier": "3.8.1"
+		"prettier": "3.9.5"
 	},
 	"devDependencies": {
-		"@types/jsdom": "28.0.1",
-		"@types/node": "24.11.0"
+		"@types/jsdom": "28.0.3",
+		"@types/node": "24.13.3"
 	}
 }

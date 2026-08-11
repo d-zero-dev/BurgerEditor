@@ -1,6 +1,6 @@
 import type { LocalServerConfig } from './types.js';
 import type { FileListResult } from '@burger-editor/core';
-import type { Hono } from 'hono';
+import type { Context, Hono } from 'hono';
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -10,7 +10,7 @@ import { z } from 'zod';
 
 import { HEALTH_CHECK_END_POINT } from './constants.js';
 import { log } from './helpers/debug.js';
-import { loadContent, saveContent } from './helpers/edit-content.js';
+import { FileNotFoundError, loadContent, saveContent } from './helpers/edit-content.js';
 import { NoEditableAreaError } from './helpers/no-editable-area-error.js';
 import { defaultConfig } from './model/default-config.js';
 import { FileListManager } from './model/file-list-manager.js';
@@ -141,6 +141,60 @@ export function setRoute(
 			userConfig.sampleFilePath,
 		),
 	} as const;
+
+	/**
+	 * Shared by `GET /` and the `GET /:page` wildcard so the site root loads
+	 * (and, if missing, creates) real file content instead of a blank editor
+	 * that can never be saved.
+	 * @param c
+	 * @param page
+	 * @param logicalPath
+	 */
+	async function renderPage(c: Context, page: string, logicalPath: string) {
+		let targetFilePath: string;
+		if (virtualTreeEnabled && resolverState) {
+			const diskFile = toDiskPath(resolverState, logicalPath);
+			if (!diskFile) {
+				return c.text('Not Found', 404);
+			}
+			targetFilePath = path.join(userConfig.documentRoot, diskFile);
+		} else {
+			targetFilePath = path.join(userConfig.documentRoot, logicalPath);
+		}
+
+		const loadResult = await loadContent(
+			targetFilePath,
+			userConfig.editableArea,
+			userConfig.newFileContent,
+		);
+
+		if (loadResult instanceof NoEditableAreaError) {
+			return c.html(
+				<App
+					path={page}
+					content={loadResult}
+					lang={userConfig.lang}
+					virtualTreeEnabled={virtualTreeEnabled}
+				/>,
+			);
+		}
+		log(
+			'Loaded page with Front Matter: %s (keys: %o)',
+			loadResult.hasFrontMatter,
+			Object.keys(loadResult.frontMatter),
+		);
+
+		return c.html(
+			<App
+				path={page}
+				content={loadResult.editableContent}
+				lang={userConfig.lang}
+				virtualTreeEnabled={virtualTreeEnabled}
+				frontMatter={loadResult.frontMatter}
+				hasFrontMatter={loadResult.hasFrontMatter}
+			/>,
+		);
+	}
 
 	const routes = app
 		// ------------------------------------------------------------------------------------------
@@ -304,13 +358,23 @@ export function setRoute(
 					);
 				}
 
-				await saveContent(
-					targetFilePath,
-					data.content,
-					userConfig.editableArea,
-					data.frontMatter,
-					data.originalFrontMatter,
-				);
+				try {
+					await saveContent(
+						targetFilePath,
+						data.content,
+						userConfig.editableArea,
+						data.frontMatter,
+						data.originalFrontMatter,
+					);
+				} catch (error) {
+					if (error instanceof NoEditableAreaError) {
+						return c.json({ error: error.message }, 400);
+					}
+					if (error instanceof FileNotFoundError) {
+						return c.json({ error: error.message }, 404);
+					}
+					throw error;
+				}
 
 				// 2-phase commit: only advance resolverState after the file write succeeds.
 				resolverState = nextResolverState;
@@ -454,15 +518,8 @@ export function setRoute(
 		// Page
 		//
 		// ------------------------------------------------------------------------------------------
-		.get('/', (c) => {
-			return c.html(
-				<App
-					path={'/'}
-					content={''}
-					lang={userConfig.lang}
-					virtualTreeEnabled={virtualTreeEnabled}
-				/>,
-			);
+		.get('/', async (c) => {
+			return renderPage(c, '/', userConfig.indexFileName);
 		})
 		.get('/:page{.+\\.html$|.+\\/$}', async (c) => {
 			const page = c.req.param('page');
@@ -472,49 +529,7 @@ export function setRoute(
 				logicalPath += userConfig.indexFileName;
 			}
 
-			let targetFilePath: string;
-			if (virtualTreeEnabled && resolverState) {
-				const diskFile = toDiskPath(resolverState, logicalPath);
-				if (!diskFile) {
-					return c.text('Not Found', 404);
-				}
-				targetFilePath = path.join(userConfig.documentRoot, diskFile);
-			} else {
-				targetFilePath = path.join(userConfig.documentRoot, logicalPath);
-			}
-
-			const loadResult = await loadContent(
-				targetFilePath,
-				userConfig.editableArea,
-				userConfig.newFileContent,
-			);
-
-			if (loadResult instanceof NoEditableAreaError) {
-				return c.html(
-					<App
-						path={page}
-						content={loadResult}
-						lang={userConfig.lang}
-						virtualTreeEnabled={virtualTreeEnabled}
-					/>,
-				);
-			}
-			log(
-				'Loaded page with Front Matter: %s (keys: %o)',
-				loadResult.hasFrontMatter,
-				Object.keys(loadResult.frontMatter),
-			);
-
-			return c.html(
-				<App
-					path={page}
-					content={loadResult.editableContent}
-					lang={userConfig.lang}
-					virtualTreeEnabled={virtualTreeEnabled}
-					frontMatter={loadResult.frontMatter}
-					hasFrontMatter={loadResult.hasFrontMatter}
-				/>,
-			);
+			return renderPage(c, page, logicalPath);
 		})
 		// ------------------------------------------------------------------------------------------
 		//

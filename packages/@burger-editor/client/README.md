@@ -1,303 +1,154 @@
-# @burger-editor/client
+# `@burger-editor/client`
 
 [![npm version](https://badge.fury.io/js/@burger-editor%2Fclient.svg)](https://badge.fury.io/js/@burger-editor%2Fclient)
 
-BurgerEditorのクライアント側UIパッケージです。Svelteベースのコンポーネントを提供し、既存のCMSやWebアプリケーションにBurgerEditorを統合できます。
+BurgerEditor をブラウザ上の DOM に組み込むための UI レイヤー。React 製の編集 UI（ブロックメニュー・各種ダイアログ・アイテムエディタ）を内部で組み立て、`@burger-editor/core` の編集エンジンに差し込んだ状態でひとつのファクトリ関数として提供する。アイテムエディタ用のフォーム部品とフック群は `@burger-editor/client/ui` として公開される。
 
-## インストール
+## Installation
 
-```bash
+```sh
 yarn add @burger-editor/client @burger-editor/core @burger-editor/blocks
 ```
 
-または
+## Related Packages
 
-```bash
-npm install @burger-editor/client @burger-editor/core @burger-editor/blocks
-```
+| パッケージ                    | 関係     | このパッケージとの使い分け                                            |
+| ----------------------------- | -------- | --------------------------------------------------------------------- |
+| `@burger-editor/core`         | 依存元   | 編集エンジンと HTML 契約。ブラウザ以外で使うなら core 単体で十分      |
+| `@burger-editor/blocks`       | 依存元   | 標準ブロック / アイテム。独自カタログのみなら不要                     |
+| `@burger-editor/migrator`     | 連携     | データバージョン移行。client から `Migrator` として再エクスポート済み |
+| `@burger-editor/frozen-patty` | 間接依存 | core 経由で HTML ⇄ JSON 変換に利用。直接の API 利用は不要             |
 
-## 公開API
+ブラウザで編集 UI を組み込むなら client、Node 単体レンダリングや非ブラウザ環境なら core を直接使う、と判断する。
 
-### `createBurgerEditorClient(options)`
+## Usage
 
-BurgerEditorのクライアントインスタンスを作成します。この関数は、すべてのUI要素（ブロックカタログ、ブロックオプション、ファイルリストなど）を自動的にセットアップします。
-
-#### 型定義
-
-```typescript
-function createBurgerEditorClient(
-	options: Omit<BurgerEditorEngineOptions, 'ui' | 'blockMenu'>,
-): Promise<{
-	engine: BurgerEditorEngine;
-}>;
-```
-
-#### パラメータ
-
-`options` は `BurgerEditorEngineOptions` から `ui` と `blockMenu` を除いたオプションです。client は内部で `ui`, `blockMenu`, `initialInsertionButton`, `defineCustomElement` を Svelte 実装で上書きするため、これらを手動で指定する必要はありません。以下の主要なプロパティがあります：
-
-**必須プロパティ:**
-
-- `root` (string): エディタをマウントするルート要素のセレクタ
-- `config` (Config): エディタの設定
-  - `classList`: ブロックに適用するCSSクラスの配列
-  - `stylesheets`: 読み込むスタイルシートのパス配列
-  - `sampleImagePath`: サンプル画像のパス
-  - `sampleFilePath`: サンプルファイルのパス
-  - `googleMapsApiKey`: Google Maps APIキー (使用する場合)
-  - `experimental`: 実験的な機能の設定 (オプション)
-- `items` (Record<string, ItemSeed>): 使用するアイテムの定義
-- `catalog` (BlockCatalog): ブロックカタログの定義
-- `generalCSS` (string): 一般的なCSS文字列
-- `initialContents` (string | { main: string; draft?: string }): 初期コンテンツのHTML
-
-**オプショナルプロパティ:**
-
-- `viewAreaClassList`: ビューエリアに適用するCSSクラスの配列
-- `blocks`: カスタムブロック定義
-- `storageKey`: ローカルストレージのキー設定
-- `defineCustomElement`: カスタム要素の定義関数
-- `onUpdated`: コンテンツ更新時のコールバック
-- `fileIO`: ファイルIO APIの実装
-- `healthCheck`: ヘルスチェックの設定
-
-#### 戻り値
-
-```typescript
-Promise<{
-	engine: BurgerEditorEngine;
-}>;
-```
-
-- `engine`: BurgerEditorエンジンのインスタンス
-
-### `version`
-
-パッケージのバージョン文字列定数です。
-
-### `attachDraftSwitcher(engine)`
-
-下書き切り替えUIを手動でアタッチする関数です。`engine.hasDraft()` が `true` の場合にのみ UI を生成します。
-
-```typescript
-import { attachDraftSwitcher } from '@burger-editor/client';
-
-attachDraftSwitcher(engine);
-```
-
-### `Migrator`
-
-`@burger-editor/migrator` パッケージからの re-export です。
-
-### `getConfig()` (非推奨)
-
-> **⚠️ @deprecated**: この関数は非推奨です。各プラットフォームで Config の型が異なるため、直接使用しないでください。
-
-## 使用例
-
-以下は基本的な使用例です：
-
-```typescript
+```ts
 import { createBurgerEditorClient } from '@burger-editor/client';
-import { items, generalCSS, defaultCatalog } from '@burger-editor/blocks';
-import { CSS_LAYER } from '@burger-editor/core';
-import '@burger-editor/client/style';
 
-async function initEditor() {
-	// エディタをマウントする要素を取得
-	const mainInput = document.getElementById('main') as HTMLInputElement;
-
-	if (!mainInput) {
-		console.error('Editable area not found');
-		return;
-	}
-
-	// エディタを作成
-	const { engine } = await createBurgerEditorClient({
-		root: '.editor',
-		config: {
-			classList: [],
-			stylesheets: [
-				{
-					path: '/path/to/your/styles.css',
-					layer: CSS_LAYER.ui,
-				},
-				{
-					path: generalCSS,
-					layer: CSS_LAYER.base,
-				},
-			],
-			sampleImagePath: '/images/sample.jpg',
-			sampleFilePath: '/files/sample.pdf',
-			googleMapsApiKey: null,
-		},
-		items,
-		catalog: defaultCatalog,
-		generalCSS,
-		initialContents: mainInput.value,
-		viewAreaClassList: ['my-editor'],
-		onUpdated: async (main, draft) => {
-			// コンテンツが更新されたときの処理
-			mainInput.value = main;
-			console.log('Content updated:', { main, draft });
-		},
-	});
-
-	console.log('Editor initialized:', engine);
-}
-
-// 初期化実行
-initEditor();
-```
-
-### カスタムブロックカタログの使用
-
-```typescript
-import { createBurgerEditorClient } from '@burger-editor/client';
-import { items, generalCSS, defaultCatalog } from '@burger-editor/blocks';
-
-const customCatalog = {
-	...defaultCatalog,
-	カスタムカテゴリ: [
-		{
-			label: 'カスタムブロック',
-			definition: {
-				name: 'custom-block',
-				containerProps: {
-					type: 'grid',
-					columns: 2,
-				},
-				items: [['wysiwyg', 'image']],
-			},
-		},
-	],
-};
-
-await createBurgerEditorClient({
-	root: '.editor',
+const { engine } = await createBurgerEditorClient({
+	root: '#editor',
 	config: {
-		classList: [],
-		stylesheets: [],
+		classList: ['content'],
+		stylesheets: ['/styles/main.css'],
 		sampleImagePath: '/images/sample.jpg',
-		sampleFilePath: '/files/sample.pdf',
-		googleMapsApiKey: null,
 	},
-	items,
-	catalog: customCatalog,
-	generalCSS,
-	initialContents: '<div class="editable"></div>',
+	items, // 使用するアイテム定義
+	catalog, // ブロックカタログ
+	generalCSS, // 一般 CSS
+	initialContents: '<div data-bge-name="..." ...></div>',
 });
 ```
 
-### ファイルIOの実装
+`options` は `BurgerEditorEngineOptions` から `view` を除いた型。`view`（`BurgerEditorView`）は client が **React 実装で内部的に注入**するため、利用側で渡してはいけない。加えて client はエンジンコマンドのディスパッチテーブル（`registerEngineCommands`）を登録し、ダイアログ群を `engine.uiState` から宣言的にレンダリングするルートをマウントする。
 
-```typescript
-import { createBurgerEditorClient } from '@burger-editor/client';
+## `createBurgerEditorClient` オプション
+
+### 必須プロパティ
+
+| キー              | 型                                           | 説明                                       |
+| ----------------- | -------------------------------------------- | ------------------------------------------ |
+| `root`            | `string`                                     | エディタをマウントするルート要素のセレクタ |
+| `config`          | `Config`                                     | エディタ設定（後述）                       |
+| `items`           | `Record<string, ItemSeed>`                   | 使用するアイテムの定義                     |
+| `catalog`         | `BlockCatalog`                               | ブロックカタログの定義                     |
+| `generalCSS`      | `string`                                     | 一般 CSS 文字列                            |
+| `initialContents` | `string \| { main: string; draft?: string }` | 初期コンテンツの HTML                      |
+
+### 任意プロパティ
+
+| キー                | 型                                                        | 説明                                           |
+| ------------------- | --------------------------------------------------------- | ---------------------------------------------- |
+| `viewAreaClassList` | `string[]`                                                | ビューエリアに適用する CSS クラス              |
+| `blocks`            | `BlockDefinition[]`                                       | カスタムブロック定義                           |
+| `storageKey`        | `{ blockClipboard?: string; ... }`                        | ストレージキー設定（ブロッククリップボード等） |
+| `onUpdated`         | `(main: string, draft?: string) => void \| Promise<void>` | コンテンツ更新時のコールバック                 |
+| `fileIO`            | `FileAPI`                                                 | ファイル I/O API 実装（後述）                  |
+| `healthCheck`       | `HealthCheckOptions`                                      | ヘルスチェックの設定                           |
+| `experimental`      | `ExperimentalOptions`                                     | 実験的機能の設定                               |
+
+### `config` 配下のキー
+
+| キー               | 型                                               | 説明                                                                                                                                          |
+| ------------------ | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `classList`        | `string[]`                                       | ブロックに適用する CSS クラスの配列                                                                                                           |
+| `stylesheets`      | `(string \| { path: string; layer?: string })[]` | 読み込むスタイルシート。`CSS_LAYER` でレイヤー指定可（core より緩い受容形式： `string` を許す。内部で `{ path, layer? }` 形式に正規化される） |
+| `sampleImagePath`  | `string`                                         | サンプル画像のパス                                                                                                                            |
+| `sampleFilePath`   | `string`                                         | サンプルファイルのパス                                                                                                                        |
+| `googleMapsApiKey` | `string \| null`                                 | Google Maps API キー（マップ機能を使う場合のみ）                                                                                              |
+| `experimental`     | `object`                                         | 実験的な機能の設定（オプション）                                                                                                              |
+
+## その他のエクスポート
+
+| 名前                          | 種別   | 説明                                                                                   |
+| ----------------------------- | ------ | -------------------------------------------------------------------------------------- |
+| `attachDraftSwitcher(engine)` | 関数   | 下書き切り替え UI を手動でアタッチ。`engine.hasDraft()` が `true` の場合のみ UI を生成 |
+| `version`                     | 定数   | パッケージのバージョン文字列                                                           |
+| `Migrator`                    | クラス | `@burger-editor/migrator` の re-export                                                 |
+| `getConfig()`                 | 関数   | `@deprecated` — 後述                                                                   |
+
+### `getConfig()` が非推奨である理由
+
+`getConfig()` は単一の `Config` 型を返す前提で実装されているが、現行設計ではプラットフォーム（client / 他プラットフォーム）ごとに `Config` 型の構造が異なる。グローバル参照として使うと型が一致しないケースが発生し、実行時エラー・型不整合の温床になる。
+
+**代替手段**: 起動時に得られる `engine.config` を直接参照すること。`engine` はそのプラットフォーム向けに型付けされた `config` を保持しているため、整合性が保たれる。
+
+```ts
+const { engine } = await createBurgerEditorClient({/* ... */});
+// 推奨: engine 経由で参照
+const stylesheets = engine.config.stylesheets;
+```
+
+## `FileAPI` の実装例
+
+ファイルアップロード機能を有効にする場合、`fileIO` プロパティに以下のインタフェースを満たす実装を渡す。各メソッドはすべて optional で、提供したメソッドに対応する UI 機能（ファイル一覧表示・アップロード・削除）だけが有効になる。
+
+```ts
 import type { FileAPI } from '@burger-editor/core';
 
 const fileIO: FileAPI = {
 	async getFileList(fileType, options) {
-		// ファイルリストを取得する実装
-		const response = await fetch(`/api/files/${fileType}?page=${options.page}`);
-		return response.json();
+		const res = await fetch(`/api/files/${fileType}?page=${options.page}`);
+		return res.json();
 	},
 	async postFile(fileType, file, progress) {
-		// ファイルをアップロードする実装
 		const formData = new FormData();
 		formData.append('file', file);
-
-		const response = await fetch(`/api/files/${fileType}`, {
-			method: 'POST',
-			body: formData,
-		});
-
-		return response.json();
+		const res = await fetch(`/api/files/${fileType}`, { method: 'POST', body: formData });
+		return res.json();
 	},
 	async deleteFile(fileType, url) {
-		// ファイルを削除する実装
-		const response = await fetch(`/api/files/${fileType}`, {
+		const res = await fetch(`/api/files/${fileType}`, {
 			method: 'DELETE',
 			body: JSON.stringify({ url }),
 		});
-
-		return response.json();
+		return res.json();
 	},
 };
-
-await createBurgerEditorClient({
-	root: '.editor',
-	config: {
-		classList: [],
-		stylesheets: [],
-		sampleImagePath: '/images/sample.jpg',
-		sampleFilePath: '/files/sample.pdf',
-		googleMapsApiKey: null,
-	},
-	items,
-	catalog: defaultCatalog,
-	generalCSS,
-	initialContents: '<div class="editable"></div>',
-	fileIO,
-});
 ```
 
-## ブロックのコピー&ペースト
+## ブロックのコピー & ペースト
 
-BurgerEditorは、ブロック単位でのコピー&ペースト機能を提供します。
+ブロック単位のコピー & ペーストを sessionStorage 経由で提供する。タブを閉じると消去され、ペースト後はクリップボードが自動的にクリアされる。
 
-### 使用方法
+| 項目     | 値                                                                |
+| -------- | ----------------------------------------------------------------- |
+| 保存形式 | JSON（`BlockData`）                                               |
+| 保存先   | `sessionStorage`                                                  |
+| 有効期限 | ブラウザセッション内のみ                                          |
+| 既定キー | `engine.storageKey.blockClipboard`（既定値 `'bge-copied-block'`） |
 
-1. **ブロックのコピー**
-   - コピーしたいブロックを選択
-   - ブロックメニューから「ブロックをコピー」をクリック
-   - ブロックのデータがクリップボード（sessionStorage）に保存されます
+カスタムキーを使うには `storageKey.blockClipboard` を上書きする。
 
-2. **ブロックのペースト**
-   - ブロック追加ダイアログを開く
-   - クリップボードにデータがある場合、「クリップボードから貼り付け」ボタンが表示されます
-   - ボタンをクリックすると、コピーしたブロックが挿入されます
-
-### 仕様
-
-- **保存形式**: JSON形式（BlockData）
-- **保存先**: sessionStorage
-- **有効期限**: ブラウザセッション内のみ（タブを閉じると消去）
-- **保存キー**: `engine.storageKey.blockClipboard`（デフォルト: `'bge-copied-block'`）
-- **動作**: ペースト後、クリップボードは自動的にクリアされます
-
-### ストレージキーのカスタマイズ
-
-```typescript
+```ts
 await createBurgerEditorClient({
-	root: '.editor',
-	config: {
-		classList: [],
-		stylesheets: [],
-		sampleImagePath: '/images/sample.jpg',
-		sampleFilePath: '/files/sample.pdf',
-		googleMapsApiKey: null,
-	},
-	items,
-	catalog: defaultCatalog,
-	generalCSS,
-	initialContents: '<div></div>',
+	// ...
 	storageKey: {
-		blockClipboard: 'my-custom-clipboard-key', // カスタムキー
+		blockClipboard: 'my-custom-clipboard-key',
 	},
 });
 ```
 
-## 詳細なAPI仕様
-
-ブロックの構造やアイテムの作成方法など、より詳細な技術仕様については [@burger-editor/core のREADME](../core/README.md) を参照してください。
-
-## カスタマイズのヒント
-
-- **カスタムアイテムの作成**: [@burger-editor/core のREADME](../core/README.md#カスタムアイテムの作成) を参照
-- **カスタムブロックカタログ**: [@burger-editor/core のREADME](../core/README.md#カスタムブロックカタログの作成) を参照
-- **スタイルのカスタマイズ**: `config.stylesheets` でCSSを指定し、`config.classList` でクラスを追加
-- **実験的機能の利用**: `config.experimental` でボタンアイテムのオプションなどをカスタマイズ可能
-
-## ライセンス
+## License
 
 Dual Licensed under MIT OR Apache-2.0

@@ -142,18 +142,6 @@ export class BurgerBlock {
 		return parseHTMLToBlockData(this.el);
 	}
 
-	#fallbackBlockData(html: string): BlockData {
-		return {
-			name: 'text',
-			containerProps: {
-				type: 'grid',
-				columns: 1,
-			},
-			classList: [],
-			items: [[{ name: 'wysiwyg', data: { wysiwyg: html } }]],
-		};
-	}
-
 	async #import(data: BlockData) {
 		this.el.replaceWith(
 			await createPlainStructuredBlockElement(data, this.#createItemElement),
@@ -175,7 +163,7 @@ export class BurgerBlock {
 		// eslint-disable-next-line no-console
 		console.error('%o is not a burger block', el);
 		const fallbackEl = await createPlainStructuredBlockElement(
-			this.#fallbackBlockData(el.outerHTML),
+			fallbackBlockData(el.outerHTML),
 			this.#createItemElement,
 		);
 		el.replaceWith(fallbackEl);
@@ -196,6 +184,23 @@ export class BurgerBlock {
 		return block;
 	}
 
+	/**
+	 * Build a block from raw HTML that carries no burger-block markers,
+	 * wrapping it as a single `wysiwyg` item instead of trying to parse
+	 * a block structure out of it.
+	 * @param html - Raw HTML to preserve as-is inside the fallback block
+	 * @param createItemElement - Factory used to materialize the wysiwyg item element
+	 * @returns The constructed fallback {@link BurgerBlock}
+	 * @example
+	 * ```ts
+	 * const block = await BurgerBlock.createFallback('<p>hello</p>', createItemElement);
+	 * container.append(block.el);
+	 * ```
+	 */
+	static createFallback(html: string, createItemElement: CreateItemElement) {
+		return BurgerBlock.create(fallbackBlockData(html), createItemElement);
+	}
+
 	static async rebind(el: HTMLElement, createItemElement: CreateItemElement) {
 		const block = new BurgerBlock(createItemElement);
 		const newEl = await block.#rebind(el);
@@ -210,6 +215,22 @@ export class BurgerBlock {
 		}
 		return block;
 	}
+}
+
+/**
+ *
+ * @param html
+ */
+function fallbackBlockData(html: string): BlockData {
+	return {
+		name: 'text',
+		containerProps: {
+			type: 'grid',
+			columns: 1,
+		},
+		classList: [],
+		items: [[{ name: 'wysiwyg', data: { wysiwyg: html } }]],
+	};
 }
 
 /**

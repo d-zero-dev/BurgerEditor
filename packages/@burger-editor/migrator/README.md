@@ -1,130 +1,131 @@
-# @burger-editor/migrator
+# `@burger-editor/migrator`
 
-[![npm version](https://badge.fury.io/js/@burger-editor%2Fmigrator.svg)](https://badge.fury.io/js/@burger-editor%2Fmigrator)
+BurgerEditor のバージョン間でコンテンツを移行するツール。現状 v3 → v4 をサポート。
 
-BurgerEditorのバージョン間でコンテンツを移行するためのツールパッケージです。
+## Installation
 
-## 概要
-
-`@burger-editor/migrator`は、BurgerEditorの異なるバージョン間でブロックやアイテムのデータを移行する機能を提供します。主にv3からv4への移行をサポートしています。
-
-## インストール
-
-```bash
-npm install @burger-editor/migrator
-```
-
-または
-
-```bash
+```sh
 yarn add @burger-editor/migrator
 ```
 
-## 使用方法
+## Related Packages
 
-### v3ブロックの作成
+| パッケージ                              | 関係                                        | 使い分け                                       |
+| --------------------------------------- | ------------------------------------------- | ---------------------------------------------- |
+| [`@burger-editor/legacy`](../legacy/)   | v3 ブロックテンプレートの定義元（内部依存） | 単体で利用可（migrator が引き込む）            |
+| [`@burger-editor/core`](../core/)       | `itemImport` を利用（内部依存）             | 単体で利用可                                   |
+| [`@burger-editor/file-io`](../file-io/) | 生成 HTML を実ファイルに書き出すときに併用  | 移行スクリプトでファイル出力するなら追加で必要 |
 
-v3形式のブロックテンプレートとアイテムデータから、HTMLブロックを生成します。
+## Usage
 
-```typescript
+```ts
 import { createBlock } from '@burger-editor/migrator/v3';
 
-// v3ブロック名とアイテムデータからHTMLを生成
-const html = createBlock('text-image', [
-	{
-		wysiwyg: '<p>テキストコンテンツ</p>',
-	},
-	{
-		path: ['/images/photo.jpg'],
-		alt: ['写真の説明'],
-	},
-]);
-
-console.log(html);
-// => v4互換のHTMLブロックが生成されます
+const html = createBlock('title', [{ titleH2: 'タイトル' }]);
 ```
+
+`createBlock(blockName, data)` は v3 のブロックテンプレートとアイテムデータから v4 互換 HTML を生成する。内部実装は `@burger-editor/legacy` の v3 テンプレートと `@burger-editor/core` の `itemImport` を組み合わせる。
 
 ### パラメータ
 
-**`createBlock(blockName, data)`**
+| パラメータ  | 型                                                   | 説明                                                                                                         |
+| ----------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `blockName` | `@burger-editor/legacy/v3` の `blocks` export のキー | v3 のブロックテンプレート名。**キャメルケース + 末尾の番号**（例: `'textImage1'`、`'image-text3'` ではない） |
+| `data`      | `readonly ItemData[]`                                | アイテムごとのデータ配列（テンプレート内のアイテム数と順序に対応）                                           |
 
-| パラメータ | 型                  | 説明                 |
-| ---------- | ------------------- | -------------------- |
-| blockName  | string              | v3のブロック名       |
-| data       | readonly ItemData[] | アイテムデータの配列 |
+**戻り値**: `string` — 生成された v4 互換 HTML ブロック  
+**エラー**: 存在しない `blockName` を渡すと `Error('Block <blockName> not found')` を throw
 
-**戻り値:** string - 生成されたHTMLブロック
+### 命名規則
+
+`blockName` がキャメルケース + 末尾番号（`textImage1` / `imageText3`）なのは、v3 の元 HTML テンプレートファイル名（`text-image1.html` / `image-text3.html`）にそのまま対応しているため。v3 → v4 移行スクリプトで「v3 のテンプレート参照」と「migrator への入力」が 1 対 1 で対応するように設計されている。v4 のブロック名（kebab-case）とは別系統である点に注意。
 
 ## 使用例
 
-### テキスト+画像ブロックの移行
+### `textImage1`（テキスト + 画像、単一カラム）
 
-```typescript
+```ts
 import { createBlock } from '@burger-editor/migrator/v3';
 
-const blockHtml = createBlock('text-image', [
+const html = createBlock('textImage1', [
+	{ ckeditor: '<p>テキストコンテンツ</p>' },
 	{
-		wysiwyg: '<h2>見出し</h2><p>本文テキスト</p>',
-	},
-	{
-		path: ['/images/sample.jpg'],
-		alt: ['サンプル画像'],
-		width: [800],
-		height: [600],
+		popup: false,
+		empty: 0,
+		hr: false,
+		path: '/images/sample.jpg',
+		srcset: '',
+		alt: 'サンプル画像',
+		width: '',
+		height: '',
+		caption: '',
 	},
 ]);
 ```
 
-### カードブロックの移行
+### `imageText3`（3 カラム画像+テキスト）
 
-```typescript
+```ts
 import { createBlock } from '@burger-editor/migrator/v3';
 
-const cardHtml = createBlock('card-3col', [
+const html = createBlock('imageText3', [
 	{
-		path: ['/images/card1.jpg'],
-		alt: ['カード1'],
-		wysiwyg: '<h3>カード1</h3><p>説明文</p>',
+		path: '/images/card1.jpg',
+		alt: 'カード1',
+		popup: false,
+		empty: 0,
+		hr: false,
+		srcset: '',
+		width: '',
+		height: '',
+		caption: '',
 	},
+	{ ckeditor: '<h3>カード1</h3><p>説明文</p>' },
 	{
-		path: ['/images/card2.jpg'],
-		alt: ['カード2'],
-		wysiwyg: '<h3>カード2</h3><p>説明文</p>',
+		path: '/images/card2.jpg',
+		alt: 'カード2',
+		popup: false,
+		empty: 0,
+		hr: false,
+		srcset: '',
+		width: '',
+		height: '',
+		caption: '',
 	},
+	{ ckeditor: '<h3>カード2</h3><p>説明文</p>' },
 	{
-		path: ['/images/card3.jpg'],
-		alt: ['カード3'],
-		wysiwyg: '<h3>カード3</h3><p>説明文</p>',
+		path: '/images/card3.jpg',
+		alt: 'カード3',
+		popup: false,
+		empty: 0,
+		hr: false,
+		srcset: '',
+		width: '',
+		height: '',
+		caption: '',
 	},
+	{ ckeditor: '<h3>カード3</h3><p>説明文</p>' },
 ]);
 ```
+
+## 主要な `blockName`
+
+利用頻度の高いものを抜粋。完全な一覧は `@burger-editor/legacy/v3` の `blocks` export を参照。
+
+| `blockName`  | v3 での用途                   |
+| ------------ | ----------------------------- |
+| `title`      | 大見出し（h2）                |
+| `wysiwyg`    | リッチテキスト                |
+| `image1`     | 単一画像                      |
+| `textImage1` | テキスト + 画像（単一カラム） |
+| `imageText3` | 3 カラム画像+テキストカード   |
+| `button`     | ボタン                        |
 
 ## 対応バージョン
 
 - **v3 → v4**: 完全サポート
 - 将来のバージョン間移行: 計画中
 
-## 内部動作
-
-`createBlock`関数は以下の処理を行います：
-
-1. v3のブロックテンプレートを[@burger-editor/legacy](../legacy/)から取得
-2. v3のアイテムテンプレートを[@burger-editor/legacy](../legacy/)から取得
-3. ブロックテンプレート内のコメントマーカーをアイテムHTMLで置換
-4. 各アイテムデータを[@burger-editor/core](../core/)の`itemImport`機能でHTMLに適用
-5. v4互換のHTMLブロックを生成
-
-## 依存パッケージ
-
-- [@burger-editor/core](../core/) - アイテムインポート機能
-- [@burger-editor/legacy](../legacy/) - v3テンプレート
-- [@burger-editor/utils](../utils/) - ユーティリティ関数
-
-## 関連パッケージ
-
-- [@burger-editor/legacy](../legacy/) - v3互換性サポート
-- [@burger-editor/core](../core/) - エディタエンジン
-
-## ライセンス
+## License
 
 Dual Licensed under MIT OR Apache-2.0

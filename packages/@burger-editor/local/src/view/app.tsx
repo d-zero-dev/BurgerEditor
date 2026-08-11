@@ -31,9 +31,9 @@ export function App({
 }: Props) {
 	return (
 		<Layout lang={lang}>
-			<div class="app">
+			<div className="app">
 				<Nav virtualTreeEnabled={virtualTreeEnabled} />
-				<div class="content">
+				<div className="content">
 					<h1>{path}</h1>
 
 					{/*
@@ -50,8 +50,8 @@ export function App({
 						<p>{content.message}</p>
 					) : (
 						<>
-							<div class="front-matter-editor"></div>
-							<main class="editor"></main>
+							<div className="front-matter-editor"></div>
+							<main className="editor"></main>
 							<input type="hidden" id="main" value={content ?? '新規作成'} />
 							<input
 								type="hidden"

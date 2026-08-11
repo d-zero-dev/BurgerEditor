@@ -63,7 +63,7 @@
 
 **UI実装への影響**:
 
-- editor.htmlでの選択肢提供はアプローチが決まれば実装可能
+- アイテムの`Editor`コンポーネントでの選択肢提供はアプローチが決まれば実装可能
 - 問題は選択した値をどうCSS適用につなげるかのアーキテクチャ
 
 #### 3. 戦略的判断
@@ -143,17 +143,15 @@
    </a>
    ```
 
-   **index.ts**:
+   **index.tsx**:
 
    ```typescript
-   editorOptions: {
-     beforeChange(newData) {
-       // CSS変数値からスタイル生成
-       return {
-         ...newData,
-         style: `--bge-options-button-type: var(--bge-options-button-type--${newData.buttonType})`
-       };
-     }
+   toItemData(state) {
+   	// CSS変数値からスタイル生成
+   	return {
+   		...state,
+   		style: `--bge-options-button-type: var(--bge-options-button-type--${state.buttonType})`,
+   	};
    }
    ```
 

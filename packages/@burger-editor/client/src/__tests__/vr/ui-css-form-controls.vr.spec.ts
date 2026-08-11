@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { commands, page } from 'vitest/browser';
 
-import { hrHtml, youtubeHtml } from './fixtures.js';
 import { cleanUp, injectCSS, renderDialog, waitForRender } from './vr-helper.js';
 
 describe('Form Controls', () => {
@@ -14,7 +13,11 @@ describe('Form Controls', () => {
 	});
 
 	test('label + text input', async () => {
-		const html = extractFragment(youtubeHtml, 'div:nth-of-type(2)');
+		// youtubeアイテムのエディタ（React版）が描画するマークアップと同等
+		const html = `<div>
+			<label><span>URLもしくは動画ID</span><input type="text" name="bge-id" /></label>
+			<label><span>動画タイトル</span><input type="text" name="bge-title" /></label>
+		</div>`;
 		const dialog = renderDialog(html);
 		await waitForRender();
 		const base64 = await page.screenshot({ element: dialog, save: false });
@@ -26,7 +29,18 @@ describe('Form Controls', () => {
 	});
 
 	test('select custom arrow', async () => {
-		renderDialog(hrHtml);
+		// hrアイテムのエディタ（React版）が描画するマークアップと同等
+		const hrEditorHtml = `<div>
+			<label><span>区切り線の種類</span>
+				<select name="bge-kind">
+					<option value="primary">標準</option>
+					<option value="dashed">破線</option>
+					<option value="bold">太い区切り線</option>
+					<option value="narrow">細い区切り線</option>
+				</select>
+			</label>
+		</div>`;
+		renderDialog(hrEditorHtml);
 		await waitForRender();
 		const select = document.querySelector('select') as HTMLSelectElement;
 		const base64 = await page.screenshot({ element: select, save: false });
@@ -113,15 +127,3 @@ describe('Form Controls', () => {
 		expect(result.pass, result.message).toBe(true);
 	});
 });
-
-/**
- *
- * @param html
- * @param _selector
- */
-function extractFragment(html: string, _selector: string): string {
-	const temp = document.createElement('div');
-	temp.innerHTML = html;
-	const el = temp.querySelector(_selector);
-	return el ? el.outerHTML : html;
-}

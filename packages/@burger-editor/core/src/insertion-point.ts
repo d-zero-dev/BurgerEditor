@@ -1,9 +1,8 @@
 import type { BurgerBlock } from './block/block.js';
 import type { BurgerEditorEngine } from './engine/engine.js';
 
-import { EditorUI } from './editor-ui.js';
-
-export class InsertionPoint extends EditorUI {
+export class InsertionPoint {
+	readonly el: HTMLElement;
 	#engine: BurgerEditorEngine;
 
 	#insertTarget: {
@@ -12,11 +11,12 @@ export class InsertionPoint extends EditorUI {
 	} | null = null;
 
 	constructor(engine: BurgerEditorEngine) {
-		super('insert-point', document.createElement('div'));
+		this.el = document.createElement('div');
+		this.el.dataset.bgeComponent = 'insert-point';
 		this.#engine = engine;
 	}
 
-	insert(insertionBlock: BurgerBlock) {
+	async insert(insertionBlock: BurgerBlock) {
 		if (this.#insertTarget === null) {
 			throw new Error(`InsertionPoint is not set`);
 		}
@@ -30,52 +30,24 @@ export class InsertionPoint extends EditorUI {
 			this.#engine.content.containerElement.insertBefore(this.el, targetElement);
 		}
 
-		return new Promise<BurgerBlock>((resolve) => {
-			this.#engine.isProcessed = true;
-			if (this.el.parentElement === null) {
-				throw new Error(`InsertionPoint is not added to the DOM tree`);
-			}
-			this.el.append(insertionBlock.el);
-			this.#engine.content.update();
-			this.el.style.height = 'auto';
-			this.el.style.height = `${this.el.getBoundingClientRect().height}px`;
+		this.#engine.isProcessed = true;
+		if (this.el.parentElement === null) {
+			throw new Error(`InsertionPoint is not added to the DOM tree`);
+		}
+		this.el.append(insertionBlock.el);
 
-			// 要素を非表示にする
-			this.el.style.display = 'none';
+		// 演出（マーカーの展開アニメーション）はUI層のhostに委譲する。
+		// host が演出を持たない場合は即時完了として扱う
+		await this.#engine.content.animateInsertion(this.el);
 
-			// アニメーションの準備
-			this.el.style.overflow = 'hidden';
-			this.el.style.transition = 'height 0.4s ease';
-			this.el.style.height = '0';
-
-			// 表示してアニメーション開始
-			this.el.style.display = '';
-
-			// 次のフレームでアニメーション実行（表示状態に）
-			requestAnimationFrame(() => {
-				this.el.style.height = `${this.el.scrollHeight}px`;
-
-				// アニメーション完了後の処理
-				this.el.addEventListener(
-					'transitionend',
-					() => {
-						// unwrap相当の処理: 親要素の前に要素を挿入し、親要素を削除
-						const parent = this.el;
-						const child = insertionBlock.el;
-
-						if (parent.parentNode) {
-							parent.parentNode.insertBefore(child, parent);
-						}
-
-						this.el.remove();
-						this.#engine.save();
-						this.#engine.isProcessed = false;
-						resolve(insertionBlock);
-					},
-					{ once: true },
-				);
-			});
-		});
+		// unwrap相当の処理: 親要素の前に要素を挿入し、親要素を削除
+		if (this.el.parentNode) {
+			this.el.parentNode.insertBefore(insertionBlock.el, this.el);
+		}
+		this.el.remove();
+		this.#engine.save();
+		this.#engine.isProcessed = false;
+		return insertionBlock;
 	}
 
 	set(targetBlock: BurgerBlock | null, toTop: boolean) {

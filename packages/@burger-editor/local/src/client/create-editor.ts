@@ -2,7 +2,13 @@ import type { AppType } from '../route.js';
 
 import { generalCSS, items } from '@burger-editor/blocks';
 import { createBurgerEditorClient } from '@burger-editor/client';
-import { CSS_LAYER, type BlockCatalog } from '@burger-editor/core';
+import {
+	CSS_LAYER,
+	type BlockCatalog,
+	type FileListItem,
+	type FileListResult,
+	type FileType,
+} from '@burger-editor/core';
 import '@burger-editor/client/style';
 import { hc } from 'hono/client';
 
@@ -10,7 +16,7 @@ import { $upload } from '../helpers/$upload.js';
 
 import {
 	createFrontMatterEditor,
-	type FrontMatterEditor,
+	type FrontMatterEditorHandle,
 } from './front-matter-editor.js';
 import { saveContentRequest } from './save-content-request.js';
 
@@ -70,7 +76,7 @@ export async function createEditor() {
 		'has-front-matter',
 	) as HTMLInputElement | null;
 
-	let frontMatterEditor: FrontMatterEditor | null = null;
+	let frontMatterEditor: FrontMatterEditorHandle | null = null;
 
 	/**
 	 * Save content to server
@@ -208,10 +214,20 @@ export async function createEditor() {
 						selected: options.selected,
 					},
 				});
+				if (!res.ok) {
+					throw new Error(`Failed to get file list: ${res.statusText}`);
+				}
 				return await res.json();
 			},
 			async postFile(fileType, file, progress) {
-				const res = await $upload(client.api.file.upload)(
+				const res = await $upload<
+					{ type: FileType; file: File },
+					{
+						readonly error: boolean;
+						readonly uploaded: FileListItem;
+						readonly result: FileListResult;
+					}
+				>(client.api.file.upload)(
 					{
 						type: fileType,
 						file,
@@ -227,6 +243,9 @@ export async function createEditor() {
 						url,
 					},
 				});
+				if (!res.ok) {
+					throw new Error(`Failed to delete file: ${res.statusText}`);
+				}
 				return await res.json();
 			},
 		},

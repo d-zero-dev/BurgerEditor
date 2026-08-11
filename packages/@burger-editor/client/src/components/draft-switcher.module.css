@@ -1,0 +1,54 @@
+.draftBtn {
+	display: flex;
+	justify-content: space-between;
+
+	button {
+		display: block;
+		padding-block: 3px;
+		padding-inline: 5px;
+		color: #333;
+		text-decoration: none;
+		background-color: var(--bge-background-color01);
+		border: var(--bge-border-primary-color) solid 1px;
+	}
+}
+
+.draftTabBtn {
+	display: flex;
+}
+
+/* stylelint-disable declaration-no-important */
+.draftTabBtn button[aria-pressed='true'] {
+	color: var(--bge-lightest-color) !important;
+	background-color: var(--bge-background-color02) !important;
+	border-color: var(--bge-background-color02) !important;
+}
+
+/* stylelint-enable declaration-no-important */
+
+.draftTabBtn button:hover {
+	cursor: pointer;
+	background-color: var(--bge-border-primary-color);
+}
+
+.draftTabBtn button span {
+	margin-inline-start: 0.5em;
+	font-size: 0.8em;
+}
+
+.draftTabBtn button span::before {
+	content: '(';
+}
+
+.draftTabBtn button span::after {
+	content: ')';
+}
+
+.draftCopyBtn {
+	display: flex;
+}
+
+.draftCopyBtn button:hover {
+	cursor: pointer;
+	background-color: var(--bge-border-primary-color);
+}

@@ -30,8 +30,7 @@ export interface SearchResult {
 export function validateAndParseQueries(
 	queries: readonly string[],
 ):
-	| { success: true; params: readonly SearchParams[] }
-	| { success: false; error: string } {
+	{ success: true; params: readonly SearchParams[] } | { success: false; error: string } {
 	if (queries.length === 0) {
 		return {
 			success: false,

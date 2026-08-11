@@ -3,6 +3,7 @@
 	"compilerOptions": {
 		"composite": true,
 		"noEmit": true,
+		"jsx": "react-jsx",
 		"types": ["google.maps"]
 	},
 	"references": [

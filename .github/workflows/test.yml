@@ -12,11 +12,11 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
       - name: Install CJK fonts
         run: |
@@ -25,9 +25,9 @@ jobs:
           rm -rf /var/lib/apt/lists/*
 
       - name: Setup Node.js
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
-          node-version: 24
+          node-version: 24.19.0
 
       - name: Enable Corepack and setup Yarn v4
         run: |
@@ -36,7 +36,7 @@ jobs:
           yarn --version
 
       - name: Cache dependencies
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: .yarn/cache
           key: yarn-cache-${{ hashFiles('yarn.lock') }}
@@ -56,7 +56,7 @@ jobs:
 
       - name: Upload VR diff images on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: vr-diff-images
           path: packages/@burger-editor/client/src/__tests__/vr/__snapshots__/**/*-diff.png
