@@ -33,7 +33,7 @@
 		"@burger-editor/client": "4.0.0-alpha.64",
 		"@burger-editor/core": "4.0.0-alpha.64",
 		"@burger-editor/utils": "4.0.0-alpha.64",
-		"@d-zero/shared": "0.22.2"
+		"@d-zero/shared": "0.22.5"
 	},
 	"peerDependencies": {
 		"react": "19.2.8"
