@@ -73,9 +73,9 @@
 		"lerna": "9.0.7",
 		"markuplint": "4.18.3",
 		"npm-run-all2": "8.0.4",
-		"pixelmatch": "^7.1.0",
+		"pixelmatch": "7.1.0",
 		"playwright": "1.62.1",
-		"pngjs": "^7.0.0",
+		"pngjs": "7.0.0",
 		"typescript": "5.9.3",
 		"vitest": "4.1.10"
 	},
