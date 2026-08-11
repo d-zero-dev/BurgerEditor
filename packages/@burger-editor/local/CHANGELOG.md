@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
+
+### Bug Fixes
+
+- **client:** stop bundling React and fix the item-edit overlay on rebound blocks ([44a845d](https://github.com/d-zero-dev/BurgerEditor/commit/44a845d3e6b57bdd17707bc498e63675bf66bffc))
+- **local:** adapt fileIO client to zod-validator 0.9 response typing ([9c35f46](https://github.com/d-zero-dev/BurgerEditor/commit/9c35f46df6e03178afb2d365e0d4023f9f238936))
+- **local:** add charset and title to layout and drop the invokers polyfill ([8b385c9](https://github.com/d-zero-dev/BurgerEditor/commit/8b385c9b882638ac65edc59a97fa1cb09e455180))
+- **local:** clear the json draft when a front matter field is deleted ([db3b078](https://github.com/d-zero-dev/BurgerEditor/commit/db3b07887595dadff0df14f252956b0c52338ed5))
+- **local:** load real content for the site root and catch FileNotFoundError on save ([33e583b](https://github.com/d-zero-dev/BurgerEditor/commit/33e583bb1186a4b8512759e4c49a5be8e7823563))
+- **local:** return 400 when editableArea selector is missing on save ([644721e](https://github.com/d-zero-dev/BurgerEditor/commit/644721e0ef328698359ef7ed8eb9a78211db78c6))
+- **local:** use React-style attribute names in Hono JSX views ([dab216f](https://github.com/d-zero-dev/BurgerEditor/commit/dab216f61a7bb37d2ebff5cb2e0e9de5fc19579d))
+
+### Features
+
+- **local:** rebuild the front matter editor as a React component ([011b6e5](https://github.com/d-zero-dev/BurgerEditor/commit/011b6e52953bcbc5be9de2ee7c3145ffb242e789))
+- **local:** replace front matter editor click listeners with invoker commands ([03b1060](https://github.com/d-zero-dev/BurgerEditor/commit/03b1060f766438f6d73d2c80f525e2ba22454454))
+
 # [4.0.0-alpha.70](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.69...v4.0.0-alpha.70) (2026-06-12)
 
 **Note:** Version bump only for package @burger-editor/local

@@ -3,6 +3,94 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
+
+### Bug Fixes
+
+- **client:** avoid cascading renders in the preview dimension reset ([05e3e89](https://github.com/d-zero-dev/BurgerEditor/commit/05e3e899f31895eeeb7c8892120d6bf8fa09be69))
+- **client:** close code-review findings in the view port implementation ([26aaa78](https://github.com/d-zero-dev/BurgerEditor/commit/26aaa78af44c9321b6fa70ff6730ed99c3e33cda))
+- **client:** close review gaps in dialogs, commands and file list ([d4abeb0](https://github.com/d-zero-dev/BurgerEditor/commit/d4abeb0ffa07d1e2dc2e935a5e4d4be5706512f2))
+- **client:** drive blockMenu visibility through React state only ([fe9ef12](https://github.com/d-zero-dev/BurgerEditor/commit/fe9ef124bd0a27fa2a9e77360aeadb880353640e))
+- **client:** keep block-menu buttons clickable above the item-edit overlay ([6440e1d](https://github.com/d-zero-dev/BurgerEditor/commit/6440e1d5e78e59c3e35c3dd7066a1a647f094dc6))
+- **client:** only render item overlays for elements that resolve to an Item ([229092c](https://github.com/d-zero-dev/BurgerEditor/commit/229092c7fbf352342c8b7794f7ecf6af1b13523b))
+- **client:** remove direct DOM manipulation left over from the React overhaul ([5defbfa](https://github.com/d-zero-dev/BurgerEditor/commit/5defbfac211879c3c0b9d69751bbe09076d367d5))
+- **client:** restore the global --border-radius token lost in the Svelte port ([b5d7b29](https://github.com/d-zero-dev/BurgerEditor/commit/b5d7b29b6fda2c3594d9b3b7577107fa88055416))
+- **client:** snapshot the target block into the block-options dialog state ([a7059fb](https://github.com/d-zero-dev/BurgerEditor/commit/a7059fb18f6f935e8b409b5244f0b82645e7eca4))
+- **client:** stop bundling React and fix the item-edit overlay on rebound blocks ([44a845d](https://github.com/d-zero-dev/BurgerEditor/commit/44a845d3e6b57bdd17707bc498e63675bf66bffc))
+- **client:** surface file delete and upload failures ([67ed27e](https://github.com/d-zero-dev/BurgerEditor/commit/67ed27ea062d111ce138948215b0fb97965acf2b))
+- **client:** use span-based figure markup in block catalog buttons ([8fc45e1](https://github.com/d-zero-dev/BurgerEditor/commit/8fc45e1676239d0b4c44ad538288cfb593332709))
+
+- refactor(core)!: replace the three UI factory contracts with a single view port ([0e5b526](https://github.com/d-zero-dev/BurgerEditor/commit/0e5b526a3f694fe15051756b70a5e7c7a5feea77))
+- refactor(client)!: flatten src/react into src and rename the subpath to ./ui ([5086a1a](https://github.com/d-zero-dev/BurgerEditor/commit/5086a1a5a369aef22cdd6f5c2d976f5bf2336bef))
+- feat(client)!: replace Svelte with the React editor chrome ([cfd5c91](https://github.com/d-zero-dev/BurgerEditor/commit/cfd5c91c67f7543ba8299ed8f36dc48201e8daa2))
+
+### Features
+
+- **client:** add React UI foundation ([aa1e2da](https://github.com/d-zero-dev/BurgerEditor/commit/aa1e2dafc2928090d10afe6e0e855768955026b7))
+- **client:** add WysiwygField and export invoker command attributes type ([fb963ad](https://github.com/d-zero-dev/BurgerEditor/commit/fb963adc4f60e8f7611ac1939faac2f28711fd3d))
+- **client:** export ItemEditorHost from the ui entry ([e143bfa](https://github.com/d-zero-dev/BurgerEditor/commit/e143bfa80806b6d386f6170f027ebeff3f67734c))
+- **client:** reimplement the 12 UI components in React ([e5ee61e](https://github.com/d-zero-dev/BurgerEditor/commit/e5ee61ebc677203bd173aa208e2ddc41301b8aa0))
+- **frozen-patty:** expose parse-fields as a subpath export ([d86d904](https://github.com/d-zero-dev/BurgerEditor/commit/d86d90403af844715119bb2ff84c5313a52f3f42))
+
+### BREAKING CHANGES
+
+- BurgerEditorEngineOptions no longer accepts blockMenu /
+  initialInsertionButton / editableAreaShell; it takes an optional `view`
+  (BurgerEditorView) instead. EditableArea is split: content concerns stay
+  in core as EditableContent, presentation moves to @burger-editor/client.
+
+The engine now holds no reference to UI-owned DOM except each area's
+containerElement, so the class of bug where the engine writes attributes
+that React also renders (block menu stuck hidden) is unrepresentable:
+
+- core: EditableContent keeps block restoration / serialization /
+  sanitization; EditorUI (hidden-attribute base class) is deleted;
+  InsertionPoint delegates its animation to the host and no longer
+  drives area updates; the engine's #show only switches the current
+  pointer and dispatches bge:switch-content
+- client: EditableAreaView renders the iframe/textarea shell with
+  React state (visibility, visual/source mode, ResizeObserver-driven
+  height) and portals BlockMenu and the initial insertion button into
+  the iframe body — no extra React roots, no leaked window listeners
+- BlockMenu hides itself by subscribing to uiState.processing (the
+  forwardRef escape hatch is gone); DraftSwitcher reads
+  uiState.sourceMode instead of duplicating it locally
+- the dead onInsert callback and the discarded factory cleanUp handles
+  disappear together with the factory contracts; engine.cleanUp() now
+  destroys the injected view
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+- the "@burger-editor/client/react" entry is now
+  "@burger-editor/client/ui" (dist/ui.js). With Svelte gone the react
+  qualifier carried no information; components/form/commands/hooks now
+  live directly under src/. The lightweight entry itself stays so blocks
+  consumers (cli/mcp-server) keep avoiding the full client bundle.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+- the Svelte 5 implementation is removed (12 components,
+  svelte-mount, engine-state) together with the svelte toolchain
+  (svelte, @tabler/icons-svelte, @sveltejs/vite-plugin-svelte,
+  svelte-check). The entry mounts React roots instead:
+
+* createBurgerEditorClient registers the central command dispatch
+  table and mounts BurgerEditorRoot, which renders the catalog/
+  options/item-editor dialogs declaratively from engine.uiState
+* ItemEditorHost renders each item's Editor component with state from
+  toEditorState and imports the result of toItemData on submit; it
+  also injects the content stylesheet into embedded wysiwyg editors
+* BlockMenu gains transparent per-item overlay buttons
+  (--open-item-editor) replacing the direct click listener on content
+  elements — the overlay lives outside the content container so saved
+  HTML stays clean
+* type checking is plain tsc (tsconfig.check.json); the temporary
+  svelte-check split is gone
+* specs for the removed class-based dialogs are deleted; React
+  equivalents land with the test migration
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
 # [4.0.0-alpha.70](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.69...v4.0.0-alpha.70) (2026-06-12)
 
 **Note:** Version bump only for package @burger-editor/client

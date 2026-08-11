@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/custom-element",
-	"version": "4.0.0-alpha.70",
+	"version": "4.0.0-alpha.71",
 	"description": "BurgerEditor Custom Element",
 	"author": "D-ZERO",
 	"license": "MIT",
@@ -28,7 +28,7 @@
 		"dev": "rollup -c -w"
 	},
 	"dependencies": {
-		"@burger-editor/utils": "4.0.0-alpha.70",
+		"@burger-editor/utils": "4.0.0-alpha.71",
 		"@tabler/icons": "3.45.0",
 		"@tiptap/core": "3.29.2",
 		"@tiptap/extension-image": "3.29.2",

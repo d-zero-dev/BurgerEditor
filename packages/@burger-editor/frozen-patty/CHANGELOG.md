@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
+
+### Features
+
+- **frozen-patty:** expose parse-fields as a subpath export ([d86d904](https://github.com/d-zero-dev/BurgerEditor/commit/d86d90403af844715119bb2ff84c5313a52f3f42))
+
 # [4.0.0-alpha.70](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.69...v4.0.0-alpha.70) (2026-06-12)
 
 **Note:** Version bump only for package @burger-editor/frozen-patty

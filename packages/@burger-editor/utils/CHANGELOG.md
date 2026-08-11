@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
+
+### Features
+
+- **utils:** add appendStylesheetTo dom helper ([5af1846](https://github.com/d-zero-dev/BurgerEditor/commit/5af1846ce9bf55aae47044bcfcc625756a17e0cd))
+- **utils:** add narrowElement ([a00c591](https://github.com/d-zero-dev/BurgerEditor/commit/a00c59100328b80d529566b876944d9126d03969))
+
 # [4.0.0-alpha.70](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.69...v4.0.0-alpha.70) (2026-06-12)
 
 **Note:** Version bump only for package @burger-editor/utils

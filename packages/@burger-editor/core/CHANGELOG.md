@@ -3,6 +3,94 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
+
+### Bug Fixes
+
+- **client:** snapshot the target block into the block-options dialog state ([a7059fb](https://github.com/d-zero-dev/BurgerEditor/commit/a7059fb18f6f935e8b409b5244f0b82645e7eca4))
+- **core:** apply frame semantics from block options form data on submit ([844a467](https://github.com/d-zero-dev/BurgerEditor/commit/844a4670cbde655a309f28c5bcc8629ef682672c))
+- **core:** give Item access to the engine config for isDisable hooks ([5a962f0](https://github.com/d-zero-dev/BurgerEditor/commit/5a962f085a591e74cf11f0eced8b6ba8aa523524))
+- **core:** make block-insertion animation completion reliable ([e257399](https://github.com/d-zero-dev/BurgerEditor/commit/e257399dffc22bad69bc63ded4310cb2b80d843f))
+- **core:** refuse draft⇄main copies that would erase or no-op ([b8cd6fa](https://github.com/d-zero-dev/BurgerEditor/commit/b8cd6fada93785b00d3d30041908e626a52d02b9))
+- **core:** stop forcing blockMenu hidden via direct DOM writes ([83dcfa2](https://github.com/d-zero-dev/BurgerEditor/commit/83dcfa2ad27c7030b5b60d0a0af07df3cb3591b8))
+- **core:** stop passing containerElement itself to BurgerBlock.rebind ([fd1747d](https://github.com/d-zero-dev/BurgerEditor/commit/fd1747d305f9543790a3d7c02288febe1d04b954))
+
+- refactor(core)!: replace the three UI factory contracts with a single view port ([0e5b526](https://github.com/d-zero-dev/BurgerEditor/commit/0e5b526a3f694fe15051756b70a5e7c7a5feea77))
+- refactor(client)!: flatten src/react into src and rename the subpath to ./ui ([5086a1a](https://github.com/d-zero-dev/BurgerEditor/commit/5086a1a5a369aef22cdd6f5c2d976f5bf2336bef))
+- feat(core)!: remove the class-based dialog UI and go headless ([e10f05b](https://github.com/d-zero-dev/BurgerEditor/commit/e10f05b387d0cb2a2fa1a308803a325d29cfb0ec))
+
+### Features
+
+- **core:** add command bus and UI state store ([a4647e2](https://github.com/d-zero-dev/BurgerEditor/commit/a4647e2fa90491ec97ee5dc458d820e357187b5d))
+- **core:** add component-based item editor contract types ([2c8a8b6](https://github.com/d-zero-dev/BurgerEditor/commit/2c8a8b6d72103d3a99dfe8fa8fed9cacd59698a5))
+- **core:** define the engine command vocabulary ([ede3fae](https://github.com/d-zero-dev/BurgerEditor/commit/ede3fae665704465d5c87ce30a3f7e4a9d16ce39))
+- **core:** make legacy editor template optional and pass config to toItemData ([c6e8e13](https://github.com/d-zero-dev/BurgerEditor/commit/c6e8e13410a83ff53fcf8eb0aee6badbee467af6))
+- **core:** return per-listener unsubscribe from ComponentObserver.on ([189e433](https://github.com/d-zero-dev/BurgerEditor/commit/189e43300e115ca6c0690083e5e84c90d584beec))
+- **core:** track processing and source-mode flags in the UI state store ([0754b71](https://github.com/d-zero-dev/BurgerEditor/commit/0754b7197c9bfc8e69938b57fe4bb03fa8fc3c53))
+- **utils:** add appendStylesheetTo dom helper ([5af1846](https://github.com/d-zero-dev/BurgerEditor/commit/5af1846ce9bf55aae47044bcfcc625756a17e0cd))
+
+### BREAKING CHANGES
+
+- BurgerEditorEngineOptions no longer accepts blockMenu /
+  initialInsertionButton / editableAreaShell; it takes an optional `view`
+  (BurgerEditorView) instead. EditableArea is split: content concerns stay
+  in core as EditableContent, presentation moves to @burger-editor/client.
+
+The engine now holds no reference to UI-owned DOM except each area's
+containerElement, so the class of bug where the engine writes attributes
+that React also renders (block menu stuck hidden) is unrepresentable:
+
+- core: EditableContent keeps block restoration / serialization /
+  sanitization; EditorUI (hidden-attribute base class) is deleted;
+  InsertionPoint delegates its animation to the host and no longer
+  drives area updates; the engine's #show only switches the current
+  pointer and dispatches bge:switch-content
+- client: EditableAreaView renders the iframe/textarea shell with
+  React state (visibility, visual/source mode, ResizeObserver-driven
+  height) and portals BlockMenu and the initial insertion button into
+  the iframe body — no extra React roots, no leaked window listeners
+- BlockMenu hides itself by subscribing to uiState.processing (the
+  forwardRef escape hatch is gone); DraftSwitcher reads
+  uiState.sourceMode instead of duplicating it locally
+- the dead onInsert callback and the discarded factory cleanUp handles
+  disappear together with the factory contracts; engine.cleanUp() now
+  destroys the injected view
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+- the "@burger-editor/client/react" entry is now
+  "@burger-editor/client/ui" (dist/ui.js). With Svelte gone the react
+  qualifier carried no information; components/form/commands/hooks now
+  live directly under src/. The lightweight entry itself stays so blocks
+  consumers (cli/mcp-server) keep avoiding the full client bundle.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+- the imperative dialog layer is gone. EditorDialog,
+  ItemEditorDialog, BlockCatalogDialog, BlockOptionsDialog, BlockMenu,
+  InitialInsertionButton, ItemEditorService and getItemEditorTemplate
+  are removed, along with the UIOptions/UICreator/EditorDialogShellCreator
+  DI contracts and the [data-bge-editor-ui] marker scanning. The UI layer
+  now subscribes to engine.uiState and renders dialogs declaratively.
+
+* Item no longer holds an editor dialog or a click listener; opening
+  the editor is a UI-layer concern (uiState.openItemEditor). Item
+  exposes its seed; import() is synchronous and no longer runs
+  beforeChange
+* ItemEditorOptions keeps only isDisable; the editor string field,
+  open/beforeOpen/beforeChange/onSubmit hooks and customData are gone
+  (replaced by Editor/toEditorState/toItemData)
+* applyBlockOptions(): the block options form application extracted
+  from BlockOptionsDialog for reuse by the declarative dialog
+* engine exposes catalog and getContentStylesheet(); EditableArea
+  installs a command bus receiver in its iframe document and the
+  fallback initial-insertion button declares an invoker command
+  instead of a click listener
+* Actions loses open-editor / select-tab-in-item-editor (editor-tree
+  coordination is lifted into React state)
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
 # [4.0.0-alpha.70](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.69...v4.0.0-alpha.70) (2026-06-12)
 
 **Note:** Version bump only for package @burger-editor/core

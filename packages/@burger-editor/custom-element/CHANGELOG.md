@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
+
+### Bug Fixes
+
+- **custom-element:** build the wysiwyg editor DOM in connectedCallback ([2951f3b](https://github.com/d-zero-dev/BurgerEditor/commit/2951f3ba0372068df0fa84d1570e2b64d12cecad))
+
+### Features
+
+- **custom-element:** replace toolbar click listeners with invoker commands ([7832764](https://github.com/d-zero-dev/BurgerEditor/commit/7832764ac78c0286c64e36a1eaf3ccce68e60436))
+
 # [4.0.0-alpha.70](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.69...v4.0.0-alpha.70) (2026-06-12)
 
 **Note:** Version bump only for package @burger-editor/custom-element

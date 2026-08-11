@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
+
+### Bug Fixes
+
+- **cli:** make itemSchema tolerant of empty or invalid data-bge bindings ([5cfb7be](https://github.com/d-zero-dev/BurgerEditor/commit/5cfb7be62a084f3c539c710db94cd1cd756508fe))
+
+- feat(cli)!: itemSchema returns data fields instead of editor HTML ([3408626](https://github.com/d-zero-dev/BurgerEditor/commit/34086265ecdf7a28f97ead4fbf63a3f1f28e2754))
+
+### BREAKING CHANGES
+
+- the editor property is gone from the item-schema
+  output (editor.html no longer exists). A fields array — the camelCased
+  data keys parsed from the template's data-bge bindings — replaces it
+  so agents can still infer the required keys.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
 # [4.0.0-alpha.70](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.69...v4.0.0-alpha.70) (2026-06-12)
 
 **Note:** Version bump only for package @burger-editor/cli

@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
+
+### Bug Fixes
+
+- **blocks:** move image editor state seeding out of the mount effect ([2985290](https://github.com/d-zero-dev/BurgerEditor/commit/29852901b55517a8f1f988903547863525acc1d4))
+- **blocks:** own the image editor tab panel label in the panel JSX ([f4de051](https://github.com/d-zero-dev/BurgerEditor/commit/f4de051085d9862fc45ce566cfb3bf2570ed286e))
+- **blocks:** restore the google-maps API-key guard and fix alt corruption on tab switch ([b52cb87](https://github.com/d-zero-dev/BurgerEditor/commit/b52cb87504d2b9ac6e36c55a42b3de6064b00ae5))
+- **blocks:** surface image load failures in the editor ([6098a81](https://github.com/d-zero-dev/BurgerEditor/commit/6098a81f5f08beae637eb03b192bf6126d6ed389))
+
+- refactor(client)!: flatten src/react into src and rename the subpath to ./ui ([5086a1a](https://github.com/d-zero-dev/BurgerEditor/commit/5086a1a5a369aef22cdd6f5c2d976f5bf2336bef))
+
+### Features
+
+- **blocks:** migrate 9 items to the Editor component contract ([ade6f8d](https://github.com/d-zero-dev/BurgerEditor/commit/ade6f8d3b53b2ef63414433652234c7af0e75371))
+- **blocks:** migrate image/table/wysiwyg editors to React ([a3a1f76](https://github.com/d-zero-dev/BurgerEditor/commit/a3a1f76ff37aa78958ad6c7181200d42ec73df64))
+
+### BREAKING CHANGES
+
+- the "@burger-editor/client/react" entry is now
+  "@burger-editor/client/ui" (dist/ui.js). With Svelte gone the react
+  qualifier carried no information; components/form/commands/hooks now
+  live directly under src/. The lightweight entry itself stays so blocks
+  consumers (cli/mcp-server) keep avoiding the full client bundle.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
 # [4.0.0-alpha.70](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.69...v4.0.0-alpha.70) (2026-06-12)
 
 **Note:** Version bump only for package @burger-editor/blocks

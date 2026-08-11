@@ -3,6 +3,165 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
+
+### Bug Fixes
+
+- **blocks:** move image editor state seeding out of the mount effect ([2985290](https://github.com/d-zero-dev/BurgerEditor/commit/29852901b55517a8f1f988903547863525acc1d4))
+- **blocks:** own the image editor tab panel label in the panel JSX ([f4de051](https://github.com/d-zero-dev/BurgerEditor/commit/f4de051085d9862fc45ce566cfb3bf2570ed286e))
+- **blocks:** restore the google-maps API-key guard and fix alt corruption on tab switch ([b52cb87](https://github.com/d-zero-dev/BurgerEditor/commit/b52cb87504d2b9ac6e36c55a42b3de6064b00ae5))
+- **blocks:** surface image load failures in the editor ([6098a81](https://github.com/d-zero-dev/BurgerEditor/commit/6098a81f5f08beae637eb03b192bf6126d6ed389))
+- **client:** avoid cascading renders in the preview dimension reset ([05e3e89](https://github.com/d-zero-dev/BurgerEditor/commit/05e3e899f31895eeeb7c8892120d6bf8fa09be69))
+- **client:** close code-review findings in the view port implementation ([26aaa78](https://github.com/d-zero-dev/BurgerEditor/commit/26aaa78af44c9321b6fa70ff6730ed99c3e33cda))
+- **client:** close review gaps in dialogs, commands and file list ([d4abeb0](https://github.com/d-zero-dev/BurgerEditor/commit/d4abeb0ffa07d1e2dc2e935a5e4d4be5706512f2))
+- **client:** drive blockMenu visibility through React state only ([fe9ef12](https://github.com/d-zero-dev/BurgerEditor/commit/fe9ef124bd0a27fa2a9e77360aeadb880353640e))
+- **client:** keep block-menu buttons clickable above the item-edit overlay ([6440e1d](https://github.com/d-zero-dev/BurgerEditor/commit/6440e1d5e78e59c3e35c3dd7066a1a647f094dc6))
+- **client:** only render item overlays for elements that resolve to an Item ([229092c](https://github.com/d-zero-dev/BurgerEditor/commit/229092c7fbf352342c8b7794f7ecf6af1b13523b))
+- **client:** remove direct DOM manipulation left over from the React overhaul ([5defbfa](https://github.com/d-zero-dev/BurgerEditor/commit/5defbfac211879c3c0b9d69751bbe09076d367d5))
+- **client:** restore the global --border-radius token lost in the Svelte port ([b5d7b29](https://github.com/d-zero-dev/BurgerEditor/commit/b5d7b29b6fda2c3594d9b3b7577107fa88055416))
+- **client:** snapshot the target block into the block-options dialog state ([a7059fb](https://github.com/d-zero-dev/BurgerEditor/commit/a7059fb18f6f935e8b409b5244f0b82645e7eca4))
+- **client:** stop bundling React and fix the item-edit overlay on rebound blocks ([44a845d](https://github.com/d-zero-dev/BurgerEditor/commit/44a845d3e6b57bdd17707bc498e63675bf66bffc))
+- **client:** surface file delete and upload failures ([67ed27e](https://github.com/d-zero-dev/BurgerEditor/commit/67ed27ea062d111ce138948215b0fb97965acf2b))
+- **client:** use span-based figure markup in block catalog buttons ([8fc45e1](https://github.com/d-zero-dev/BurgerEditor/commit/8fc45e1676239d0b4c44ad538288cfb593332709))
+- **cli:** make itemSchema tolerant of empty or invalid data-bge bindings ([5cfb7be](https://github.com/d-zero-dev/BurgerEditor/commit/5cfb7be62a084f3c539c710db94cd1cd756508fe))
+- **core:** apply frame semantics from block options form data on submit ([844a467](https://github.com/d-zero-dev/BurgerEditor/commit/844a4670cbde655a309f28c5bcc8629ef682672c))
+- **core:** give Item access to the engine config for isDisable hooks ([5a962f0](https://github.com/d-zero-dev/BurgerEditor/commit/5a962f085a591e74cf11f0eced8b6ba8aa523524))
+- **core:** make block-insertion animation completion reliable ([e257399](https://github.com/d-zero-dev/BurgerEditor/commit/e257399dffc22bad69bc63ded4310cb2b80d843f))
+- **core:** refuse draft⇄main copies that would erase or no-op ([b8cd6fa](https://github.com/d-zero-dev/BurgerEditor/commit/b8cd6fada93785b00d3d30041908e626a52d02b9))
+- **core:** stop forcing blockMenu hidden via direct DOM writes ([83dcfa2](https://github.com/d-zero-dev/BurgerEditor/commit/83dcfa2ad27c7030b5b60d0a0af07df3cb3591b8))
+- **core:** stop passing containerElement itself to BurgerBlock.rebind ([fd1747d](https://github.com/d-zero-dev/BurgerEditor/commit/fd1747d305f9543790a3d7c02288febe1d04b954))
+- **custom-element:** build the wysiwyg editor DOM in connectedCallback ([2951f3b](https://github.com/d-zero-dev/BurgerEditor/commit/2951f3ba0372068df0fa84d1570e2b64d12cecad))
+- **deps:** downgrade yarn.lock metadata version to 8 for CI compatibility ([1f897a9](https://github.com/d-zero-dev/BurgerEditor/commit/1f897a9eee78997c39542939522d15e0f223a2dd))
+- **deps:** downgrade yarn.lock metadata version to 8 for CI compatibility ([b91c12d](https://github.com/d-zero-dev/BurgerEditor/commit/b91c12db75b2e4418e565b861c5ec0f783e04bb0))
+- **github:** publish prerelease versions to the correct dist-tag ([b8660a6](https://github.com/d-zero-dev/BurgerEditor/commit/b8660a67476ada7985f01a89ad034ee82994a435))
+- **inspector:** preserve length/item() on proxied style for indexed access ([74b11f6](https://github.com/d-zero-dev/BurgerEditor/commit/74b11f68f6c3b005ba54f2017a386cb882b80afc))
+- **local:** adapt fileIO client to zod-validator 0.9 response typing ([9c35f46](https://github.com/d-zero-dev/BurgerEditor/commit/9c35f46df6e03178afb2d365e0d4023f9f238936))
+- **local:** add charset and title to layout and drop the invokers polyfill ([8b385c9](https://github.com/d-zero-dev/BurgerEditor/commit/8b385c9b882638ac65edc59a97fa1cb09e455180))
+- **local:** clear the json draft when a front matter field is deleted ([db3b078](https://github.com/d-zero-dev/BurgerEditor/commit/db3b07887595dadff0df14f252956b0c52338ed5))
+- **local:** load real content for the site root and catch FileNotFoundError on save ([33e583b](https://github.com/d-zero-dev/BurgerEditor/commit/33e583bb1186a4b8512759e4c49a5be8e7823563))
+- **local:** return 400 when editableArea selector is missing on save ([644721e](https://github.com/d-zero-dev/BurgerEditor/commit/644721e0ef328698359ef7ed8eb9a78211db78c6))
+- **local:** use React-style attribute names in Hono JSX views ([dab216f](https://github.com/d-zero-dev/BurgerEditor/commit/dab216f61a7bb37d2ebff5cb2e0e9de5fc19579d))
+- **repo:** allow model to invoke git/pr skills from /impl ([2719ef0](https://github.com/d-zero-dev/BurgerEditor/commit/2719ef0955e936f51845974ae15c398059f7a8eb))
+- **repo:** forbid client info from leaking into PR body ([ae75364](https://github.com/d-zero-dev/BurgerEditor/commit/ae7536481cbd4d8f90fb5a04d9a4d54f59a94bb7))
+
+- refactor(core)!: replace the three UI factory contracts with a single view port ([0e5b526](https://github.com/d-zero-dev/BurgerEditor/commit/0e5b526a3f694fe15051756b70a5e7c7a5feea77))
+- refactor(client)!: flatten src/react into src and rename the subpath to ./ui ([5086a1a](https://github.com/d-zero-dev/BurgerEditor/commit/5086a1a5a369aef22cdd6f5c2d976f5bf2336bef))
+- feat(cli)!: itemSchema returns data fields instead of editor HTML ([3408626](https://github.com/d-zero-dev/BurgerEditor/commit/34086265ecdf7a28f97ead4fbf63a3f1f28e2754))
+- feat(client)!: replace Svelte with the React editor chrome ([cfd5c91](https://github.com/d-zero-dev/BurgerEditor/commit/cfd5c91c67f7543ba8299ed8f36dc48201e8daa2))
+- feat(core)!: remove the class-based dialog UI and go headless ([e10f05b](https://github.com/d-zero-dev/BurgerEditor/commit/e10f05b387d0cb2a2fa1a308803a325d29cfb0ec))
+
+### Features
+
+- **blocks:** migrate 9 items to the Editor component contract ([ade6f8d](https://github.com/d-zero-dev/BurgerEditor/commit/ade6f8d3b53b2ef63414433652234c7af0e75371))
+- **blocks:** migrate image/table/wysiwyg editors to React ([a3a1f76](https://github.com/d-zero-dev/BurgerEditor/commit/a3a1f76ff37aa78958ad6c7181200d42ec73df64))
+- **client:** add React UI foundation ([aa1e2da](https://github.com/d-zero-dev/BurgerEditor/commit/aa1e2dafc2928090d10afe6e0e855768955026b7))
+- **client:** add WysiwygField and export invoker command attributes type ([fb963ad](https://github.com/d-zero-dev/BurgerEditor/commit/fb963adc4f60e8f7611ac1939faac2f28711fd3d))
+- **client:** export ItemEditorHost from the ui entry ([e143bfa](https://github.com/d-zero-dev/BurgerEditor/commit/e143bfa80806b6d386f6170f027ebeff3f67734c))
+- **client:** reimplement the 12 UI components in React ([e5ee61e](https://github.com/d-zero-dev/BurgerEditor/commit/e5ee61ebc677203bd173aa208e2ddc41301b8aa0))
+- **core:** add command bus and UI state store ([a4647e2](https://github.com/d-zero-dev/BurgerEditor/commit/a4647e2fa90491ec97ee5dc458d820e357187b5d))
+- **core:** add component-based item editor contract types ([2c8a8b6](https://github.com/d-zero-dev/BurgerEditor/commit/2c8a8b6d72103d3a99dfe8fa8fed9cacd59698a5))
+- **core:** define the engine command vocabulary ([ede3fae](https://github.com/d-zero-dev/BurgerEditor/commit/ede3fae665704465d5c87ce30a3f7e4a9d16ce39))
+- **core:** make legacy editor template optional and pass config to toItemData ([c6e8e13](https://github.com/d-zero-dev/BurgerEditor/commit/c6e8e13410a83ff53fcf8eb0aee6badbee467af6))
+- **core:** return per-listener unsubscribe from ComponentObserver.on ([189e433](https://github.com/d-zero-dev/BurgerEditor/commit/189e43300e115ca6c0690083e5e84c90d584beec))
+- **core:** track processing and source-mode flags in the UI state store ([0754b71](https://github.com/d-zero-dev/BurgerEditor/commit/0754b7197c9bfc8e69938b57fe4bb03fa8fc3c53))
+- **custom-element:** replace toolbar click listeners with invoker commands ([7832764](https://github.com/d-zero-dev/BurgerEditor/commit/7832764ac78c0286c64e36a1eaf3ccce68e60436))
+- **frozen-patty:** expose parse-fields as a subpath export ([d86d904](https://github.com/d-zero-dev/BurgerEditor/commit/d86d90403af844715119bb2ff84c5313a52f3f42))
+- **local:** rebuild the front matter editor as a React component ([011b6e5](https://github.com/d-zero-dev/BurgerEditor/commit/011b6e52953bcbc5be9de2ee7c3145ffb242e789))
+- **local:** replace front matter editor click listeners with invoker commands ([03b1060](https://github.com/d-zero-dev/BurgerEditor/commit/03b1060f766438f6d73d2c80f525e2ba22454454))
+- **utils:** add appendStylesheetTo dom helper ([5af1846](https://github.com/d-zero-dev/BurgerEditor/commit/5af1846ce9bf55aae47044bcfcc625756a17e0cd))
+- **utils:** add narrowElement ([a00c591](https://github.com/d-zero-dev/BurgerEditor/commit/a00c59100328b80d529566b876944d9126d03969))
+
+### BREAKING CHANGES
+
+- BurgerEditorEngineOptions no longer accepts blockMenu /
+  initialInsertionButton / editableAreaShell; it takes an optional `view`
+  (BurgerEditorView) instead. EditableArea is split: content concerns stay
+  in core as EditableContent, presentation moves to @burger-editor/client.
+
+The engine now holds no reference to UI-owned DOM except each area's
+containerElement, so the class of bug where the engine writes attributes
+that React also renders (block menu stuck hidden) is unrepresentable:
+
+- core: EditableContent keeps block restoration / serialization /
+  sanitization; EditorUI (hidden-attribute base class) is deleted;
+  InsertionPoint delegates its animation to the host and no longer
+  drives area updates; the engine's #show only switches the current
+  pointer and dispatches bge:switch-content
+- client: EditableAreaView renders the iframe/textarea shell with
+  React state (visibility, visual/source mode, ResizeObserver-driven
+  height) and portals BlockMenu and the initial insertion button into
+  the iframe body — no extra React roots, no leaked window listeners
+- BlockMenu hides itself by subscribing to uiState.processing (the
+  forwardRef escape hatch is gone); DraftSwitcher reads
+  uiState.sourceMode instead of duplicating it locally
+- the dead onInsert callback and the discarded factory cleanUp handles
+  disappear together with the factory contracts; engine.cleanUp() now
+  destroys the injected view
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+- the "@burger-editor/client/react" entry is now
+  "@burger-editor/client/ui" (dist/ui.js). With Svelte gone the react
+  qualifier carried no information; components/form/commands/hooks now
+  live directly under src/. The lightweight entry itself stays so blocks
+  consumers (cli/mcp-server) keep avoiding the full client bundle.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+- the editor property is gone from the item-schema
+  output (editor.html no longer exists). A fields array — the camelCased
+  data keys parsed from the template's data-bge bindings — replaces it
+  so agents can still infer the required keys.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+- the Svelte 5 implementation is removed (12 components,
+  svelte-mount, engine-state) together with the svelte toolchain
+  (svelte, @tabler/icons-svelte, @sveltejs/vite-plugin-svelte,
+  svelte-check). The entry mounts React roots instead:
+
+* createBurgerEditorClient registers the central command dispatch
+  table and mounts BurgerEditorRoot, which renders the catalog/
+  options/item-editor dialogs declaratively from engine.uiState
+* ItemEditorHost renders each item's Editor component with state from
+  toEditorState and imports the result of toItemData on submit; it
+  also injects the content stylesheet into embedded wysiwyg editors
+* BlockMenu gains transparent per-item overlay buttons
+  (--open-item-editor) replacing the direct click listener on content
+  elements — the overlay lives outside the content container so saved
+  HTML stays clean
+* type checking is plain tsc (tsconfig.check.json); the temporary
+  svelte-check split is gone
+* specs for the removed class-based dialogs are deleted; React
+  equivalents land with the test migration
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+- the imperative dialog layer is gone. EditorDialog,
+  ItemEditorDialog, BlockCatalogDialog, BlockOptionsDialog, BlockMenu,
+  InitialInsertionButton, ItemEditorService and getItemEditorTemplate
+  are removed, along with the UIOptions/UICreator/EditorDialogShellCreator
+  DI contracts and the [data-bge-editor-ui] marker scanning. The UI layer
+  now subscribes to engine.uiState and renders dialogs declaratively.
+
+* Item no longer holds an editor dialog or a click listener; opening
+  the editor is a UI-layer concern (uiState.openItemEditor). Item
+  exposes its seed; import() is synchronous and no longer runs
+  beforeChange
+* ItemEditorOptions keeps only isDisable; the editor string field,
+  open/beforeOpen/beforeChange/onSubmit hooks and customData are gone
+  (replaced by Editor/toEditorState/toItemData)
+* applyBlockOptions(): the block options form application extracted
+  from BlockOptionsDialog for reuse by the declarative dialog
+* engine exposes catalog and getContentStylesheet(); EditableArea
+  installs a command bus receiver in its iframe document and the
+  fallback initial-insertion button declares an invoker command
+  instead of a click listener
+* Actions loses open-editor / select-tab-in-item-editor (editor-tree
+  coordination is lifted into React state)
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
 # [4.0.0-alpha.70](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.69...v4.0.0-alpha.70) (2026-06-12)
 
 **Note:** Version bump only for package BurgerEditor_v4
