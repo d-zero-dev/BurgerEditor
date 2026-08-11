@@ -15,6 +15,9 @@
 		// Shell keywords
 		"elif",
 
+		// English vocabulary missing from the base dictionary
+		"unrepresentable",
+
 		// Dependencies
 		"hono",
 		"pixelmatch",
