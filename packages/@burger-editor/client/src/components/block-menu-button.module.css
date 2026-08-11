@@ -1,9 +1,9 @@
 .wrapper {
 	button {
-		anchor-name: var(--name);
 		display: block;
 		padding-block: 0.2em;
 		padding-inline: 0.5em;
+		anchor-name: var(--name);
 		font-size: 1.5em;
 		color: var(--bge-lightest-color);
 		pointer-events: all;
@@ -23,12 +23,12 @@
 		position: absolute;
 		z-index: 1000;
 		display: none;
-		position-anchor: var(--name);
 		inline-size: calc(anchor-size(inline-size) * 2);
 		padding-block: 0.2em;
 		padding-inline: 0.6em;
 		margin: 0.2em;
 		position-area: block-end;
+		position-anchor: var(--name);
 		font-size: 0.8em;
 		color: var(--bge-lightest-color);
 		background: var(--bge-tooltip-background-color);

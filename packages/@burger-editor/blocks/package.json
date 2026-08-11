@@ -36,15 +36,15 @@
 		"@d-zero/shared": "0.22.2"
 	},
 	"peerDependencies": {
-		"react": "^19.0.0"
+		"react": "19.2.8"
 	},
 	"devDependencies": {
 		"@burger-editor/custom-element": "4.0.0-alpha.64",
 		"@testing-library/dom": "10.4.1",
 		"@testing-library/react": "16.3.2",
 		"@types/google.maps": "3.65.2",
-		"@types/react": "19.2.17",
-		"react": "19.2.7",
+		"@types/react": "19.2.18",
+		"react": "19.2.8",
 		"rollup": "4.62.2",
 		"rollup-plugin-esbuild": "6.2.1",
 		"rollup-plugin-string": "3.0.0"

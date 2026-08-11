@@ -509,7 +509,7 @@ label:has(input[type='radio'][name='bge-scale-type'][value='container']) {
 			content: 'コンテナ';
 		}
 
-		&:is([data-bge-container^='grid:'] *, [data-bge-container='grid'] *) {
+		:is([data-bge-container^='grid:'], [data-bge-container='grid']) & {
 			&::before {
 				content: 'グリッド';
 			}

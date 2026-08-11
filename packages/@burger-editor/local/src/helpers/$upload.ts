@@ -3,7 +3,11 @@ import type { ClientResponse } from 'hono/client';
 import type { StatusCode } from 'hono/utils/http-status';
 
 /**
- *
+ * `request.$post` is only used to derive the upload URL; the actual request runs
+ * through `XMLHttpRequest` for progress events, so its response type is untyped here.
+ * `R` (the success JSON shape) must be supplied explicitly by the caller, since
+ * `zValidator` makes the route's real response a success/validation-error union that
+ * can't be inferred as a single type.
  * @param request
  * @param request.$post
  * @param request.$url
@@ -12,7 +16,7 @@ export function $upload<D extends Record<string, unknown>, R>(request: {
 	$post: (
 		args: { form: D },
 		options?: ClientRequestOptions<unknown>,
-	) => Promise<ClientResponse<R, StatusCode, 'json'>>;
+	) => Promise<ClientResponse<unknown, StatusCode, 'json'>>;
 
 	$url: (arg?: {} | undefined) => URL;
 }) {
