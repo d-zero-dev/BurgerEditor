@@ -392,7 +392,7 @@ __metadata:
     "@burger-editor/custom-element": "npm:4.0.0-alpha.71"
     "@burger-editor/migrator": "npm:4.0.0-alpha.71"
     "@burger-editor/utils": "npm:4.0.0-alpha.71"
-    "@tabler/icons-react": "npm:3.45.0"
+    "@tabler/icons-react": "npm:3.46.0"
     "@testing-library/dom": "npm:10.4.1"
     "@testing-library/react": "npm:16.3.2"
     "@types/react": "npm:19.2.18"
@@ -4474,21 +4474,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tabler/icons-react@npm:3.45.0":
-  version: 3.45.0
-  resolution: "@tabler/icons-react@npm:3.45.0"
+"@tabler/icons-react@npm:3.46.0":
+  version: 3.46.0
+  resolution: "@tabler/icons-react@npm:3.46.0"
   dependencies:
-    "@tabler/icons": "npm:3.45.0"
+    "@tabler/icons": "npm:3.46.0"
   peerDependencies:
     react: ">= 16"
-  checksum: 10c0/db728a8a35788e63aae68f201fac3c84803e6edd40fb3d271eb9c5d64b0dcf6a071226cdcc67cc7b157cef5cb931b7dfc783e68dd89092ec2d737177390d392d
-  languageName: node
-  linkType: hard
-
-"@tabler/icons@npm:3.45.0":
-  version: 3.45.0
-  resolution: "@tabler/icons@npm:3.45.0"
-  checksum: 10c0/efd31c992267538a2390d697ce18cc472e85cbd644494df6a472c0233f3509469cc0eb5bf8091078da6503dfd53451a0f53f13af4f2e96a2c17fcb9af09a95f4
+  checksum: 10c0/8fab7d3a9ec6b62724a1628b8bad68a7b503979e4418f97d057c442adc5257b227a08185a884d452d171983648e36fa92cd7bfe9457f693e9b67bbf4ecf8ec24
   languageName: node
   linkType: hard
 
