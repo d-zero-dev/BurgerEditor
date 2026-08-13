@@ -40,7 +40,7 @@
 		"@burger-editor/custom-element": "4.0.0-alpha.71",
 		"@burger-editor/migrator": "4.0.0-alpha.71",
 		"@burger-editor/utils": "4.0.0-alpha.71",
-		"@tabler/icons-react": "3.45.0"
+		"@tabler/icons-react": "3.46.0"
 	},
 	"devDependencies": {
 		"@testing-library/dom": "10.4.1",
