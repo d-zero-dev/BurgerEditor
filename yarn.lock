@@ -13746,14 +13746,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pixelmatch@npm:7.1.0":
-  version: 7.1.0
-  resolution: "pixelmatch@npm:7.1.0"
+"pixelmatch@npm:7.2.0":
+  version: 7.2.0
+  resolution: "pixelmatch@npm:7.2.0"
   dependencies:
     pngjs: "npm:^7.0.0"
   bin:
     pixelmatch: bin/pixelmatch
-  checksum: 10c0/ff069f92edaa841ac9b58b0ab74e1afa1f3b5e770eea0218c96bac1da4e752f5f6b79a0f9c4ba6b02afb955d39b8c78bcc3cc884f8122b67a1f2efbbccbe1a73
+  checksum: 10c0/d8a2454ecf3a977738d6050ed087effa0a9f1b53a0da92d37381a74bb04db5c21e14cfcd41965fbdac4a5967aa5ff2525e2afe9826a77eae043b8339dafc53b6
   languageName: node
   linkType: hard
 
@@ -15150,7 +15150,7 @@ __metadata:
     lerna: "npm:9.0.7"
     markuplint: "npm:4.18.3"
     npm-run-all2: "npm:8.0.4"
-    pixelmatch: "npm:7.1.0"
+    pixelmatch: "npm:7.2.0"
     playwright: "npm:1.62.1"
     pngjs: "npm:7.0.0"
     typescript: "npm:5.9.3"
