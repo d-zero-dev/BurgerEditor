@@ -51,21 +51,24 @@ export type EditableAreaType = 'main' | 'draft';
  * imperatively from the engine.
  * @example
  * ```ts
- * const view: BurgerEditorView = {
- * 	async createAreaHost({ engine, stylesheets, classList }) {
- * 		// Build the area UI (e.g. mount a React component) and resolve
- * 		// once the content container exists.
- * 		return { containerElement };
- * 	},
- * 	destroy() {
- * 		// Deprecated — forwards to [Symbol.dispose].
- * 		this[Symbol.dispose]();
- * 	},
- * 	[Symbol.dispose]() {
+ * function createMyView(): BurgerEditorView {
+ * 	const teardown = () => {
  * 		// Unmount everything created by createAreaHost.
- * 	},
- * };
- * const engine = await BurgerEditorEngine.new({ ...options, view });
+ * 	};
+ * 	return {
+ * 		async createAreaHost({ engine, stylesheets, classList }) {
+ * 			// Build the area UI (e.g. mount a React component) and resolve
+ * 			// once the content container exists.
+ * 			return { containerElement };
+ * 		},
+ * 		// destroy and [Symbol.dispose] point at the same function — a
+ * 		// `this`-dependent implementation breaks if a caller pulls
+ * 		// `destroy` off the object before calling it.
+ * 		destroy: teardown,
+ * 		[Symbol.dispose]: teardown,
+ * 	};
+ * }
+ * const engine = await BurgerEditorEngine.new({ ...options, view: createMyView() });
  * ```
  */
 export interface BurgerEditorView extends Disposable {

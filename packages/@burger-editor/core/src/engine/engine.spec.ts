@@ -118,6 +118,35 @@ describe('BurgerEditorEngine.new', () => {
 		revokeSpy.mockRestore();
 	});
 
+	test('new()が構築途中で失敗した場合、それまでに確保したリソースをdisposeしてから例外を伝播する（リーク回帰）', async () => {
+		const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
+		const fetchSpy = vi
+			.spyOn(globalThis, 'fetch')
+			.mockRejectedValue(new Error('network error'));
+
+		await expect(
+			BurgerEditorEngine.new(
+				createOptions({
+					config: {
+						classList: [],
+						stylesheets: [{ path: '/broken.css' }],
+						sampleImagePath: '/img/sample.png',
+						sampleFilePath: '/pdf/sample.pdf',
+						googleMapsApiKey: null,
+					},
+				}),
+			),
+		).rejects.toThrow('network error');
+
+		// layers / baseStylesheetのblob URLはfetch失敗より前にdeferされて
+		// いるため、engineが呼び出し元に渡らなくてもdispose経由でrevoke
+		// されているはず
+		expect(revokeSpy).toHaveBeenCalled();
+
+		fetchSpy.mockRestore();
+		revokeSpy.mockRestore();
+	});
+
 	test('[Symbol.dispose]()はcomponentObserverのリスナーも解除する（windowリスナーリーク回帰）', async () => {
 		const engine = await BurgerEditorEngine.new(createOptions());
 		const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');

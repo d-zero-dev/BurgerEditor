@@ -32,15 +32,11 @@ export function createDefaultView(): BurgerEditorView {
 			containers.add(containerElement);
 			return Promise.resolve({ containerElement });
 		},
-		/**
-		 * @deprecated Use a `using` declaration instead — this now only
-		 * forwards to `[Symbol.dispose]`.
-		 */
-		destroy() {
-			this[Symbol.dispose]();
-		},
-		[Symbol.dispose]() {
-			teardown();
-		},
+		// destroyと[Symbol.dispose]は同じ関数を指す — thisに依存する実装だと
+		// 分割代入経由の呼び出しでthisが外れてTypeErrorになるため、
+		// 共有クロージャへの参照にしている
+		/** @deprecated Use a `using` declaration instead. */
+		destroy: teardown,
+		[Symbol.dispose]: teardown,
 	};
 }

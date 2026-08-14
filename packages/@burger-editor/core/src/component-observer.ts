@@ -1,5 +1,7 @@
 import type { Actions } from './types.js';
 
+import { asDisposableFn } from './utils/as-disposable-fn.js';
+
 let instanceId = 0;
 
 export class ComponentObserver implements Disposable {
@@ -56,7 +58,7 @@ export class ComponentObserver implements Disposable {
 			window.removeEventListener(`bge:_${this.#instanceId}_:${name}`, wrapper);
 			this.#listeners.delete(wrapper);
 		};
-		return Object.assign(remove, { [Symbol.dispose]: remove });
+		return asDisposableFn(remove);
 	}
 	#off(): void {
 		for (const [wrapper, name] of this.#listeners) {

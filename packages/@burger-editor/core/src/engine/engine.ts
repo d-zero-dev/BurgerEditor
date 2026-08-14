@@ -420,6 +420,22 @@ export class BurgerEditorEngine implements Disposable {
 	static async new(options: BurgerEditorEngineOptions) {
 		const engine = new BurgerEditorEngine(options);
 
+		try {
+			return await BurgerEditorEngine.#finishConstruction(engine, options);
+		} catch (error) {
+			// 構築が完了しなかった場合、engineはこの関数の外に出ないため
+			// 呼び出し元にはSymbol.dispose()を呼ぶ手段がない。ここまでに
+			// deferされたblob URLやuse済みのviewをその場でdisposeし、
+			// 恒久的なリークを防いでから例外を伝播する
+			engine[Symbol.dispose]();
+			throw error;
+		}
+	}
+
+	static async #finishConstruction(
+		engine: BurgerEditorEngine,
+		options: BurgerEditorEngineOptions,
+	) {
 		const layers = createStylesheet(
 			`@layer ${CSS_LAYER.base}, ${CSS_LAYER.components}, ${CSS_LAYER.ui};`,
 		);

@@ -1,5 +1,7 @@
 import type { BurgerCommandEvent } from './types.js';
 
+import { asDisposableFn } from '../utils/as-disposable-fn.js';
+
 /**
  * The id assigned to every command bus receiver element.
  *
@@ -99,7 +101,7 @@ export class CommandBus implements Disposable {
 			this.#detachers.delete(receiver);
 		};
 		this.#detachers.set(receiver, detach);
-		return Object.assign(detach, { [Symbol.dispose]: detach });
+		return asDisposableFn(detach);
 	}
 	#destroy(): void {
 		for (const [receiver, detach] of this.#detachers) {
