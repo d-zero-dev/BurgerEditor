@@ -24,12 +24,14 @@ export function reactMount(
 } {
 	const root = createRoot(target);
 	root.render(node);
+	const teardown = () => {
+		root.unmount();
+	};
+	// cleanUpと[Symbol.dispose]は同じ関数を指す — thisに依存する実装だと
+	// `const { cleanUp } = reactMount(...)` のような分割代入経由の呼び出しで
+	// thisが外れてTypeErrorになるため、共有クロージャへの参照にしている
 	return {
-		cleanUp() {
-			this[Symbol.dispose]();
-		},
-		[Symbol.dispose]() {
-			root.unmount();
-		},
+		cleanUp: teardown,
+		[Symbol.dispose]: teardown,
 	};
 }
