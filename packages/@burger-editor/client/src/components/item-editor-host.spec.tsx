@@ -5,7 +5,7 @@ import { render, cleanup } from '@testing-library/react';
 import { createElement } from 'react';
 import { test, expect, describe, beforeAll, afterEach, vi } from 'vitest';
 
-import { ItemEditorHost } from '@burger-editor/client/ui';
+import { ItemEditorHost } from './item-editor-host.js';
 
 afterEach(cleanup);
 
@@ -50,6 +50,7 @@ const wysiwygStubSeed: ItemSeed<string, {}, {}, {}> = {
 	version: '1',
 	name: 'wysiwyg-stub',
 	template: '<div></div>',
+	style: '',
 	Editor: StubEditor,
 };
 
