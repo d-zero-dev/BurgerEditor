@@ -292,8 +292,18 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 					'innerHTML',
 				)!.set!;
 				setPlainInnerHTML.call(this, wysiwygElement.value);
-			} catch {
-				// 値取得不可（既に破棄されたエディタ等）の場合は書き戻しをスキップ
+			} catch (error) {
+				// 子要素が自身のdisconnectedCallback経由で既に破棄済みの場合、
+				// value取得がReferenceErrorになる（親子同時切断時のレース）。
+				// 書き戻しはスキップするが、無音にはしない — 開発時に気づける
+				// ようにする
+				if (process.env.NODE_ENV !== 'production') {
+					// eslint-disable-next-line no-console
+					console.warn(
+						'<bge-wysiwyg-editor>: skipped writing the inner value back to plain innerHTML on dispose (the inner <bge-wysiwyg> was already disposed)',
+						error,
+					);
+				}
 			}
 			wysiwygElement[Symbol.dispose]();
 		});
