@@ -4,22 +4,23 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { NoEditableAreaError, updateHtmlContent } from '@burger-editor/core';
-import { afterAll, beforeEach, describe, expect, test } from 'vitest';
+import { mkdtempDisposable } from '@d-zero/shared/mkdtemp-disposable';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import '../dom-shim.js';
 
 import { FileNotFoundError, loadContent, saveContent } from './edit-content.js';
 
-const TEST_DIR = path.join(import.meta.dirname, '..', '..', 'test-temp');
+let tmp: { path: string } & AsyncDisposable;
+let TEST_DIR: string;
 
-beforeEach(async () => {
-	// Create test directory
-	await fs.mkdir(TEST_DIR, { recursive: true });
+beforeAll(async () => {
+	tmp = await mkdtempDisposable(path.join(import.meta.dirname, '..', '..', 'test-temp-'));
+	TEST_DIR = tmp.path;
 });
 
 afterAll(async () => {
-	// Delete test-temp directory after tests
-	await fs.rm(TEST_DIR, { recursive: true, force: true }).catch(() => {});
+	await tmp[Symbol.asyncDispose]();
 });
 
 describe('edit-content with Front Matter support', () => {

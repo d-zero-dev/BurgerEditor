@@ -497,6 +497,7 @@ __metadata:
     cosmiconfig: "npm:9.0.2"
     jsdom: "npm:28.1.0"
     prettier: "npm:3.9.6"
+    vitest: "npm:4.1.10"
   languageName: unknown
   linkType: soft
 

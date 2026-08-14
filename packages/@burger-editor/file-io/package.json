@@ -38,6 +38,7 @@
 	"devDependencies": {
 		"@d-zero/shared": "0.23.0",
 		"@types/jsdom": "28.0.3",
-		"@types/node": "24.13.3"
+		"@types/node": "24.13.3",
+		"vitest": "4.1.10"
 	}
 }
