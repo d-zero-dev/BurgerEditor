@@ -1,9 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { PassThrough } from 'node:stream';
 
-import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
+import { mockStdin } from './__tests__/disposables.js';
 import { resolveSpec } from './spec-input.js';
 
 const FIXTURE_ROOT = path.resolve(import.meta.dirname, '../.tmp-spec-input-fixture');
@@ -16,47 +16,12 @@ afterAll(async () => {
 	await fs.rm(FIXTURE_ROOT, { recursive: true, force: true }).catch(() => {});
 });
 
-// process.stdin replacement: a PassThrough with a forced isTTY flag so
-// resolveSpec's "is stdin piped?" branch follows our scenario instead of the
-// vitest worker's terminal state.
-/**
- *
- * @param isTTY
- * @param payload
- * @param run
- */
-function withMockStdin<T>(
-	isTTY: boolean,
-	payload: string | null,
-	run: () => Promise<T>,
-): Promise<T> {
-	const original = process.stdin;
-	const mock = new PassThrough();
-	Object.defineProperty(mock, 'isTTY', { value: isTTY, configurable: true });
-	Object.defineProperty(process, 'stdin', { value: mock, configurable: true });
-	if (payload === null) {
-		mock.end('');
-	} else {
-		mock.end(payload);
-	}
-	return run().finally(() => {
-		Object.defineProperty(process, 'stdin', { value: original, configurable: true });
-	});
-}
-
 describe('resolveSpec', () => {
-	afterEach(() => {
-		// Defensive in case a test leaks stdin replacement (it shouldn't —
-		// withMockStdin restores in finally — but lint-staged hooks etc. can
-		// re-order things).
-	});
-
 	test('--spec inline JSON wins over --spec-file and stdin (source: inline)', async () => {
 		const filePath = path.join(FIXTURE_ROOT, 'never.json');
 		await fs.writeFile(filePath, JSON.stringify({ source: 'file' }), 'utf8');
-		const result = await withMockStdin(false, JSON.stringify({ source: 'stdin' }), () =>
-			resolveSpec(JSON.stringify({ source: 'inline' }), filePath),
-		);
+		using _ = mockStdin(false, JSON.stringify({ source: 'stdin' }));
+		const result = await resolveSpec(JSON.stringify({ source: 'inline' }), filePath);
 		expect(result.source).toBe('inline');
 		expect(result.value).toEqual({ source: 'inline' });
 	});
@@ -64,28 +29,28 @@ describe('resolveSpec', () => {
 	test('--spec-file is used when --spec is absent (source: file)', async () => {
 		const filePath = path.join(FIXTURE_ROOT, 'fromfile.json');
 		await fs.writeFile(filePath, JSON.stringify({ source: 'file', n: 7 }), 'utf8');
-		const result = await withMockStdin(false, JSON.stringify({ source: 'stdin' }), () =>
-			resolveSpec(undefined, filePath),
-		);
+		using _ = mockStdin(false, JSON.stringify({ source: 'stdin' }));
+		const result = await resolveSpec(undefined, filePath);
 		expect(result.source).toBe('file');
 		expect(result.value).toEqual({ source: 'file', n: 7 });
 	});
 
 	test('stdin is consumed only when both --spec and --spec-file are absent (source: stdin)', async () => {
-		const result = await withMockStdin(false, JSON.stringify({ source: 'stdin' }), () =>
-			resolveSpec(),
-		);
+		using _ = mockStdin(false, JSON.stringify({ source: 'stdin' }));
+		const result = await resolveSpec();
 		expect(result.source).toBe('stdin');
 		expect(result.value).toEqual({ source: 'stdin' });
 	});
 
 	test('returns {value: null, source: "none"} when no source is provided and stdin is a TTY', async () => {
-		const result = await withMockStdin(true, null, () => resolveSpec());
+		using _ = mockStdin(true, null);
+		const result = await resolveSpec();
 		expect(result).toEqual({ value: null, source: 'none' });
 	});
 
 	test('returns {value: null, source: "none"} when stdin is piped but empty', async () => {
-		const result = await withMockStdin(false, '', () => resolveSpec());
+		using _ = mockStdin(false, '');
+		const result = await resolveSpec();
 		expect(result).toEqual({ value: null, source: 'none' });
 	});
 
