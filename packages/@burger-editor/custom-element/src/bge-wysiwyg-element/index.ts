@@ -47,6 +47,7 @@ export function defineBgeWysiwygElement(
 }
 
 export class BgeWysiwygElement extends HTMLElement {
+	#disposables: DisposableStack | null = null;
 	#editor: Editor | null = null;
 	#editorRoot: HTMLDivElement | null = null;
 	#hasStructureChange = false;
@@ -205,10 +206,125 @@ export class BgeWysiwygElement extends HTMLElement {
 		}
 	}
 
+	[Symbol.dispose](): void {
+		this.#disposables?.dispose();
+	}
 	connectedCallback() {
+		// DOM移動（disconnect直後のreconnect）の場合、旧リソースを同期的に
+		// 破棄してから最新の値で再初期化する。iframeは切断された時点で
+		// ブラウジングコンテキストが破棄されるため、エディタ状態
+		// （undo履歴等）の温存はできない。dispose時にlight DOMへ現在値を
+		// 書き戻すため、コンテンツ自体は再初期化後も保持される
+		this.#disposables?.dispose();
+		this.#initialize();
+	}
+
+	/**
+	 * `Node.moveBefore()`（Chrome 133+）によるDOM移動はdisconnectedCallback /
+	 * connectedCallbackを発火させないため、no-opのままエディタ状態を温存する
+	 */
+	connectedMoveCallback(): void {}
+	disconnectedCallback() {
+		const disposables = this.#disposables;
+		queueMicrotask(() => {
+			// 同一タスク内で再接続された場合は何もしない
+			// （connectedCallbackが既にdisposeしているか、破棄不要）
+			if (!this.isConnected) {
+				disposables?.dispose();
+			}
+		});
+	}
+
+	/**
+	 * tiptapのwysiwygが出力するであろうHTMLをレンダリングせずに文字列で返す
+	 * @param html 変換対象のHTML文字列
+	 * @returns 変換後のHTML文字列
+	 */
+	expectHTML(html: string): string {
+		if (!this.#editor) {
+			throw new ReferenceError('<bge-wysiwyg> is not connected');
+		}
+
+		const originalContent = this.#editor.getHTML();
+		this.#isExpectingHTML = true;
+		this.#editor.commands.setContent(html);
+		const result = this.#editor.getHTML().replaceAll('<p></p>', '');
+		this.#editor.commands.setContent(originalContent);
+		this.#isExpectingHTML = false;
+		return result;
+	}
+	isActive(name: string) {
+		return this.editor.isActive(name) ?? false;
+	}
+	setImage(options: { src: string; alt?: string; title?: string }) {
+		this.editor.chain().focus().setImage(options).run();
+	}
+	setStyle(css: string) {
+		if (!this.#previewStyle) {
+			throw new ReferenceError('<bge-wysiwyg> is not connected');
+		}
+
+		this.#previewStyle.textContent = editorContentStyles(css);
+	}
+	syncWysiwygToTextarea() {
+		// expectHTML実行中は同期しない
+		if (this.#isExpectingHTML) {
+			return;
+		}
+
+		// HTMLモードの場合は同期しない（textareaの値が正しい値）
+		if (this.mode === 'html') {
+			return;
+		}
+
+		let html = this.editor.getHTML();
+		html = html.replaceAll('<p></p>', '');
+		this.#setToTextarea(html);
+	}
+	toggleAlign(alignment: 'start' | 'center' | 'end') {
+		this.editor.chain().focus().toggleAlign(alignment).run();
+	}
+	toggleBlockquote() {
+		this.editor.chain().focus().toggleBlockquote().run();
+	}
+	toggleBold() {
+		this.editor.chain().focus().toggleBold().run();
+	}
+	toggleBulletList() {
+		this.editor.chain().focus().toggleBulletList().run();
+	}
+	toggleButtonLikeLink(options?: { href: string }) {
+		this.editor.chain().focus().toggleButtonLikeLink(options).run();
+	}
+	#initialize(): void {
 		if (!this.shadowRoot) {
 			throw new Error('Not supported shadow DOM');
 		}
+
+		const stack = new DisposableStack();
+		this.#disposables = stack;
+
+		// 再接続時にセッション状態をリセットする
+		this.#isInitializing = true;
+		this.#hasStructureChange = false;
+		this.#isExpectingHTML = false;
+
+		// フィールドのnull化はdispose時に最後に実行する（他のdispose処理が
+		// フィールドを参照できるようにするため、スタックの先頭で登録する）
+		stack.defer(() => {
+			this.#editor = null;
+			this.#editorRoot = null;
+			this.#previewStyle = null;
+			this.#structureChangeMessage = null;
+			this.#textarea = null;
+			this.#textareaDescriptor = null;
+			this.#textOnlyMode = null;
+		});
+
+		const abortController = new AbortController();
+		stack.defer(() => {
+			abortController.abort();
+		});
 
 		const initialValue = this.innerHTML;
 		const label = this.getAttribute('label') ?? '内容';
@@ -236,12 +352,20 @@ export class BgeWysiwygElement extends HTMLElement {
 		this.shadowRoot.append(controlUIStyle);
 		controlUIStyle.textContent = controlUIStyles;
 
-		preview.contentDocument.body.addEventListener('focusin', () => {
-			preview.dataset.focusWithin = 'true';
-		});
-		preview.contentDocument.body.addEventListener('focusout', () => {
-			delete preview.dataset.focusWithin;
-		});
+		preview.contentDocument.body.addEventListener(
+			'focusin',
+			() => {
+				preview.dataset.focusWithin = 'true';
+			},
+			{ signal: abortController.signal },
+		);
+		preview.contentDocument.body.addEventListener(
+			'focusout',
+			() => {
+				delete preview.dataset.focusWithin;
+			},
+			{ signal: abortController.signal },
+		);
 
 		if (BgeWysiwygElement.wrapperElement) {
 			const wrapperElement = createElement(
@@ -277,12 +401,12 @@ export class BgeWysiwygElement extends HTMLElement {
 			extensions.push(...BgeWysiwygElement.extensions);
 		}
 
-		this.#editor = new Editor({
+		const editor = new Editor({
 			element: this.#editorRoot,
 			extensions,
 			autofocus: this.hasAttribute('autofocus'),
-			onTransaction: ({ editor }) => {
-				const data = this.#transaction(editor);
+			onTransaction: ({ editor: currentEditor }) => {
+				const data = this.#transaction(currentEditor);
 				this.dispatchEvent(
 					new CustomEvent('transaction', {
 						detail: data,
@@ -295,6 +419,10 @@ export class BgeWysiwygElement extends HTMLElement {
 				this.syncWysiwygToTextarea();
 			},
 		});
+		this.#editor = editor;
+		stack.defer(() => {
+			editor.destroy();
+		});
 
 		if (itemName) {
 			this.#editorRoot.dataset.bgi = itemName;
@@ -306,17 +434,23 @@ export class BgeWysiwygElement extends HTMLElement {
 		)!;
 
 		// Initialize text-only mode controller
-		this.#textOnlyMode = new TextOnlyModeController((html) => {
+		const textOnlyMode = new TextOnlyModeController((html) => {
 			this.#setToTextarea(html);
 		});
+		this.#textOnlyMode = textOnlyMode;
+		stack.use(textOnlyMode);
 
 		Object.defineProperty(this.#textarea, 'value', {
+			configurable: true,
 			get: () => {
 				return this.#textareaDescriptor?.get?.call(this.#textarea) ?? '';
 			},
 			set: (value) => {
 				this.#editor?.commands.setContent(value);
 			},
+		});
+		stack.defer(() => {
+			Reflect.deleteProperty(textarea, 'value');
 		});
 
 		if (initialValue) {
@@ -339,93 +473,40 @@ export class BgeWysiwygElement extends HTMLElement {
 		this.#isInitializing = false;
 
 		// HTMLモードでフォーカスアウト時に構造変更をチェック
-		this.#textarea.addEventListener('blur', () => {
-			if (this.mode !== 'html') {
-				return;
-			}
+		this.#textarea.addEventListener(
+			'blur',
+			() => {
+				if (this.mode !== 'html') {
+					return;
+				}
 
-			this.#setStructureChange(this.#checkStructureChange());
-		});
+				this.#setStructureChange(this.#checkStructureChange());
+			},
+			{ signal: abortController.signal },
+		);
 
 		// HTMLモードで入力時に構造変更をチェック（解消された場合に状態を更新）
-		this.#textarea.addEventListener('input', () => {
-			if (this.mode !== 'html') {
-				return;
+		this.#textarea.addEventListener(
+			'input',
+			() => {
+				if (this.mode !== 'html') {
+					return;
+				}
+
+				this.#setStructureChange(this.#checkStructureChange());
+			},
+			{ signal: abortController.signal },
+		);
+
+		// dispose時に現在値をlight DOMへ書き戻す（最初に実行される）。
+		// これにより再接続時や移動時の再初期化が最新の内容から始まる
+		stack.defer(() => {
+			try {
+				this.innerHTML = this.value;
+			} catch {
+				// 値取得不可（既に破棄されたエディタ等）の場合は書き戻しをスキップ
 			}
-
-			this.#setStructureChange(this.#checkStructureChange());
 		});
-	}
-
-	/**
-	 * tiptapのwysiwygが出力するであろうHTMLをレンダリングせずに文字列で返す
-	 * @param html 変換対象のHTML文字列
-	 * @returns 変換後のHTML文字列
-	 */
-	expectHTML(html: string): string {
-		if (!this.#editor) {
-			throw new ReferenceError('<bge-wysiwyg> is not connected');
-		}
-
-		const originalContent = this.#editor.getHTML();
-		this.#isExpectingHTML = true;
-		this.#editor.commands.setContent(html);
-		const result = this.#editor.getHTML().replaceAll('<p></p>', '');
-		this.#editor.commands.setContent(originalContent);
-		this.#isExpectingHTML = false;
-		return result;
-	}
-
-	isActive(name: string) {
-		return this.editor.isActive(name) ?? false;
-	}
-
-	setImage(options: { src: string; alt?: string; title?: string }) {
-		this.editor.chain().focus().setImage(options).run();
-	}
-
-	setStyle(css: string) {
-		if (!this.#previewStyle) {
-			throw new ReferenceError('<bge-wysiwyg> is not connected');
-		}
-
-		this.#previewStyle.textContent = editorContentStyles(css);
-	}
-
-	syncWysiwygToTextarea() {
-		// expectHTML実行中は同期しない
-		if (this.#isExpectingHTML) {
-			return;
-		}
-
-		// HTMLモードの場合は同期しない（textareaの値が正しい値）
-		if (this.mode === 'html') {
-			return;
-		}
-
-		let html = this.editor.getHTML();
-		html = html.replaceAll('<p></p>', '');
-		this.#setToTextarea(html);
-	}
-
-	toggleAlign(alignment: 'start' | 'center' | 'end') {
-		this.editor.chain().focus().toggleAlign(alignment).run();
-	}
-
-	toggleBlockquote() {
-		this.editor.chain().focus().toggleBlockquote().run();
-	}
-
-	toggleBold() {
-		this.editor.chain().focus().toggleBold().run();
-	}
-
-	toggleBulletList() {
-		this.editor.chain().focus().toggleBulletList().run();
-	}
-
-	toggleButtonLikeLink(options?: { href: string }) {
-		this.editor.chain().focus().toggleButtonLikeLink(options).run();
 	}
 
 	toggleCode() {

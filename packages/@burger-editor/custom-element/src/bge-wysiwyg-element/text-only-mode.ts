@@ -3,7 +3,7 @@
  * Manages contenteditable elements within a container,
  * syncing their content back to a textarea.
  */
-export class TextOnlyModeController {
+export class TextOnlyModeController implements Disposable {
 	#container: HTMLDivElement | null = null;
 	readonly #setToTextarea: (html: string) => void;
 
@@ -42,6 +42,14 @@ export class TextOnlyModeController {
 		this.#setToTextarea = setToTextarea;
 	}
 
+	/**
+	 * 最終破棄。`deactivate()`に加えてコンテナ要素自体をDOMから除去する
+	 */
+	[Symbol.dispose](): void {
+		this.deactivate();
+		this.#container?.remove();
+		this.#container = null;
+	}
 	/**
 	 * text-onlyモードを有効化
 	 * @param shadowRoot
@@ -102,7 +110,8 @@ export class TextOnlyModeController {
 	}
 
 	/**
-	 * text-onlyモードを無効化
+	 * text-onlyモードを無効化。コンテナ要素自体はDOMに残し、
+	 * 他モードへの切り替え後の再利用に備える
 	 */
 	deactivate(): void {
 		if (!this.#container) {
