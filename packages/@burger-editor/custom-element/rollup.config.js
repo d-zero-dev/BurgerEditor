@@ -14,6 +14,7 @@ export default defineConfig([
 			string({ include: ['**/*.svg'] }),
 			esbuild({
 				tsconfig: './tsconfig.rollup.json',
+				target: 'esnext',
 			}),
 		],
 	},
