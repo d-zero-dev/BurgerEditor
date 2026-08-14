@@ -86,11 +86,19 @@ export async function createBurgerEditorClient(
 	// エンジン操作コマンドの中央ディスパッチテーブルを登録する
 	registerEngineCommands(engine, options.catalog);
 
-	// ダイアログ群をエンジンのUI状態ストアから宣言的にレンダリングする
+	// ダイアログ群をエンジンのUI状態ストアから宣言的にレンダリングする。
+	// マウントハンドルをengineのDisposableStackに載せ、
+	// engine[Symbol.dispose]()（cleanUp()）で確実にunmount+除去する
 	const dialogHost = document.createElement('div');
 	dialogHost.dataset.bgeComponent = 'dialog-host';
 	engine.el.append(dialogHost);
-	reactMount(<BurgerEditorRoot engine={engine} />, dialogHost);
+	const dialogMount = reactMount(<BurgerEditorRoot engine={engine} />, dialogHost);
+	engine.own({
+		[Symbol.dispose]() {
+			dialogMount[Symbol.dispose]();
+			dialogHost.remove();
+		},
+	});
 
 	return {
 		engine,

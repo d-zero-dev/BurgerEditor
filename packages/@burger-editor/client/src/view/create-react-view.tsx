@@ -22,6 +22,17 @@ import { EditableAreaView } from '../components/editable-area-view.js';
 export function createReactView(): BurgerEditorView {
 	const mounts = new Map<Root, HTMLElement>();
 
+	/**
+	 *
+	 */
+	function teardown(): void {
+		for (const [root, mountEl] of mounts) {
+			root.unmount();
+			mountEl.remove();
+		}
+		mounts.clear();
+	}
+
 	return {
 		createAreaHost(context) {
 			return new Promise((resolve) => {
@@ -42,12 +53,15 @@ export function createReactView(): BurgerEditorView {
 				);
 			});
 		},
+		/**
+		 * @deprecated Use a `using` declaration instead — this now only
+		 * forwards to `[Symbol.dispose]`.
+		 */
 		destroy() {
-			for (const [root, mountEl] of mounts) {
-				root.unmount();
-				mountEl.remove();
-			}
-			mounts.clear();
+			this[Symbol.dispose]();
+		},
+		[Symbol.dispose]() {
+			teardown();
 		},
 	};
 }
