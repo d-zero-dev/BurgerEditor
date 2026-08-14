@@ -36,7 +36,7 @@ export interface FrontMatterEditorOptions {
 /**
  * Handle returned by {@link createFrontMatterEditor}.
  */
-export interface FrontMatterEditorHandle {
+export interface FrontMatterEditorHandle extends Disposable {
 	/**
 	 * Get current Front Matter data
 	 */
@@ -46,7 +46,8 @@ export interface FrontMatterEditorHandle {
 	 */
 	getOriginalFrontMatter(): string | undefined;
 	/**
-	 * Unmount the editor UI
+	 * Unmount the editor UI.
+	 * @deprecated Use a `using` declaration (`[Symbol.dispose]`) instead.
 	 */
 	unmount(): void;
 }
@@ -95,7 +96,10 @@ export function createFrontMatterEditor(
 	return {
 		getData: () => latest,
 		getOriginalFrontMatter: () => originalFrontMatter,
-		unmount: () => {
+		unmount() {
+			this[Symbol.dispose]();
+		},
+		[Symbol.dispose]() {
 			root.unmount();
 		},
 	};
