@@ -12,6 +12,7 @@ import { parseCli } from '@d-zero/roar';
 import { loadContext } from './context.js';
 import * as h from './handlers.js';
 import { writeErrorJson } from './output.js';
+import { silenceStdout } from './silence-stdout.js';
 import { resolveSpec, type SpecResolution } from './spec-input.js';
 
 // Capture the original stdout writer once. We swap process.stdout.write only
@@ -25,15 +26,8 @@ const realStdoutWrite = process.stdout.write.bind(process.stdout);
  *
  */
 async function loadContextWithSilencedStdout(): ReturnType<typeof loadContext> {
-	const saved = process.stdout.write;
-	process.stdout.write = ((chunk: string | Uint8Array, ...rest: unknown[]) => {
-		return process.stderr.write(chunk as never, ...(rest as []));
-	}) as typeof process.stdout.write;
-	try {
-		return await loadContext();
-	} finally {
-		process.stdout.write = saved;
-	}
+	using _ = silenceStdout();
+	return await loadContext();
 }
 
 // IMPORTANT — flag keys MUST be camelCase. roar derives the user-facing
