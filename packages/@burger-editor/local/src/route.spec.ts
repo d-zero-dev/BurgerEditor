@@ -1,9 +1,9 @@
 import type { LocalServerConfig } from './types.js';
 
 import fs from 'node:fs/promises';
-import os from 'node:os';
 import path from 'node:path';
 
+import { mkdtempDisposable } from '@d-zero/shared/mkdtemp-disposable';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
@@ -12,18 +12,21 @@ import { setRoute } from './route.js';
 
 /**
  * Spin up a fresh tmp documentRoot + assetsRoot pair. Each test gets its own
- * tree so that file writes don't leak between cases.
+ * tree so that file writes don't leak between cases. The returned `tmp`
+ * handle must be disposed (`await tmp[Symbol.asyncDispose]()`) in the
+ * caller's `afterEach`.
  */
 async function makeTmpDocumentRoot(): Promise<{
 	documentRoot: string;
 	assetsRoot: string;
+	tmp: { path: string } & AsyncDisposable;
 }> {
-	const root = await fs.mkdtemp(path.join(os.tmpdir(), 'bge-route-'));
-	const documentRoot = path.join(root, 'docs');
-	const assetsRoot = path.join(root, 'assets');
+	const tmp = await mkdtempDisposable('bge-route-');
+	const documentRoot = path.join(tmp.path, 'docs');
+	const assetsRoot = path.join(tmp.path, 'assets');
 	await fs.mkdir(documentRoot);
 	await fs.mkdir(assetsRoot);
-	return { documentRoot, assetsRoot };
+	return { documentRoot, assetsRoot, tmp };
 }
 
 type ConfigOverrides = {
@@ -107,13 +110,14 @@ async function buildApp(
 describe('GET /api/tree', () => {
 	let documentRoot: string;
 	let assetsRoot: string;
+	let tmp: ({ path: string } & AsyncDisposable) | undefined;
 
 	beforeEach(async () => {
-		({ documentRoot, assetsRoot } = await makeTmpDocumentRoot());
+		({ documentRoot, assetsRoot, tmp } = await makeTmpDocumentRoot());
 	});
 
 	afterEach(async () => {
-		await fs.rm(path.dirname(documentRoot), { recursive: true, force: true });
+		await tmp?.[Symbol.asyncDispose]();
 	});
 
 	test('buildApp rejects on a documentRoot with malformed Front Matter (strict-mode contract)', async () => {
@@ -210,13 +214,14 @@ describe('GET /api/tree', () => {
 describe('GET /:page (virtual mode)', () => {
 	let documentRoot: string;
 	let assetsRoot: string;
+	let tmp: ({ path: string } & AsyncDisposable) | undefined;
 
 	beforeEach(async () => {
-		({ documentRoot, assetsRoot } = await makeTmpDocumentRoot());
+		({ documentRoot, assetsRoot, tmp } = await makeTmpDocumentRoot());
 	});
 
 	afterEach(async () => {
-		await fs.rm(path.dirname(documentRoot), { recursive: true, force: true });
+		await tmp?.[Symbol.asyncDispose]();
 	});
 
 	test('serves an HTML page when the logical path is registered', async () => {
@@ -248,13 +253,14 @@ describe('GET /:page (virtual mode)', () => {
 describe('POST /api/content/create (virtual mode)', () => {
 	let documentRoot: string;
 	let assetsRoot: string;
+	let tmp: ({ path: string } & AsyncDisposable) | undefined;
 
 	beforeEach(async () => {
-		({ documentRoot, assetsRoot } = await makeTmpDocumentRoot());
+		({ documentRoot, assetsRoot, tmp } = await makeTmpDocumentRoot());
 	});
 
 	afterEach(async () => {
-		await fs.rm(path.dirname(documentRoot), { recursive: true, force: true });
+		await tmp?.[Symbol.asyncDispose]();
 	});
 
 	test('writes <id>.html with frontmatter and registers logical path', async () => {
@@ -474,13 +480,14 @@ describe('POST /api/content/create (virtual mode)', () => {
 describe('POST /api/content (virtual mode, path change)', () => {
 	let documentRoot: string;
 	let assetsRoot: string;
+	let tmp: ({ path: string } & AsyncDisposable) | undefined;
 
 	beforeEach(async () => {
-		({ documentRoot, assetsRoot } = await makeTmpDocumentRoot());
+		({ documentRoot, assetsRoot, tmp } = await makeTmpDocumentRoot());
 	});
 
 	afterEach(async () => {
-		await fs.rm(path.dirname(documentRoot), { recursive: true, force: true });
+		await tmp?.[Symbol.asyncDispose]();
 	});
 
 	test('updates frontmatter path and reflects in tree without moving disk file', async () => {
@@ -686,13 +693,14 @@ describe('POST /api/content (virtual mode, path change)', () => {
 describe('POST /api/content (virtual mode, 2-phase commit)', () => {
 	let documentRoot: string;
 	let assetsRoot: string;
+	let tmp: ({ path: string } & AsyncDisposable) | undefined;
 
 	beforeEach(async () => {
-		({ documentRoot, assetsRoot } = await makeTmpDocumentRoot());
+		({ documentRoot, assetsRoot, tmp } = await makeTmpDocumentRoot());
 	});
 
 	afterEach(async () => {
-		await fs.rm(path.dirname(documentRoot), { recursive: true, force: true });
+		await tmp?.[Symbol.asyncDispose]();
 		vi.restoreAllMocks();
 	});
 
@@ -738,13 +746,14 @@ describe('POST /api/content (virtual mode, 2-phase commit)', () => {
 describe('POST /api/content (virtual mode, concurrency)', () => {
 	let documentRoot: string;
 	let assetsRoot: string;
+	let tmp: ({ path: string } & AsyncDisposable) | undefined;
 
 	beforeEach(async () => {
-		({ documentRoot, assetsRoot } = await makeTmpDocumentRoot());
+		({ documentRoot, assetsRoot, tmp } = await makeTmpDocumentRoot());
 	});
 
 	afterEach(async () => {
-		await fs.rm(path.dirname(documentRoot), { recursive: true, force: true });
+		await tmp?.[Symbol.asyncDispose]();
 	});
 
 	test('serializes overlapping path-renames so neither update is lost', async () => {
@@ -795,13 +804,14 @@ describe('POST /api/content (virtual mode, concurrency)', () => {
 describe('POST /api/content (non-virtual passthrough)', () => {
 	let documentRoot: string;
 	let assetsRoot: string;
+	let tmp: ({ path: string } & AsyncDisposable) | undefined;
 
 	beforeEach(async () => {
-		({ documentRoot, assetsRoot } = await makeTmpDocumentRoot());
+		({ documentRoot, assetsRoot, tmp } = await makeTmpDocumentRoot());
 	});
 
 	afterEach(async () => {
-		await fs.rm(path.dirname(documentRoot), { recursive: true, force: true });
+		await tmp?.[Symbol.asyncDispose]();
 	});
 
 	test('rejects ../escape.html in non-virtual mode without writing outside documentRoot', async () => {
@@ -916,13 +926,14 @@ describe('POST /api/content (non-virtual passthrough)', () => {
 describe('GET / (site root)', () => {
 	let documentRoot: string;
 	let assetsRoot: string;
+	let tmp: ({ path: string } & AsyncDisposable) | undefined;
 
 	beforeEach(async () => {
-		({ documentRoot, assetsRoot } = await makeTmpDocumentRoot());
+		({ documentRoot, assetsRoot, tmp } = await makeTmpDocumentRoot());
 	});
 
 	afterEach(async () => {
-		await fs.rm(path.dirname(documentRoot), { recursive: true, force: true });
+		await tmp?.[Symbol.asyncDispose]();
 	});
 
 	test('creates and serves index.html on first visit when virtualTree is disabled', async () => {
@@ -983,13 +994,14 @@ describe('GET / (site root)', () => {
 describe('GET /:page (non-virtual fallthrough)', () => {
 	let documentRoot: string;
 	let assetsRoot: string;
+	let tmp: ({ path: string } & AsyncDisposable) | undefined;
 
 	beforeEach(async () => {
-		({ documentRoot, assetsRoot } = await makeTmpDocumentRoot());
+		({ documentRoot, assetsRoot, tmp } = await makeTmpDocumentRoot());
 	});
 
 	afterEach(async () => {
-		await fs.rm(path.dirname(documentRoot), { recursive: true, force: true });
+		await tmp?.[Symbol.asyncDispose]();
 	});
 
 	test('serves an existing disk file as HTML when virtualTree is disabled', async () => {

@@ -19,6 +19,8 @@ export type { CommandName, CommandHandler } from './command/command-bus.js';
 export type { BurgerCommandEvent } from './command/types.js';
 export { UIStateStore } from './engine/ui-state.js';
 export type { UIState, OpenDialogState } from './engine/ui-state.js';
+export { beginProcessing } from './engine/processing-scope.js';
+export type { ProcessingHost } from './engine/processing-scope.js';
 export * from './const.js';
 export * from './utils/find-value-pattern-from-array.js';
 export { exportStyleOptions } from './block/export-style-options.js';

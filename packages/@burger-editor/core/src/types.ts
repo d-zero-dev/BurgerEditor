@@ -51,20 +51,27 @@ export type EditableAreaType = 'main' | 'draft';
  * imperatively from the engine.
  * @example
  * ```ts
- * const view: BurgerEditorView = {
- * 	async createAreaHost({ engine, stylesheets, classList }) {
- * 		// Build the area UI (e.g. mount a React component) and resolve
- * 		// once the content container exists.
- * 		return { containerElement };
- * 	},
- * 	destroy() {
+ * function createMyView(): BurgerEditorView {
+ * 	const teardown = () => {
  * 		// Unmount everything created by createAreaHost.
- * 	},
- * };
- * const engine = await BurgerEditorEngine.new({ ...options, view });
+ * 	};
+ * 	return {
+ * 		async createAreaHost({ engine, stylesheets, classList }) {
+ * 			// Build the area UI (e.g. mount a React component) and resolve
+ * 			// once the content container exists.
+ * 			return { containerElement };
+ * 		},
+ * 		// destroy and [Symbol.dispose] point at the same function — a
+ * 		// `this`-dependent implementation breaks if a caller pulls
+ * 		// `destroy` off the object before calling it.
+ * 		destroy: teardown,
+ * 		[Symbol.dispose]: teardown,
+ * 	};
+ * }
+ * const engine = await BurgerEditorEngine.new({ ...options, view: createMyView() });
  * ```
  */
-export interface BurgerEditorView {
+export interface BurgerEditorView extends Disposable {
 	/**
 	 * Create the host UI for one editable area (`main` or `draft`) and
 	 * resolve with the content container the engine will own.
@@ -73,8 +80,8 @@ export interface BurgerEditorView {
 	createAreaHost(context: EditableAreaHostContext): Promise<EditableAreaHost>;
 
 	/**
-	 * Tear down everything created by `createAreaHost`. Called from
-	 * `engine.cleanUp()`.
+	 * Tear down everything created by `createAreaHost`.
+	 * @deprecated Use a `using` declaration (`[Symbol.dispose]`) instead.
 	 */
 	destroy(): void;
 }

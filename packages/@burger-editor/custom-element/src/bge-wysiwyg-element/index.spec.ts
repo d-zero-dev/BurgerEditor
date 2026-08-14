@@ -799,3 +799,88 @@ test('text-only mode should remove event listeners on deactivate', () => {
 	);
 	expect(editableElements?.length).toBe(0);
 });
+
+test('[Symbol.dispose]() destroys the tiptap Editor instance', () => {
+	document.body.innerHTML = '<bge-wysiwyg><p>test</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const editor = element.editor;
+
+	element[Symbol.dispose]();
+
+	expect(editor.isDestroyed).toBe(true);
+});
+
+test('[Symbol.dispose]() is idempotent', () => {
+	document.body.innerHTML = '<bge-wysiwyg><p>test</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+
+	element[Symbol.dispose]();
+
+	expect(() => {
+		element[Symbol.dispose]();
+	}).not.toThrow();
+});
+
+test('after [Symbol.dispose](), accessing value/editor throws ReferenceError', () => {
+	document.body.innerHTML = '<bge-wysiwyg><p>test</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+
+	element[Symbol.dispose]();
+
+	expect(() => element.value).toThrow(ReferenceError);
+	expect(() => element.editor).toThrow(ReferenceError);
+});
+
+test('[Symbol.dispose]() restores the native textarea value descriptor', () => {
+	document.body.innerHTML = '<bge-wysiwyg><p>test</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const textarea = element.shadowRoot!.querySelector('textarea')!;
+
+	element[Symbol.dispose]();
+
+	expect(() => {
+		textarea.value = 'plain text';
+	}).not.toThrow();
+	expect(textarea.value).toBe('plain text');
+});
+
+test('[Symbol.dispose]() removes DOM listeners registered via the internal AbortController', () => {
+	document.body.innerHTML = '<bge-wysiwyg><p>test</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const preview = element.shadowRoot!.querySelector('iframe')!;
+
+	element[Symbol.dispose]();
+
+	preview.contentDocument!.body.dispatchEvent(new Event('focusin'));
+	expect(preview.dataset.focusWithin).toBeUndefined();
+});
+
+test('moving the element within the same tick reinitializes the editor but preserves its value', () => {
+	document.body.innerHTML = '<div id="container1"></div><div id="container2"></div>';
+	const container1 = document.querySelector('#container1')!;
+	const container2 = document.querySelector('#container2')!;
+	container1.innerHTML = '<bge-wysiwyg><p>hello</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const oldEditor = element.editor;
+
+	element.remove();
+	container2.append(element);
+
+	expect(oldEditor.isDestroyed).toBe(true);
+	expect(element.editor).not.toBe(oldEditor);
+	expect(element.value).toContain('hello');
+});
+
+test('reconnecting after the disconnect microtask flushes preserves the value in a fresh editor', async () => {
+	document.body.innerHTML = '<bge-wysiwyg><p>hello</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const oldEditor = element.editor;
+
+	element.remove();
+	// disconnectedCallbackがスケジュールしたdisposeマイクロタスクをフラッシュする
+	await Promise.resolve();
+	expect(oldEditor.isDestroyed).toBe(true);
+
+	document.body.append(element);
+	expect(element.value).toContain('hello');
+});

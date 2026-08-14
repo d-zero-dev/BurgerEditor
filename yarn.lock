@@ -372,7 +372,7 @@ __metadata:
     "@burger-editor/core": "npm:4.0.0-alpha.71"
     "@burger-editor/custom-element": "npm:4.0.0-alpha.71"
     "@burger-editor/utils": "npm:4.0.0-alpha.71"
-    "@d-zero/shared": "npm:0.22.5"
+    "@d-zero/shared": "npm:0.23.0"
     "@testing-library/dom": "npm:10.4.1"
     "@testing-library/react": "npm:16.3.2"
     "@types/google.maps": "npm:3.65.4"
@@ -394,7 +394,8 @@ __metadata:
     "@burger-editor/core": "npm:4.0.0-alpha.71"
     "@burger-editor/file-io": "npm:4.0.0-alpha.71"
     "@burger-editor/frozen-patty": "npm:4.0.0-alpha.71"
-    "@d-zero/roar": "npm:2.2.0"
+    "@d-zero/roar": "npm:2.2.1"
+    "@d-zero/shared": "npm:0.23.0"
     "@types/node": "npm:24.13.3"
   bin:
     cli: ./dist/bin.js
@@ -490,11 +491,13 @@ __metadata:
     "@burger-editor/blocks": "npm:4.0.0-alpha.71"
     "@burger-editor/core": "npm:4.0.0-alpha.71"
     "@burger-editor/utils": "npm:4.0.0-alpha.71"
+    "@d-zero/shared": "npm:0.23.0"
     "@types/jsdom": "npm:28.0.3"
     "@types/node": "npm:24.13.3"
     cosmiconfig: "npm:9.0.2"
     jsdom: "npm:28.1.0"
     prettier: "npm:3.9.6"
+    vitest: "npm:4.1.10"
   languageName: unknown
   linkType: soft
 
@@ -544,6 +547,7 @@ __metadata:
     "@burger-editor/core": "npm:4.0.0-alpha.71"
     "@burger-editor/file-io": "npm:4.0.0-alpha.71"
     "@burger-editor/inspector": "npm:4.0.0-alpha.71"
+    "@d-zero/shared": "npm:0.23.0"
     "@hono/node-server": "npm:2.1.0"
     "@hono/zod-validator": "npm:0.9.0"
     "@testing-library/dom": "npm:10.4.1"
@@ -562,6 +566,7 @@ __metadata:
     react-dom: "npm:19.2.8"
     tsx: "npm:4.23.9"
     vite: "npm:7.3.6"
+    vitest: "npm:4.1.10"
     zod: "npm:4.4.3"
   bin:
     bge: ./server/index.js
@@ -578,6 +583,7 @@ __metadata:
     "@burger-editor/legacy": "npm:4.0.0-alpha.71"
     "@burger-editor/migrator": "npm:4.0.0-alpha.71"
     "@burger-editor/utils": "npm:4.0.0-alpha.71"
+    "@d-zero/shared": "npm:0.23.0"
     "@modelcontextprotocol/sdk": "npm:1.30.0"
     vitest: "npm:4.1.10"
     zod: "npm:4.4.3"
@@ -1704,12 +1710,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@d-zero/roar@npm:2.2.0":
-  version: 2.2.0
-  resolution: "@d-zero/roar@npm:2.2.0"
+"@d-zero/roar@npm:2.2.1":
+  version: 2.2.1
+  resolution: "@d-zero/roar@npm:2.2.1"
   dependencies:
     yargs-parser: "npm:22.0.0"
-  checksum: 10c0/d2dbedaa8afb4c7c41beaea9750ed93200f1c4cd369ed13b21ffc3d6404b780f7bcfc2bf9b1b9a075d8d55919aa5e7ba07202f06e6c57a14b93828b8a02cd2be
+  checksum: 10c0/b9c62c12f7b0334d37aedb77142d4dc2c38f3d9fcd03d5c17121c7ad3c66025c23da061a0a8048885d8ab3b940a31798301023d1b5b3e724150baf57b2fc5a10
   languageName: node
   linkType: hard
 
@@ -1728,9 +1734,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@d-zero/shared@npm:0.22.5":
-  version: 0.22.5
-  resolution: "@d-zero/shared@npm:0.22.5"
+"@d-zero/shared@npm:0.23.0":
+  version: 0.23.0
+  resolution: "@d-zero/shared@npm:0.23.0"
   dependencies:
     "@holiday-jp/holiday_jp": "npm:2.5.1"
     await-event-emitter: "npm:2.0.2"
@@ -1739,7 +1745,7 @@ __metadata:
     front-matter: "npm:4.0.2"
     micromatch: "npm:4.0.8"
     sanitize-filename: "npm:1.6.4"
-  checksum: 10c0/c0f0fff768db6a03ac5255383bdd4efeea00d2c18c663fbb6203a6db119d48e072be002d72b8be1f294e6ce847b5d2485a4e79e499c0e0673e5bcd259e064a4e
+  checksum: 10c0/56a4e76c117d5918a2a0dfa34daf75138812db1349217d89cf65ee329ab2f2f7a9be4c9241a80fcc8ab732254f233b0381776e8fa4e4e9b96e630bba5d2ccd55
   languageName: node
   linkType: hard
 

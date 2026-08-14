@@ -70,6 +70,7 @@
 	},
 	"devDependencies": {
 		"@burger-editor/client": "4.0.0-alpha.71",
+		"@d-zero/shared": "0.23.0",
 		"@testing-library/dom": "10.4.1",
 		"@testing-library/react": "16.3.2",
 		"@types/debug": "4.1.13",
@@ -80,7 +81,8 @@
 		"react": "19.2.8",
 		"react-dom": "19.2.8",
 		"tsx": "4.23.9",
-		"vite": "7.3.6"
+		"vite": "7.3.6",
+		"vitest": "4.1.10"
 	},
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)"

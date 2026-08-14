@@ -1,6 +1,8 @@
 import type { BurgerBlock } from './block/block.js';
 import type { BurgerEditorEngine } from './engine/engine.js';
 
+import { beginProcessing } from './engine/processing-scope.js';
+
 export class InsertionPoint {
 	readonly el: HTMLElement;
 	#engine: BurgerEditorEngine;
@@ -30,7 +32,7 @@ export class InsertionPoint {
 			this.#engine.content.containerElement.insertBefore(this.el, targetElement);
 		}
 
-		this.#engine.isProcessed = true;
+		using _processing = beginProcessing(this.#engine);
 		if (this.el.parentElement === null) {
 			throw new Error(`InsertionPoint is not added to the DOM tree`);
 		}
@@ -46,7 +48,6 @@ export class InsertionPoint {
 		}
 		this.el.remove();
 		this.#engine.save();
-		this.#engine.isProcessed = false;
 		return insertionBlock;
 	}
 

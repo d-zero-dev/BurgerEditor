@@ -22,6 +22,17 @@ import { EditableAreaView } from '../components/editable-area-view.js';
 export function createReactView(): BurgerEditorView {
 	const mounts = new Map<Root, HTMLElement>();
 
+	/**
+	 *
+	 */
+	function teardown(): void {
+		for (const [root, mountEl] of mounts) {
+			root.unmount();
+			mountEl.remove();
+		}
+		mounts.clear();
+	}
+
 	return {
 		createAreaHost(context) {
 			return new Promise((resolve) => {
@@ -42,12 +53,11 @@ export function createReactView(): BurgerEditorView {
 				);
 			});
 		},
-		destroy() {
-			for (const [root, mountEl] of mounts) {
-				root.unmount();
-				mountEl.remove();
-			}
-			mounts.clear();
-		},
+		// destroyと[Symbol.dispose]は同じ関数を指す — thisに依存する実装だと
+		// 分割代入経由の呼び出しでthisが外れてTypeErrorになるため、
+		// 共有クロージャへの参照にしている
+		/** @deprecated Use a `using` declaration instead. */
+		destroy: teardown,
+		[Symbol.dispose]: teardown,
 	};
 }

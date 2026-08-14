@@ -2,9 +2,9 @@ import type { LocalServerConfig } from '../types.js';
 import type { SearchMatch } from '@burger-editor/inspector';
 
 import fs from 'node:fs/promises';
-import os from 'node:os';
 import path from 'node:path';
 
+import { mkdtempDisposable } from '@d-zero/shared/mkdtemp-disposable';
 import { test, expect, describe, beforeEach, afterEach } from 'vitest';
 
 import { validateAndParseQueries, formatSearchResults, executeSearch } from './search.js';
@@ -129,11 +129,13 @@ describe('formatSearchResults', () => {
 });
 
 describe('executeSearch (integration)', () => {
+	let tmp: ({ path: string } & AsyncDisposable) | undefined;
 	let testDocumentRoot: string;
 
 	beforeEach(async () => {
 		// Create temporary directory for tests
-		testDocumentRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'bge-search-test-'));
+		tmp = await mkdtempDisposable('bge-search-test-');
+		testDocumentRoot = tmp.path;
 
 		// Create test HTML files with proper BurgerEditor structure
 		// CSS variables must use the format: --bge-options-{category}: var(--bge-options-{category}--{value})
@@ -185,7 +187,7 @@ describe('executeSearch (integration)', () => {
 
 	afterEach(async () => {
 		// Clean up temporary directory
-		await fs.rm(testDocumentRoot, { recursive: true, force: true });
+		await tmp?.[Symbol.asyncDispose]();
 	});
 
 	test('executes search and finds matches', async () => {

@@ -3,14 +3,15 @@ import type { BlockCatalog } from '@burger-editor/core';
 import type { BurgerEditorConfig } from '@burger-editor/file-io';
 
 import fs from 'node:fs/promises';
-import os from 'node:os';
 import path from 'node:path';
 
 import { defaultCatalog } from '@burger-editor/blocks';
+import { mkdtempDisposable } from '@d-zero/shared/mkdtemp-disposable';
 // dom-shim side-effect — must come before any handler call that touches DOMParser.
 import '@burger-editor/file-io';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
+import { chmodScoped } from './__tests__/disposables.js';
 import {
 	blockDelete,
 	blockGet,
@@ -114,15 +115,15 @@ title: 'New Page'
 	};
 }
 
-let tmpRoot = '';
+let tmp: ({ path: string } & AsyncDisposable) | null = null;
 let docRoot = '';
 let assetsRoot = '';
 let ctx: CliContext = {} as CliContext;
 
 beforeEach(async () => {
-	tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'bge-cli-handlers-'));
-	docRoot = path.join(tmpRoot, 'src');
-	assetsRoot = path.join(tmpRoot, 'public');
+	tmp = await mkdtempDisposable('bge-cli-handlers-');
+	docRoot = path.join(tmp.path, 'src');
+	assetsRoot = path.join(tmp.path, 'public');
 	await fs.mkdir(docRoot, { recursive: true });
 	await fs.mkdir(assetsRoot, { recursive: true });
 	await fs.writeFile(path.join(docRoot, 'about.html'), samplePageHtml(), 'utf8');
@@ -134,7 +135,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-	await fs.rm(tmpRoot, { recursive: true, force: true }).catch(() => {});
+	await tmp?.[Symbol.asyncDispose]();
 });
 
 describe('catalog handlers', () => {
@@ -401,20 +402,14 @@ describe('page handlers', () => {
 			// in the EACCES branch (not just EXDEV).
 			const readonlyParent = path.join(docRoot, 'readonly');
 			await fs.mkdir(readonlyParent);
-			await fs.chmod(readonlyParent, 0o555);
-			try {
-				await expect(
-					pageRename(ctx, 'about.html', 'readonly/nested/deeper/new.html'),
-				).rejects.toThrow();
-				// `readonly/nested/deeper` must NOT remain on disk.
-				await expect(
-					fs.access(path.join(readonlyParent, 'nested')),
-				).rejects.toMatchObject({
-					code: 'ENOENT',
-				});
-			} finally {
-				await fs.chmod(readonlyParent, 0o755);
-			}
+			await using _ = await chmodScoped(readonlyParent, 0o555);
+			await expect(
+				pageRename(ctx, 'about.html', 'readonly/nested/deeper/new.html'),
+			).rejects.toThrow();
+			// `readonly/nested/deeper` must NOT remain on disk.
+			await expect(fs.access(path.join(readonlyParent, 'nested'))).rejects.toMatchObject({
+				code: 'ENOENT',
+			});
 		},
 	);
 

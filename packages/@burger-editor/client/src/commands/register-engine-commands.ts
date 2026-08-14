@@ -1,6 +1,6 @@
 import type { BlockCatalog, BurgerEditorEngine } from '@burger-editor/core';
 
-import { BGE_COMMAND } from '@burger-editor/core';
+import { BGE_COMMAND, beginProcessing } from '@burger-editor/core';
 
 import { replaceElement } from '../replace-element.js';
 
@@ -46,11 +46,10 @@ export function registerEngineCommands(
 			return;
 		}
 
-		engine.isProcessed = true;
-
-		await replaceElement(fromEl, toEl);
-
-		engine.isProcessed = false;
+		{
+			using _processing = beginProcessing(engine);
+			await replaceElement(fromEl, toEl);
+		}
 		engine.save();
 	});
 
@@ -123,14 +122,13 @@ export function registerEngineCommands(
 			return;
 		}
 
-		engine.isProcessed = true;
+		{
+			using _processing = beginProcessing(engine);
+			await Promise.resolve();
 
-		await Promise.resolve();
-
-		currentBlock.remove();
-		engine.clearCurrentBlock();
-
-		engine.isProcessed = false;
+			currentBlock.remove();
+			engine.clearCurrentBlock();
+		}
 		engine.save();
 	});
 

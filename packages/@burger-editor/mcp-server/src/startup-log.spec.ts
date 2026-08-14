@@ -20,17 +20,27 @@ function captureStartupStderr(done: RegExp, timeoutMs = 15_000): Promise<string>
 			stdio: ['pipe', 'pipe', 'pipe'],
 		});
 		let stderr = '';
-		const finish = () => {
+		// Hard cap so a hung child can't hang the suite. Cleared on every exit
+		// path below — otherwise it fires again up to timeoutMs later (killing
+		// an already-dead child is harmless, but the dangling timer keeps the
+		// event loop — and vitest's teardown — waiting on it).
+		const timer = setTimeout(finish, timeoutMs);
+		/**
+		 *
+		 */
+		function finish() {
+			clearTimeout(timer);
 			child.kill();
 			resolve(stderr);
-		};
+		}
 		child.stderr.on('data', (chunk: Buffer) => {
 			stderr += chunk.toString('utf8');
 			if (done.test(stderr)) finish();
 		});
-		child.on('error', reject);
-		// Hard cap so a hung child can't hang the suite.
-		setTimeout(finish, timeoutMs);
+		child.on('error', (error) => {
+			clearTimeout(timer);
+			reject(error);
+		});
 	});
 }
 

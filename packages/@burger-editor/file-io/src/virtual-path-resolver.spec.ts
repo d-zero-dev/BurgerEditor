@@ -1,9 +1,10 @@
 import fs from 'node:fs/promises';
-import os from 'node:os';
 import path from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { mkdtempDisposable } from '@d-zero/shared/mkdtemp-disposable';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
+import { disposableSpy } from './__tests__/disposables.js';
 import {
 	EmptyLogicalPathError,
 	IdAlreadyExistsError,
@@ -243,14 +244,16 @@ describe('deleteEntry', () => {
 });
 
 describe('loadResolverState', () => {
+	let tmp: { path: string } & AsyncDisposable;
 	let tmpDir: string;
 
 	beforeEach(async () => {
-		tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bge-resolver-'));
+		tmp = await mkdtempDisposable('bge-resolver-');
+		tmpDir = tmp.path;
 	});
 
 	afterEach(async () => {
-		await fs.rm(tmpDir, { recursive: true, force: true });
+		await tmp[Symbol.asyncDispose]();
 	});
 
 	/**
@@ -386,16 +389,11 @@ describe('loadResolverState', () => {
 		// EBUSY on a locked file, EIO) MUST surface — they're not dirt, and
 		// silently hiding them lets an agent overwrite the wrong file.
 		await writeFile('1.html', '---\npath: about.html\n---\n<h1>a</h1>\n');
-		const spy = vi
-			.spyOn(fs, 'readFile')
-			.mockRejectedValueOnce(
-				Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' }),
-			);
-		try {
-			await expect(loadResolverState(tmpDir, 'path')).rejects.toThrow(/EACCES/);
-		} finally {
-			spy.mockRestore();
-		}
+		using spy = disposableSpy(fs, 'readFile');
+		spy.mockRejectedValueOnce(
+			Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' }),
+		);
+		await expect(loadResolverState(tmpDir, 'path')).rejects.toThrow(/EACCES/);
 	});
 
 	test('PathConflictError still thrown in lenient mode (structural ambiguity, not dirt)', async () => {

@@ -326,3 +326,77 @@ test('default mode (experimental=false) renders HTML mode button only', () => {
 	expect(textOnlyModeButton).toBeNull();
 	expect(modeSelector).toBeNull();
 });
+
+test('[Symbol.dispose]() destroys the inner bge-wysiwyg element and disables its API', () => {
+	document.body.innerHTML = '<bge-wysiwyg-editor><p>test</p></bge-wysiwyg-editor>';
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+	const innerWysiwyg = editor.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const tiptapEditor = innerWysiwyg.editor;
+
+	editor[Symbol.dispose]();
+
+	expect(tiptapEditor.isDestroyed).toBe(true);
+	expect(() => editor.value).toThrow(ReferenceError);
+});
+
+test('[Symbol.dispose]() writes the current value back to plain innerHTML', () => {
+	document.body.innerHTML = '<bge-wysiwyg-editor><p>test</p></bge-wysiwyg-editor>';
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+
+	editor[Symbol.dispose]();
+
+	const plainInnerHTML = Object.getOwnPropertyDescriptor(
+		Element.prototype,
+		'innerHTML',
+	)!.get!.call(editor) as string;
+	expect(plainInnerHTML).toContain('<p>test</p>');
+	// dispose後はツールバーのfieldset構造が残っていない
+	expect(plainInnerHTML).not.toContain('<fieldset>');
+});
+
+test('[Symbol.dispose]() is idempotent', () => {
+	document.body.innerHTML = '<bge-wysiwyg-editor><p>test</p></bge-wysiwyg-editor>';
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+
+	editor[Symbol.dispose]();
+
+	expect(() => {
+		editor[Symbol.dispose]();
+	}).not.toThrow();
+});
+
+test('[Symbol.dispose]() removes the command listener registered via the internal AbortController', () => {
+	document.body.innerHTML = '<bge-wysiwyg-editor><p>test</p></bge-wysiwyg-editor>';
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+	const htmlModeButton = editor.querySelector<HTMLButtonElement>(
+		'[data-bge-toolbar-button="html-mode"]',
+	)!;
+
+	editor[Symbol.dispose]();
+
+	const event = new Event('command') as Event & {
+		command: string;
+		source: Element | null;
+	};
+	Object.assign(event, { command: '--wysiwyg-html-mode', source: htmlModeButton });
+	expect(() => {
+		editor.dispatchEvent(event);
+	}).not.toThrow();
+	// リスナーが解除されているため、モードは変化しない
+	expect(htmlModeButton.ariaPressed).not.toBe('true');
+});
+
+test('moving the element within the same tick keeps the same inner bge-wysiwyg instance (no reinitialization)', () => {
+	document.body.innerHTML = '<div id="container1"></div><div id="container2"></div>';
+	const container1 = document.querySelector('#container1')!;
+	const container2 = document.querySelector('#container2')!;
+	container1.innerHTML = '<bge-wysiwyg-editor><p>hello</p></bge-wysiwyg-editor>';
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+	const innerWysiwyg = editor.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+
+	editor.remove();
+	container2.append(editor);
+
+	expect(editor.querySelector('bge-wysiwyg')).toBe(innerWysiwyg);
+	expect(editor.value).toContain('hello');
+});

@@ -36,7 +36,7 @@ export interface FrontMatterEditorOptions {
 /**
  * Handle returned by {@link createFrontMatterEditor}.
  */
-export interface FrontMatterEditorHandle {
+export interface FrontMatterEditorHandle extends Disposable {
 	/**
 	 * Get current Front Matter data
 	 */
@@ -46,7 +46,8 @@ export interface FrontMatterEditorHandle {
 	 */
 	getOriginalFrontMatter(): string | undefined;
 	/**
-	 * Unmount the editor UI
+	 * Unmount the editor UI.
+	 * @deprecated Use a `using` declaration (`[Symbol.dispose]`) instead.
 	 */
 	unmount(): void;
 }
@@ -92,12 +93,18 @@ export function createFrontMatterEditor(
 		/>,
 	);
 
+	const teardown = () => {
+		root.unmount();
+	};
+
 	return {
 		getData: () => latest,
 		getOriginalFrontMatter: () => originalFrontMatter,
-		unmount: () => {
-			root.unmount();
-		},
+		// unmountと[Symbol.dispose]は同じ関数を指す — thisに依存する実装だと
+		// 分割代入経由の呼び出しでthisが外れてTypeErrorになるため、
+		// 共有クロージャへの参照にしている
+		unmount: teardown,
+		[Symbol.dispose]: teardown,
 	};
 }
 

@@ -34,7 +34,7 @@ import { copyEditableArea } from './copy-editable-area.js';
 import { createDefaultView } from './default-view.js';
 import { UIStateStore } from './ui-state.js';
 
-export class BurgerEditorEngine {
+export class BurgerEditorEngine implements Disposable {
 	readonly catalog: BlockCatalog;
 	readonly commandBus = new CommandBus();
 	readonly componentObserver = new ComponentObserver();
@@ -58,6 +58,8 @@ export class BurgerEditorEngine {
 	#contentStylesheetCache: string | null = null;
 	#current!: EditableContent<EditableAreaType>;
 	#currentBlock: BurgerBlock | null = null;
+	readonly #disposables = new DisposableStack();
+
 	#draft!: EditableContent<'draft'> | null;
 	readonly #healthMonitor: HealthMonitor;
 	#main!: EditableContent<'main'>;
@@ -99,6 +101,9 @@ export class BurgerEditorEngine {
 				this.el.dispatchEvent(event);
 			},
 		});
+		this.#disposables.use(this.#healthMonitor);
+		this.#disposables.use(this.commandBus);
+		this.#disposables.use(this.componentObserver);
 
 		this.css = {
 			stylesheets: options.config.stylesheets ?? [],
@@ -139,6 +144,9 @@ export class BurgerEditorEngine {
 		});
 	}
 
+	[Symbol.dispose](): void {
+		this.#disposables.dispose();
+	}
 	async addBlock(data: BlockData) {
 		const block = await BurgerBlock.create(data, this.#createItemElement.bind(this));
 		const message = block.isDisable();
@@ -151,18 +159,17 @@ export class BurgerEditorEngine {
 	}
 
 	/**
-	 * Clean up resources and stop monitoring
+	 * Clean up resources and stop monitoring.
+	 * @deprecated Use a `using` declaration instead — this now only
+	 * forwards to `[Symbol.dispose]`.
 	 */
 	cleanUp() {
-		this.#healthMonitor.stop();
-		this.commandBus.destroy();
-		this.#view.destroy();
+		this[Symbol.dispose]();
 	}
 
 	clearCurrentBlock() {
 		this.#currentBlock = null;
 	}
-
 	/**
 	 * ブロックマーカーを持たない生HTMLを、1つのwysiwygアイテムとして
 	 * ラップしたフォールバックブロックに変換する
@@ -187,7 +194,6 @@ export class BurgerEditorEngine {
 		}
 		return false;
 	}
-
 	/**
 	 * Resolve the CSS applied to the content (generalCSS plus non-layered
 	 * stylesheets), for injection into rich-text editors.
@@ -217,7 +223,6 @@ export class BurgerEditorEngine {
 		}
 		return this.#currentBlock;
 	}
-
 	getCustomProperties(containerType?: ContainerType) {
 		return getCustomProperties(
 			this.#current.containerElement.ownerDocument,
@@ -239,19 +244,15 @@ export class BurgerEditorEngine {
 	getEditableContent(type: EditableAreaType): EditableContent<EditableAreaType> | null {
 		return type === 'main' ? this.#main : this.#draft;
 	}
-
 	getRepeatMinInlineSizeVariants() {
 		return getRepeatMinInlineSizeVariants(this.#current.containerElement.ownerDocument);
 	}
-
 	hasDraft() {
 		return !!this.#draft;
 	}
-
 	isSetBlock() {
 		return !!this.#currentBlock;
 	}
-
 	async mainToDraft(confirm?: ConfirmCallback) {
 		if (!this.#draft) {
 			return false;
@@ -263,9 +264,33 @@ export class BurgerEditorEngine {
 		}
 		return false;
 	}
-
 	migrationCheck(dom: HTMLElement) {
 		this.#migrationCheck?.(dom);
+	}
+	/**
+	 * Register an externally created resource so it is torn down together
+	 * with the engine (in reverse registration order, alongside the health
+	 * monitor / command bus / component observer / view). Intended for UI
+	 * resources (e.g. a mounted React root) that the engine itself does not
+	 * create but that should not outlive it.
+	 * @template T - Any `Disposable`
+	 * @param disposable - The resource to tie to the engine's lifetime
+	 * @returns The same `disposable`, for chaining
+	 * @example
+	 * ```ts
+	 * const dialogHost = document.createElement('div');
+	 * engine.el.append(dialogHost);
+	 * const mount = reactMount(<Root />, dialogHost);
+	 * engine.own({
+	 * 	[Symbol.dispose]() {
+	 * 		mount.cleanUp();
+	 * 		dialogHost.remove();
+	 * 	},
+	 * });
+	 * ```
+	 */
+	own<T extends Disposable>(disposable: T): T {
+		return this.#disposables.use(disposable);
 	}
 
 	registerMigrationCheck(callback: (dom: HTMLElement) => void) {
@@ -395,15 +420,37 @@ export class BurgerEditorEngine {
 	static async new(options: BurgerEditorEngineOptions) {
 		const engine = new BurgerEditorEngine(options);
 
+		try {
+			return await BurgerEditorEngine.#finishConstruction(engine, options);
+		} catch (error) {
+			// 構築が完了しなかった場合、engineはこの関数の外に出ないため
+			// 呼び出し元にはSymbol.dispose()を呼ぶ手段がない。ここまでに
+			// deferされたblob URLやuse済みのviewをその場でdisposeし、
+			// 恒久的なリークを防いでから例外を伝播する
+			engine[Symbol.dispose]();
+			throw error;
+		}
+	}
+
+	static async #finishConstruction(
+		engine: BurgerEditorEngine,
+		options: BurgerEditorEngineOptions,
+	) {
 		const layers = createStylesheet(
 			`@layer ${CSS_LAYER.base}, ${CSS_LAYER.components}, ${CSS_LAYER.ui};`,
 		);
+		engine.#disposables.defer(() => {
+			URL.revokeObjectURL(layers);
+		});
 
 		const baseStylesheet = createComponentStylesheet(
 			options.items,
 			options.generalCSS,
 			CSS_LAYER.base,
 		);
+		engine.#disposables.defer(() => {
+			URL.revokeObjectURL(baseStylesheet);
+		});
 
 		const componentStylesheets = await Promise.all(
 			options.config.stylesheets.map(async (stylesheet) => {
@@ -413,6 +460,11 @@ export class BurgerEditorEngine {
 				);
 			}),
 		);
+		for (const { blob } of componentStylesheets) {
+			engine.#disposables.defer(() => {
+				URL.revokeObjectURL(blob);
+			});
+		}
 
 		const stylesheets = [
 			{
@@ -435,6 +487,7 @@ export class BurgerEditorEngine {
 				: options.initialContents.main;
 
 		engine.#view = options.view ?? createDefaultView();
+		engine.#disposables.use(engine.#view);
 
 		const draftInitialContent =
 			typeof options.initialContents === 'string' ? null : options.initialContents.draft;

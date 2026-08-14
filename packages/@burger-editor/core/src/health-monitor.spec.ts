@@ -14,7 +14,7 @@ describe('HealthMonitor', () => {
 	describe('start', () => {
 		test('should not start when enabled is false', () => {
 			const checkHealth = vi.fn().mockResolvedValue(true);
-			const monitor = new HealthMonitor({ enabled: false, checkHealth });
+			using monitor = new HealthMonitor({ enabled: false, checkHealth });
 
 			monitor.start();
 
@@ -23,7 +23,7 @@ describe('HealthMonitor', () => {
 
 		test('should call checkHealth immediately when enabled', async () => {
 			const checkHealth = vi.fn().mockResolvedValue(true);
-			const monitor = new HealthMonitor({
+			using monitor = new HealthMonitor({
 				enabled: true,
 				interval: 10_000,
 				checkHealth,
@@ -33,13 +33,11 @@ describe('HealthMonitor', () => {
 			await vi.advanceTimersByTimeAsync(0);
 
 			expect(checkHealth).toHaveBeenCalledOnce();
-
-			monitor.stop();
 		});
 
 		test('should not start twice if already running', async () => {
 			const checkHealth = vi.fn().mockResolvedValue(true);
-			const monitor = new HealthMonitor({
+			using monitor = new HealthMonitor({
 				enabled: true,
 				interval: 10_000,
 				checkHealth,
@@ -50,13 +48,11 @@ describe('HealthMonitor', () => {
 			monitor.start();
 
 			expect(checkHealth).toHaveBeenCalledOnce();
-
-			monitor.stop();
 		});
 
 		test('should pass context to checkHealth', async () => {
 			const checkHealth = vi.fn().mockResolvedValue(true);
-			const monitor = new HealthMonitor({
+			using monitor = new HealthMonitor({
 				enabled: true,
 				interval: 5000,
 				retryCount: 5,
@@ -72,15 +68,13 @@ describe('HealthMonitor', () => {
 				retryCount: 5,
 				currentFailureCount: 0,
 			});
-
-			monitor.stop();
 		});
 	});
 
 	describe('stop', () => {
 		test('should clear the timer', async () => {
 			const checkHealth = vi.fn().mockResolvedValue(true);
-			const monitor = new HealthMonitor({
+			using monitor = new HealthMonitor({
 				enabled: true,
 				interval: 10_000,
 				checkHealth,
@@ -102,7 +96,7 @@ describe('HealthMonitor', () => {
 		test('should call onOffline after consecutive failures reach retryCount', async () => {
 			const onOffline = vi.fn();
 			const checkHealth = vi.fn().mockResolvedValue(false);
-			const monitor = new HealthMonitor({
+			using monitor = new HealthMonitor({
 				enabled: true,
 				interval: 10_000,
 				retryCount: 3,
@@ -130,8 +124,6 @@ describe('HealthMonitor', () => {
 			expect(checkHealth).toHaveBeenCalledTimes(3);
 			expect(onOffline).toHaveBeenCalledOnce();
 			expect(monitor.isOnline).toBe(false);
-
-			monitor.stop();
 		});
 
 		test('should call onOnline when recovering from offline', async () => {
@@ -139,7 +131,7 @@ describe('HealthMonitor', () => {
 			const onOffline = vi.fn();
 			let isHealthy = false;
 			const checkHealth = vi.fn().mockImplementation(() => Promise.resolve(isHealthy));
-			const monitor = new HealthMonitor({
+			using monitor = new HealthMonitor({
 				enabled: true,
 				interval: 10_000,
 				retryCount: 3,
@@ -161,8 +153,6 @@ describe('HealthMonitor', () => {
 			await vi.advanceTimersByTimeAsync(10_000);
 			expect(onOnline).toHaveBeenCalledOnce();
 			expect(monitor.isOnline).toBe(true);
-
-			monitor.stop();
 		});
 
 		test('should reset failure count on successful check', async () => {
@@ -174,7 +164,7 @@ describe('HealthMonitor', () => {
 				if (callCount === 1) return Promise.resolve(false);
 				return Promise.resolve(true);
 			});
-			const monitor = new HealthMonitor({
+			using monitor = new HealthMonitor({
 				enabled: true,
 				interval: 10_000,
 				retryCount: 2,
@@ -192,14 +182,12 @@ describe('HealthMonitor', () => {
 			await vi.advanceTimersByTimeAsync(10_000);
 			expect(onOffline).not.toHaveBeenCalled();
 			expect(checkHealth).toHaveBeenCalledTimes(2);
-
-			monitor.stop();
 		});
 
 		test('should handle checkHealth throwing errors as failures', async () => {
 			const onOffline = vi.fn();
 			const checkHealth = vi.fn().mockRejectedValue(new Error('Network error'));
-			const monitor = new HealthMonitor({
+			using monitor = new HealthMonitor({
 				enabled: true,
 				interval: 10_000,
 				retryCount: 2,
@@ -215,15 +203,13 @@ describe('HealthMonitor', () => {
 			await vi.advanceTimersByTimeAsync(10_000);
 			expect(onOffline).toHaveBeenCalledOnce();
 			expect(monitor.isOnline).toBe(false);
-
-			monitor.stop();
 		});
 	});
 
 	describe('interval calculation', () => {
 		test('should use base interval for normal state', async () => {
 			const checkHealth = vi.fn().mockResolvedValue(true);
-			const monitor = new HealthMonitor({
+			using monitor = new HealthMonitor({
 				enabled: true,
 				interval: 10_000,
 				retryCount: 3,
@@ -236,13 +222,11 @@ describe('HealthMonitor', () => {
 
 			await vi.advanceTimersByTimeAsync(10_000);
 			expect(checkHealth).toHaveBeenCalledTimes(2);
-
-			monitor.stop();
 		});
 
 		test('should use exponential backoff during retry phase', async () => {
 			const checkHealth = vi.fn().mockResolvedValue(false);
-			const monitor = new HealthMonitor({
+			using monitor = new HealthMonitor({
 				enabled: true,
 				interval: 10_000,
 				retryCount: 3,
@@ -259,13 +243,11 @@ describe('HealthMonitor', () => {
 			const baseRetry = 10_000 / 3;
 			await vi.advanceTimersByTimeAsync(baseRetry);
 			expect(checkHealth).toHaveBeenCalledTimes(2);
-
-			monitor.stop();
 		});
 
 		test('should use base interval when offline', async () => {
 			const checkHealth = vi.fn().mockResolvedValue(false);
-			const monitor = new HealthMonitor({
+			using monitor = new HealthMonitor({
 				enabled: true,
 				interval: 10_000,
 				retryCount: 3,
@@ -285,21 +267,19 @@ describe('HealthMonitor', () => {
 			// Offline interval should be base interval
 			await vi.advanceTimersByTimeAsync(10_000);
 			expect(checkHealth).toHaveBeenCalledTimes(callsBefore + 1);
-
-			monitor.stop();
 		});
 	});
 
 	describe('isOnline', () => {
 		test('should default to true', () => {
-			const monitor = new HealthMonitor();
+			using monitor = new HealthMonitor();
 			expect(monitor.isOnline).toBe(true);
 		});
 	});
 
 	describe('defaults', () => {
 		test('should use default values when options not provided', () => {
-			const monitor = new HealthMonitor();
+			using monitor = new HealthMonitor();
 			expect(monitor.isOnline).toBe(true);
 			// enabled defaults to false, so start() should not do anything
 			const checkHealth = vi.fn();

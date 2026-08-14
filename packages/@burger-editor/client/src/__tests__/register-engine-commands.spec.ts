@@ -274,6 +274,30 @@ describe('block操作コマンド', () => {
 		expect([...parent.children].map((el) => el.id)).toEqual(['current', 'prev', 'next']);
 	});
 
+	test('--move-block resets isProcessed even when replaceElement rejects (leak regression)', async () => {
+		const { engine, nextEl } = createEngineWithBlock();
+		// fromEl/toElの親を分離させ、replaceElementの検証エラーで
+		// 確実にrejectさせる
+		const otherParent = document.createElement('div');
+		otherParent.append(nextEl);
+		registerEngineCommands(engine, {});
+		const receiver = engine.commandBus.createReceiver(document.body);
+
+		const onUnhandledRejection = (e: PromiseRejectionEvent) => {
+			e.preventDefault();
+		};
+		window.addEventListener('unhandledrejection', onUnhandledRejection);
+
+		dispatchCommand(receiver, BGE_COMMAND.moveBlock, createSource('down'));
+
+		await vi.waitFor(() => {
+			expect(engine.isProcessed).toBe(false);
+		});
+		expect(engine.save).not.toHaveBeenCalled();
+
+		window.removeEventListener('unhandledrejection', onUnhandledRejection);
+	});
+
 	test('--move-block up does nothing for the first block', async () => {
 		const { engine, parent, prevEl } = createEngineWithBlock();
 		prevEl.remove();

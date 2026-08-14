@@ -1,5 +1,7 @@
 import type { BurgerCommandEvent } from './types.js';
 
+import { asDisposableFn } from '../utils/as-disposable-fn.js';
+
 /**
  * The id assigned to every command bus receiver element.
  *
@@ -37,10 +39,13 @@ export type CommandHandler = (event: BurgerCommandEvent) => void;
  * // <button command="--my-action" commandfor="bge-command-bus" value="x">
  * ```
  */
-export class CommandBus {
+export class CommandBus implements Disposable {
 	readonly #detachers = new Map<HTMLElement, () => void>();
 	readonly #handlers = new Map<CommandName, CommandHandler>();
 
+	[Symbol.dispose](): void {
+		this.#destroy();
+	}
 	/**
 	 * Install a receiver element into the given parent and attach the bus
 	 * to it. Call once per document that hosts command-invoking buttons.
@@ -72,24 +77,20 @@ export class CommandBus {
 	/**
 	 * Detach the bus from every receiver element and remove the receivers
 	 * created by `createReceiver` from their documents.
+	 * @deprecated Use a `using` declaration instead — this now only
+	 * forwards to `[Symbol.dispose]`.
 	 */
 	destroy() {
-		for (const [receiver, detach] of this.#detachers) {
-			detach();
-			if (receiver.id === COMMAND_BUS_ID) {
-				receiver.remove();
-			}
-		}
-		this.#detachers.clear();
+		this[Symbol.dispose]();
 	}
-
 	/**
 	 * Attach the dispatch table to an existing element. Use `createReceiver`
 	 * unless the receiver element is managed elsewhere.
 	 * @param receiver - The element `commandfor` attributes point to
-	 * @returns A function that detaches the listener
+	 * @returns A detach function that is also `Disposable`, so callers may
+	 * either invoke it directly or hold it in a `using` declaration
 	 */
-	listen(receiver: HTMLElement): () => void {
+	listen(receiver: HTMLElement): (() => void) & Disposable {
 		const onCommand = (event: BurgerCommandEvent) => {
 			const handler = this.#handlers.get(event.command as CommandName);
 			handler?.(event);
@@ -100,6 +101,15 @@ export class CommandBus {
 			this.#detachers.delete(receiver);
 		};
 		this.#detachers.set(receiver, detach);
-		return detach;
+		return asDisposableFn(detach);
+	}
+	#destroy(): void {
+		for (const [receiver, detach] of this.#detachers) {
+			detach();
+			if (receiver.id === COMMAND_BUS_ID) {
+				receiver.remove();
+			}
+		}
+		this.#detachers.clear();
 	}
 }

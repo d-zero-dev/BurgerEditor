@@ -113,6 +113,27 @@ describe('ComponentObserver', () => {
 
 			expect(handler).not.toHaveBeenCalled();
 		});
+
+		test('on()の戻り値はDisposableでもあり、usingでこのリスナーだけ解除できる', () => {
+			const observer = new ComponentObserver();
+			const handler = vi.fn();
+			const payload = {
+				block: {} as unknown,
+				width: 100,
+				height: 50,
+				x: 0,
+				y: 0,
+				marginBlockEnd: 0,
+			};
+
+			{
+				using _remove = observer.on('select-block', handler);
+				observer.notify('select-block', payload);
+			}
+			observer.notify('select-block', payload);
+
+			expect(handler).toHaveBeenCalledTimes(1);
+		});
 	});
 
 	describe('duplicate registration', () => {

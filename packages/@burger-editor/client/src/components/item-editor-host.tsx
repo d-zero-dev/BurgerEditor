@@ -107,9 +107,18 @@ function ItemEditorBody({
 		if (!wysiwyg) {
 			return;
 		}
+		// ダイアログが即座に閉じられ要素が破棄された場合、setStyle呼び出しが
+		// ReferenceErrorをthrowし未処理rejectionになるのを防ぐ
+		let cancelled = false;
 		void engine.getContentStylesheet().then((css) => {
+			if (cancelled) {
+				return;
+			}
 			wysiwyg.setStyle(css);
 		});
+		return () => {
+			cancelled = true;
+		};
 	}, [engine, item]);
 
 	const containerType =

@@ -79,6 +79,22 @@ test('destroy()はReact rootのunmountに加えてマウント用の<div>自体�
 	expect(context.engine.viewArea.children.length).toBe(0);
 });
 
+test('destroy()はオブジェクトから分割代入して単独で呼び出しても動作する（thisバインディング回帰）', async () => {
+	const view = createReactView();
+	const context = createContext();
+	await view.createAreaHost(context);
+	const mountEl = context.engine.viewArea.firstElementChild;
+
+	// `const { destroy } = view;` のようにメソッドを取り出すと、
+	// thisに依存する実装ではthisが外れてTypeErrorになる
+	const { destroy } = view;
+	act(() => {
+		destroy();
+	});
+
+	expect(context.engine.viewArea.contains(mountEl)).toBe(false);
+});
+
 test('destroy()を複数エリアぶん呼んでもすべてのマウント要素が除去される', async () => {
 	const view = createReactView();
 	const mainContext = createContext();

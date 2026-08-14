@@ -4,7 +4,7 @@ import esbuild from 'rollup-plugin-esbuild';
 import { string } from 'rollup-plugin-string';
 
 const plugins = {
-	main: [esbuild(), string({ include: ['**/*.html'] })],
+	main: [esbuild({ target: 'esnext' }), string({ include: ['**/*.html'] })],
 	types: [dts(), string({ include: ['**/*.html'] })],
 };
 

@@ -12,6 +12,16 @@ import type { BurgerEditorView } from '../types.js';
 export function createDefaultView(): BurgerEditorView {
 	const containers = new Set<HTMLElement>();
 
+	/**
+	 *
+	 */
+	function teardown(): void {
+		for (const containerElement of containers) {
+			containerElement.remove();
+		}
+		containers.clear();
+	}
+
 	return {
 		createAreaHost({ type, engine, classList }) {
 			const containerElement = document.createElement('div');
@@ -22,11 +32,11 @@ export function createDefaultView(): BurgerEditorView {
 			containers.add(containerElement);
 			return Promise.resolve({ containerElement });
 		},
-		destroy() {
-			for (const containerElement of containers) {
-				containerElement.remove();
-			}
-			containers.clear();
-		},
+		// destroyと[Symbol.dispose]は同じ関数を指す — thisに依存する実装だと
+		// 分割代入経由の呼び出しでthisが外れてTypeErrorになるため、
+		// 共有クロージャへの参照にしている
+		/** @deprecated Use a `using` declaration instead. */
+		destroy: teardown,
+		[Symbol.dispose]: teardown,
 	};
 }
