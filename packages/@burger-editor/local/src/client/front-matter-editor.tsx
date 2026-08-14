@@ -93,15 +93,18 @@ export function createFrontMatterEditor(
 		/>,
 	);
 
+	const teardown = () => {
+		root.unmount();
+	};
+
 	return {
 		getData: () => latest,
 		getOriginalFrontMatter: () => originalFrontMatter,
-		unmount() {
-			this[Symbol.dispose]();
-		},
-		[Symbol.dispose]() {
-			root.unmount();
-		},
+		// unmountと[Symbol.dispose]は同じ関数を指す — thisに依存する実装だと
+		// 分割代入経由の呼び出しでthisが外れてTypeErrorになるため、
+		// 共有クロージャへの参照にしている
+		unmount: teardown,
+		[Symbol.dispose]: teardown,
 	};
 }
 
