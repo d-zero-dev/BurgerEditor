@@ -58,10 +58,11 @@ export type EditableAreaType = 'main' | 'draft';
  * 		return { containerElement };
  * 	},
  * 	destroy() {
- * 		// Unmount everything created by createAreaHost.
+ * 		// Deprecated — forwards to [Symbol.dispose].
+ * 		this[Symbol.dispose]();
  * 	},
  * 	[Symbol.dispose]() {
- * 		this.destroy();
+ * 		// Unmount everything created by createAreaHost.
  * 	},
  * };
  * const engine = await BurgerEditorEngine.new({ ...options, view });
@@ -76,8 +77,8 @@ export interface BurgerEditorView extends Disposable {
 	createAreaHost(context: EditableAreaHostContext): Promise<EditableAreaHost>;
 
 	/**
-	 * Tear down everything created by `createAreaHost`. Called from
-	 * `engine.cleanUp()`. Alias of `[Symbol.dispose]`.
+	 * Tear down everything created by `createAreaHost`.
+	 * @deprecated Use a `using` declaration (`[Symbol.dispose]`) instead.
 	 */
 	destroy(): void;
 }

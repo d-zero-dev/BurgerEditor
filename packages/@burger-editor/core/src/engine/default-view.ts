@@ -12,6 +12,16 @@ import type { BurgerEditorView } from '../types.js';
 export function createDefaultView(): BurgerEditorView {
 	const containers = new Set<HTMLElement>();
 
+	/**
+	 *
+	 */
+	function teardown(): void {
+		for (const containerElement of containers) {
+			containerElement.remove();
+		}
+		containers.clear();
+	}
+
 	return {
 		createAreaHost({ type, engine, classList }) {
 			const containerElement = document.createElement('div');
@@ -22,14 +32,15 @@ export function createDefaultView(): BurgerEditorView {
 			containers.add(containerElement);
 			return Promise.resolve({ containerElement });
 		},
+		/**
+		 * @deprecated Use a `using` declaration instead — this now only
+		 * forwards to `[Symbol.dispose]`.
+		 */
 		destroy() {
-			for (const containerElement of containers) {
-				containerElement.remove();
-			}
-			containers.clear();
+			this[Symbol.dispose]();
 		},
 		[Symbol.dispose]() {
-			this.destroy();
+			teardown();
 		},
 	};
 }
