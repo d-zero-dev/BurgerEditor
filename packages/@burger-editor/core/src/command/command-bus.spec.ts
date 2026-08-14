@@ -100,6 +100,22 @@ describe('CommandBus', () => {
 
 		expect(external.isConnected).toBe(true);
 	});
+
+	test('listen()の戻り値はDisposableでもあり、usingで解除できる', () => {
+		const bus = new CommandBus();
+		const receiver = document.createElement('div');
+		document.body.append(receiver);
+		const handler = vi.fn();
+		bus.define('--via-using', handler);
+
+		{
+			using _detach = bus.listen(receiver);
+			dispatchCommand(receiver, '--via-using');
+		}
+		dispatchCommand(receiver, '--via-using');
+
+		expect(handler).toHaveBeenCalledTimes(1);
+	});
 });
 
 describe('ネイティブInvoker Commands経路', () => {
