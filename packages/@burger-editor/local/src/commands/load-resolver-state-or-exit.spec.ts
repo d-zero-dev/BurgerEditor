@@ -1,34 +1,42 @@
+import type { MockInstance } from 'vitest';
+
 import fs from 'node:fs/promises';
-import os from 'node:os';
 import path from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { mkdtempDisposable } from '@d-zero/shared/mkdtemp-disposable';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+
+import { disposableSpy } from '../__tests__/disposables.js';
 
 import { loadResolverStateOrExit } from './load-resolver-state-or-exit.js';
 
 describe('loadResolverStateOrExit', () => {
+	let tmp: ({ path: string } & AsyncDisposable) | undefined;
 	let documentRoot: string;
 	let errorCalls: string[];
-	let errorSpy: ReturnType<typeof vi.spyOn>;
-	let exitSpy: ReturnType<typeof vi.spyOn>;
+	let errorSpy: MockInstance & Disposable;
+	let exitSpy: MockInstance & Disposable;
 
 	beforeEach(async () => {
-		documentRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'bge-server-load-'));
+		tmp = await mkdtempDisposable('bge-server-load-');
+		documentRoot = tmp.path;
 		errorCalls = [];
-		errorSpy = vi.spyOn(console, 'error').mockImplementation((...args) => {
+		errorSpy = disposableSpy(console, 'error');
+		errorSpy.mockImplementation((...args: unknown[]) => {
 			errorCalls.push(args.map(String).join(' '));
 		});
 		// Translate process.exit into a thrown sentinel so the test runner survives
 		// and we can observe the call from within the awaited promise rejection.
-		exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+		exitSpy = disposableSpy(process, 'exit');
+		exitSpy.mockImplementation(((code?: number) => {
 			throw new Error(`__test_exit__:${code ?? 0}`);
 		}) as never);
 	});
 
 	afterEach(async () => {
-		await fs.rm(documentRoot, { recursive: true, force: true });
-		errorSpy.mockRestore();
-		exitSpy.mockRestore();
+		await tmp?.[Symbol.asyncDispose]();
+		errorSpy[Symbol.dispose]();
+		exitSpy[Symbol.dispose]();
 	});
 
 	test('returns the resolver state when documentRoot is valid', async () => {

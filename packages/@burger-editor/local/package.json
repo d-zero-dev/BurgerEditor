@@ -81,7 +81,8 @@
 		"react": "19.2.8",
 		"react-dom": "19.2.8",
 		"tsx": "4.23.9",
-		"vite": "7.3.6"
+		"vite": "7.3.6",
+		"vitest": "4.1.10"
 	},
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)"

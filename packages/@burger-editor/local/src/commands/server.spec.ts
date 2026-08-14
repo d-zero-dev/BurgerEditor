@@ -3,9 +3,9 @@ import type { ChildProcess } from 'node:child_process';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import os from 'node:os';
 import path from 'node:path';
 
+import { mkdtempDisposable } from '@d-zero/shared/mkdtemp-disposable';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 // cspell:ignore burgereditorrc
@@ -73,14 +73,16 @@ function runCli(cwd: string, timeoutMs = 20_000): Promise<CliResult> {
 }
 
 describe('runServerCommand boot (virtualTree)', () => {
+	let tmp: ({ path: string } & AsyncDisposable) | undefined;
 	let documentRoot: string;
 
 	beforeEach(async () => {
-		documentRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'bge-boot-'));
+		tmp = await mkdtempDisposable('bge-boot-');
+		documentRoot = tmp.path;
 	});
 
 	afterEach(async () => {
-		await fs.rm(documentRoot, { recursive: true, force: true });
+		await tmp?.[Symbol.asyncDispose]();
 	});
 
 	test('exits 1 with formatted stderr listing conflicting files (regression: #754)', async () => {

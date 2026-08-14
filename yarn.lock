@@ -566,6 +566,7 @@ __metadata:
     react-dom: "npm:19.2.8"
     tsx: "npm:4.23.9"
     vite: "npm:7.3.6"
+    vitest: "npm:4.1.10"
     zod: "npm:4.4.3"
   bin:
     bge: ./server/index.js
