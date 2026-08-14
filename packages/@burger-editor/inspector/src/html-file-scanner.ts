@@ -4,9 +4,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { exportStyleOptions, BLOCK_OPTION_SCOPE_SELECTOR } from '@burger-editor/core';
-import { JSDOM } from 'jsdom';
 
 import { matchesSearchQuery } from './css-variable-matcher.js';
+import { openDom } from './disposable-dom.js';
 import { proxyJsdomElementForIterableStyle } from './jsdom-proxy-utils.js';
 
 export interface SearchMatch {
@@ -113,15 +113,15 @@ async function searchInFileWithMultipleQueries(
 	const matches: SearchMatch[] = [];
 
 	// Parse HTML with jsdom
-	const dom = new JSDOM(html);
-	const document = dom.window.document;
+	using scope = openDom(html);
+	const document = scope.window.document;
 
 	// Find all block container elements
 	const containers = document.querySelectorAll(BLOCK_OPTION_SCOPE_SELECTOR);
 
 	for (const [i, container] of containers.entries()) {
 		if (!container) continue;
-		if (!(container instanceof dom.window.HTMLElement)) continue;
+		if (!(container instanceof scope.window.HTMLElement)) continue;
 
 		const proxiedElement = proxyJsdomElementForIterableStyle(container);
 		const styleOptions = exportStyleOptions(proxiedElement);
@@ -189,15 +189,15 @@ async function searchInFile(
 	const matches: SearchMatch[] = [];
 
 	// Parse HTML with jsdom
-	const dom = new JSDOM(html);
-	const document = dom.window.document;
+	using scope = openDom(html);
+	const document = scope.window.document;
 
 	// Find all block container elements
 	const containers = document.querySelectorAll(BLOCK_OPTION_SCOPE_SELECTOR);
 
 	for (const [i, container] of containers.entries()) {
 		if (!container) continue;
-		if (!(container instanceof dom.window.HTMLElement)) continue;
+		if (!(container instanceof scope.window.HTMLElement)) continue;
 
 		const proxiedElement = proxyJsdomElementForIterableStyle(container);
 		const styleOptions = exportStyleOptions(proxiedElement);
