@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import * as cli from '@burger-editor/cli';
+import { mkdtempDisposable } from '@d-zero/shared/mkdtemp-disposable';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -37,19 +38,30 @@ const EXPECTED_V4_TOOLS = [
 ] as const;
 
 let client: Client;
-let originalCwd: string;
-let tmpRoot: string;
+let stack: AsyncDisposableStack;
 
 // loadContext() walks cosmiconfig from process.cwd() to find a
 // burgereditor.config.js. We co-locate the fixture under the mcp-server
 // package's own directory tree so module resolution (`@burger-editor/blocks`
 // inside the config) works via the workspace's node_modules.
 beforeAll(async () => {
-	originalCwd = process.cwd();
-	tmpRoot = await fs.mkdtemp(
+	stack = new AsyncDisposableStack();
+
+	const originalCwd = process.cwd();
+
+	const tmp = await mkdtempDisposable(
 		path.join(path.resolve(import.meta.dirname, '../../'), '.tmp-v4-spec-'),
 	);
-	const docRoot = path.join(tmpRoot, 'src');
+	// 登録順（生成順）＝dispose時はLIFOで逆順に実行される。
+	// client.close() → server.close() → cwdの復帰 → tmpディレクトリ削除
+	// の順に破棄されるよう、ここでは生成順（tmp → cwd復帰 → server → client）
+	// に登録する
+	stack.use(tmp);
+	stack.defer(() => {
+		process.chdir(originalCwd);
+	});
+
+	const docRoot = path.join(tmp.path, 'src');
 	await fs.mkdir(docRoot, { recursive: true });
 	await fs.writeFile(
 		path.join(docRoot, 'index.html'),
@@ -57,7 +69,7 @@ beforeAll(async () => {
 		'utf8',
 	);
 	await fs.writeFile(
-		path.join(tmpRoot, 'burgereditor.config.mjs'),
+		path.join(tmp.path, 'burgereditor.config.mjs'),
 		`import { defaultCatalog } from '@burger-editor/blocks';
 export default {
 	documentRoot: './src',
@@ -69,21 +81,26 @@ export default {
 `,
 		'utf8',
 	);
-	process.chdir(tmpRoot);
+	process.chdir(tmp.path);
 
 	// Fresh server per spec — avoid polluting the shared singleton used by
 	// other tool specs.
 	const server = new McpServer({ name: 'burger-editor-v4-test', version: '0.0.0' });
+	stack.defer(async () => {
+		await server.close();
+	});
 	registerV4Tools(server);
 
 	client = new Client({ name: 'v4-test-client', version: '0.0.0' });
+	stack.defer(async () => {
+		await client.close();
+	});
 	const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
 	await Promise.all([client.connect(clientTransport), server.connect(serverTransport)]);
 });
 
 afterAll(async () => {
-	process.chdir(originalCwd);
-	await fs.rm(tmpRoot, { recursive: true, force: true }).catch(() => {});
+	await stack.disposeAsync();
 });
 
 describe('registerV4Tools — tool registration', () => {
