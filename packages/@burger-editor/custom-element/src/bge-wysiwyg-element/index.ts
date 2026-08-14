@@ -296,6 +296,49 @@ export class BgeWysiwygElement extends HTMLElement {
 	toggleButtonLikeLink(options?: { href: string }) {
 		this.editor.chain().focus().toggleButtonLikeLink(options).run();
 	}
+	toggleCode() {
+		this.editor.chain().focus().toggleCode().run();
+	}
+	toggleFlexBox() {
+		this.editor.chain().focus().toggleFlexBox().run();
+	}
+	toggleHeading(level: 1 | 2 | 3 | 4 | 5 | 6) {
+		this.editor.chain().focus().toggleHeading({ level }).run();
+	}
+	toggleItalic() {
+		this.editor.chain().focus().toggleItalic().run();
+	}
+	toggleLink(options?: { href: string }) {
+		this.editor.chain().focus().toggleLink(options).run();
+	}
+	toggleNote() {
+		this.editor.chain().focus().toggleNote().run();
+	}
+	toggleOrderedList() {
+		this.editor.chain().focus().toggleOrderedList().run();
+	}
+	toggleStrike() {
+		this.editor.chain().focus().toggleStrike().run();
+	}
+	toggleSubscript() {
+		this.editor.chain().focus().toggleSubscript().run();
+	}
+	toggleSuperscript() {
+		this.editor.chain().focus().toggleSuperscript().run();
+	}
+	toggleUnderline() {
+		this.editor.chain().focus().toggleUnderline().run();
+	}
+	#checkStructureChange(): boolean {
+		if (!this.#editor || !this.#textarea || this.mode !== 'html') {
+			return false;
+		}
+
+		const expectedHTML = this.expectHTML(this.#textarea.value);
+		const isStructureSame = normalizeHtmlStructure(this.#textarea.value, expectedHTML);
+
+		return !isStructureSame;
+	}
 	#initialize(): void {
 		if (!this.shadowRoot) {
 			throw new Error('Not supported shadow DOM');
@@ -507,61 +550,6 @@ export class BgeWysiwygElement extends HTMLElement {
 				// 値取得不可（既に破棄されたエディタ等）の場合は書き戻しをスキップ
 			}
 		});
-	}
-
-	toggleCode() {
-		this.editor.chain().focus().toggleCode().run();
-	}
-
-	toggleFlexBox() {
-		this.editor.chain().focus().toggleFlexBox().run();
-	}
-
-	toggleHeading(level: 1 | 2 | 3 | 4 | 5 | 6) {
-		this.editor.chain().focus().toggleHeading({ level }).run();
-	}
-
-	toggleItalic() {
-		this.editor.chain().focus().toggleItalic().run();
-	}
-
-	toggleLink(options?: { href: string }) {
-		this.editor.chain().focus().toggleLink(options).run();
-	}
-
-	toggleNote() {
-		this.editor.chain().focus().toggleNote().run();
-	}
-
-	toggleOrderedList() {
-		this.editor.chain().focus().toggleOrderedList().run();
-	}
-
-	toggleStrike() {
-		this.editor.chain().focus().toggleStrike().run();
-	}
-
-	toggleSubscript() {
-		this.editor.chain().focus().toggleSubscript().run();
-	}
-
-	toggleSuperscript() {
-		this.editor.chain().focus().toggleSuperscript().run();
-	}
-
-	toggleUnderline() {
-		this.editor.chain().focus().toggleUnderline().run();
-	}
-
-	#checkStructureChange(): boolean {
-		if (!this.#editor || !this.#textarea || this.mode !== 'html') {
-			return false;
-		}
-
-		const expectedHTML = this.expectHTML(this.#textarea.value);
-		const isStructureSame = normalizeHtmlStructure(this.#textarea.value, expectedHTML);
-
-		return !isStructureSame;
 	}
 
 	#setStructureChange(hasChange: boolean): void {

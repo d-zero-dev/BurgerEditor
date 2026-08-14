@@ -54,12 +54,12 @@ export class BurgerEditorEngine implements Disposable {
 		readonly blockClipboard: string;
 	};
 	readonly uiState = new UIStateStore();
-	readonly #disposables = new DisposableStack();
-
 	readonly viewArea: HTMLElement;
 	#contentStylesheetCache: string | null = null;
 	#current!: EditableContent<EditableAreaType>;
 	#currentBlock: BurgerBlock | null = null;
+	readonly #disposables = new DisposableStack();
+
 	#draft!: EditableContent<'draft'> | null;
 	readonly #healthMonitor: HealthMonitor;
 	#main!: EditableContent<'main'>;
@@ -247,6 +247,26 @@ export class BurgerEditorEngine implements Disposable {
 	getRepeatMinInlineSizeVariants() {
 		return getRepeatMinInlineSizeVariants(this.#current.containerElement.ownerDocument);
 	}
+	hasDraft() {
+		return !!this.#draft;
+	}
+	isSetBlock() {
+		return !!this.#currentBlock;
+	}
+	async mainToDraft(confirm?: ConfirmCallback) {
+		if (!this.#draft) {
+			return false;
+		}
+
+		if (await copyEditableArea(this.#main, this.#draft, confirm)) {
+			this.showDraft();
+			return true;
+		}
+		return false;
+	}
+	migrationCheck(dom: HTMLElement) {
+		this.#migrationCheck?.(dom);
+	}
 	/**
 	 * Register an externally created resource so it is torn down together
 	 * with the engine (in reverse registration order, alongside the health
@@ -271,30 +291,6 @@ export class BurgerEditorEngine implements Disposable {
 	 */
 	own<T extends Disposable>(disposable: T): T {
 		return this.#disposables.use(disposable);
-	}
-
-	hasDraft() {
-		return !!this.#draft;
-	}
-
-	isSetBlock() {
-		return !!this.#currentBlock;
-	}
-
-	async mainToDraft(confirm?: ConfirmCallback) {
-		if (!this.#draft) {
-			return false;
-		}
-
-		if (await copyEditableArea(this.#main, this.#draft, confirm)) {
-			this.showDraft();
-			return true;
-		}
-		return false;
-	}
-
-	migrationCheck(dom: HTMLElement) {
-		this.#migrationCheck?.(dom);
 	}
 
 	registerMigrationCheck(callback: (dom: HTMLElement) => void) {
