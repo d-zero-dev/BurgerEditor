@@ -15,6 +15,7 @@
 		"server",
 		"./src/**/*.spec.ts",
 		"./src/client/**/*",
-		"./src/import/**/*"
+		"./src/import/**/*",
+		"./src/__tests__/**"
 	]
 }
