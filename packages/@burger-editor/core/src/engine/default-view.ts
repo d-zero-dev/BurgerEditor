@@ -28,5 +28,8 @@ export function createDefaultView(): BurgerEditorView {
 			}
 			containers.clear();
 		},
+		[Symbol.dispose]() {
+			this.destroy();
+		},
 	};
 }

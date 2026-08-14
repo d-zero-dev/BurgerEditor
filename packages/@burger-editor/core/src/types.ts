@@ -60,11 +60,14 @@ export type EditableAreaType = 'main' | 'draft';
  * 	destroy() {
  * 		// Unmount everything created by createAreaHost.
  * 	},
+ * 	[Symbol.dispose]() {
+ * 		this.destroy();
+ * 	},
  * };
  * const engine = await BurgerEditorEngine.new({ ...options, view });
  * ```
  */
-export interface BurgerEditorView {
+export interface BurgerEditorView extends Disposable {
 	/**
 	 * Create the host UI for one editable area (`main` or `draft`) and
 	 * resolve with the content container the engine will own.
@@ -74,7 +77,7 @@ export interface BurgerEditorView {
 
 	/**
 	 * Tear down everything created by `createAreaHost`. Called from
-	 * `engine.cleanUp()`.
+	 * `engine.cleanUp()`. Alias of `[Symbol.dispose]`.
 	 */
 	destroy(): void;
 }

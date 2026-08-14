@@ -21,7 +21,7 @@ export interface HealthMonitorOptions {
 /**
  * Monitors server health status and notifies offline/online state changes via events
  */
-export class HealthMonitor {
+export class HealthMonitor implements Disposable {
 	#checkHealth: HealthCheckFunction;
 	/**
 	 * Default health check implementation (no-op, always returns true)
@@ -54,6 +54,9 @@ export class HealthMonitor {
 		this.#onOnline = options?.onOnline;
 	}
 
+	[Symbol.dispose](): void {
+		this.#stop();
+	}
 	/**
 	 * Start health monitoring
 	 */
@@ -67,15 +70,13 @@ export class HealthMonitor {
 	}
 
 	/**
-	 * Stop health monitoring
+	 * Stop health monitoring.
+	 * @deprecated Use a `using` declaration instead — this now only
+	 * forwards to `[Symbol.dispose]`.
 	 */
 	stop(): void {
-		if (this.#timeoutId !== null) {
-			clearTimeout(this.#timeoutId);
-			this.#timeoutId = null;
-		}
+		this[Symbol.dispose]();
 	}
-
 	/**
 	 * Calculate dynamic interval based on current state
 	 * - Normal/Recovery/Offline: use base interval (設定したintervalで等間隔)
@@ -154,7 +155,6 @@ export class HealthMonitor {
 		// Schedule next check with dynamic interval
 		this.#scheduleNextCheck();
 	}
-
 	/**
 	 * Schedule next health check with dynamic interval
 	 */
@@ -163,5 +163,11 @@ export class HealthMonitor {
 		this.#timeoutId = window.setTimeout(() => {
 			void this.#performHealthCheck();
 		}, nextInterval);
+	}
+	#stop(): void {
+		if (this.#timeoutId !== null) {
+			clearTimeout(this.#timeoutId);
+			this.#timeoutId = null;
+		}
 	}
 }

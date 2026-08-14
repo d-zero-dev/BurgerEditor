@@ -165,6 +165,22 @@ describe('InsertionPoint', () => {
 			expect(ipIndex).toBeLessThan(existingIndex);
 		});
 
+		test('should reset isProcessed to false even when attaching the marker to the DOM fails', async () => {
+			const engine = createMockEngine();
+			const ip = new InsertionPoint(engine);
+			const insertionBlock = createMockBlock();
+
+			// containerElement.appendをno-opにして「DOMに接続されなかった」経路を再現する
+			engine.content.containerElement.append = () => {};
+
+			ip.set(null, false);
+			await expect(ip.insert(insertionBlock)).rejects.toThrow(
+				'InsertionPoint is not added to the DOM tree',
+			);
+
+			expect(engine.isProcessed).toBe(false);
+		});
+
 		test('should insert after target block when toTop is false', () => {
 			const engine = createMockEngine();
 			const existingBlock = createMockBlock();

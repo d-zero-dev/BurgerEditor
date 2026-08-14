@@ -2,7 +2,7 @@ import type { Actions } from './types.js';
 
 let instanceId = 0;
 
-export class ComponentObserver {
+export class ComponentObserver implements Disposable {
 	readonly #instanceId: number;
 	#listeners = new Map<EventListener, keyof Actions>();
 
@@ -10,6 +10,9 @@ export class ComponentObserver {
 		this.#instanceId = instanceId++;
 	}
 
+	[Symbol.dispose](): void {
+		this.#off();
+	}
 	/**
 	 * Dispatch a custom event on the window.
 	 * @template A - The action type key
@@ -24,14 +27,12 @@ export class ComponentObserver {
 
 	/**
 	 * Remove all registered event listeners and clear the internal map.
+	 * @deprecated Use a `using` declaration instead — this now only
+	 * forwards to `[Symbol.dispose]`.
 	 */
 	off() {
-		for (const [wrapper, name] of this.#listeners) {
-			window.removeEventListener(`bge:_${this.#instanceId}_:${name}`, wrapper);
-		}
-		this.#listeners.clear();
+		this[Symbol.dispose]();
 	}
-
 	/**
 	 * Register an event listener. Each call creates a separate wrapper,
 	 * so calling with the same listener multiple times will fire it
@@ -39,20 +40,28 @@ export class ComponentObserver {
 	 * @template A - The action type key
 	 * @param name - The action name to listen for
 	 * @param listener - Callback receiving the typed payload
-	 * @returns A function that removes this listener only
+	 * @returns A function that removes this listener only, also `Disposable`
+	 * so it can be held in a `using` declaration
 	 */
 	on<A extends keyof Actions>(
 		name: A,
 		listener: (payload: Actions[A]) => void,
-	): () => void {
+	): (() => void) & Disposable {
 		const wrapper: EventListener = (e) => {
 			listener((e as CustomEvent).detail);
 		};
 		this.#listeners.set(wrapper, name);
 		window.addEventListener(`bge:_${this.#instanceId}_:${name}`, wrapper);
-		return () => {
+		const remove = () => {
 			window.removeEventListener(`bge:_${this.#instanceId}_:${name}`, wrapper);
 			this.#listeners.delete(wrapper);
 		};
+		return Object.assign(remove, { [Symbol.dispose]: remove });
+	}
+	#off(): void {
+		for (const [wrapper, name] of this.#listeners) {
+			window.removeEventListener(`bge:_${this.#instanceId}_:${name}`, wrapper);
+		}
+		this.#listeners.clear();
 	}
 }

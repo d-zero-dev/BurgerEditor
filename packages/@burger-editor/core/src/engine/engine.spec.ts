@@ -1,6 +1,6 @@
 import type { BurgerEditorView, EditableAreaType } from '../types.js';
 
-import { test, expect, beforeEach, describe } from 'vitest';
+import { test, expect, beforeEach, describe, vi } from 'vitest';
 
 import { BurgerEditorEngine } from './engine.js';
 
@@ -98,6 +98,41 @@ describe('BurgerEditorEngine.new', () => {
 		expect(container?.isConnected).toBe(false);
 	});
 
+	test('[Symbol.dispose]()は2回呼んでも安全（冪等）', async () => {
+		const engine = await BurgerEditorEngine.new(createOptions());
+
+		engine[Symbol.dispose]();
+
+		expect(() => {
+			engine[Symbol.dispose]();
+		}).not.toThrow();
+	});
+
+	test('[Symbol.dispose]()はstylesheetのblob URLをrevokeする', async () => {
+		const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
+		const engine = await BurgerEditorEngine.new(createOptions());
+
+		engine[Symbol.dispose]();
+
+		expect(revokeSpy).toHaveBeenCalled();
+		revokeSpy.mockRestore();
+	});
+
+	test('[Symbol.dispose]()はcomponentObserverのリスナーも解除する（windowリスナーリーク回帰）', async () => {
+		const engine = await BurgerEditorEngine.new(createOptions());
+		const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
+
+		engine[Symbol.dispose]();
+
+		const removedEventNames = removeEventListenerSpy.mock.calls.map(
+			([eventName]) => eventName,
+		);
+		expect(removedEventNames.some((name) => String(name).endsWith(':select-block'))).toBe(
+			true,
+		);
+		removeEventListenerSpy.mockRestore();
+	});
+
 	test('main/draftのcreateAreaHostが並列に呼ばれる（順に await されない）', async () => {
 		const started: EditableAreaType[] = [];
 		const gates = new Map<EditableAreaType, { resolve: () => void }>();
@@ -115,6 +150,9 @@ describe('BurgerEditorEngine.new', () => {
 				});
 			},
 			destroy() {},
+			[Symbol.dispose]() {
+				this.destroy();
+			},
 		};
 
 		const enginePromise = BurgerEditorEngine.new(
