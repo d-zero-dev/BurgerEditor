@@ -1,6 +1,6 @@
 {
 	"import": ["@d-zero/cspell-config"],
-	"ignorePaths": [".vscode", ".claude", "**/CODEOWNERS"],
+	"ignorePaths": [".vscode", ".claude", "**/CODEOWNERS", "**/storybook-static/**"],
 	"words": [
 		// CSS terminology
 		"CSSWG",

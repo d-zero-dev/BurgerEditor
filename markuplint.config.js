@@ -9,6 +9,7 @@ const extended = extendsConfig({
  */
 export default {
 	...extended,
+	excludeFiles: ['**/storybook-static/**'],
 	parser: {
 		...extended.parser,
 		'\\.[jt]sx$': '@markuplint/jsx-parser',

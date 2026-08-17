@@ -95,6 +95,9 @@ yarn test
 
 # Lintの実行
 yarn lint
+
+# 管理画面UIコンポーネントカタログ（Storybook）の起動
+yarn storybook
 ```
 
 #### コントリビューションガイドライン
