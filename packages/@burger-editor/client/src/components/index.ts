@@ -5,6 +5,7 @@ export { BlockMenuView } from './block-menu-view.js';
 export type { MenuGeometry, ItemOverlayRect } from './block-menu-view.js';
 export { BlockOptions } from './block-options.js';
 export { DraftSwitcher } from './draft-switcher.js';
+export { EditableAreaView } from './editable-area-view.js';
 export { FileList } from './file-list.js';
 export { FileUploader } from './file-uploader.js';
 export { createFrontMatterEditor, FrontMatterEditorView } from './front-matter-editor.js';
