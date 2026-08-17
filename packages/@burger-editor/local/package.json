@@ -33,6 +33,9 @@
 		"./upload": {
 			"import": "./server/helpers/upload.js",
 			"types": "./server/helpers/upload.d.ts"
+		},
+		"./style": {
+			"import": "./style/app.css"
 		}
 	},
 	"bin": {
@@ -71,8 +74,6 @@
 	"devDependencies": {
 		"@burger-editor/client": "4.0.0-alpha.71",
 		"@d-zero/shared": "0.23.0",
-		"@testing-library/dom": "10.4.1",
-		"@testing-library/react": "16.3.2",
 		"@types/debug": "4.1.13",
 		"@types/node": "24.13.3",
 		"@types/react": "19.2.18",

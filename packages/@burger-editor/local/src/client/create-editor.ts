@@ -3,6 +3,10 @@ import type { AppType } from '../route.js';
 import { generalCSS, items } from '@burger-editor/blocks';
 import { createBurgerEditorClient } from '@burger-editor/client';
 import {
+	createFrontMatterEditor,
+	type FrontMatterEditorHandle,
+} from '@burger-editor/client/ui';
+import {
 	CSS_LAYER,
 	type BlockCatalog,
 	type FileListItem,
@@ -14,10 +18,6 @@ import { hc } from 'hono/client';
 
 import { $upload } from '../helpers/$upload.js';
 
-import {
-	createFrontMatterEditor,
-	type FrontMatterEditorHandle,
-} from './front-matter-editor.js';
 import { saveContentRequest } from './save-content-request.js';
 
 const client = hc<AppType>(location.origin);

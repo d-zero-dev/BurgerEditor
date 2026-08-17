@@ -7,6 +7,11 @@ export { BlockOptions } from './block-options.js';
 export { DraftSwitcher } from './draft-switcher.js';
 export { FileList } from './file-list.js';
 export { FileUploader } from './file-uploader.js';
+export { createFrontMatterEditor, FrontMatterEditorView } from './front-matter-editor.js';
+export type {
+	FrontMatterEditorOptions,
+	FrontMatterEditorHandle,
+} from './front-matter-editor.js';
 export { InitialInsertionButton } from './initial-insertion-button.js';
 export { ItemEditorHost } from './item-editor-host.js';
 export { Preview } from './preview.js';
