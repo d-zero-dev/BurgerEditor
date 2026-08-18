@@ -1,45 +1,13 @@
+import type { MenuGeometry, ItemOverlayRect } from './block-menu-view.js';
 import type { BurgerBlock, BurgerEditorEngine, ItemData } from '@burger-editor/core';
-import type { RefObject, CSSProperties } from 'react';
+import type { RefObject } from 'react';
 
-import {
-	BGE_COMMAND,
-	COMMAND_BUS_ID,
-	Item,
-	getBlockAtPosition,
-} from '@burger-editor/core';
-import {
-	IconArrowBigDownLine,
-	IconArrowBigUpLine,
-	IconClipboardPlus,
-	IconLayoutGridAdd,
-	IconLayoutGridRemove,
-	IconRowInsertBottom,
-	IconRowInsertTop,
-	IconSettings,
-	IconTrash,
-} from '@tabler/icons-react';
+import { Item, getBlockAtPosition } from '@burger-editor/core';
 import { useId, useEffect, useRef, useState, useCallback } from 'react';
 
 import { useCommand } from '../use-command.js';
 
-import { BlockMenuButton } from './block-menu-button.js';
-import styles from './block-menu.module.css';
-
-interface MenuGeometry {
-	readonly width: number;
-	readonly height: number;
-	readonly x: number;
-	readonly y: number;
-	readonly marginBlockEnd: number;
-	readonly marginBlockEndValue: string;
-}
-
-interface ItemOverlayRect {
-	readonly x: number;
-	readonly y: number;
-	readonly width: number;
-	readonly height: number;
-}
+import { BlockMenuView } from './block-menu-view.js';
 
 /**
  * Hover menu over the selected block inside the editable area iframe.
@@ -50,6 +18,11 @@ interface ItemOverlayRect {
  * ever writes this component's `hidden` attribute (a direct DOM write
  * would leave React's `visible` state out of sync and a later same-value
  * `setVisible(true)` would be skipped, leaving the menu stuck hidden).
+ *
+ * マウス追跡・`BurgerBlock` 解決・`engine` 接続を担うコンテナで、
+ * 実際の描画は {@link BlockMenuView} に委譲する。`BlockMenuView` は
+ * `BurgerBlock` の実インスタンスなしに見た目だけ確認できるため、
+ * Storybook 等では `BlockMenuView` を直接使う。
  * @param root0
  * @param root0.engine
  * @param root0.container
@@ -242,114 +215,16 @@ export function BlockMenu({
 		};
 	}, [engine, container, hide]);
 
-	const isMutable = currentBlock?.isMutable();
+	const isMutable = currentBlock?.isMutable() ?? false;
 
 	return (
-		<div
-			ref={rootRef}
-			id={menuId}
-			hidden={!visible}
-			className={styles['bgeMenuBase']}
-			style={
-				{
-					'--width': `${geometry.width}px`,
-					'--height': `${geometry.height}px`,
-					'--x': `${geometry.x}px`,
-					'--y': `${geometry.y}px`,
-					'--margin-block-end': `${geometry.marginBlockEnd ?? '0'}px`,
-				} as CSSProperties
-			}>
-			{itemRects.map((rect, index) => (
-				<button
-					key={index}
-					type="button"
-					className={styles['bgeItemOverlay']}
-					aria-label="コンテンツを編集"
-					command="--open-item-editor"
-					commandfor={menuId}
-					value={index}
-					style={{
-						insetInlineStart: `${rect.x}px`,
-						insetBlockStart: `${rect.y}px`,
-						inlineSize: `${rect.width}px`,
-						blockSize: `${rect.height}px`,
-					}}></button>
-			))}
-			<div className={styles['bgeMenu']}>
-				<div className={styles['bgeMoveGroup']}>
-					<BlockMenuButton
-						label="ひとつ上へ移動"
-						command={BGE_COMMAND.moveBlock}
-						commandfor={COMMAND_BUS_ID}
-						value="up">
-						<IconArrowBigUpLine />
-					</BlockMenuButton>
-					<BlockMenuButton
-						label="ひとつ下へ移動"
-						command={BGE_COMMAND.moveBlock}
-						commandfor={COMMAND_BUS_ID}
-						value="down">
-						<IconArrowBigDownLine />
-					</BlockMenuButton>
-				</div>
-				<div className={styles['bgeStandardGroup']}>
-					<BlockMenuButton
-						label="上にブロックを追加"
-						command={BGE_COMMAND.insertBlock}
-						commandfor={COMMAND_BUS_ID}
-						value="before">
-						<IconRowInsertTop />
-					</BlockMenuButton>
-					<BlockMenuButton
-						label="下にブロックを追加"
-						command={BGE_COMMAND.insertBlock}
-						commandfor={COMMAND_BUS_ID}
-						value="after">
-						<IconRowInsertBottom />
-					</BlockMenuButton>
-					{isMutable ? (
-						<>
-							<BlockMenuButton
-								label="ブロック内に要素を追加"
-								command={BGE_COMMAND.updateGridItems}
-								commandfor={COMMAND_BUS_ID}
-								value="+1">
-								<IconLayoutGridAdd />
-							</BlockMenuButton>
-							<BlockMenuButton
-								label="ブロック内の要素を削除"
-								command={BGE_COMMAND.updateGridItems}
-								commandfor={COMMAND_BUS_ID}
-								value="-1">
-								<IconLayoutGridRemove />
-							</BlockMenuButton>
-						</>
-					) : null}
-					<BlockMenuButton
-						label="オプション設定"
-						command={BGE_COMMAND.openBlockOptions}
-						commandfor={COMMAND_BUS_ID}>
-						<IconSettings />
-					</BlockMenuButton>
-					<BlockMenuButton
-						label="ブロックをコピー"
-						command={BGE_COMMAND.copyBlock}
-						commandfor={COMMAND_BUS_ID}>
-						<IconClipboardPlus />
-					</BlockMenuButton>
-					<BlockMenuButton
-						label="ブロックを削除"
-						command={BGE_COMMAND.removeBlock}
-						commandfor={COMMAND_BUS_ID}>
-						<IconTrash />
-					</BlockMenuButton>
-				</div>
-			</div>
-			<div className={styles['bgeMenuMargin']}>
-				<span>
-					余白: {geometry.marginBlockEndValue} ({geometry.marginBlockEnd}px)
-				</span>
-			</div>
-		</div>
+		<BlockMenuView
+			rootRef={rootRef}
+			menuId={menuId}
+			visible={visible}
+			geometry={geometry}
+			itemRects={itemRects}
+			isMutable={isMutable}
+		/>
 	);
 }

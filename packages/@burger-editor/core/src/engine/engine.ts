@@ -1,3 +1,4 @@
+import type { ConfirmCallback } from './copy-editable-area.js';
 import type { ContainerType } from '../block/types.js';
 import type { ItemSeed } from '../item/types.js';
 import type {
@@ -10,7 +11,6 @@ import type {
 	BlockItem,
 	BlockData,
 } from '../types.js';
-import type { ConfirmCallback } from './copy-editable-area.js';
 
 import { BurgerBlock } from '../block/block.js';
 import { CommandBus } from '../command/command-bus.js';

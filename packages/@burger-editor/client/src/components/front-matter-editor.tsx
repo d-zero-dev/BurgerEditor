@@ -1,9 +1,10 @@
 /* @jsxImportSource react */
 import type { ReactNode } from 'react';
 
-import { useCommand } from '@burger-editor/client/ui';
 import { useEffect, useId, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+
+import { useCommand } from '../use-command.js';
 
 /**
  * Supported field types for Front Matter editor
@@ -115,8 +116,15 @@ export function createFrontMatterEditor(
  * @param root0
  * @param root0.initialData
  * @param root0.onDataChange
+ * @example
+ * ```tsx
+ * <FrontMatterEditorView
+ * 	initialData={{ title: 'ページ' }}
+ * 	onDataChange={(data) => console.log(data)}
+ * />
+ * ```
  */
-function FrontMatterEditorView({
+export function FrontMatterEditorView({
 	initialData,
 	onDataChange,
 }: {

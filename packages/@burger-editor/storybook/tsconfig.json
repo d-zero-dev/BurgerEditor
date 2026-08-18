@@ -1,0 +1,22 @@
+{
+	"extends": "../../../tsconfig.json",
+	"compilerOptions": {
+		"noEmit": true,
+		"jsx": "react-jsx"
+	},
+	"include": ["src/**/*", ".storybook/**/*"],
+	"references": [
+		{
+			"path": "../client"
+		},
+		{
+			"path": "../core"
+		},
+		{
+			"path": "../custom-element"
+		},
+		{
+			"path": "../local"
+		}
+	]
+}

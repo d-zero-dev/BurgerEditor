@@ -60,6 +60,11 @@
 			"matchPackageNames": ["react", "react-dom", "@types/react", "@types/react-dom"]
 		},
 		{
+			"description": "vite-plugin-dts follows vite compatibility, keep aligned with vite bumps",
+			"groupName": "vite",
+			"matchPackageNames": ["vite", "vite-plugin-dts"]
+		},
+		{
 			"groupName": "typescript",
 			"matchPackageNames": ["typescript", "@d-zero/tsconfig"]
 		},

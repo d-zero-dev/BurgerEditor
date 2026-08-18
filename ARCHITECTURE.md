@@ -23,6 +23,7 @@ graph TD
     legacy["@burger-editor/legacy<br/>(v3互換性サポート)"]
     css["@burger-editor/css<br/>(blocks全CSS統合配布)"]
     runtime["@burger-editor/runtime<br/>(ブラウザ用ランタイム)"]
+    storybook["@burger-editor/storybook<br/>(管理画面UIカタログ)"]
 
     %% Core dependencies
     utils --> frozen
@@ -75,6 +76,12 @@ graph TD
     migrator --> mcp
     utils --> mcp
 
+    %% Storybook (開発時のコンポーネントカタログ、他パッケージからは依存されない末端)
+    client --> storybook
+    core --> storybook
+    custom --> storybook
+    local --> storybook
+
     %% Independent packages
     legacy
     runtime
@@ -118,7 +125,7 @@ graph TD
 
 - ReactベースのクライアントUI
 - 依存関係: core, custom-element, migrator, utils, react
-- 責任: 編集エリアシェル（iframe/ソース表示・高さ追従を担う `EditableAreaView`）、ブロック選択UI、ファイル管理UI、エディタUI（ダイアログ群を `engine.uiState` から宣言的にレンダリング）、エンジンコマンドのディスパッチテーブル、アイテムエディタ用フォーム部品（`@burger-editor/client/ui`）
+- 責任: 編集エリアシェル（iframe/ソース表示・高さ追従を担う `EditableAreaView`）、ブロック選択UI、ファイル管理UI、エディタUI（ダイアログ群を `engine.uiState` から宣言的にレンダリング）、エンジンコマンドのディスパッチテーブル、アイテムエディタ用フォーム部品、Front Matter 編集UI（`createFrontMatterEditor` / `FrontMatterEditorView`。React実装のためUI層に置くが、`local` のFront Matterという概念自体には依存しない汎用コンポーネント）を `@burger-editor/client/ui` として公開
 
 **`@burger-editor/custom-element`**
 
@@ -258,6 +265,15 @@ graph TD
 - **主要機能**:
   - 画像モーダル表示（Invoker Commands API使用）
   - 将来的な拡張機能の基盤
+
+**`@burger-editor/storybook`**
+
+- Storybook（`@storybook/react-vite`）による管理画面UIコンポーネントカタログ
+- 依存関係: client, core, custom-element, local（devDependencies、他パッケージからは依存されない末端）
+- 責任: `@burger-editor/client` のコンポーネント群と `@burger-editor/local` の Front Matter 編集UI（`@burger-editor/client` 経由で公開）を、`engine` 等の実インスタンスなしに一覧・確認できるカタログを提供
+- **private パッケージ**: publish 対象外。`yarn storybook`（開発起動）/ `yarn build-storybook`（静的ビルド）はルートから実行
+- **見た目確認専用**: 見た目の回帰検知は既存の Playwright + pixelmatch VRT（`vitest --project vr`）が引き続き担う。Storybook 側に test-runner や Chromatic は導入しない
+- **`engine` のモック方針**: `BurgerEditorEngine` は private constructor のため直接生成できない。`uiState`/`commandBus`/`componentObserver` は本物のクラスをそのまま `new` し、それ以外のメソッドだけを `src/mocks/create-mock-engine.ts` の `overrides` で個別に差し込む（各 `*.spec.tsx` に確立された `createMockEngine()` パターンを踏襲）。`BlockMenu` のようにマウス位置から `BurgerBlock` の実インスタンスを解決する設計のコンポーネントは、モックだけでは実表示を再現できないため、描画専用の子コンポーネント（`BlockMenuView`）を切り出してそちらをカタログ化する
 
 ## アーキテクチャ原則
 

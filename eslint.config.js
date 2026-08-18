@@ -19,6 +19,7 @@ export default [
 			'**/server/**/*',
 			'**/node_modules/**',
 			'**/*.d.ts',
+			'**/storybook-static/**',
 		],
 	},
 	...dz.configs.frontend,

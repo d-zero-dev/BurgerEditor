@@ -11,6 +11,8 @@
 		"build": "lerna run build",
 		"clean": "lerna run clean",
 		"dev": "lerna run dev --parallel",
+		"storybook": "yarn workspace @burger-editor/storybook dev",
+		"build-storybook": "yarn workspace @burger-editor/storybook build",
 		"test": "bash scripts/docker-yarn.sh test:unit",
 		"test:unit": "vitest run",
 		"test:vr": "vitest run --project vr",
