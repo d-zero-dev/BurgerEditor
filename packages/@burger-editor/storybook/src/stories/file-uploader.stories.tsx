@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { FileUploader } from '@burger-editor/client/ui';
 
+import placeholderImage from '../assets/placeholder-image.svg?url';
 import { createMockEngine } from '../mocks/create-mock-engine.js';
 
 const meta = {
@@ -33,7 +34,7 @@ export const Default: Story = {
 						uploaded: {
 							fileId: '1',
 							name: 'uploaded.jpg',
-							url: 'https://example.com/uploaded.jpg',
+							url: placeholderImage,
 							size: 102_400,
 							timestamp: 1_754_006_400_000,
 							sizes: {},

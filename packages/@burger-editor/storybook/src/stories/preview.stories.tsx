@@ -4,6 +4,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Preview } from '@burger-editor/client/ui';
 import { ComponentObserver } from '@burger-editor/core';
 
+import placeholderImage from '../assets/placeholder-image.svg?url';
+
 // Preview は engine.componentObserver の file-upload-progress 購読のみ
 // 使用する。ComponentObserver は本物のクラスをそのままインスタンス化
 // できる（window.dispatchEvent の薄いラッパーで副作用が安全なため）
@@ -25,7 +27,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Image: Story = {
 	args: {
-		path: 'https://example.com/photo.jpg',
+		path: placeholderImage,
 	},
 };
 

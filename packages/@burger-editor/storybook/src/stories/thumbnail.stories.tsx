@@ -2,6 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Thumbnail } from '@burger-editor/client/ui';
 
+import placeholderImage from '../assets/placeholder-image.svg?url';
+
 const meta = {
 	title: 'Client/Components/Thumbnail',
 	component: Thumbnail,
@@ -13,7 +15,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Image: Story = {
 	args: {
-		src: 'https://example.com/photo.jpg',
+		src: placeholderImage,
 	},
 };
 

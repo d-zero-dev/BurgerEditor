@@ -3,13 +3,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { FileList } from '@burger-editor/client/ui';
 
+import placeholderImage from '../assets/placeholder-image.svg?url';
 import { createMockEngine } from '../mocks/create-mock-engine.js';
 
 const dummyFiles: FileListItem[] = [
 	{
 		fileId: '1',
 		name: 'photo-01.jpg',
-		url: 'https://example.com/photo-01.jpg',
+		url: placeholderImage,
 		size: 102_400,
 		timestamp: 1_754_006_400_000,
 		sizes: {},
@@ -17,7 +18,7 @@ const dummyFiles: FileListItem[] = [
 	{
 		fileId: '2',
 		name: 'photo-02.jpg',
-		url: 'https://example.com/photo-02.jpg',
+		url: placeholderImage,
 		size: 204_800,
 		timestamp: 1_754_092_800_000,
 		sizes: {},
@@ -25,7 +26,7 @@ const dummyFiles: FileListItem[] = [
 	{
 		fileId: '3',
 		name: 'photo-03.jpg',
-		url: 'https://example.com/photo-03.jpg',
+		url: placeholderImage,
 		size: 51_200,
 		timestamp: 1_754_179_200_000,
 		sizes: {},

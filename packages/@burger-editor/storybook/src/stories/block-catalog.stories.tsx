@@ -6,6 +6,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { BlockCatalog } from '@burger-editor/client/ui';
 
+import placeholderImage from '../assets/placeholder-image.svg?url';
+
 // BlockCatalog は engine.storageKey.blockClipboard の読み取りのみ使用する
 // （sessionStorageのキー名）。他のengineサブシステムには依存しない
 const fakeEngine = {
@@ -22,7 +24,7 @@ const catalog: BlockCatalogData = {
 				name: 'heading',
 				containerProps: {},
 				items: [],
-				img: 'https://example.com/thumbnails/heading.png',
+				img: placeholderImage,
 			},
 		},
 		{
@@ -42,7 +44,7 @@ const catalog: BlockCatalogData = {
 				name: 'image',
 				containerProps: {},
 				items: [],
-				img: 'https://example.com/thumbnails/image.png',
+				img: placeholderImage,
 			},
 		},
 		{
@@ -51,7 +53,7 @@ const catalog: BlockCatalogData = {
 				name: 'video',
 				containerProps: {},
 				items: [],
-				img: 'https://example.com/thumbnails/video.png',
+				img: placeholderImage,
 			},
 		},
 	],
