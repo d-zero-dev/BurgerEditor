@@ -12,6 +12,9 @@ import { useRef } from 'react';
 const meta = {
 	title: 'Client/Components/BlockMenuView',
 	component: BlockMenuView,
+	// [data-bge-component='block-menu'] の子孫としてのみui.cssのボタン
+	// スタイルが当たる
+	parameters: { wrapper: 'block-menu' },
 	render: (args) => {
 		// eslint-disable-next-line react-hooks/rules-of-hooks
 		const rootRef = useRef<HTMLDivElement>(null);

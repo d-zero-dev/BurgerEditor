@@ -6,6 +6,9 @@ import { fn } from 'storybook/test';
 const meta = {
 	title: 'Client/Components/FrontMatterEditor',
 	component: FrontMatterEditorView,
+	// localのページ本文（app.tsx）に直接配置され、独自CSS
+	// （local/style/app.cssの.fm-editor*）で完結するためラップしない
+	parameters: { wrapper: 'none' },
 } satisfies Meta<typeof FrontMatterEditorView>;
 
 export default meta;

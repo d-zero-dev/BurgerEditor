@@ -7,6 +7,9 @@ import { createMockEngine } from '../mocks/create-mock-engine.js';
 const meta = {
 	title: 'Client/Components/DraftSwitcher',
 	component: DraftSwitcher,
+	// エディタ本体の外側（編集エリアの直前）に配置されるUIのため、
+	// dialog/block-menuではラップしない
+	parameters: { wrapper: 'none' },
 } satisfies Meta<typeof DraftSwitcher>;
 
 export default meta;

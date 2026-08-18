@@ -46,6 +46,9 @@ const itemSeeds = new Map<string, ItemSeed>([['sample-text', sampleSeed]]);
 const meta = {
 	title: 'Client/Components/ItemEditorHost',
 	component: ItemEditorHost,
+	// 自身がEditorDialog（<dialog>）を内包するため、既定のdialogラップは
+	// 二重になってしまう
+	parameters: { wrapper: 'none' },
 } satisfies Meta<typeof ItemEditorHost>;
 
 export default meta;

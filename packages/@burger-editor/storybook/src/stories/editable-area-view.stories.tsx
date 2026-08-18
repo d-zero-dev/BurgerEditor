@@ -15,6 +15,8 @@ import { createMockEngine } from '../mocks/create-mock-engine.js';
 const meta = {
 	title: 'Client/Components/EditableAreaView',
 	component: EditableAreaView,
+	// 編集エリア本体（iframeシェル）のため、dialog/block-menuではラップしない
+	parameters: { wrapper: 'none' },
 } satisfies Meta<typeof EditableAreaView>;
 
 export default meta;

@@ -6,6 +6,8 @@ import { IconTrash } from '@tabler/icons-react';
 const meta = {
 	title: 'Client/Components/BlockMenuButton',
 	component: BlockMenuButton,
+	// BlockMenuView（block-menu内）で使われる部品のため文脈を揃える
+	parameters: { wrapper: 'block-menu' },
 } satisfies Meta<typeof BlockMenuButton>;
 
 export default meta;
