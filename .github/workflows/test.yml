@@ -19,10 +19,16 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install CJK fonts
-        run: |
-          apt-get update
-          apt-get install -y --no-install-recommends fonts-noto-cjk
-          rm -rf /var/lib/apt/lists/*
+        # azure.archive.ubuntu.com への接続が一過性にタイムアウトし apt-get update が失敗することがあるためリトライする
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          retry_wait_seconds: 10
+          command: |
+            apt-get update
+            apt-get install -y --no-install-recommends fonts-noto-cjk
+            rm -rf /var/lib/apt/lists/*
 
       - name: Setup Node.js
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
