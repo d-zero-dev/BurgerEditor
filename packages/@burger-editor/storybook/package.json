@@ -20,11 +20,11 @@
 		"@burger-editor/core": "4.0.0-alpha.71",
 		"@burger-editor/custom-element": "4.0.0-alpha.71",
 		"@burger-editor/local": "4.0.0-alpha.71",
-		"@storybook/react-vite": "10.5.7",
+		"@storybook/react-vite": "10.5.8",
 		"@tabler/icons-react": "3.46.0",
 		"react": "19.2.8",
 		"react-dom": "19.2.8",
-		"storybook": "10.5.7",
+		"storybook": "10.5.8",
 		"vite": "7.3.6"
 	},
 	"devDependencies": {
