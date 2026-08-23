@@ -604,7 +604,7 @@ __metadata:
     "@burger-editor/file-io": "npm:4.0.0-alpha.71"
     "@burger-editor/inspector": "npm:4.0.0-alpha.71"
     "@d-zero/shared": "npm:0.23.0"
-    "@hono/node-server": "npm:2.1.0"
+    "@hono/node-server": "npm:2.1.1"
     "@hono/zod-validator": "npm:0.9.0"
     "@types/debug": "npm:4.1.13"
     "@types/node": "npm:24.13.3"
@@ -2450,12 +2450,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hono/node-server@npm:2.1.0, @hono/node-server@npm:^1.19.9 || ^2.0.5":
-  version: 2.1.0
-  resolution: "@hono/node-server@npm:2.1.0"
+"@hono/node-server@npm:2.1.1":
+  version: 2.1.1
+  resolution: "@hono/node-server@npm:2.1.1"
   peerDependencies:
     hono: ^4
-  checksum: 10c0/907aa2cabb804cf6f9c6bc329a898803b0794992d1c2d1bea7e4ae803f5d205fd2733d684c9c87b28338964dc437341e3bee1544b4d504a6b19f9e65ba28b198
+  checksum: 10c0/7ef810ca647c56d8d9386fd81609e18443b3a5634aa5ecabdf357e7ca724613c535e863c15ded9b7ae89b935a073040fb11e6d59041f3b1c3e153d8ecb699880
   languageName: node
   linkType: hard
 
@@ -2465,6 +2465,15 @@ __metadata:
   peerDependencies:
     hono: ^4
   checksum: 10c0/de18c06b6b266dc45fe55fb82053bd1da8fe84939c49b6fbab4d2448b679d54ab5affbf8b15de9bead26f29b1755284d770aafb5ad14a8e4b3cfb4f79334554e
+  languageName: node
+  linkType: hard
+
+"@hono/node-server@npm:^1.19.9 || ^2.0.5":
+  version: 2.1.0
+  resolution: "@hono/node-server@npm:2.1.0"
+  peerDependencies:
+    hono: ^4
+  checksum: 10c0/907aa2cabb804cf6f9c6bc329a898803b0794992d1c2d1bea7e4ae803f5d205fd2733d684c9c87b28338964dc437341e3bee1544b4d504a6b19f9e65ba28b198
   languageName: node
   linkType: hard
 
