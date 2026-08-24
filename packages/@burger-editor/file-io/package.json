@@ -31,7 +31,7 @@
 		"@burger-editor/blocks": "4.0.0-alpha.71",
 		"@burger-editor/core": "4.0.0-alpha.71",
 		"@burger-editor/utils": "4.0.0-alpha.71",
-		"cosmiconfig": "9.0.2",
+		"cosmiconfig": "10.0.0",
 		"jsdom": "28.1.0",
 		"prettier": "3.9.6"
 	},
