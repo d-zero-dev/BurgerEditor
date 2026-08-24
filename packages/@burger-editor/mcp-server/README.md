@@ -248,7 +248,7 @@ Claude Code / Claude Desktop / Cursor などの MCP host はサーバの stderr 
 
 ### サーバーが起動しない
 
-1. Node.js のバージョンが本リポジトリ標準（`package.json` の `volta.node` を参照、Node 24.x 系）と一致しているか確認
+1. Node.js のバージョンが本リポジトリ標準（`package.json` の `volta.node` を参照）と一致しているか確認
 2. パッケージが正しくインストールされているか確認:
 
 ```sh

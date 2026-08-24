@@ -6,7 +6,7 @@ import uiCss from '../../style/ui.css?raw';
  */
 export function injectCSS(): void {
 	const style = document.createElement('style');
-	style.textContent = uiCss as string;
+	style.textContent = uiCss;
 	document.head.append(style);
 
 	const stabilize = document.createElement('style');
