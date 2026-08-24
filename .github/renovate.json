@@ -100,6 +100,11 @@
 		{
 			"groupName": "turndown",
 			"matchPackageNames": ["turndown", "@types/turndown"]
+		},
+		{
+			"description": "@types/node is DefinitelyTyped, keep aligned with the volta.node/setup-node bump",
+			"groupName": "node",
+			"matchPackageNames": ["node", "@types/node"]
 		}
 	]
 }
