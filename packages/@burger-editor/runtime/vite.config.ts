@@ -1,5 +1,4 @@
 import { defineConfig } from 'vite';
-// eslint-disable-next-line import-x/default
 import dts from 'vite-plugin-dts';
 
 export default defineConfig({

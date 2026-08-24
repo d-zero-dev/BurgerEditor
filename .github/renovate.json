@@ -60,9 +60,9 @@
 			"matchPackageNames": ["react", "react-dom", "@types/react", "@types/react-dom"]
 		},
 		{
-			"description": "vite-plugin-dts follows vite compatibility, keep aligned with vite bumps",
+			"description": "vite-plugin-dts and @vitejs/plugin-react follow vite's peer dependency range, keep aligned with vite bumps",
 			"groupName": "vite",
-			"matchPackageNames": ["vite", "vite-plugin-dts"]
+			"matchPackageNames": ["vite", "vite-plugin-dts", "@vitejs/plugin-react"]
 		},
 		{
 			"groupName": "typescript",
