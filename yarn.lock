@@ -550,7 +550,7 @@ __metadata:
     "@d-zero/shared": "npm:0.23.0"
     "@types/jsdom": "npm:28.0.3"
     "@types/node": "npm:26.2.0"
-    cosmiconfig: "npm:9.0.2"
+    cosmiconfig: "npm:10.0.0"
     jsdom: "npm:28.1.0"
     prettier: "npm:3.9.6"
     vitest: "npm:4.1.10"
@@ -8486,6 +8486,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cosmiconfig@npm:10.0.0":
+  version: 10.0.0
+  resolution: "cosmiconfig@npm:10.0.0"
+  dependencies:
+    env-paths: "npm:^2.2.1"
+    js-yaml: "npm:^4.1.0"
+  checksum: 10c0/93d8a38d8d24678fa162fc4c1678e1fbd725ddf61e447a3626833931b8c468019423219323a8931b89cd581fea101865aa714935b6dff367645da5b9f0d582ad
+  languageName: node
+  linkType: hard
+
 "cosmiconfig@npm:9.0.0, cosmiconfig@npm:^9.0.0":
   version: 9.0.0
   resolution: "cosmiconfig@npm:9.0.0"
@@ -8520,7 +8530,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cosmiconfig@npm:9.0.2, cosmiconfig@npm:^9.0.1":
+"cosmiconfig@npm:^9.0.1":
   version: 9.0.2
   resolution: "cosmiconfig@npm:9.0.2"
   dependencies:
