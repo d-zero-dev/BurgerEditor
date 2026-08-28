@@ -84,6 +84,9 @@ export async function resolveConfig(searchFrom?: string): Promise<ResolvedConfig
 			enabled: userConfig.virtualTree?.enabled ?? false,
 			pathKey: userConfig.virtualTree?.pathKey ?? 'path',
 		},
+		agent: {
+			enabled: userConfig.agent?.enabled ?? true,
+		},
 	};
 
 	return { config, configPath: res?.filepath ?? null };

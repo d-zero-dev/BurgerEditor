@@ -41,6 +41,7 @@ export interface BurgerEditorConfig {
 		};
 	};
 	readonly virtualTree: VirtualTreeConfig;
+	readonly agent: AgentConfig;
 }
 
 /**
@@ -51,18 +52,29 @@ export interface VirtualTreeConfig {
 	readonly pathKey: string;
 }
 
+/**
+ * Configuration for the AI agent hub (`@burger-editor/local`'s WebSocket +
+ * `/api/agent/*` routes). Disabling it turns off the WebSocket upgrade and
+ * agent REST routes while leaving the rest of the server (including the
+ * `Host`/`Origin` guard) unaffected.
+ */
+export interface AgentConfig {
+	readonly enabled: boolean;
+}
+
 export type SamplePath = `/${string}` | `https://${string}` | `base64:${string}`;
 
 export type BurgerEditorFileDirConfig = Record<FileType, FileDirSettings>;
 
 export type BurgerEditorConfigUserSettings = Omit<
 	Partial<BurgerEditorConfig>,
-	'filesDir' | 'healthCheck' | 'virtualTree'
+	'filesDir' | 'healthCheck' | 'virtualTree' | 'agent'
 > & {
 	readonly assetsRoot?: string;
 	readonly filesDir?: string | FileDirSettings | BurgerEditorFileDirUserSettings;
 	readonly healthCheck?: Partial<BurgerEditorConfig['healthCheck']>;
 	readonly virtualTree?: Partial<VirtualTreeConfig>;
+	readonly agent?: Partial<AgentConfig>;
 };
 
 export type BurgerEditorFileDirUserSettings = {
