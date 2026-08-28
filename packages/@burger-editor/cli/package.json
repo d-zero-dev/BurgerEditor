@@ -17,6 +17,10 @@
 		".": {
 			"import": "./dist/index.js",
 			"types": "./dist/index.d.ts"
+		},
+		"./block-op": {
+			"import": "./dist/agent-tools/block-op.js",
+			"types": "./dist/agent-tools/block-op.d.ts"
 		}
 	},
 	"bin": "./dist/bin.js",
