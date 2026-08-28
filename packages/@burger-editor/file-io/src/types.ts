@@ -57,6 +57,10 @@ export interface VirtualTreeConfig {
  * `/api/agent/*` routes). Disabling it turns off the WebSocket upgrade and
  * agent REST routes while leaving the rest of the server (including the
  * `Host`/`Origin` guard) unaffected.
+ * @example
+ * ```ts
+ * const agent: AgentConfig = { enabled: false }; // serve pages, no agent hub
+ * ```
  */
 export interface AgentConfig {
 	readonly enabled: boolean;
