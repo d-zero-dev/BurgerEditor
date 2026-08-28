@@ -9,14 +9,16 @@ import { defaultCatalog } from '@burger-editor/blocks';
 import { mkdtempDisposable } from '@d-zero/shared/mkdtemp-disposable';
 // dom-shim side-effect — must come before any handler call that touches DOMParser.
 import '@burger-editor/file-io';
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { chmodScoped } from './__tests__/disposables.js';
 import {
+	PageAlreadyExistsError,
 	blockDelete,
+	blockDuplicate,
+	blockEnsureId,
 	blockGet,
 	blockInsert,
-	blockList,
 	blockMove,
 	blockReplace,
 	catalogGet,
@@ -27,6 +29,7 @@ import {
 	frontMatterSet,
 	itemList,
 	itemSchema,
+	itemUpdate,
 	pageConcat,
 	pageCopy,
 	pageCreate,
@@ -34,6 +37,7 @@ import {
 	pageGet,
 	pageList,
 	pageRename,
+	readBlocks,
 	styleOptionsList,
 } from './handlers.js';
 
@@ -131,6 +135,7 @@ beforeEach(async () => {
 		config: makeConfig(docRoot, assetsRoot),
 		configPath: null,
 		resolverState: null,
+		invalidPages: [],
 	};
 });
 
@@ -389,17 +394,19 @@ describe('page handlers', () => {
 
 	// chmod 0o555 has no effect for the root user (CI runs as root in some
 	// containers), so the rename would succeed instead of throwing EACCES.
-	// Skip the cleanup-on-EACCES check in that case — the EXDEV branch is
-	// still covered by other rename tests.
+	// Skip this OS-permission-dependent check in that case — the same rethrow
+	// branch is covered independent of OS permissions by the fs.link-mocked
+	// test below ('rethrows a non-EEXIST/EXDEV error from fs.link as-is').
 	const isRoot = process.getuid?.() === 0;
 	test.skipIf(isRoot)(
 		'pageRename cleans up freshly-created target directories when rename fails',
 		async () => {
 			// chmod 0o555 makes the parent dir read+execute-only — mkdir succeeds
 			// (we create children of THAT parent's children, which is allowed
-			// because mkdir checks ancestor permission), but rename INTO a path
-			// under the readonly tree fails with EACCES. Verifies rollback even
-			// in the EACCES branch (not just EXDEV).
+			// because mkdir checks ancestor permission), but renameNoClobber's
+			// fs.link INTO a path under the readonly tree fails with EACCES.
+			// Verifies rollback on a real OS-level rethrown error, not just the
+			// mocked one below.
 			const readonlyParent = path.join(docRoot, 'readonly');
 			await fs.mkdir(readonlyParent);
 			await using _ = await chmodScoped(readonlyParent, 0o555);
@@ -412,6 +419,53 @@ describe('page handlers', () => {
 			});
 		},
 	);
+
+	test('pageRename rethrows a non-EEXIST/EXDEV error from fs.link as-is (permission-independent)', async () => {
+		// Independent of OS/root permissions (unlike the chmod-based test above):
+		// mock fs.link directly so this rethrow branch is always exercised, in
+		// CI containers that run as root too.
+		const linkSpy = vi.spyOn(fs, 'link').mockImplementationOnce(() => {
+			return Promise.reject(Object.assign(new Error('mocked EPERM'), { code: 'EPERM' }));
+		});
+		try {
+			await expect(pageRename(ctx, 'about.html', 'moved.html')).rejects.toMatchObject({
+				code: 'EPERM',
+			});
+			// Nothing renamed — the source must still be exactly where it was.
+			await expect(fs.access(path.join(docRoot, 'about.html'))).resolves.toBeUndefined();
+		} finally {
+			linkSpy.mockRestore();
+		}
+	});
+
+	test('pageRename falls back to check-then-rename on EXDEV (cross-device) and still moves the file', async () => {
+		const linkSpy = vi.spyOn(fs, 'link').mockImplementationOnce(() => {
+			return Promise.reject(Object.assign(new Error('mocked EXDEV'), { code: 'EXDEV' }));
+		});
+		try {
+			await pageRename(ctx, 'about.html', 'moved-cross-device.html');
+			await expect(fs.access(path.join(docRoot, 'about.html'))).rejects.toThrow();
+			await expect(
+				fs.access(path.join(docRoot, 'moved-cross-device.html')),
+			).resolves.toBeUndefined();
+		} finally {
+			linkSpy.mockRestore();
+		}
+	});
+
+	test('pageRename EXDEV fallback still refuses to clobber an existing destination', async () => {
+		await pageCreate(ctx, 'taken-cross-device.html');
+		const linkSpy = vi.spyOn(fs, 'link').mockImplementationOnce(() => {
+			return Promise.reject(Object.assign(new Error('mocked EXDEV'), { code: 'EXDEV' }));
+		});
+		try {
+			await expect(
+				pageRename(ctx, 'about.html', 'taken-cross-device.html'),
+			).rejects.toThrow(PageAlreadyExistsError);
+		} finally {
+			linkSpy.mockRestore();
+		}
+	});
 
 	test('pageCopy duplicates the file', async () => {
 		await pageCopy(ctx, 'about.html', 'about-copy.html');
@@ -451,11 +505,31 @@ describe('page handlers', () => {
 		});
 
 		await pageConcat(ctx, 'about.html', ['extra.html']);
-		const blocks = await blockList(ctx, 'about.html');
-		const names = blocks.blocks.map((b) => b.data.name);
+		const blocks = await readBlocks(ctx, 'about.html');
+		const names = blocks.map((b) => b.data.name);
 		// Original target had [h2, wysiwyg]; after concat we expect the
 		// source's h2 appended → [h2, wysiwyg, h2].
 		expect(names).toEqual(['h2', 'wysiwyg', 'h2']);
+	});
+
+	test('pageRename refuses to clobber an existing destination', async () => {
+		await pageCreate(ctx, 'taken.html');
+		await expect(pageRename(ctx, 'about.html', 'taken.html')).rejects.toThrow(
+			PageAlreadyExistsError,
+		);
+		// Neither file changed.
+		await expect(fs.access(path.join(docRoot, 'about.html'))).resolves.toBeUndefined();
+	});
+
+	test('pageCopy refuses to clobber an existing destination', async () => {
+		await pageCreate(ctx, 'taken.html');
+		await expect(pageCopy(ctx, 'about.html', 'taken.html')).rejects.toThrow(
+			PageAlreadyExistsError,
+		);
+	});
+
+	test('pageCreate refusal is a PageAlreadyExistsError', async () => {
+		await expect(pageCreate(ctx, 'about.html')).rejects.toThrow(PageAlreadyExistsError);
 	});
 });
 
@@ -496,20 +570,36 @@ describe('front matter handlers', () => {
 });
 
 describe('block handlers', () => {
-	test('blockList returns metadata + parsed item data per block', async () => {
-		const result = await blockList(ctx, 'about.html');
-		expect(result.blocks).toHaveLength(2);
-		expect(result.blocks[0]!.data.name).toBe('h2');
-		expect(result.blocks[0]!.data.items[0]![0]).toMatchObject({
+	test('readBlocks returns metadata + parsed item data per block', async () => {
+		const result = await readBlocks(ctx, 'about.html');
+		expect(result).toHaveLength(2);
+		expect(result[0]!.data.name).toBe('h2');
+		expect(result[0]!.data.items[0]![0]).toMatchObject({
 			name: 'title-h2',
 			data: { titleH2: '最初の見出し' },
 		});
-		expect(result.blocks[1]!.data.name).toBe('wysiwyg');
+		expect(result[1]!.data.name).toBe('wysiwyg');
 	});
 
-	test('blockGet returns a single block by index', async () => {
-		const result = await blockGet(ctx, 'about.html', 1);
+	test('blockGet returns a single block by index target', async () => {
+		const result = await blockGet(ctx, 'about.html', { index: 1 });
 		expect(result.block.data.name).toBe('wysiwyg');
+	});
+
+	test('blockGet resolves an id target to the block carrying that id', async () => {
+		const ensured = await blockEnsureId(ctx, 'about.html', { index: 1 });
+		const result = await blockGet(ctx, 'about.html', { id: ensured.id });
+		expect(result.block.data.name).toBe('wysiwyg');
+	});
+
+	test('blockGet throws when neither index nor id is given', async () => {
+		await expect(blockGet(ctx, 'about.html', {})).rejects.toThrow(/index.*id/);
+	});
+
+	test('blockGet throws when an id target matches no block', async () => {
+		await expect(blockGet(ctx, 'about.html', { id: 'bge-nope' })).rejects.toThrow(
+			/No block with id/,
+		);
 	});
 
 	test('blockInsert at index 0 prepends a block', async () => {
@@ -517,9 +607,9 @@ describe('block handlers', () => {
 			catalog: 'h2',
 			items: [[{ name: 'title-h2', data: { titleH2: '挿入見出し' } }]],
 		});
-		const result = await blockList(ctx, 'about.html');
-		expect(result.blocks).toHaveLength(3);
-		expect(result.blocks[0]!.data.items[0]![0]).toMatchObject({
+		const result = await readBlocks(ctx, 'about.html');
+		expect(result).toHaveLength(3);
+		expect(result[0]!.data.items[0]![0]).toMatchObject({
 			data: { titleH2: '挿入見出し' },
 		});
 	});
@@ -529,35 +619,140 @@ describe('block handlers', () => {
 			catalog: 'h2',
 			items: [[{ name: 'title-h2', data: { titleH2: '末尾見出し' } }]],
 		});
-		const result = await blockList(ctx, 'about.html');
-		expect(result.blocks.at(-1)!.data.items[0]![0]).toMatchObject({
+		const result = await readBlocks(ctx, 'about.html');
+		expect(result.at(-1)!.data.items[0]![0]).toMatchObject({
 			data: { titleH2: '末尾見出し' },
 		});
 	});
 
-	test('blockReplace substitutes the targeted block', async () => {
-		await blockReplace(ctx, 'about.html', 0, {
-			catalog: 'h2',
-			items: [[{ name: 'title-h2', data: { titleH2: '差し替え見出し' } }]],
-		});
-		const result = await blockList(ctx, 'about.html');
-		expect(result.blocks).toHaveLength(2);
-		expect(result.blocks[0]!.data.items[0]![0]).toMatchObject({
+	test('blockReplace substitutes the targeted block (index target)', async () => {
+		await blockReplace(
+			ctx,
+			'about.html',
+			{ index: 0 },
+			{
+				catalog: 'h2',
+				items: [[{ name: 'title-h2', data: { titleH2: '差し替え見出し' } }]],
+			},
+		);
+		const result = await readBlocks(ctx, 'about.html');
+		expect(result).toHaveLength(2);
+		expect(result[0]!.data.items[0]![0]).toMatchObject({
 			data: { titleH2: '差し替え見出し' },
 		});
 	});
 
+	test('blockReplace substitutes the targeted block (id target)', async () => {
+		const ensured = await blockEnsureId(ctx, 'about.html', { index: 0 });
+		await blockReplace(
+			ctx,
+			'about.html',
+			{ id: ensured.id },
+			{
+				catalog: 'h2',
+				items: [[{ name: 'title-h2', data: { titleH2: 'idで差し替え' } }]],
+			},
+		);
+		const result = await readBlocks(ctx, 'about.html');
+		expect(result[0]!.data.items[0]![0]).toMatchObject({
+			data: { titleH2: 'idで差し替え' },
+		});
+	});
+
 	test('blockDelete removes the targeted block', async () => {
-		await blockDelete(ctx, 'about.html', 0);
-		const result = await blockList(ctx, 'about.html');
-		expect(result.blocks).toHaveLength(1);
-		expect(result.blocks[0]!.data.name).toBe('wysiwyg');
+		await blockDelete(ctx, 'about.html', { index: 0 });
+		const result = await readBlocks(ctx, 'about.html');
+		expect(result).toHaveLength(1);
+		expect(result[0]!.data.name).toBe('wysiwyg');
 	});
 
 	test('blockMove reorders blocks', async () => {
-		await blockMove(ctx, 'about.html', 0, 1);
-		const result = await blockList(ctx, 'about.html');
-		expect(result.blocks.map((b) => b.data.name)).toEqual(['wysiwyg', 'h2']);
+		await blockMove(ctx, 'about.html', { index: 0 }, 1);
+		const result = await readBlocks(ctx, 'about.html');
+		expect(result.map((b) => b.data.name)).toEqual(['wysiwyg', 'h2']);
+	});
+
+	test('blockDuplicate inserts a copy right after the original, without its id', async () => {
+		await blockEnsureId(ctx, 'about.html', { index: 0 });
+		await blockDuplicate(ctx, 'about.html', { index: 0 });
+		const result = await readBlocks(ctx, 'about.html');
+		expect(result).toHaveLength(3);
+		expect(result[0]!.data.name).toBe('h2');
+		expect(result[1]!.data.name).toBe('h2');
+		expect(result[1]!.data.id).toBeFalsy();
+	});
+
+	test('blockEnsureId assigns a bge-<n> id to an id-less block', async () => {
+		const result = await blockEnsureId(ctx, 'about.html', { index: 0 });
+		expect(result.created).toBe(true);
+		expect(result.id).toMatch(/^bge-\d+$/);
+		const blocks = await readBlocks(ctx, 'about.html');
+		// blocks[].data.id has the `bge-` prefix stripped (BlockData's own
+		// convention) — result.id is the full DOM id agents address blocks by.
+		expect(`bge-${blocks[0]!.data.id}`).toBe(result.id);
+	});
+
+	test('blockEnsureId is idempotent — a second call returns the same id and does not reassign', async () => {
+		const first = await blockEnsureId(ctx, 'about.html', { index: 0 });
+		const second = await blockEnsureId(ctx, 'about.html', { index: 0 });
+		expect(second.created).toBe(false);
+		expect(second.id).toBe(first.id);
+	});
+
+	test('blockEnsureId picks a fresh id that does not collide with an existing one', async () => {
+		await blockEnsureId(ctx, 'about.html', { index: 0 }); // -> bge-1
+		const second = await blockEnsureId(ctx, 'about.html', { index: 1 });
+		expect(second.id).not.toBe('bge-1');
+	});
+
+	test('itemUpdate merges new data into the targeted item, preserving other fields', async () => {
+		await itemUpdate(ctx, 'about.html', { index: 1 }, 0, { wysiwyg: '<p>更新後</p>' });
+		const result = await readBlocks(ctx, 'about.html');
+		expect(result[1]!.data.items[0]![0]).toMatchObject({
+			name: 'wysiwyg',
+			data: { wysiwyg: '<p>更新後</p>' },
+		});
+	});
+
+	test('itemUpdate throws when itemIndex is out of range', async () => {
+		await expect(itemUpdate(ctx, 'about.html', { index: 0 }, 5, {})).rejects.toThrow(
+			/Item index 5 out of range/,
+		);
+	});
+
+	test('itemUpdate itemIndex stays aligned with page_blocks/parseHTMLToBlockData item counting, even past an item with no data-bgi wrapper', async () => {
+		// Regression: getItemWrapperElements used to filter out items lacking a
+		// [data-bgi] wrapper, knocking its itemIndex out of sync with the count
+		// core's parseHTMLToBlockData reports for the same block (which
+		// page_blocks / block_get expose). A page_blocks-derived itemIndex of 1 must not
+		// silently land on the wrapper-less item 0's slot.
+		const mixedPage = `<div class="content">
+			<div data-bge-name="mixed" data-bge-container="grid:1">
+				<div data-bge-container-frame>
+					<div data-bge-group>
+						<div data-bge-item>raw content, no data-bgi wrapper here</div>
+						<div data-bge-item>
+							<div data-bgi="wysiwyg" data-bgi-ver="0.0.0"><div data-bge="wysiwyg"><p>本文2</p></div></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>`;
+		await fs.writeFile(path.join(docRoot, 'mixed.html'), mixedPage, 'utf8');
+
+		// itemIndex 1 is the real (wrapped) item — must succeed and update it.
+		await itemUpdate(ctx, 'mixed.html', { index: 0 }, 1, { wysiwyg: '<p>更新済み</p>' });
+		const blocks = await readBlocks(ctx, 'mixed.html');
+		expect(blocks[0]!.data.items[0]![1]).toMatchObject({
+			name: 'wysiwyg',
+			data: { wysiwyg: '<p>更新済み</p>' },
+		});
+
+		// itemIndex 0 is in range but has no data-bgi wrapper — must reject
+		// clearly, not silently write into item 1's slot.
+		await expect(itemUpdate(ctx, 'mixed.html', { index: 0 }, 0, {})).rejects.toThrow(
+			/no data-bgi wrapper/,
+		);
 	});
 });
 
@@ -588,7 +783,7 @@ describe('mutation dry-run', () => {
 		const result = await blockReplace(
 			ctx,
 			'about.html',
-			0,
+			{ index: 0 },
 			{
 				catalog: 'h2',
 				items: [[{ name: 'title-h2', data: { titleH2: 'preview-replace' } }]],
@@ -605,7 +800,7 @@ describe('mutation dry-run', () => {
 
 	test('blockDelete dry-run preview omits the targeted block but file is untouched', async () => {
 		const before = await fs.readFile(path.join(docRoot, 'about.html'), 'utf8');
-		const result = await blockDelete(ctx, 'about.html', 0, { dryRun: true });
+		const result = await blockDelete(ctx, 'about.html', { index: 0 }, { dryRun: true });
 		expect(result.dryRun).toBe(true);
 		// No `deleted` field on the result — the previous `deleted: !dryRun`
 		// shape lied about a successful preview.
@@ -619,7 +814,7 @@ describe('mutation dry-run', () => {
 
 	test('blockMove dry-run preview reorders but file is untouched', async () => {
 		const before = await fs.readFile(path.join(docRoot, 'about.html'), 'utf8');
-		const result = await blockMove(ctx, 'about.html', 0, 1, { dryRun: true });
+		const result = await blockMove(ctx, 'about.html', { index: 0 }, 1, { dryRun: true });
 		expect(result.dryRun).toBe(true);
 		// No `moved` field — symmetric to blockDelete's removal of `deleted`.
 		expect((result as { moved?: boolean }).moved).toBeUndefined();

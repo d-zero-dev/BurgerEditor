@@ -104,14 +104,12 @@ describe('bin.js end-to-end', () => {
 		expect(payload.documentRoot).toBe(path.join(FIXTURE_ROOT, 'src'));
 	}, 20_000);
 
-	test('block-list runs the full layered stack end-to-end', async () => {
-		const result = await run(['block-list', 'index.html']);
+	test('page-blocks runs the full layered stack end-to-end', async () => {
+		const result = await run(['page-blocks', 'index.html']);
 		expect(result.code).toBe(0);
-		const payload = JSON.parse(result.stdout) as {
-			blocks: { data: { name: string; items: unknown[][] } }[];
-		};
+		const payload = JSON.parse(result.stdout) as { blocks: { name: string }[] };
 		expect(payload.blocks).toHaveLength(1);
-		expect(payload.blocks[0]!.data.name).toBe('h2');
+		expect(payload.blocks[0]!.name).toBe('h2');
 	}, 20_000);
 
 	test('block-insert accepts a spec via --spec inline JSON and persists the page', async () => {
@@ -122,13 +120,11 @@ describe('bin.js end-to-end', () => {
 		const insert = await run(['block-insert', 'index.html', '0', '--spec', spec]);
 		expect(insert.code).toBe(0);
 
-		const list = await run(['block-list', 'index.html']);
+		const list = await run(['page-blocks', 'index.html']);
 		expect(list.code).toBe(0);
-		const payload = JSON.parse(list.stdout) as {
-			blocks: { data: { items: { data: { titleH2?: string } }[][] } }[];
-		};
+		const payload = JSON.parse(list.stdout) as { blocks: { text: string }[] };
 		expect(payload.blocks).toHaveLength(2);
-		expect(payload.blocks[0]!.data.items[0]![0]!.data.titleH2).toBe('挿入された見出し');
+		expect(payload.blocks[0]!.text).toContain('挿入された見出し');
 	}, 30_000);
 
 	test('block-insert accepts a spec via stdin when no --spec flag is given', async () => {
@@ -146,12 +142,10 @@ describe('bin.js end-to-end', () => {
 		const insert = await run(['block-insert', 'stdin.html', '0'], spec);
 		expect(insert.code).toBe(0);
 
-		const list = await run(['block-list', 'stdin.html']);
-		const payload = JSON.parse(list.stdout) as {
-			blocks: { data: { items: { data: { titleH2?: string } }[][] } }[];
-		};
+		const list = await run(['page-blocks', 'stdin.html']);
+		const payload = JSON.parse(list.stdout) as { blocks: { text: string }[] };
 		expect(payload.blocks).toHaveLength(1);
-		expect(payload.blocks[0]!.data.items[0]![0]!.data.titleH2).toBe('stdin 見出し');
+		expect(payload.blocks[0]!.text).toContain('stdin 見出し');
 	}, 30_000);
 
 	test('block-insert accepts --spec-file AFTER positional args (roar camelCase flag contract)', async () => {
@@ -182,12 +176,10 @@ describe('bin.js end-to-end', () => {
 			specFile,
 		]);
 		expect(result.code).toBe(0);
-		const list = await run(['block-list', 'spec-file-target.html']);
-		const payload = JSON.parse(list.stdout) as {
-			blocks: { data: { items: { data: { titleH2?: string } }[][] } }[];
-		};
+		const list = await run(['page-blocks', 'spec-file-target.html']);
+		const payload = JSON.parse(list.stdout) as { blocks: { text: string }[] };
 		expect(payload.blocks).toHaveLength(1);
-		expect(payload.blocks[0]!.data.items[0]![0]!.data.titleH2).toBe('via spec-file');
+		expect(payload.blocks[0]!.text).toContain('via spec-file');
 	}, 30_000);
 
 	test('block-insert --dry-run returns previewContent and does not write the file', async () => {
