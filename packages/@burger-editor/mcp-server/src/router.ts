@@ -1,5 +1,8 @@
 import type { AgentTool } from '@burger-editor/cli';
 
+import fs from 'node:fs';
+import path from 'node:path';
+
 import { AgentError } from '@burger-editor/cli';
 
 import { getContext } from './context.js';
@@ -61,13 +64,45 @@ export function __resetReachabilityCache(): void {
 }
 
 /**
- * Bearer token for `local`'s non-loopback-bind auth. Only the environment
- * variable is supported today — reading a token file from `local`'s config
- * directory requires `local` to actually issue and persist one first,
- * which depends on `local` having a token-issuing auth layer at all.
+ * Bearer token for `local`'s non-loopback-bind auth. Precedence:
+ *
+ * 1. `BGE_AGENT_TOKEN` — an explicit override (a token copied from the
+ *    startup banner, or a server on another machine whose file this process
+ *    cannot see).
+ * 2. `<configDir>/.burgereditor/agent-token` — the per-launch token `local`
+ *    persists (`local/src/agent/auth.ts`, mode 0600) precisely so an MCP
+ *    process on the same machine authenticates without the user pasting
+ *    anything. `configDir` is the directory of the resolved
+ *    `burgereditor.config.*`, matching where `local` writes it; with no
+ *    config file (or when the context cannot be loaded at all) `cwd` is the
+ *    best remaining guess.
+ *
+ * Returns `null` when neither source yields a token — a loopback-bound
+ * `local` needs none, so the absence is the normal case, not an error.
  */
-function resolveAgentToken(): string | null {
-	return process.env.BGE_AGENT_TOKEN || null;
+async function resolveAgentToken(): Promise<string | null> {
+	const fromEnv = process.env.BGE_AGENT_TOKEN;
+	if (fromEnv) {
+		return fromEnv;
+	}
+	let configDir = process.cwd();
+	try {
+		const ctx = await getContext();
+		if (ctx.configPath) {
+			configDir = path.dirname(ctx.configPath);
+		}
+	} catch {
+		// No resolvable config: `local` mode must still be able to forward
+		// calls, so fall through with cwd rather than failing the call here.
+	}
+	try {
+		const token = fs
+			.readFileSync(path.join(configDir, '.burgereditor', 'agent-token'), 'utf8')
+			.trim();
+		return token || null;
+	} catch {
+		return null;
+	}
 }
 
 interface RemoteInvokeResponse {
@@ -91,7 +126,7 @@ async function invokeRemote(
 	toolName: string,
 	args: unknown,
 ): Promise<RouteResult> {
-	const token = resolveAgentToken();
+	const token = await resolveAgentToken();
 	// Only the fetch itself may throw a non-AgentError from here: a network
 	// failure genuinely means `local` is gone and `routeToolCall` may fall
 	// back to disk. Once ANY HTTP response arrives, `local` answered, and
@@ -195,7 +230,8 @@ export async function routeToolCall(
 			if (options.mode === 'local') {
 				throw new AgentError(
 					'local-unreachable',
-					`Lost connection to the local dev server at ${options.localUrl} mid-call. ` +
+					`Lost connection to the local dev server (\`bge\`, the bin of ` +
+						`@burger-editor/local) at ${options.localUrl} mid-call. ` +
 						'It may have crashed — restart it, or retry with --mode disk / auto.',
 				);
 			}
@@ -207,7 +243,7 @@ export async function routeToolCall(
 		throw new AgentError(
 			'local-unreachable',
 			`Could not reach the local dev server at ${options.localUrl}. ` +
-				'Start it with `npx bge`, or retry with --mode disk / auto.',
+				'Start it (`bge`, the bin of `@burger-editor/local`), or retry with --mode disk / auto.',
 		);
 	}
 

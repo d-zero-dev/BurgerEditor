@@ -12,11 +12,42 @@ import { __resetV4ContextCache } from './context.js';
 
 import { registerTools } from './index.js';
 
-const V3_TOOL_NAMES = [
+// Spelled out rather than derived from `agentTools` so that a tool
+// accidentally dropped from (or renamed in) cli's registry fails here
+// instead of being silently reflected into the expectation.
+const EXPECTED_TOOL_NAMES = [
 	'get_block_type',
 	'get_block_data_params_v3',
 	'create_block_v3',
-] as const;
+	'page_list',
+	'page_get',
+	'page_blocks',
+	'block_get',
+	'block_insert',
+	'block_replace',
+	'block_delete',
+	'block_move',
+	'block_duplicate',
+	'block_ensure_id',
+	'item_update',
+	'page_update',
+	'page_create',
+	'page_delete',
+	'page_rename',
+	'page_copy',
+	'page_concat',
+	'front_matter_get',
+	'front_matter_set',
+	'catalog_list',
+	'catalog_get',
+	'item_list',
+	'item_schema',
+	'style_options_list',
+	'container_options_list',
+	'config_resolve',
+	'editor_state_get',
+	'editor_wait_for_event',
+];
 
 let client: Client;
 let stack: AsyncDisposableStack;
@@ -85,19 +116,18 @@ afterAll(async () => {
 });
 
 describe('registerTools — v3 compat + agent tools coexist', () => {
-	test('lists every v3 compat tool and every agentTools entry, exactly once', async () => {
+	test('lists the 3 v3 compat tools followed by the 28 agent tools in registration order, exactly once', async () => {
 		const list = await client.listTools();
-		const names = list.tools.map((t) => t.name).toSorted();
-		const expected = [...V3_TOOL_NAMES, ...agentTools.map((t) => t.name)].toSorted();
-		expect(names).toEqual(expected);
+		expect(list.tools.map((t) => t.name)).toEqual(EXPECTED_TOOL_NAMES);
 	});
 
 	test('every agent tool is registered with annotations', async () => {
 		const list = await client.listTools();
-		for (const tool of agentTools) {
-			const registered = list.tools.find((t) => t.name === tool.name);
-			expect(registered?.annotations).toBeDefined();
-		}
+		const agentToolNames = new Set(agentTools.map((t) => t.name));
+		const missingAnnotations = list.tools
+			.filter((t) => agentToolNames.has(t.name) && !t.annotations)
+			.map((t) => t.name);
+		expect(missingAnnotations).toEqual([]);
 	});
 
 	test('a tool that defines an output schema (config_resolve) advertises outputSchema', async () => {

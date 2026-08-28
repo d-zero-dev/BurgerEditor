@@ -20,12 +20,15 @@ import { __resetV4ContextCache } from './context.js';
 import { __resetReachabilityCache, routeToolCall } from './router.js';
 
 const pageListTool = agentTools.find((t) => t.name === 'page_list')!;
+const pageCreateTool = agentTools.find((t) => t.name === 'page_create')!;
 const editorStateGetTool = agentTools.find((t) => t.name === 'editor_state_get')!;
 const editorWaitForEventTool = agentTools.find(
 	(t) => t.name === 'editor_wait_for_event',
 )!;
 
 let stack: AsyncDisposableStack;
+let projectDir: string;
+let docRoot: string;
 
 // loadContext() walks cosmiconfig from process.cwd() — co-locate the fixture
 // under this package's own directory tree so `@burger-editor/blocks`
@@ -41,7 +44,8 @@ beforeAll(async () => {
 	stack.defer(() => {
 		process.chdir(originalCwd);
 	});
-	const docRoot = path.join(tmp.path, 'src');
+	projectDir = tmp.path;
+	docRoot = path.join(tmp.path, 'src');
 	await fs.mkdir(docRoot, { recursive: true });
 	await fs.writeFile(
 		path.join(docRoot, 'index.html'),
@@ -68,10 +72,11 @@ afterAll(async () => {
 	await stack.disposeAsync();
 });
 
-beforeEach(() => {
+beforeEach(async () => {
 	__resetV4ContextCache();
 	__resetReachabilityCache();
 	delete process.env.BGE_AGENT_TOKEN;
+	await fs.rm(path.join(projectDir, '.burgereditor'), { recursive: true, force: true });
 });
 
 /**
@@ -86,9 +91,36 @@ function startFakeLocal(
 			const { port } = server.address() as AddressInfo;
 			resolve({
 				url: `http://127.0.0.1:${port}`,
-				close: () => new Promise((r) => server.close(() => r())),
+				close: () =>
+					new Promise((r) => {
+						// A handler that deliberately never answers (probe-timeout
+						// test) leaves its socket open; `close()` alone would wait
+						// for it forever.
+						server.closeAllConnections();
+						server.close(() => r());
+					}),
 			});
 		});
+	});
+}
+
+/**
+ * A fake local that answers the reachability probe and echoes every invoke
+ * as a browser-applied success, recording what it received.
+ * @param onInvoke
+ */
+function startEchoingLocal(
+	onInvoke: (req: http.IncomingMessage) => void = () => {},
+): Promise<{ close: () => Promise<void>; url: string }> {
+	return startFakeLocal((req, res) => {
+		if (req.url === '/api/agent/status') {
+			res.writeHead(200, { 'content-type': 'application/json' });
+			res.end(JSON.stringify({ protocolVersion: 1 }));
+			return;
+		}
+		onInvoke(req);
+		res.writeHead(200, { 'content-type': 'application/json' });
+		res.end(JSON.stringify({ ok: true, result: {}, appliedTo: 'browser' }));
 	});
 }
 
@@ -182,6 +214,122 @@ describe('routeToolCall — auto mode', () => {
 		process.env.BGE_AGENT_TOKEN = 'secret-token';
 		await routeToolCall(pageListTool, {}, { mode: 'auto', localUrl: fakeLocal.url });
 		expect(receivedAuth).toBe('Bearer secret-token');
+	});
+
+	test('reads the token from <configDir>/.burgereditor/agent-token (the file local writes) when BGE_AGENT_TOKEN is unset', async () => {
+		let receivedAuth: string | undefined;
+		fakeLocal = await startEchoingLocal((req) => {
+			receivedAuth = req.headers.authorization;
+		});
+		// configDir is the directory of the resolved burgereditor.config.mjs —
+		// the fixture's project root — which is where local persists the token.
+		await fs.mkdir(path.join(projectDir, '.burgereditor'), { recursive: true });
+		await fs.writeFile(
+			path.join(projectDir, '.burgereditor', 'agent-token'),
+			'file-token\n',
+			'utf8',
+		);
+		await routeToolCall(pageListTool, {}, { mode: 'auto', localUrl: fakeLocal.url });
+		expect(receivedAuth).toBe('Bearer file-token');
+	});
+
+	test('BGE_AGENT_TOKEN takes precedence over the token file', async () => {
+		let receivedAuth: string | undefined;
+		fakeLocal = await startEchoingLocal((req) => {
+			receivedAuth = req.headers.authorization;
+		});
+		await fs.mkdir(path.join(projectDir, '.burgereditor'), { recursive: true });
+		await fs.writeFile(
+			path.join(projectDir, '.burgereditor', 'agent-token'),
+			'file-token',
+			'utf8',
+		);
+		process.env.BGE_AGENT_TOKEN = 'env-token';
+		await routeToolCall(pageListTool, {}, { mode: 'auto', localUrl: fakeLocal.url });
+		expect(receivedAuth).toBe('Bearer env-token');
+	});
+
+	test('sends no authorization header when neither the env var nor the token file exists', async () => {
+		let receivedAuth: string | undefined = 'sentinel';
+		fakeLocal = await startEchoingLocal((req) => {
+			receivedAuth = req.headers.authorization;
+		});
+		await routeToolCall(pageListTool, {}, { mode: 'auto', localUrl: fakeLocal.url });
+		expect(receivedAuth).toBeUndefined();
+	});
+
+	test('a mutation forwarded to a reachable local is applied in the browser only — nothing is written to disk', async () => {
+		let forwarded: { tool: string; args: unknown } | null = null;
+		fakeLocal = await startFakeLocal((req, res) => {
+			if (req.url === '/api/agent/status') {
+				res.writeHead(200, { 'content-type': 'application/json' });
+				res.end(JSON.stringify({ protocolVersion: 1 }));
+				return;
+			}
+			let body = '';
+			req.on('data', (chunk) => {
+				body += chunk;
+			});
+			req.on('end', () => {
+				forwarded = JSON.parse(body);
+				res.writeHead(200, { 'content-type': 'application/json' });
+				res.end(JSON.stringify({ ok: true, result: {}, appliedTo: 'browser' }));
+			});
+		});
+		const result = await routeToolCall(
+			pageCreateTool,
+			{ path: 'created-in-browser.html' },
+			{ mode: 'auto', localUrl: fakeLocal.url },
+		);
+		expect(result).toEqual({ result: {}, appliedTo: 'browser' });
+		expect(forwarded).toEqual({
+			tool: 'page_create',
+			args: { path: 'created-in-browser.html' },
+		});
+		// The disk fixture holds exactly the one page beforeAll wrote — the
+		// forwarded page_create must not have created a second file.
+		expect(await fs.readdir(docRoot)).toEqual(['index.html']);
+	});
+
+	test('a local whose status route never answers is treated as unreachable after the 500 ms probe timeout and auto mode falls back to disk', async () => {
+		let invokeCalls = 0;
+		fakeLocal = await startFakeLocal((req, res) => {
+			if (req.url === '/api/agent/status') {
+				// Never call res.end(): the probe must give up on its own.
+				return;
+			}
+			invokeCalls++;
+			res.writeHead(200, { 'content-type': 'application/json' });
+			res.end(JSON.stringify({ ok: true, result: {}, appliedTo: 'browser' }));
+		});
+		const started = Date.now();
+		const result = await routeToolCall(
+			pageListTool,
+			{},
+			{ mode: 'auto', localUrl: fakeLocal.url },
+		);
+		const elapsed = Date.now() - started;
+		expect(result.appliedTo).toBe('disk');
+		expect(invokeCalls).toBe(0);
+		expect(elapsed).toBeGreaterThanOrEqual(450);
+		expect(elapsed).toBeLessThan(2000);
+	}, 5000);
+
+	test('a reachable verdict is cached: two invokes inside the TTL probe /api/agent/status only once', async () => {
+		let statusCalls = 0;
+		fakeLocal = await startFakeLocal((req, res) => {
+			if (req.url === '/api/agent/status') {
+				statusCalls++;
+				res.writeHead(200, { 'content-type': 'application/json' });
+				res.end(JSON.stringify({ protocolVersion: 1 }));
+				return;
+			}
+			res.writeHead(200, { 'content-type': 'application/json' });
+			res.end(JSON.stringify({ ok: true, result: {}, appliedTo: 'browser' }));
+		});
+		await routeToolCall(pageListTool, {}, { mode: 'auto', localUrl: fakeLocal.url });
+		await routeToolCall(pageListTool, {}, { mode: 'auto', localUrl: fakeLocal.url });
+		expect(statusCalls).toBe(1);
 	});
 
 	test('a mid-window crash (reachable cached, but the connection fails on invoke) falls back to disk in auto mode without waiting out the TTL', async () => {
