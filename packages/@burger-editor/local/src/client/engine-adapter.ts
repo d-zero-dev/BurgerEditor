@@ -2,13 +2,21 @@ import type { EditorAdapter } from './agent-link.js';
 import type { UIState } from '../protocol/ws-messages.js';
 import type { BurgerEditorEngine } from '@burger-editor/core';
 
-import { applyLiveBlockOp, getLiveBlockIndex } from '@burger-editor/core';
-
 /**
  * `agent-link.ts`'s `EditorAdapter`, backed by a real `BurgerEditorEngine` —
- * the one place this feature touches `core`'s live DOM API, kept separate
- * from `agent-link.ts` so that file can be tested with a fake adapter
- * instead of a full editor instance.
+ * the one place this feature touches the live editor, kept separate from
+ * `agent-link.ts` so that file can be tested with a fake adapter instead of
+ * a full editor instance.
+ *
+ * Everything goes through METHODS on `engine` (`applyLiveBlockOp`,
+ * `getLiveBlockIndex`), and this module imports `@burger-editor/core` as a
+ * type only. That is load-bearing, not style: the browser bundle contains
+ * two copies of core — one inlined into `@burger-editor/client`'s dist
+ * (which created `engine`), one resolved from `@burger-editor/core` directly.
+ * `BurgerBlock`/`Item` lookups live in `static` WeakMaps, so a function
+ * imported from the second copy sees none of the blocks the first copy
+ * registered ("Do not get BurgerBlock instance."). Calling through the
+ * engine instance keeps the lookup inside the copy that owns the state.
  * @param engine
  */
 export function createEngineAdapter(engine: BurgerEditorEngine): EditorAdapter {
@@ -27,12 +35,12 @@ export function createEngineAdapter(engine: BurgerEditorEngine): EditorAdapter {
 				// `detail`. `block-options` DOES carry the block directly.
 				editingBlockIndex:
 					openDialog?.type === 'block-options'
-						? getLiveBlockIndex(engine.content, openDialog.block)
+						? engine.getLiveBlockIndex(openDialog.block)
 						: null,
 			};
 		},
 		async applyOp(op, options) {
-			await applyLiveBlockOp(engine, engine.content, op, options);
+			await engine.applyLiveBlockOp(op, options);
 			return { html: engine.content.getContentsAsString() };
 		},
 		reload() {
