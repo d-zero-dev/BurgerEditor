@@ -35,4 +35,4 @@ export {
 	toLogicalPath,
 } from './virtual-path-resolver.js';
 
-export { resolvePathInput } from './path-input.js';
+export { PathOutsideDocumentRootError, resolvePathInput } from './path-input.js';
