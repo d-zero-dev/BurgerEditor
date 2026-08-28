@@ -340,4 +340,30 @@ describe('POST /api/agent/invoke — with a tab open', () => {
 		const body = (await res.json()) as { error: string };
 		expect(body.error).toBe('user-editing');
 	});
+
+	test('a nack with a non-standard reason surfaces as invalid, with the browser detail folded into message', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const { sessionId, sent } = connectPrimaryTab(hub);
+		const token = await readToken(app, '/a.html');
+
+		const invokePromise = postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 0 }, readToken: token },
+		});
+		const applyMessage = await waitForApply(sent);
+		hub.tabHub.resolveNack(
+			sessionId,
+			applyMessage.id,
+			'disabled-block',
+			'this item type is disabled by editorOptions.isDisable',
+		);
+
+		const res = await invokePromise;
+		expect(res.status).toBe(400);
+		const body = (await res.json()) as { error: string; message: string };
+		expect(body.error).toBe('invalid');
+		expect(body.message).toContain(
+			'this item type is disabled by editorOptions.isDisable',
+		);
+	});
 });

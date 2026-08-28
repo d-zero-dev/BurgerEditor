@@ -516,10 +516,11 @@ function resultBlockFor(
  */
 function tabHubErrorToAgentError(error: unknown): AgentError | null {
 	if (error instanceof ApplyNackError) {
+		const detailMessage = typeof error.detail === 'string' ? `: ${error.detail}` : '';
 		if (error.reason === 'user-editing' || error.reason === 'stale') {
-			return new AgentError(error.reason, error.message, {});
+			return new AgentError(error.reason, `${error.message}${detailMessage}`, {});
 		}
-		return new AgentError('invalid', error.message);
+		return new AgentError('invalid', `${error.message}${detailMessage}`);
 	}
 	if (error instanceof ApplyTimeoutError) {
 		return new AgentError('local-unreachable', 'The open tab stopped responding.');
