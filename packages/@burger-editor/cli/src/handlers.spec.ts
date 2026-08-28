@@ -721,6 +721,17 @@ describe('block handlers', () => {
 		);
 	});
 
+	test('a NaN block index (what `Number(undefined)` from a missing CLI argument yields) is rejected as out of range instead of silently resolving to nothing', async () => {
+		// `NaN < 0` and `NaN >= length` are both false, so a plain bounds check
+		// let NaN through and callers got `block: undefined` with exit 0.
+		await expect(
+			itemUpdate(ctx, 'about.html', { index: Number('abc') }, 0, {}),
+		).rejects.toThrow(/Block index NaN out of range/);
+		await expect(itemUpdate(ctx, 'about.html', { index: 1.5 }, 0, {})).rejects.toThrow(
+			/Block index 1.5 out of range/,
+		);
+	});
+
 	test('itemUpdate itemIndex stays aligned with page_blocks/parseHTMLToBlockData item counting, even past an item with no data-bgi wrapper', async () => {
 		// Regression: getItemWrapperElements used to filter out items lacking a
 		// [data-bgi] wrapper, knocking its itemIndex out of sync with the count

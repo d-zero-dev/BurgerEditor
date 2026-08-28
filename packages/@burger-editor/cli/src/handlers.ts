@@ -482,8 +482,16 @@ export function resolveIndexInBlocks(
 		// blockDelete, blockMove's `target`, blockDuplicate, blockEnsureId,
 		// itemUpdate) gets a clear RangeError for an out-of-range index
 		// instead of `blocks[index]` silently yielding `undefined` past a
-		// `!`-asserted access further down the call stack.
-		if (target.index < 0 || target.index >= blocks.length) {
+		// `!`-asserted access further down the call stack. `Number.isInteger`
+		// first: the CLI passes `Number(argv)`, so a missing or non-numeric
+		// argument arrives as NaN, which slips through both `<`/`>=`
+		// comparisons and would otherwise produce a "successful" result with
+		// `block: undefined`.
+		if (
+			!Number.isInteger(target.index) ||
+			target.index < 0 ||
+			target.index >= blocks.length
+		) {
 			throw new RangeError(
 				`Block index ${target.index} out of range (length=${blocks.length}) in ${pathInput}`,
 			);
