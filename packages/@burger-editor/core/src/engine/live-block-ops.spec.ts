@@ -1,3 +1,5 @@
+import type { BurgerEditorView } from '../types.js';
+
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import { BurgerBlock } from '../block/block.js';
@@ -55,7 +57,6 @@ function createOptions(
 }
 
 /**
- * @param text
  * @param block
  */
 function textOf(block: BurgerBlock): string {
@@ -284,5 +285,94 @@ describe('applyLiveBlockOp — set-id', () => {
 			{ highlight: false },
 		);
 		expect(result.touched?.id).toBe('bge-42');
+	});
+});
+
+/**
+ * The production UI (`@burger-editor/client`) renders the editable area
+ * inside an `<iframe>`, so `content.containerElement` and every block in it
+ * belong to the iframe's realm — they are NOT `instanceof` the top window's
+ * `HTMLElement`. This view reproduces exactly that: the engine's `viewArea`
+ * stays in the top document, only the content container is created inside
+ * an iframe document.
+ */
+function createIframeView(): BurgerEditorView {
+	const iframes: HTMLIFrameElement[] = [];
+	const teardown = () => {
+		for (const iframe of iframes) {
+			iframe.remove();
+		}
+		iframes.length = 0;
+	};
+	return {
+		createAreaHost({ engine: hostEngine, classList }) {
+			const iframe = document.createElement('iframe');
+			hostEngine.viewArea.append(iframe);
+			iframes.push(iframe);
+			const frameDoc = iframe.contentDocument!;
+			const containerElement = frameDoc.createElement('div');
+			containerElement.classList.add(...classList);
+			frameDoc.body.append(containerElement);
+			return Promise.resolve({ containerElement });
+		},
+		destroy: teardown,
+		[Symbol.dispose]: teardown,
+	};
+}
+
+describe('applyLiveBlockOp — container inside an iframe (cross-realm)', () => {
+	let iframeEngine: BurgerEditorEngine;
+
+	beforeEach(async () => {
+		iframeEngine = await BurgerEditorEngine.new(
+			createOptions({ view: createIframeView() }),
+		);
+	});
+
+	afterEach(() => {
+		iframeEngine[Symbol.dispose]();
+	});
+
+	test('the container really lives in another realm (precondition for the tests below)', () => {
+		const container = iframeEngine.content.containerElement;
+		expect(container.ownerDocument).not.toBe(document);
+		expect(container.firstElementChild instanceof HTMLElement).toBe(false);
+	});
+
+	test('listLiveBlocks sees every block even though none is a top-window HTMLElement', () => {
+		expect(listLiveBlocks(iframeEngine.content).map((b) => textOf(b))).toEqual([
+			'a',
+			'b',
+			'c',
+		]);
+	});
+
+	test('replace resolves its index instead of failing with "out of range (length=0)"', async () => {
+		const result = await applyLiveBlockOp(
+			iframeEngine,
+			iframeEngine.content,
+			{ op: 'replace', index: 0, blockHtml: blockHtml('replaced') },
+			{ highlight: false },
+		);
+		expect(result.touched && textOf(result.touched)).toBe('replaced');
+		expect(listLiveBlocks(iframeEngine.content).map((b) => textOf(b))).toEqual([
+			'replaced',
+			'b',
+			'c',
+		]);
+		// The new block was imported into the container's own document.
+		expect(result.touched?.el.ownerDocument).toBe(
+			iframeEngine.content.containerElement.ownerDocument,
+		);
+	});
+
+	test('update-item reaches the targeted item', async () => {
+		const result = await applyLiveBlockOp(
+			iframeEngine,
+			iframeEngine.content,
+			{ op: 'update-item', index: 0, itemIndex: 0, data: { wysiwyg: '<p>updated</p>' } },
+			{ highlight: false },
+		);
+		expect(result.touched && textOf(result.touched)).toBe('updated');
 	});
 });

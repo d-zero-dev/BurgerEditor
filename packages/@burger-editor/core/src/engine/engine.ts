@@ -1,5 +1,9 @@
 import type { ConfirmCallback } from './copy-editable-area.js';
-import type { ContainerType } from '../block/types.js';
+import type {
+	ApplyLiveBlockOpOptions,
+	ApplyLiveBlockOpResult,
+} from './live-block-ops.js';
+import type { BlockOp, ContainerType } from '../block/types.js';
 import type { ItemSeed } from '../item/types.js';
 import type {
 	BurgerEditorEngineOptions,
@@ -32,6 +36,7 @@ import { Item } from '../item/item.js';
 
 import { copyEditableArea } from './copy-editable-area.js';
 import { createDefaultView } from './default-view.js';
+import { applyLiveBlockOp, getLiveBlockIndex, listLiveBlocks } from './live-block-ops.js';
 import { UIStateStore } from './ui-state.js';
 
 export class BurgerEditorEngine implements Disposable {
@@ -159,6 +164,26 @@ export class BurgerEditorEngine implements Disposable {
 	}
 
 	/**
+	 * Apply one `BlockOp` to the current editable area through the same
+	 * code path a manual edit takes (`InsertionPoint`, `BurgerBlock`,
+	 * `Item`), so animation, instance identity and open dialogs behave
+	 * exactly as for a human. This is the entry point a remote driver (the
+	 * Agent Hub WebSocket link) should use — see {@link getLiveBlocks} for
+	 * why it must be a method and not an imported function.
+	 * @param op
+	 * @param options
+	 * @example
+	 * ```ts
+	 * await engine.applyLiveBlockOp({ op: 'delete', index: 2 });
+	 * ```
+	 */
+	applyLiveBlockOp(
+		op: BlockOp,
+		options?: ApplyLiveBlockOpOptions,
+	): Promise<ApplyLiveBlockOpResult> {
+		return applyLiveBlockOp(this, this.#current, op, options);
+	}
+	/**
 	 * Clean up resources and stop monitoring.
 	 * @deprecated Use a `using` declaration instead — this now only
 	 * forwards to `[Symbol.dispose]`.
@@ -243,6 +268,39 @@ export class BurgerEditorEngine implements Disposable {
 	 */
 	getEditableContent(type: EditableAreaType): EditableContent<EditableAreaType> | null {
 		return type === 'main' ? this.#main : this.#draft;
+	}
+	/**
+	 * Index of `block` within {@link getLiveBlocks}, or `-1` when it's not
+	 * in the current editable area.
+	 * @param block
+	 * @example
+	 * ```ts
+	 * const index = engine.getLiveBlockIndex(engine.getCurrentBlock());
+	 * ```
+	 */
+	getLiveBlockIndex(block: BurgerBlock): number {
+		return getLiveBlockIndex(this.#current, block);
+	}
+	/**
+	 * The live blocks of the current editable area, in DOM order — the same
+	 * ordering every `BlockOp.index` addresses.
+	 *
+	 * Exposed as a METHOD rather than only as the free function in
+	 * `live-block-ops.ts` on purpose: `BurgerBlock`/`Item` instances are
+	 * looked up through `static` WeakMaps, i.e. module-level state. A host
+	 * app that ends up with two copies of `@burger-editor/core` in its bundle
+	 * (one inlined into a UI package, one imported directly) gets two
+	 * independent maps, and a free function imported from the "other" copy
+	 * finds nothing the engine registered. Calling through the engine
+	 * instance keeps the lookup inside the copy that created the blocks.
+	 * @example
+	 * ```ts
+	 * const blocks = engine.getLiveBlocks();
+	 * blocks[0]?.highlight();
+	 * ```
+	 */
+	getLiveBlocks(): readonly BurgerBlock[] {
+		return listLiveBlocks(this.#current);
 	}
 	getRepeatMinInlineSizeVariants() {
 		return getRepeatMinInlineSizeVariants(this.#current.containerElement.ownerDocument);

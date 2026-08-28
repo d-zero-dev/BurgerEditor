@@ -23,10 +23,15 @@ export class DisabledBlockError extends Error {
 export function listLiveBlocks(
 	content: EditableContent<EditableAreaType>,
 ): readonly BurgerBlock[] {
+	// No `instanceof HTMLElement` here: the container lives inside the
+	// editor's iframe, whose elements belong to that frame's realm and are
+	// NOT instances of the top window's `HTMLElement` — an `instanceof`
+	// filter silently drops every block and every op then fails with
+	// "index out of range (length=0)". `children` already yields only
+	// Elements, and `matches` works across realms.
 	return [...content.containerElement.children]
-		.filter((el): el is HTMLElement => el instanceof HTMLElement)
 		.filter((el) => el.matches('[data-bge-container]'))
-		.map((el) => BurgerBlock.getBlock(el));
+		.map((el) => BurgerBlock.getBlock(el as HTMLElement));
 }
 
 /**
@@ -82,21 +87,29 @@ function requireBlockAt(
 }
 
 /**
- * Parse pre-rendered block HTML into a detached element owned by the
- * current document — `document.importNode` because `DOMParser` produces
- * elements from a different document, and core's block APIs (item
- * binding, `BurgerBlock` identity tracking) assume same-document elements
- * the way `core/src/block/block-ops.ts`'s disk-side `parseBlockHtml`
- * assumes same-scope-document elements.
+ * Parse pre-rendered block HTML into a detached element owned by
+ * `targetDocument` — the editable container's own document, which is the
+ * editor iframe's, not the top window's. `DOMParser` produces elements
+ * from yet another document, so they're imported explicitly; core's block
+ * APIs (item binding, `BurgerBlock` identity tracking) assume same-document
+ * elements the way `core/src/block/block-ops.ts`'s disk-side
+ * `parseBlockHtml` assumes same-scope-document elements.
  * @param blockHtml
+ * @param targetDocument the document that owns `content.containerElement`
  */
-function parseBlockElement(blockHtml: string): HTMLElement {
+function parseBlockElement(blockHtml: string, targetDocument: Document): HTMLElement {
 	const doc = new DOMParser().parseFromString(`<body>${blockHtml}</body>`, 'text/html');
 	const el = doc.body.firstElementChild;
 	if (!el) {
 		throw new Error('Provided block HTML does not contain a root element.');
 	}
-	return document.importNode(el, true) as HTMLElement;
+	// Import into the CONTAINER's document (the editor iframe), not the top
+	// window's `document` this module happens to run in — the two are
+	// different realms, and a node owned by the wrong document is exactly
+	// the kind of cross-realm mismatch that made `listLiveBlocks` see zero
+	// blocks. Browsers adopt on insert, so it would "work", but every
+	// `instanceof`/identity check downstream would be against the wrong realm.
+	return targetDocument.importNode(el, true) as HTMLElement;
 }
 
 /**
@@ -196,7 +209,10 @@ export async function applyLiveBlockOp(
 		case 'insert': {
 			const blocks = listLiveBlocks(content);
 			const { target, toTop } = resolveInsertTarget(blocks, op.index);
-			const parsed = parseBlockElement(op.blockHtml);
+			const parsed = parseBlockElement(
+				op.blockHtml,
+				content.containerElement.ownerDocument,
+			);
 			const block = await engine.restoreBlockFromElement(parsed);
 			const disableMessage = disableMessageFor(block);
 			if (disableMessage) {
@@ -210,7 +226,10 @@ export async function applyLiveBlockOp(
 		case 'replace': {
 			const blocks = listLiveBlocks(content);
 			const old = requireBlockAt(blocks, op.index);
-			const parsed = parseBlockElement(op.blockHtml);
+			const parsed = parseBlockElement(
+				op.blockHtml,
+				content.containerElement.ownerDocument,
+			);
 			const next = await engine.restoreBlockFromElement(parsed);
 			deselectIfCurrent(engine, old);
 			old.el.replaceWith(next.el);
