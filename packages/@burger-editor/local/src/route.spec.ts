@@ -75,6 +75,7 @@ function makeConfig(
 		enableImportBlock: false,
 		healthCheck: { enabled: false, interval: 10_000, retryCount: 3 },
 		virtualTree: { enabled: virtualTreeEnabled, pathKey },
+		agent: { enabled: true },
 	};
 }
 

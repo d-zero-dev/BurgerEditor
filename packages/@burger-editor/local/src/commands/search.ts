@@ -137,7 +137,7 @@ export async function runSearchCommand(
 	}
 
 	// Load configuration
-	const config = await getUserConfig();
+	const { config } = await getUserConfig();
 
 	// Execute search
 	const searchResult = await executeSearch(config.documentRoot, parseResult.params);

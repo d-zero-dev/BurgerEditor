@@ -1,13 +1,21 @@
+import type { AgentAuth } from './agent/auth.js';
+import type { AgentHub } from './agent/hub.js';
 import type { LocalServerConfig } from './types.js';
 import type { FileListResult } from '@burger-editor/core';
 import type { Context, Hono } from 'hono';
+import type { UpgradeWebSocket } from 'hono/ws';
+import type { WebSocket } from 'ws';
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import { computeContentHash } from '@burger-editor/cli';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 
+import { isAgentAuthed } from './agent/auth.js';
+import { hostGuard } from './agent/host-guard.js';
+import { setAgentRoute } from './agent/route.js';
 import { HEALTH_CHECK_END_POINT } from './constants.js';
 import { log } from './helpers/debug.js';
 import { FileNotFoundError, loadContent, saveContent } from './helpers/edit-content.js';
@@ -26,6 +34,15 @@ import {
 	type ResolverState,
 } from './model/virtual-path-resolver.js';
 import { App } from './view/app.js';
+
+export interface AgentRouteDeps {
+	readonly hub: AgentHub;
+	readonly auth: AgentAuth;
+	readonly upgradeWebSocket: UpgradeWebSocket<
+		WebSocket,
+		{ onError: (err: unknown) => void }
+	>;
+}
 
 const clientFileDir = path.resolve(import.meta.dirname, '..', 'dist');
 
@@ -91,11 +108,14 @@ const createApiSchema = z.object({
  * @param app
  * @param userConfig
  * @param initialResolverState Pre-loaded resolver state (null when virtualTree is disabled)
+ * @param agentDeps Agent Hub wiring (`hub` + `auth` + `upgradeWebSocket`). Omitted when
+ *   `agent.enabled` is `false` — `/api/agent/*` and `/ws/editor` are then not mounted at all.
  */
 export function setRoute(
 	app: Hono,
 	userConfig: LocalServerConfig,
 	initialResolverState: ResolverState | null = null,
+	agentDeps?: AgentRouteDeps,
 ) {
 	const virtualTreeEnabled = userConfig.virtualTree.enabled;
 	const pathKey = userConfig.virtualTree.pathKey;
@@ -103,7 +123,9 @@ export function setRoute(
 
 	// Serialize all resolverState read-modify-write operations to avoid races
 	// where two concurrent saves both observe the same starting state and the
-	// later write clobbers the earlier one.
+	// later write clobbers the earlier one. Also serializes every agent
+	// invoke that writes to disk against these same saves — see
+	// `agent/route.ts`'s `setAgentRoute` doc comment.
 	let stateLock: Promise<unknown> = Promise.resolve();
 	/**
 	 *
@@ -113,6 +135,16 @@ export function setRoute(
 		const next = stateLock.then(work, work);
 		stateLock = next.catch(() => {});
 		return next;
+	}
+
+	if (agentDeps) {
+		setAgentRoute(app, userConfig, agentDeps.hub, agentDeps.auth, {
+			withStateLock,
+			getResolverState: () => resolverState,
+			setResolverState: (state) => {
+				resolverState = state;
+			},
+		});
 	}
 	const fileListManger = {
 		image: new FileListManager(
@@ -175,6 +207,7 @@ export function setRoute(
 					content={loadResult}
 					lang={userConfig.lang}
 					virtualTreeEnabled={virtualTreeEnabled}
+					serverSession={agentDeps?.hub.serverSession}
 				/>,
 			);
 		}
@@ -192,7 +225,45 @@ export function setRoute(
 				virtualTreeEnabled={virtualTreeEnabled}
 				frontMatter={loadResult.frontMatter}
 				hasFrontMatter={loadResult.hasFrontMatter}
+				serverSession={agentDeps?.hub.serverSession}
 			/>,
+		);
+	}
+
+	if (agentDeps) {
+		// Registered before the `routes` chain below — its trailing
+		// `/:file{.+$}` static-file fallback matches ANY path, so `/ws/editor`
+		// would 404 (shadowed by that catch-all) if mounted after it.
+		app.use('/ws/*', hostGuard(userConfig.host));
+		app.get(
+			'/ws/editor',
+			agentDeps.upgradeWebSocket((c) => {
+				if (!isAgentAuthed(agentDeps.auth, c.req)) {
+					// `upgradeWebSocket` handlers can't return an HTTP error
+					// response once invoked — the closest equivalent is refusing
+					// to register a session and closing immediately on open.
+					return { onOpen: (_evt, ws) => ws.close(1008, 'Unauthorized') };
+				}
+				let sessionId: string | null = null;
+				return {
+					onOpen(_evt, ws) {
+						sessionId = agentDeps.hub.tabHub.register({
+							send: (data) => ws.send(data),
+							close: () => ws.close(),
+						});
+					},
+					onMessage(evt) {
+						if (sessionId) {
+							agentDeps.hub.handleSocketMessage(sessionId, String(evt.data));
+						}
+					},
+					onClose() {
+						if (sessionId) {
+							agentDeps.hub.tabHub.disconnect(sessionId);
+						}
+					},
+				};
+			}),
 		);
 	}
 
@@ -378,6 +449,23 @@ export function setRoute(
 
 				// 2-phase commit: only advance resolverState after the file write succeeds.
 				resolverState = nextResolverState;
+
+				if (agentDeps) {
+					// A human's browser save also moves disk state — keep the agent
+					// hub's view of it current so the next agent invoke's staleness
+					// check (agent/route.ts) doesn't compare against a stale hash.
+					// The saving tab isn't identified here (no session header), so
+					// every tab with this page open is treated as caught up; a tab
+					// that's actually behind still gets a `reload` from the normal
+					// disk-write path further down agent/route.ts on the NEXT invoke.
+					const newHash = await computeContentHash(targetFilePath);
+					agentDeps.hub.revisions.bump(normalizedPath, newHash);
+					for (const session of agentDeps.hub.tabHub.snapshotAll()) {
+						if (session.page === normalizedPath) {
+							agentDeps.hub.tabHub.setSyncedHash(session.id, newHash);
+						}
+					}
+				}
 
 				log('Saved: %s (with Front Matter: %s)', targetFilePath, !!data.frontMatter);
 				return c.json({

@@ -12,7 +12,7 @@ import { HEALTH_CHECK_END_POINT } from './constants.js';
  * ```typescript
  * import { getUserConfig, createHealthChecker } from '@burger-editor/local';
  *
- * const config = await getUserConfig();
+ * const { config } = await getUserConfig();
  * const healthMonitor = createHealthChecker(config);
  * healthMonitor.start();
  * ```
