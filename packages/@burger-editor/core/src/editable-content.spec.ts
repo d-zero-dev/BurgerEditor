@@ -198,6 +198,20 @@ describe('EditableContent', () => {
 		});
 	});
 
+	describe('replaceContents', () => {
+		test('should set HTML and rebind blocks through init', async () => {
+			const { host } = createFakeHost();
+			const engine = createMockEngine();
+			const content = new EditableContent('main', '<p>old</p>', engine, host);
+
+			await content.replaceContents('<div data-bge-name="text"><p>new</p></div>');
+
+			expect(content.getContentsAsString()).toContain('<p>new</p>');
+			expect(engine.restoreBlockFromElement).toHaveBeenCalled();
+			expect(engine.migrationCheck).toHaveBeenCalledWith(host.containerElement);
+		});
+	});
+
 	describe('animateInsertion', () => {
 		test('should delegate to the host hook', async () => {
 			const { host, animateInsertion } = createFakeHost(true);
