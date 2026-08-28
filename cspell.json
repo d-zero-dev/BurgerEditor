@@ -27,6 +27,13 @@
 		"trix",
 
 		// Project specific
-		"bgeconfig"
+		"bgeconfig",
+
+		// Networking terminology (WebSocket ack/nack protocol)
+		"acks",
+		"nack",
+		"nacked",
+		"nacking",
+		"nacks"
 	]
 }

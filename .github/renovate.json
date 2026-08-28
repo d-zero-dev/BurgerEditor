@@ -105,6 +105,10 @@
 			"description": "@types/node is DefinitelyTyped, keep aligned with the volta.node/setup-node bump",
 			"groupName": "node",
 			"matchPackageNames": ["node", "@types/node"]
+		},
+		{
+			"groupName": "ws",
+			"matchPackageNames": ["ws", "@types/ws"]
 		}
 	]
 }

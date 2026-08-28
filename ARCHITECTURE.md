@@ -62,6 +62,7 @@ graph TD
     inspector --> local
     blocks --> local
     core --> local
+    cli --> local
 
     %% CLI (AI エージェント向け)
     fileio --> cli
@@ -189,8 +190,8 @@ graph TD
 **`@burger-editor/local`**
 
 - ローカルファイルシステム向けCMS実装（Hono ベース HTTP + Hono JSX による SSR + ビルド済み client UI の埋め込み）
-- 依存関係: core, file-io, blocks, inspector, Hono, Node.js関連パッケージ
-- 責任: ローカルサーバー、ブラウザ UI、CLI機能（`bge dev` / `bge search`）、プログラマティックAPI
+- 依存関係: core, file-io, blocks, inspector, cli, Hono, Node.js関連パッケージ
+- 責任: ローカルサーバー、ブラウザ UI、CLI機能（`bge dev` / `bge search`）、プログラマティックAPI、AI エージェント向け agent API（`cli` の agent-tools をタブが開いていればブラウザへ、無ければディスクへ適用）
 - **重要**: ファイル I/O / 設定解決 / virtual-path-resolver / Front Matter の本体は `@burger-editor/file-io` に移っており、local はそれを再エクスポートする薄いシムに痩身化されている。`local/src/helpers/{front-matter,html-detection,no-editable-area-error,edit-content}.ts` と `local/src/model/{file-tree,virtual-path-resolver,get-user-config}.ts` は互換性のためのシム re-export であり、本体は `@burger-editor/core` / `@burger-editor/file-io` 側を参照すること
 - **環境固有**: ローカルファイルシステム専用
 - **CLI機能**:
