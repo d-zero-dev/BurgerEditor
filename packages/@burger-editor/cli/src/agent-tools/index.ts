@@ -35,11 +35,17 @@ import {
 
 /**
  * Every tool BurgerEditor exposes to an agent, in one array — the single
- * source `mcp-server` (stdio, disk/auto/local mode) registers from, and
- * designed to stay the single source once `local` grows its own HTTP
- * entry points for these same tools. See `types.ts` for why one
- * definition per tool is load-bearing: it's what keeps the contract
- * identical across every surface an agent might be talking to.
+ * source both registration sites import: `@burger-editor/mcp-server`
+ * (stdio, disk/auto/local mode) and `@burger-editor/local`'s
+ * `POST /api/agent/invoke`. See `types.ts` for why one definition per tool
+ * is load-bearing: it's what keeps the contract identical across every
+ * surface an agent might be talking to.
+ * @example
+ * ```ts
+ * for (const tool of agentTools) {
+ *   server.registerTool(tool.name, { description: tool.description, inputSchema: tool.input }, ...);
+ * }
+ * ```
  */
 export const agentTools: readonly AgentTool<unknown, unknown>[] = [
 	pageListTool,

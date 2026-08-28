@@ -51,8 +51,9 @@ export const editorWaitForEventTool = defineAgentTool({
 		return Promise.reject(
 			new AgentError(
 				'local-required',
-				'editor_wait_for_event requires the local dev server (`npx bge`). ' +
-					'Start it, or use editor_state_get for a one-shot check in disk mode.',
+				'editor_wait_for_event requires the local dev server (`bge`, from ' +
+					'`@burger-editor/local`). Start it, or use editor_state_get for a one-shot ' +
+					'check in disk mode.',
 			),
 		);
 	},

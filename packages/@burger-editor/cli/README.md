@@ -1,6 +1,6 @@
 # `@burger-editor/cli`
 
-BurgerEditor v4 プロジェクトを AI エージェント（Claude Code 等）・スクリプト・CI から非対話で操作する CLI。**stdout には常に JSON のみ** を出力する。`@burger-editor/mcp-server` の v4 ツールはこの CLI のハンドラを内部的にラップしている。
+BurgerEditor v4 プロジェクトを AI エージェント（Claude Code 等）・スクリプト・CI から非対話で操作する CLI。**stdout には常に JSON のみ** を出力する。AI エージェント向けツール定義（`src/agent-tools/`）もこのパッケージが持ち、`@burger-editor/mcp-server` と `@burger-editor/local` の Agent Hub はそれを登録して公開する。
 
 ## Quick Start
 
@@ -33,9 +33,9 @@ npx @burger-editor/cli config-resolve
 
 | パッケージ                                      | 役割                                              | CLI vs MCP の使い分け                                                     |
 | ----------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------- |
-| [`@burger-editor/cli`](./) **（本パッケージ）** | 非対話 CLI（JSON-only stdout）                    | パイプライン・スクリプト統合・人間が直接叩く・CI 組み込み                 |
+| [`@burger-editor/cli`](./) **（本パッケージ）** | 非対話 CLI（JSON-only stdout）+ agent ツール定義  | パイプライン・スクリプト統合・人間が直接叩く・CI 組み込み                 |
 | [`@burger-editor/mcp-server`](../mcp-server/)   | MCP サーバー（AI クライアント向けインタフェース） | AI クライアントから自然言語で叩く・Claude Desktop / Code / Cursor / Cline |
-| [`@burger-editor/local`](../local/)             | ブラウザ UI + HTTP サーバー                       | 編集者が GUI で操作する。CLI / MCP と同じ `burgereditor.config.js` を共有 |
+| [`@burger-editor/local`](../local/)             | ブラウザ UI + HTTP サーバー（Agent Hub 含む）     | 編集者が GUI で操作する。CLI / MCP と同じ `burgereditor.config.js` を共有 |
 | [`@burger-editor/core`](../core/)               | エディタエンジン本体・カスタムアイテム実装基盤    | 独自ブロック / アイテムを実装するとき                                     |
 | [`@burger-editor/file-io`](../file-io/)         | ファイル I/O・virtual-path-resolver の本体        | 本 CLI が内部利用。直接依存する必要はない                                 |
 
@@ -56,21 +56,33 @@ npx @burger-editor/cli <subcommand> [args] [flags]
 - **JSON-only stdout**: 成功時は単一 JSON 行のみ。ユーザー側の `dotenv` バナー等は stderr にリダイレクトされ、最終 JSON は drain callback で確実に flush される
 - **3-way spec input**: `--spec` / `--spec-file` / **stdin** の優先順で受け取る。シェルクォート地獄を回避するため
 - **atomic 操作**: `page-create` は `fs.writeFile(... flag: 'wx')` で原子的に reserve、`page-rename` は rename 失敗時に作成済みディレクトリを巻き戻す
-- **ハンドラの再利用**: `src/handlers.ts` の各関数は `mcp-server` の v4 ツールがそのままラップして公開する。CLI と MCP で同じ振る舞い
+- **ツール定義の一本化**: AI エージェント向けツールは `src/agent-tools/tools/*.ts` に 1 ツール 1 定義で置かれ、`agentTools` 配列として export される。`mcp-server`（stdio）と `local` の Agent Hub（HTTP / WebSocket）は同じ配列を登録するだけなので、どの経路から呼んでも入力・出力・エラーの契約が同一になる
 - **block-move の `to`**: `Array.prototype.splice` 慣用で、**移動後の最終配列における index**
 - **パスは documentRoot 起点**: リーディング `/` は OS ルートではなく `documentRoot` 直下として扱う（AI エージェントの直感に合わせるため）
 
 ## stdout / stderr / exit code 契約
 
 - `stdout` … 成功時の JSON のみ
-- `stderr` … エラー `{"error":{...}}`、警告、デバッグ情報
+- `stderr` … エラー JSON、警告、デバッグ情報
 - `exit code` … 成功 = 0、失敗 = 1
 
-エラーは stderr に `{"error":{"name":"...","message":"..."}}` を返し exit code 1。
+エラーは stderr に、MCP ツールエラーおよび Agent Hub の `POST /api/agent/invoke` と共通の **フラットな** shape（`agentErrorSchema`、`src/agent-tools/errors.ts`）で 1 行返す:
+
+```json
+{ "error": "not-found", "message": "ENOENT: no such file or directory, open '...'" }
+```
+
+| フィールド      | 型         | 説明                                                                                                                |
+| --------------- | ---------- | ------------------------------------------------------------------------------------------------------------------- |
+| `error`         | `string`   | 機械可読な短いコード（`invalid` / `not-found` / `exists` / `range` / `no-such-area` / `stale` / `read-required` …） |
+| `message`       | `string`   | 何が起きたか + 次に何をすべきかを 1 文で                                                                            |
+| `next`          | `string[]` | 任意。復旧のための次アクション                                                                                      |
+| `readToken`     | `string`   | 任意。`readToken` 検証で失敗したとき同梱される新しいトークン                                                        |
+| `currentBlocks` | `object[]` | 任意。`{ index, id, text }` の先頭ブロック要約（再試行の手がかり）                                                  |
 
 ## spec の渡し方（3-way input）
 
-`block-insert` / `block-replace` / `front-matter-set` / `page-create` は JSON spec を以下の優先順で受け取る:
+`block-insert` / `block-replace` / `item-update` / `front-matter-set` / `page-create` は JSON spec を以下の優先順で受け取る:
 
 1. `--spec '{"catalog":"h2",...}'` — インライン JSON 文字列
 2. `--spec-file ./block.json` — ファイルパス
@@ -100,7 +112,7 @@ echo '{"title":"新タイトル"}' \
 - 実ファイルパス（documentRoot 配下の絶対 / 相対）
 - 仮想 / 論理パス（`virtualTree.enabled: true` 時の Front Matter `path` キー）
 
-リーディング `/` は **OS ルートではなく documentRoot 直下**として扱う（AI エージェントの直感に合わせるため）。
+リーディング `/` は **OS ルートではなく documentRoot 直下**として扱う（AI エージェントの直感に合わせるため）。`documentRoot` の外を指すパス（`../` 等）は `resolvePathInput`（`@burger-editor/file-io`）が `invalid` エラーで拒否する。
 
 ```sh
 npx @burger-editor/cli page-get about.html
@@ -111,13 +123,13 @@ npx @burger-editor/cli page-get /                  # → documentRoot/<indexFile
 
 ## コマンド一覧
 
-すべて成功時は stdout に JSON を 1 行返す。エラーは stderr に `{"error":{"name":"...","message":"..."}}` を返し exit code 1。
+すべて成功時は stdout に JSON を 1 行返す。エラーは stderr に前述の `{"error":"...","message":"...", ...}` を返し exit code 1。サブコマンドの正は `src/bin.ts` の `commands` テーブル。
 
 ### ページ操作
 
 | コマンド                           | 説明                                                                                             |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `page-list`                        | `documentRoot` 配下のページツリーを返す                                                          |
+| `page-list`                        | `documentRoot` 配下のページツリーを返す（`invalidPages` 付き、後述）                             |
 | `page-get <path>`                  | Front Matter と編集可能領域の内容を返す                                                          |
 | `page-create <path> [--spec ...]`  | 新規ページを `newFileContent` テンプレートから atomic に作成（同時実行で一方だけが成功）         |
 | `page-delete <path>`               | ファイル削除                                                                                     |
@@ -134,25 +146,28 @@ npx @burger-editor/cli page-get /                  # → documentRoot/<indexFile
 
 ### ブロック操作
 
-| コマンド                                                 | 説明                                                                              |
-| -------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `block-list <path>`                                      | 各ブロックのメタ + 構造化されたアイテムデータを返す（`{index, data, html}[]`）    |
-| `block-get <path> <index>`                               | 単一ブロックを返す                                                                |
-| `block-insert <path> <atIndex> [--spec ...] [--dry-run]` | atIndex 位置に挿入（0 = 先頭、大きな値 = 末尾）                                   |
-| `block-replace <path> <index> [--spec ...] [--dry-run]`  | 指定 index のブロックを置き換え                                                   |
-| `block-delete <path> <index> [--dry-run]`                | 削除                                                                              |
-| `block-move <path> <from> <to> [--dry-run]`              | 移動。`to` は **移動後の最終配列における index**（`Array.prototype.splice` 慣用） |
+| コマンド                                                               | 説明                                                                                             |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `page-blocks <path>`                                                   | ページ内の全ブロック要約（`index` / `id` / `name` / `itemNames` / `text` / `headings` 等）を返す |
+| `block-get <path> <index>`                                             | 単一ブロック（`data` / `html`）を返す                                                            |
+| `block-insert <path> <atIndex> [--spec ...] [--dry-run]`               | atIndex 位置に挿入（0 = 先頭、大きな値 = 末尾）                                                  |
+| `block-replace <path> <index> [--spec ...] [--dry-run]`                | 指定 index のブロックを置き換え                                                                  |
+| `block-delete <path> <index> [--dry-run]`                              | 削除                                                                                             |
+| `block-move <path> <from> <to> [--dry-run]`                            | 移動。`to` は **移動後の最終配列における index**（`Array.prototype.splice` 慣用）                |
+| `block-duplicate <path> <index> [--dry-run]`                           | 指定ブロックの複製を直後に挿入（複製側の id は付かない）                                         |
+| `block-ensure-id <path> <index>`                                       | id を持たないブロックに安定 id `bge-<n>` を付与（idempotent — 既に id があれば無変更）           |
+| `item-update <path> <blockIndex> <itemIndex> [--spec ...] [--dry-run]` | ブロック内の 1 アイテムのデータに spec を **マージ**（省略したフィールドは維持）                 |
 
 #### `--dry-run`（プレビュー）
 
-書き込み系コマンドはすべて `--dry-run` を受け付けます。ファイルを更新せず、書き込まれるはずの編集可能領域 HTML を `previewContent` に入れて返します。CI / レビュー差分プレビュー用途を想定。
+書き込み系ブロックコマンドは `--dry-run` を受け付けます。ファイルを更新せず、書き込まれるはずの編集可能領域 HTML を `previewContent` に入れて返します。CI / レビュー差分プレビュー用途を想定。
 
 ```bash
 npx @burger-editor/cli block-insert about.html 0 --dry-run --spec '{...}'
 # → { "path": "about.html", "atIndex": 0, "dryRun": true, "previewContent": "<...>" }
 ```
 
-**注意**: dryRun は副作用なし。対象ページが存在しないと「Cannot dry-run mutation on a non-existent page」エラーを返します（旧版で空ファイルが残る不具合を防ぐため）。
+**注意**: dryRun は副作用なし。対象ページが存在しないと「Cannot dry-run mutation on a non-existent page」エラーを返します（空ファイルを残さないため）。
 
 ### スキーマ・参照
 
@@ -165,6 +180,14 @@ npx @burger-editor/cli block-insert about.html 0 --dry-run --spec '{...}'
 | `style-options-list`     | プロジェクト CSS から抽出した `--bge-options-<軸>--<バリアント>` 一覧                  |
 | `container-options-list` | 静的なコンテナレイアウト選択肢（grid/inline/float）                                    |
 | `config-resolve`         | 解決済み config の要約                                                                 |
+
+### CLI サブコマンドを持たないツール
+
+`page_update`（`BlockOp[]` の一括適用）、`editor_state_get`、`editor_wait_for_event` は agent ツール（`src/agent-tools/tools/`）としてのみ存在し、MCP / Agent Hub 経由で呼ぶ。CLI からはそれぞれ個別の `block-*` コマンドを順番に叩くことで代替できる。
+
+## `readToken` — 読んでから書く契約
+
+agent ツール（MCP / Agent Hub 経由）では、既存ページへの変更系ツールは直前にそのページを読んだときの `readToken`（ファイル内容ハッシュに束縛したトークン）を要求し、欠落なら `read-required`、内容が変わっていれば `stale` で失敗する。どちらの応答にも新しい `readToken` と `currentBlocks` が同梱されるので、エージェントは再読込なしに再試行できる。**CLI サブコマンドはこのトークンを要求しない** — `src/handlers.ts` を直接呼び、`page-blocks` は 2 段プロトコルを内部で完結させて結果だけを返す。なぜトークンが署名されず「手順」としてのみ強制されるのかは `src/agent-tools/read-token.ts` のファイルレベル JSDoc を参照。
 
 ## block spec フィールド
 
@@ -213,24 +236,39 @@ npx @burger-editor/cli item-schema image
 
 ## プログラマブル API
 
-CLI ハンドラは JS / TS から直接呼べる:
+CLI ハンドラは JS / TS から直接呼べる。ブロックを指す `target` は `{ index }`（並び順）または `{ id }`（`blockEnsureId` で付与した安定 id）のどちらか:
 
 ```ts
-import { loadContext, blockList, blockReplace } from '@burger-editor/cli';
+import { loadContext, readBlocks, blockEnsureId, blockReplace } from '@burger-editor/cli';
 
 const ctx = await loadContext();
-const { blocks } = await blockList(ctx, 'about.html');
-await blockReplace(ctx, 'about.html', 0, {
-	catalog: 'h2',
-	items: [[{ name: 'title-h2', data: { titleH2: '新しい見出し' } }]],
-});
+const blocks = await readBlocks(ctx, 'about.html');
+console.log(blocks.length);
+
+const { id } = await blockEnsureId(ctx, 'about.html', { index: 0 });
+await blockReplace(
+	ctx,
+	'about.html',
+	{ id },
+	{
+		catalog: 'h2',
+		items: [[{ name: 'title-h2', data: { titleH2: '新しい見出し' } }]],
+	},
+);
 ```
 
-`@burger-editor/mcp-server` の v4 ツールも同じパスを通る。
+各関数のシグネチャと戻り値は `src/handlers.ts` の JSDoc を参照。
+
+### `exports`
+
+| サブパス                      | 内容                                                                                                                                                            |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@burger-editor/cli`          | `loadContext` / ハンドラ群 / `agentTools` と agent ツール関連（`AgentError` / `agentErrorSchema` / `readToken` ユーティリティ等）                               |
+| `@burger-editor/cli/block-op` | `blockOpSchema`（zod）と `BlockOp` 型のみ。Node 組み込みモジュールに依存しないため、ブラウザバンドル（`@burger-editor/local` のクライアント）から import できる |
 
 ## メンテナンス責任
 
-- 新コマンド追加 → `src/handlers.ts` にハンドラ、`src/bin.ts` に case、`mcp-server/src/tools/v4.ts` に MCP ラッパーを 1 PR にまとめる
+- 新コマンド追加 → `src/handlers.ts` にハンドラ、`src/bin.ts` の `commands` に登録、agent ツールとしても公開するなら `src/agent-tools/tools/*.ts` に定義を置いて `src/agent-tools/index.ts` の `agentTools` に追加する。`mcp-server` / `local` 側の変更は不要（配列を登録しているだけ）
 - 出力 JSON shape の変更は **破壊的変更扱い**、CHANGELOG にマイグレーション例必須
 
 ## License

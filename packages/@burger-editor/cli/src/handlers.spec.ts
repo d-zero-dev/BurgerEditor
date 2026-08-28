@@ -690,7 +690,8 @@ describe('block handlers', () => {
 		const blocks = await readBlocks(ctx, 'about.html');
 		// blocks[].data.id has the `bge-` prefix stripped (BlockData's own
 		// convention) — result.id is the full DOM id agents address blocks by.
-		expect(`bge-${blocks[0]!.data.id}`).toBe(result.id);
+		expect(result.id).toBe('bge-1');
+		expect(blocks[0]!.data.id).toBe('1');
 	});
 
 	test('blockEnsureId is idempotent — a second call returns the same id and does not reassign', async () => {

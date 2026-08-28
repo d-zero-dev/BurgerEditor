@@ -24,6 +24,11 @@ import { getItemWrapperElements } from '../handlers.js';
  * with animation and identity to preserve.
  * @param html
  * @param op
+ * @example
+ * ```ts
+ * const next = applyBlockOpToHtml(editableHtml, { op: 'move', from: 0, to: 2 });
+ * if (next instanceof NoEditableAreaError) throw next;
+ * ```
  */
 export function applyBlockOpToHtml(
 	html: string,

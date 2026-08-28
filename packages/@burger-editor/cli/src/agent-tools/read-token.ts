@@ -24,6 +24,10 @@ export interface ReadTokenPayload {
  * (see `AgentError` docs on why "read-then-write" is enforced as a
  * procedure, not a security boundary).
  * @param filePath absolute path to the file on disk
+ * @example
+ * ```ts
+ * const hash = await computeContentHash('/srv/site/about.html'); // 'a3f9…' (16 hex chars)
+ * ```
  */
 export async function computeContentHash(filePath: string): Promise<string> {
 	const buf = await fs.readFile(filePath);
@@ -31,14 +35,29 @@ export async function computeContentHash(filePath: string): Promise<string> {
 }
 
 /**
+ * Serialize a `ReadTokenPayload` into the opaque base64 string agents pass
+ * around as `readToken`. Base64 JSON rather than a bare hash so the token
+ * carries the path it was minted for (see `issueReadToken`).
  * @param payload
+ * @example
+ * ```ts
+ * const token = encodeReadToken({ path: 'about.html', contentHash: 'a3f9b2c1d4e5f607' });
+ * ```
  */
 export function encodeReadToken(payload: ReadTokenPayload): string {
 	return Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
 }
 
 /**
+ * Parse a `readToken` back into its payload, returning `null` for anything
+ * that is not base64 JSON with both `path` and `contentHash` strings —
+ * callers report that as `malformed` rather than crashing on agent input.
  * @param token
+ * @example
+ * ```ts
+ * decodeReadToken(token); // { path: 'about.html', contentHash: 'a3f9b2c1d4e5f607' }
+ * decodeReadToken('not-a-token'); // null
+ * ```
  */
 export function decodeReadToken(token: string): ReadTokenPayload | null {
 	try {
@@ -66,6 +85,11 @@ export function decodeReadToken(token: string): ReadTokenPayload | null {
  * from another call.
  * @param pathInput
  * @param filePath
+ * @example
+ * ```ts
+ * const readToken = await issueReadToken('about.html', '/srv/site/about.html');
+ * return { blockCount, readToken };
+ * ```
  */
 export async function issueReadToken(
 	pathInput: string,
@@ -90,6 +114,11 @@ export type ReadTokenVerifyResult =
  * @param token
  * @param pathInput
  * @param filePath
+ * @example
+ * ```ts
+ * const result = await verifyReadToken(token, 'about.html', '/srv/site/about.html');
+ * if (!result.ok && result.reason === 'stale') reReadPage(); // page changed since the read
+ * ```
  */
 export async function verifyReadToken(
 	token: string | undefined,
@@ -157,6 +186,11 @@ async function buildRecovery(
  * @param ctx
  * @param pathInput
  * @param token
+ * @example
+ * ```ts
+ * await requireReadToken(ctx, args.path, args.readToken); // throws AgentError on failure
+ * const html = await deleteBlockOnDisk(ctx, args.path, args.index);
+ * ```
  */
 export async function requireReadToken(
 	ctx: CliContext,

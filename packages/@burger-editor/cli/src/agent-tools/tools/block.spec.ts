@@ -126,6 +126,19 @@ describe('successful mutations attach readToken + result.block', () => {
 		expect(result.block.data.name).toBe('h2');
 	});
 
+	test('block_move with `to` past the end appends and still returns the moved block under result.block', async () => {
+		const token = await readToken();
+		const result = (await blockMoveTool.run(fixture.ctx, {
+			path: 'about.html',
+			target: { index: 0 },
+			to: 99,
+			readToken: token,
+		})) as { block: { data: { name: string } } };
+		expect(result.block.data.name).toBe('h2');
+		const blocks = await h.readBlocks(fixture.ctx, 'about.html');
+		expect(blocks.map((b) => b.data.name)).toEqual(['wysiwyg', 'h2']);
+	});
+
 	test('block_duplicate returns the copy under result.block', async () => {
 		const token = await readToken();
 		const result = (await blockDuplicateTool.run(fixture.ctx, {
@@ -179,6 +192,19 @@ describe('dryRun returns a before/after diff without writing', () => {
 			path: 'about.html',
 			target: { index: 0 },
 			to: 1,
+			readToken: token,
+			dryRun: true,
+		})) as { diff: { before: string | null; after: string | null } };
+		expect(result.diff.before).toContain('最初の見出し');
+		expect(result.diff.after).toContain('最初の見出し');
+	});
+
+	test('block_move dryRun with `to` past the end reports the block at its real final (last) index, not a null after', async () => {
+		const token = await readToken();
+		const result = (await blockMoveTool.run(fixture.ctx, {
+			path: 'about.html',
+			target: { index: 0 },
+			to: 99,
 			readToken: token,
 			dryRun: true,
 		})) as { diff: { before: string | null; after: string | null } };

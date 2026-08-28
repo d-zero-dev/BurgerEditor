@@ -1,3 +1,13 @@
+/**
+ * `page_blocks` — the one tool through which an agent reads a page's block
+ * structure. It is a single two-call tool rather than a `block_list` /
+ * `block_search` pair because choosing between listing and searching by
+ * page size is a judgment call a small model gets wrong often enough to
+ * matter; here the first call's `next` tells the agent exactly what to do,
+ * and a typical page (a few dozen blocks) is small enough to read whole,
+ * so a search tool would rarely beat the model reading the full list.
+ */
+
 import { resolvePathInput } from '@burger-editor/file-io';
 import { z } from 'zod';
 
@@ -92,16 +102,13 @@ function estimateTokens(summaries: readonly BlockSummary[]): number {
 }
 
 /**
- * `page_blocks` is the sole way an agent reads a page's block structure —
- * see the module JSDoc rationale on why this replaced separate list/search
- * tools: a two-call protocol with a mandatory `readToken` round trip is a
- * contract every model follows identically, where "call block_list or
- * block_search depending on page size" is a judgment call a small model
- * gets wrong often enough to matter. The first call never inlines blocks
- * (even for a two-block page) so the response SHAPE never depends on page
- * size — a model that has only ever seen small pages must still know to
- * pass `readToken` back, which it will not reliably infer from a response
- * that looks complete already.
+ * A two-call protocol with a mandatory `readToken` round trip is a contract
+ * every model follows identically (see the file-level JSDoc for why one
+ * tool instead of list/search). The first call never inlines blocks (even
+ * for a two-block page) so the response SHAPE never depends on page size —
+ * a model that has only ever seen small pages must still know to pass
+ * `readToken` back, which it will not reliably infer from a response that
+ * looks complete already.
  *
  * Semantic narrowing (picking a target block by meaning) is left to the
  * model reading the full list — no embedding search. A typical page is a

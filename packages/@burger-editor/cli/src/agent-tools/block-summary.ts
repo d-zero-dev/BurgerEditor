@@ -35,6 +35,11 @@ export interface BlockSummary {
  * heading", "the third FAQ item") without spending the tokens a full render
  * would cost.
  * @param block
+ * @example
+ * ```ts
+ * const summaries = listBlocks(html, '.content').map((block) => summarizeBlock(block));
+ * summaries[0]?.headings; // [{ level: 2, text: 'Pricing' }]
+ * ```
  */
 export function summarizeBlock(block: ListedBlock): BlockSummary {
 	const doc = new DOMParser().parseFromString(

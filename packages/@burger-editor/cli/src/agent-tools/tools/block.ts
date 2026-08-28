@@ -159,25 +159,31 @@ export const blockMoveTool = defineAgentTool({
 		await requireReadToken(ctx, args.path, args.readToken);
 		const blocks = await h.readBlocks(ctx, args.path);
 		const fromIndex = h.resolveIndexInBlocks(blocks, args.target, args.path);
+		// core's moveBlock appends when `to` >= the block count, so the moved
+		// block's real final index is the last slot, not `to` itself. A move
+		// never changes the count, so the pre-move length is the post-move
+		// length; without the clamp, `to: 99` would look up `blocks[99]` and
+		// silently drop `result.block` / report `diff.after === null`.
+		const toIndex = Math.min(args.to, blocks.length - 1);
 		const write = await h.blockMove(ctx, args.path, args.target, args.to, {
 			dryRun: args.dryRun,
 		});
 		if (write.dryRun) {
 			// A move doesn't change the block's content, only its position —
 			// `before` is the block at its original index, `after` the same
-			// content now at `to`. Passing `null` for beforeIndex (as if this
-			// were an insert) would always report "nothing existed there
+			// content now at `toIndex`. Passing `null` for beforeIndex (as if
+			// this were an insert) would always report "nothing existed there
 			// before", which is wrong for every move.
 			const diff = await buildBlockDiff(
 				ctx,
 				args.path,
 				fromIndex,
-				args.to,
+				toIndex,
 				write.previewContent!,
 			);
 			return { ...write, diff };
 		}
-		return await finalizeMutation(ctx, args.path, write, args.to);
+		return await finalizeMutation(ctx, args.path, write, toIndex);
 	},
 });
 

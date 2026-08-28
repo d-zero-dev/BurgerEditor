@@ -21,6 +21,10 @@ const index = z.number().int().nonnegative();
  * by the disk-side tool (`renderBlockHtml`) before an op is constructed —
  * neither this schema nor the browser-side consumer resolves a catalog
  * entry itself.
+ * @example
+ * ```ts
+ * const op = blockOpSchema.parse({ op: 'delete', index: 2 });
+ * ```
  */
 export const blockOpSchema: z.ZodType<BlockOp> = z.discriminatedUnion('op', [
 	z.object({ op: z.literal('insert'), index, blockHtml: z.string() }),

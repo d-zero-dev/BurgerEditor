@@ -44,6 +44,7 @@ BurgerEditor Agent Hub — working procedure
    Do not change your behavior based on it — the contract is identical
    either way.
 8. If a tool errors with local-unreachable or local-required, that means
-   the local dev server (\`npx bge\`) is not running. Report it to the user
-   as informational; do not attempt to start it yourself.
+   the local dev server (\`bge\`, from \`@burger-editor/local\`) is not
+   running. Report it to the user as informational; do not attempt to start
+   it yourself.
 `.trim();

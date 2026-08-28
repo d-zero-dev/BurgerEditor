@@ -13,6 +13,11 @@ import { PageAlreadyExistsError } from '../handlers.js';
  * turn. `next` / `readToken` / `currentBlocks` are populated when the
  * failure has an obvious recovery (see `read-token.ts`'s `buildRecovery`),
  * so the agent can retry without another round trip just to re-read state.
+ * @example
+ * ```ts
+ * const payload = agentErrorSchema.parse(await res.json());
+ * if (payload.error === 'stale') retryWith(payload.readToken);
+ * ```
  */
 export const agentErrorSchema = z.object({
 	error: z.string(),
@@ -42,6 +47,12 @@ export interface AgentErrorExtra {
  * A tool failure with a machine-readable `code` an agent (or the router
  * relaying between mcp-server / local) can branch on, distinct from a raw
  * `Error` whose `message` is meant for humans only.
+ * @example
+ * ```ts
+ * throw new AgentError('invalid', 'filter.regex is not a valid pattern.', {
+ *   next: ['Fix the pattern and call page_blocks again.'],
+ * });
+ * ```
  */
 export class AgentError extends Error {
 	readonly code: string;
@@ -73,6 +84,11 @@ export class AgentError extends Error {
  * translates disk-layer exceptions into the codes `agentErrorSchema`
  * promises.
  * @param error
+ * @example
+ * ```ts
+ * const agentError = toAgentError(new RangeError('Block index 9 out of range'));
+ * agentError.code; // 'range'
+ * ```
  */
 export function toAgentError(error: unknown): AgentError {
 	if (error instanceof AgentError) {

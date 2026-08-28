@@ -4,6 +4,9 @@ import path from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
+import { AgentError } from './agent-tools/errors.js';
+import { writeErrorJson } from './output.js';
+
 // End-to-end smoke for the compiled bin. Spawns `node dist/bin.js` against a
 // fixture project and asserts on stdout JSON + exit code. Catches regressions
 // in the layered stack (parseCli → loadContext → cosmiconfig walk → handlers
@@ -254,11 +257,49 @@ describe('bin.js end-to-end', () => {
 		expect(result.stderr.toLowerCase()).toContain('array');
 	}, 20_000);
 
-	test('unknown command exits non-zero and prints an error to stderr', async () => {
+	test('unknown command exits non-zero and prints the command usage to stderr (the parser rejects it before any JSON error path)', async () => {
 		const result = await run(['this-command-does-not-exist']);
 		expect(result.code).not.toBe(0);
-		expect(result.stderr.length).toBeGreaterThan(0);
+		expect(result.stderr).toContain('Usage: @burger-editor/cli <command> [options]');
+		expect(result.stderr).toContain('page-blocks');
 	}, 20_000);
+
+	test('a handler failure is written to stderr as the flat agentErrorSchema payload, not a bare {name, message}', async () => {
+		const result = await run(['block-insert', 'about.html', '0', '--spec', '[1,2,3]']);
+		expect(result.code).not.toBe(0);
+		expect(JSON.parse(result.stderr)).toEqual({
+			error: 'invalid',
+			message: 'spec must be a JSON object describing a block (got array).',
+		});
+	}, 20_000);
+
+	test('writeErrorJson serialises a read-required failure with its recovery fields (readToken, next) intact', () => {
+		// No bin command surfaces `read-required` (page-blocks drives the
+		// two-call protocol itself), so the stderr writer is exercised
+		// directly with the same AgentError requireReadToken() throws.
+		const chunks: string[] = [];
+		const original = process.stderr.write;
+		process.stderr.write = ((chunk: string | Uint8Array) => {
+			chunks.push(String(chunk));
+			return true;
+		}) as typeof process.stderr.write;
+		try {
+			writeErrorJson(
+				new AgentError('read-required', 'Call page_blocks first.', {
+					readToken: 'fresh-token',
+					next: ['Retry with readToken: fresh-token.'],
+				}),
+			);
+		} finally {
+			process.stderr.write = original;
+		}
+		expect(JSON.parse(chunks.join(''))).toEqual({
+			error: 'read-required',
+			message: 'Call page_blocks first.',
+			next: ['Retry with readToken: fresh-token.'],
+			readToken: 'fresh-token',
+		});
+	});
 
 	test('after loadContext returns, stdout writes flow normally — the temporary redirect is restored', async () => {
 		// The bin scopes its stdout redirect to loadContext() via try/finally.
