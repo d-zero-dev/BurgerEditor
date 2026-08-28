@@ -520,3 +520,49 @@ describe('POST /api/agent/invoke — with a tab open', () => {
 		).toBe(true);
 	});
 });
+
+describe('POST /api/agent/invoke — documentRoot containment over HTTP', () => {
+	// documentRoot is <tmp>/docs, so `..` lands in <tmp>: plant a file there
+	// and prove the agent endpoint can neither read it nor create beside it.
+	test('page_get with a traversing path is a 400 and leaks nothing', async () => {
+		await fs.writeFile(path.join(tmp!.path, 'secret.txt'), 'TOP SECRET', 'utf8');
+		const { app } = await buildApp(makeConfig(documentRoot));
+
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'page_get',
+			args: { path: '../secret.txt' },
+		});
+		expect(res.status).toBe(400);
+		const text = await res.text();
+		expect(text).not.toContain('TOP SECRET');
+		expect((JSON.parse(text) as { error: string }).error).toBe('invalid');
+	});
+
+	test('page_create with a traversing path is a 400 and writes nothing outside documentRoot', async () => {
+		const { app } = await buildApp(makeConfig(documentRoot));
+
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'page_create',
+			args: { path: '../escaped.html' },
+		});
+		expect(res.status).toBe(400);
+		await expect(fs.stat(path.join(tmp!.path, 'escaped.html'))).rejects.toMatchObject({
+			code: 'ENOENT',
+		});
+	});
+
+	test('page_delete with a traversing path never hands back a readToken for it', async () => {
+		await fs.writeFile(path.join(tmp!.path, 'victim.html'), '<p>x</p>', 'utf8');
+		const { app } = await buildApp(makeConfig(documentRoot));
+
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'page_delete',
+			args: { path: '../victim.html' },
+		});
+		expect(res.status).toBe(400);
+		const body = (await res.json()) as { error: string; readToken?: string };
+		expect(body.error).toBe('invalid');
+		expect(body.readToken).toBeUndefined();
+		await expect(fs.stat(path.join(tmp!.path, 'victim.html'))).resolves.toBeDefined();
+	});
+});
