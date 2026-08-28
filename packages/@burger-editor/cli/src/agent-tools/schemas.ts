@@ -32,7 +32,9 @@ export const blockSpecSchema = z
 	})
 	.describe(
 		'Block spec — `catalog` selects a catalog block template by name; ' +
-			'`items` is a [[BlockItem]] structure where each item is `{name, data}`.',
+			'`items` is a [[BlockItem]] structure where each item is `{name, data}`. ' +
+			'Do not guess `name` or `data` fields — call catalog_list / catalog_get or ' +
+			'item_schema first to see what exists in this project and what data it expects.',
 	);
 
 export const dryRunArg = z
