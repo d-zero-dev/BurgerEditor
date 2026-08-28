@@ -240,6 +240,41 @@ describe('routeToolCall — auto mode', () => {
 		).rejects.toMatchObject({ code: 'stale' });
 	});
 
+	test('a 401 text response from a reachable local (auth required, no token) surfaces as unauthorized — NOT as a crash that falls back to disk', async () => {
+		let invokeCalls = 0;
+		fakeLocal = await startFakeLocal((req, res) => {
+			if (req.url === '/api/agent/status') {
+				// status answers 200 without auth, exactly like local's real
+				// route, so the reachability probe passes.
+				res.writeHead(200, { 'content-type': 'application/json' });
+				res.end(JSON.stringify({ protocolVersion: 1 }));
+				return;
+			}
+			invokeCalls++;
+			res.writeHead(401, { 'content-type': 'text/plain' });
+			res.end('Unauthorized');
+		});
+		await expect(
+			routeToolCall(pageListTool, {}, { mode: 'auto', localUrl: fakeLocal.url }),
+		).rejects.toMatchObject({ code: 'unauthorized' });
+		expect(invokeCalls).toBe(1);
+	});
+
+	test('a non-JSON error body from a reachable local surfaces as an AgentError, not a disk fallback', async () => {
+		fakeLocal = await startFakeLocal((req, res) => {
+			if (req.url === '/api/agent/status') {
+				res.writeHead(200, { 'content-type': 'application/json' });
+				res.end(JSON.stringify({ protocolVersion: 1 }));
+				return;
+			}
+			res.writeHead(500, { 'content-type': 'text/plain' });
+			res.end('Internal Server Error');
+		});
+		await expect(
+			routeToolCall(pageListTool, {}, { mode: 'auto', localUrl: fakeLocal.url }),
+		).rejects.toMatchObject({ code: 'invalid' });
+	});
+
 	test('falls back to disk once the local server stops responding (after the reachability TTL is reset)', async () => {
 		fakeLocal = await startFakeLocal((req, res) => {
 			if (req.url === '/api/agent/status') {

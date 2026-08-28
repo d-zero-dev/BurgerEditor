@@ -92,6 +92,14 @@ async function invokeRemote(
 	args: unknown,
 ): Promise<RouteResult> {
 	const token = resolveAgentToken();
+	// Only the fetch itself may throw a non-AgentError from here: a network
+	// failure genuinely means `local` is gone and `routeToolCall` may fall
+	// back to disk. Once ANY HTTP response arrives, `local` answered, and
+	// that answer is authoritative — it must surface as an AgentError even
+	// when the body isn't JSON (401/403 are `c.text()` responses). Letting a
+	// JSON SyntaxError escape here would masquerade an auth failure as a
+	// crash and, in auto mode, silently re-run a mutation on disk, bypassing
+	// the open tab the user is looking at.
 	const res = await fetch(new URL('/api/agent/invoke', localUrl), {
 		method: 'POST',
 		headers: {
@@ -100,7 +108,25 @@ async function invokeRemote(
 		},
 		body: JSON.stringify({ tool: toolName, args }),
 	});
-	const body: unknown = await res.json();
+	if (res.status === 401 || res.status === 403) {
+		throw new AgentError(
+			'unauthorized',
+			`The local dev server at ${localUrl} rejected the call (${res.status}). ` +
+				'It is bound to a non-loopback address and requires its per-launch token: set ' +
+				'BGE_AGENT_TOKEN to the value shown in its startup banner (or found in ' +
+				'<configDir>/.burgereditor/agent-token), then retry.',
+		);
+	}
+	const text = await res.text();
+	let body: unknown;
+	try {
+		body = JSON.parse(text);
+	} catch {
+		throw new AgentError(
+			'invalid',
+			`The local dev server returned a non-JSON ${res.status} response: ${text.slice(0, 200)}`,
+		);
+	}
 	if (!res.ok || !(body as { ok?: boolean }).ok) {
 		const payload = body as Partial<RemoteErrorResponse>;
 		throw new AgentError(
@@ -154,9 +180,11 @@ export async function routeToolCall(
 			// own terms (bad readToken, user-editing, …) — that's an authoritative
 			// response, not a reachability problem, and must propagate as-is
 			// (falling back to disk here could silently diverge from what local
-			// just told the agent). Anything else (fetch's own connection error,
-			// a JSON parse failure) means `local` most likely died between the
-			// reachability probe above and this call — drop the cached
+			// just told the agent). `invokeRemote` turns EVERY received response
+			// — 401/403, non-JSON, error bodies — into an AgentError for that
+			// reason, so anything else reaching here is fetch's own connection
+			// error: `local` most likely died between the reachability probe
+			// above and this call — drop the cached
 			// "reachable" verdict so the NEXT call re-probes instead of trusting
 			// the rest of the TTL window, and in `auto` mode fall back to disk
 			// for THIS call so a mid-session crash doesn't fail outright.
