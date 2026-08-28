@@ -25,6 +25,8 @@ import {
 } from '@burger-editor/file-io';
 import { z } from 'zod';
 
+import { log } from '../helpers/debug.js';
+
 import { isAgentAuthed } from './auth.js';
 import { BROWSER_APPLICABLE_TOOLS, buildBrowserOps } from './block-op-builder.js';
 import { hostGuard } from './host-guard.js';
@@ -342,7 +344,9 @@ async function runViaBrowserOrDisk(
 ) {
 	const ctx = toCliContext(userConfig, deps.getResolverState());
 	const primary = hub.tabHub.primaryTabFor(pathInput);
+	log('invoke %s for %s: primary tab = %o', toolName, pathInput, primary);
 	if (!primary) {
+		log('no tab has %s open, falling back to disk', pathInput);
 		return runOnDisk(c, tool, toolName, args, userConfig, deps, hub, pathInput);
 	}
 
@@ -354,12 +358,19 @@ async function runViaBrowserOrDisk(
 			filePath,
 		);
 		if (!verify.ok) {
+			log('readToken rejected for %s: %s', pathInput, verify.reason);
 			throw await toReadTokenError(verify.reason, pathInput, filePath);
 		}
 
 		const currentHash = await computeContentHash(filePath);
 		const entry = hub.revisions.ensure(pathInput);
 		if (entry.persistedHash !== null && entry.persistedHash !== currentHash) {
+			log(
+				'disk hash for %s drifted from persistedHash (external-change): %s vs %s',
+				pathInput,
+				currentHash,
+				entry.persistedHash,
+			);
 			hub.tabHub.reloadOthers(pathInput, null, entry.revision, 'external-change');
 			throw new AgentError(
 				'stale',
@@ -368,6 +379,12 @@ async function runViaBrowserOrDisk(
 			);
 		}
 		if (primary.syncedHash !== null && primary.syncedHash !== entry.persistedHash) {
+			log(
+				'primary tab for %s is behind (syncedHash %s vs persistedHash %s)',
+				pathInput,
+				primary.syncedHash,
+				entry.persistedHash,
+			);
 			hub.tabHub.reloadOne(primary.id, entry.revision, 'behind');
 			throw new AgentError(
 				'stale',
@@ -396,7 +413,9 @@ async function runViaBrowserOrDisk(
 
 		let lastHtml = loaded.editableContent;
 		for (const op of ops) {
+			log('sending op to tab %s for %s: %o', primary.id, pathInput, op);
 			const ack = await hub.tabHub.apply(pathInput, 'main', op, entry.revision, true);
+			log('tab %s acked, new revision=%s', primary.id, ack.revision);
 			lastHtml = ack.html;
 		}
 
@@ -534,5 +553,6 @@ function tabHubErrorToAgentError(error: unknown): AgentError | null {
  */
 function errorResponse(c: Context, error: unknown) {
 	const agentError = tabHubErrorToAgentError(error) ?? toAgentError(error);
+	log('invoke failed: %s — %s', agentError.code, agentError.message);
 	return c.json(agentError.toPayload(), statusForCode(agentError.code));
 }

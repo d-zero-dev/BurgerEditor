@@ -7,6 +7,8 @@ import type { BlockOp } from '@burger-editor/cli';
 
 import { randomUUID } from 'node:crypto';
 
+import { log } from '../helpers/debug.js';
+
 /**
  * The transport `TabHub` needs from a WebSocket connection — narrowed so
  * tests can inject a fake without touching `ws`/`@hono/node-ws`.
@@ -203,6 +205,7 @@ export class TabHub {
 	hello(sessionId: string, payload: HelloPayload): void {
 		const session = this.#sessions.get(sessionId);
 		if (!session) {
+			log('hello from unknown session %s, ignoring', sessionId);
 			return;
 		}
 		session.page = payload.page;
@@ -210,6 +213,12 @@ export class TabHub {
 		session.uiState = payload.uiState;
 		session.lastActiveAt = this.#now();
 		if (payload.serverSession !== this.#serverSession) {
+			log(
+				'hello from %s carries a stale serverSession (%s vs current %s) — sending server-restart reload',
+				sessionId,
+				payload.serverSession,
+				this.#serverSession,
+			);
 			this.#send(session, {
 				type: 'reload',
 				revision: payload.revision,
@@ -217,6 +226,12 @@ export class TabHub {
 			});
 			return;
 		}
+		log(
+			'hello from %s: page=%s revision=%d — sending welcome',
+			sessionId,
+			payload.page,
+			payload.revision,
+		);
 		this.#send(session, { type: 'welcome', sessionId, revision: payload.revision });
 	}
 	/**
@@ -267,6 +282,7 @@ export class TabHub {
 			lastActiveAt: this.#now(),
 			pendingApplies: new Map(),
 		});
+		log('tab registered: %s (total connected: %d)', id, this.#sessions.size);
 		return id;
 	}
 

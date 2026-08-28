@@ -30,6 +30,8 @@
 		"bgeconfig",
 
 		// Networking terminology (WebSocket ack/nack protocol)
+		"acked",
+		"acking",
 		"acks",
 		"nack",
 		"nacked",

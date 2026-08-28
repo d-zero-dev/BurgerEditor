@@ -273,8 +273,11 @@ export async function createEditor() {
 	) as HTMLInputElement | null;
 	if (serverSessionInput) {
 		const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+		const wsUrl = `${wsProtocol}//${location.host}/ws/editor`;
+		// eslint-disable-next-line no-console
+		console.log('[bge-agent-link] wiring up', { wsUrl, page: location.pathname });
 		const transport = createWsTransport({
-			url: `${wsProtocol}//${location.host}/ws/editor`,
+			url: wsUrl,
 			onMessage: (raw) => agentLink?.handleMessage(raw),
 			onOpen: () => agentLink?.handleOpen(),
 		});
@@ -285,5 +288,10 @@ export async function createEditor() {
 			serverSession: serverSessionInput.value,
 		});
 		engine.el.addEventListener('bge:server-online', () => transport.reconnectNow());
+	} else {
+		// eslint-disable-next-line no-console
+		console.log(
+			'[bge-agent-link] #server-session not found — agent.enabled is false, skipping WS wiring',
+		);
 	}
 }

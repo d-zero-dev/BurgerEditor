@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import { log } from '../helpers/debug.js';
 import { browserToServerMessageSchema } from '../protocol/ws-messages.js';
 
 import { RevisionRegistry } from './revision-registry.js';
@@ -52,14 +53,27 @@ export function createAgentHub(options: AgentHubOptions = {}): AgentHub {
 			let parsed: unknown;
 			try {
 				parsed = JSON.parse(raw);
-			} catch {
+			} catch (error) {
+				log(
+					'socket %s sent a frame that is not valid JSON: %o (%o)',
+					sessionId,
+					raw,
+					error,
+				);
 				return;
 			}
 			const result = browserToServerMessageSchema.safeParse(parsed);
 			if (!result.success) {
+				log(
+					'socket %s sent a frame that failed schema validation: %o (%o)',
+					sessionId,
+					parsed,
+					result.error,
+				);
 				return;
 			}
 			const message = result.data;
+			log('socket %s -> %s: %o', sessionId, message.type, message);
 			switch (message.type) {
 				case 'hello': {
 					tabHub.hello(sessionId, message);

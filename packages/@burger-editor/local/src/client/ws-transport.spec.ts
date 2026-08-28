@@ -18,7 +18,7 @@ class FakeSocket {
 	}
 	close() {
 		this.readyState = FakeSocket.CLOSED;
-		this.#emit('close');
+		this.#emit('close', { code: 1000, reason: '' });
 	}
 	message(data: string) {
 		this.#emit('message', { data });
