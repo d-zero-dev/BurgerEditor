@@ -242,7 +242,7 @@ graph TD
 - 責任: AIアシスタント（Claude等）にBurgerEditor機能を提供
 - 機能:
   - v3 ツール 3 個（`create_block_v3` / `get_block_data_params_v3` / `get_block_type`）— v3 プロジェクト互換
-  - v4 ツール 21 個 + 高レベルヘルパー 2 個（`update_page` / `duplicate_block`）— v4 プロジェクトのページ・ブロック CRUD、カタログ・スタイルオプションの参照を `@burger-editor/cli` のハンドラ経由で公開
+  - AI エージェント向けツール 28 個（`page_*` / `block_*` / `item_*` / `front_matter_*` / `catalog_*` / `style_options_list` / `container_options_list` / `config_resolve` / `editor_*`）— ツール定義は `@burger-editor/cli` の `agent-tools/` に一本化されており、mcp-server はそれを登録するだけ（`register-agent-tools.ts`）。ページ・ブロック CRUD、カタログ・スタイルオプションの参照に加え、既存ページへの変更系ツールは `readToken`（内容ハッシュに束縛したトークン）を要求する「読んでから書く」契約を持つ
   - `loadContext()` の結果はサーバープロセス内で 1 回だけ評価し、以降の全ツールで再利用（テスト用に `__resetV4ContextCache()` を export）
 
 **`@burger-editor/legacy`**

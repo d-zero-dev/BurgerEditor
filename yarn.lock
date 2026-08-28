@@ -424,6 +424,7 @@ __metadata:
     "@d-zero/roar": "npm:2.2.1"
     "@d-zero/shared": "npm:0.23.0"
     "@types/node": "npm:26.2.0"
+    zod: "npm:4.4.3"
   bin:
     cli: ./dist/bin.js
   languageName: unknown

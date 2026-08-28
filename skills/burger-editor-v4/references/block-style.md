@@ -45,7 +45,7 @@ container_options_list
 
 ### 3. 既存ブロックのスタイルを参考にする
 
-ユーザーが「他のセクションと同じ見た目で」と言ったら、`block_list` を読み、既存ブロックの `data.style` / `data.classList` / `data.containerProps` を**コピー元として再利用**する。これがプロジェクトに馴染ませる最短経路。
+ユーザーが「他のセクションと同じ見た目で」と言ったら、`page_blocks` + `block_get` で読み、既存ブロックの `data.style` / `data.classList` / `data.containerProps` を**コピー元として再利用**する。これがプロジェクトに馴染ませる最短経路。
 
 ### 4. ユーザーの意図を軸とバリアントに翻訳
 
