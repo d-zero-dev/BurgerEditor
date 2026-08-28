@@ -276,10 +276,25 @@ export async function applyLiveBlockOp(
 		case 'update-item': {
 			const blocks = listLiveBlocks(content);
 			const target = requireBlockAt(blocks, op.index);
-			const wrapper = target.el.querySelectorAll<HTMLElement>('[data-bgi]')[op.itemIndex];
-			if (!wrapper) {
+			// One slot per `[data-bge-item]` (group order, then item order),
+			// each resolving to its FIRST `[data-bgi]` wrapper or `null` — the
+			// same enumeration `parseHTMLToBlockData` reports as the block's
+			// item count and the disk-side `item_update` indexes by. A flat
+			// `querySelectorAll('[data-bgi]')` would skip wrapper-less slots and
+			// count nested wrappers, so the same `itemIndex` would land on a
+			// different item depending on whether a tab happened to be open.
+			const slots = [...target.el.querySelectorAll<HTMLElement>('[data-bge-group]')]
+				.flatMap((group) => [...group.querySelectorAll<HTMLElement>('[data-bge-item]')])
+				.map((itemEl) => itemEl.querySelector<HTMLElement>('[data-bgi]'));
+			if (op.itemIndex < 0 || op.itemIndex >= slots.length) {
 				throw new RangeError(
-					`Item index ${op.itemIndex} out of range for block ${op.index}`,
+					`Item index ${op.itemIndex} out of range for block ${op.index} (length=${slots.length})`,
+				);
+			}
+			const wrapper = slots[op.itemIndex];
+			if (!wrapper) {
+				throw new Error(
+					`Item ${op.itemIndex} in block ${op.index} has no [data-bgi] wrapper to update.`,
 				);
 			}
 			const item = Item.getInstance(wrapper);

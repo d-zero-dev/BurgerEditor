@@ -274,6 +274,49 @@ describe('applyLiveBlockOp — update-item', () => {
 			),
 		).rejects.toThrow(RangeError);
 	});
+
+	test('itemIndex counts one slot per [data-bge-item] — including a slot with no [data-bgi] wrapper — matching page_blocks and the disk-side item_update', async () => {
+		// Slot 0 has no wrapper at all; slot 1 is a real wysiwyg item. A flat
+		// `querySelectorAll('[data-bgi]')[itemIndex]` would make itemIndex 1
+		// out of range here (only one wrapper exists) while page_blocks
+		// reports two items — the same index would then hit a different item
+		// depending on whether a tab is open.
+		const twoSlotBlock =
+			'<div data-bge-name="text" data-bge-container="grid:2"><div data-bge-container-frame=""><div data-bge-group="">' +
+			'<div data-bge-item=""><p>plain</p></div>' +
+			'<div data-bge-item=""><div data-bgi="wysiwyg" data-bgi-ver="1.0.0"><div data-bge="wysiwyg"><p>b</p></div></div></div>' +
+			'</div></div></div>';
+		const localEngine = await BurgerEditorEngine.new(
+			createOptions({ initialContents: twoSlotBlock }),
+		);
+		try {
+			const result = await applyLiveBlockOp(
+				localEngine,
+				localEngine.content,
+				{
+					op: 'update-item',
+					index: 0,
+					itemIndex: 1,
+					data: { wysiwyg: '<p>updated</p>' },
+				},
+				{ highlight: false },
+			);
+			expect(
+				result.touched?.el.querySelector('[data-bge="wysiwyg"] p')?.textContent,
+			).toBe('updated');
+
+			await expect(
+				applyLiveBlockOp(
+					localEngine,
+					localEngine.content,
+					{ op: 'update-item', index: 0, itemIndex: 0, data: {} },
+					{ highlight: false },
+				),
+			).rejects.toThrow(/has no \[data-bgi\] wrapper/);
+		} finally {
+			localEngine[Symbol.dispose]();
+		}
+	});
 });
 
 describe('applyLiveBlockOp — set-id', () => {
