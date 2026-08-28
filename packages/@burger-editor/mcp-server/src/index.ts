@@ -1,22 +1,52 @@
+import type { McpMode, RouterOptions } from './router.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
+import { registerAgentTools } from './register-agent-tools.js';
 import server from './server.js';
 import createBlockV3 from './tools/create-block-v3.js';
 import getBlockDataParamsV3 from './tools/get-block-data-params-v3.js';
 import getBlockType from './tools/get-block-type.js';
-import registerV4Tools from './tools/v4.js';
+
+const MODES: readonly McpMode[] = ['auto', 'local', 'disk'];
+const DEFAULT_LOCAL_URL = 'http://localhost:5255';
+
+/**
+ * `--mode` (`BGE_MCP_MODE`, default `auto`) and `--url` (`BGE_LOCAL_URL`,
+ * default `http://localhost:5255`) are the only flags this server takes.
+ * CLI flags win over environment variables so a one-off override doesn't
+ * require touching the host config's env block.
+ * @param argv
+ */
+export function parseRouterOptions(argv: readonly string[]): RouterOptions {
+	let mode = (process.env.BGE_MCP_MODE as McpMode | undefined) ?? 'auto';
+	let localUrl = process.env.BGE_LOCAL_URL ?? DEFAULT_LOCAL_URL;
+	for (let i = 0; i < argv.length; i++) {
+		if (argv[i] === '--mode' && argv[i + 1]) {
+			mode = argv[i + 1] as McpMode;
+			i++;
+		} else if (argv[i] === '--url' && argv[i + 1]) {
+			localUrl = argv[i + 1]!;
+			i++;
+		}
+	}
+	if (!MODES.includes(mode)) {
+		throw new Error(`Invalid --mode "${mode}" — expected one of: ${MODES.join(', ')}.`);
+	}
+	return { mode, localUrl };
+}
 
 /**
  *
  * @param server
+ * @param options
  */
-function registerTools(server: McpServer) {
+export function registerTools(server: McpServer, options: RouterOptions) {
 	getBlockType(server);
 	getBlockDataParamsV3(server);
 	createBlockV3(server);
-	registerV4Tools(server);
+	registerAgentTools(server, options);
 }
 
 /**
@@ -36,18 +66,17 @@ function registerTools(server: McpServer) {
 export async function run() {
 	const startedAt = process.hrtime.bigint();
 	try {
-		process.stderr.write(`[burger-editor mcp] starting (pid ${process.pid})\n`);
-		registerTools(server);
-		// `server.listTools()` from outside isn't on the public API at this
-		// point in startup, so we don't enumerate tools here — but the
-		// registration calls above are synchronous and any registration
-		// failure would have thrown by now.
+		const options = parseRouterOptions(process.argv.slice(2));
+		process.stderr.write(
+			`[burger-editor mcp] starting (pid ${process.pid}, mode=${options.mode}, url=${options.localUrl})\n`,
+		);
+		registerTools(server, options);
 		const transport = new StdioServerTransport();
 		await server.connect(transport);
 		const ms = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
 		process.stderr.write(
 			`[burger-editor mcp] ready on stdio (boot ${ms.toFixed(0)}ms) — ` +
-				`v3 + v4 tools registered\n`,
+				`v3 + agent tools registered\n`,
 		);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
