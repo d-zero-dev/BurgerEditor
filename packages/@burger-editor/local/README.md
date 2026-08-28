@@ -231,20 +231,21 @@ engine.el.addEventListener('bge:server-offline', (e) => {
 
 `@burger-editor/local/get-user-config`、`@burger-editor/local/create-health-checker`、`@burger-editor/local/get-candidate-name`、`@burger-editor/local/upload` の 4 サブパスを公開している。
 
-### `getUserConfig(): Promise<LocalServerConfig>`
+### `getUserConfig(): Promise<{ config: LocalServerConfig; configDir: string }>`
 
-`burgereditor.config.js` を解決してデフォルトをマージした完成形を返す。
+`burgereditor.config.js` を解決してデフォルトをマージした完成形 `config` と、その設定ファイルが見つかったディレクトリ `configDir`（設定ファイルが無い場合は `process.cwd()`）を返す。`configDir` は Agent Hub が非ループバック bind 時の起動ごとの token を `<configDir>/.burgereditor/agent-token` に書くために使う。
 
 ```ts
 import { getUserConfig } from '@burger-editor/local/get-user-config';
 
-const config = await getUserConfig();
+const { config, configDir } = await getUserConfig();
 console.log(config.host, config.port); // 'localhost' 5255
+console.log(configDir); // '/path/to/project'
 ```
 
 ### `createHealthChecker(config): HealthMonitor`
 
-ブラウザ環境で動く `HealthMonitor` インスタンスを生成する。`config` には `getUserConfig()` の結果を渡す。
+ブラウザ環境で動く `HealthMonitor` インスタンスを生成する。`config` には `getUserConfig()` の結果の `config` を渡す。
 
 ```ts
 import { createHealthChecker } from '@burger-editor/local/create-health-checker';

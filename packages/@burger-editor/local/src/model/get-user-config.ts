@@ -15,9 +15,20 @@ export interface UserConfigResult {
 }
 
 /**
- * Locate and parse the user's BurgerEditor config and merge it with defaults.
- * Thin wrapper around `@burger-editor/file-io`'s resolveConfig so callers can
- * keep importing from `@burger-editor/local/get-user-config`.
+ * Locate and parse the user's BurgerEditor config, merge it with defaults,
+ * and report where it was found. Thin wrapper around
+ * `@burger-editor/file-io`'s `resolveConfig`; returns `{ config, configDir }`
+ * rather than the bare config because the Agent Hub needs the config's
+ * directory as a stable place to persist its per-launch token — and a
+ * caller that only wants the config picks `config` out of it in one step.
+ * @example
+ * ```ts
+ * import { getUserConfig } from '@burger-editor/local/get-user-config';
+ *
+ * const { config, configDir } = await getUserConfig();
+ * console.log(config.host, config.port); // 'localhost' 5255
+ * console.log(configDir); // directory containing burgereditor.config.js
+ * ```
  */
 export async function getUserConfig(): Promise<UserConfigResult> {
 	const { config, configPath } = await resolveConfig();

@@ -166,7 +166,7 @@ export function setAgentRoute(
 				400,
 			);
 		}
-		const { tool: toolName, args } = parsedBody.data;
+		const { tool: toolName, args: rawArgs } = parsedBody.data;
 		const tool = agentTools.find((t) => t.name === toolName);
 		if (!tool) {
 			return c.json(
@@ -174,6 +174,28 @@ export function setAgentRoute(
 				404,
 			);
 		}
+		// Validate against the tool's own input schema here, the way the MCP
+		// SDK does before `registerTool`'s handler runs. Without it a direct
+		// HTTP client's malformed args reach `buildBrowserOps`, get serialized
+		// into an `apply` the tab's zod parse silently drops, and the caller
+		// only learns about it as a 5 s ApplyTimeout → 504 "tab stopped
+		// responding" — for what is a 400.
+		const parsedArgs = tool.input.safeParse(rawArgs);
+		if (!parsedArgs.success) {
+			return c.json(
+				{
+					error: 'invalid',
+					message:
+						`Invalid arguments for ${toolName}: ` +
+						parsedArgs.error.issues
+							.map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`)
+							.join('; '),
+					timestamp: nowIso(),
+				},
+				400,
+			);
+		}
+		const args = parsedArgs.data;
 
 		if (toolName === 'editor_state_get') {
 			const sessions = [...hub.tabHub.snapshotAll()]
@@ -265,7 +287,7 @@ async function runOnDisk(
 	const ctx = toCliContext(userConfig, deps.getResolverState());
 	try {
 		const result = await tool.run(ctx, args);
-		if (userConfig.virtualTree.enabled) {
+		if (userConfig.virtualTree.enabled && !tool.annotations?.readOnlyHint) {
 			// Page create/delete/rename/copy/concat mutate resolverState through
 			// `ctx.resolverState`, but `ctx` is a fresh snapshot per call — reload
 			// it from disk so /api/content's resolverState doesn't drift.
@@ -275,7 +297,8 @@ async function runOnDisk(
 			);
 			deps.setResolverState(state);
 		}
-		notifyAffectedTabs(hub, toolName, pathInput, userConfig, result);
+		await syncRegistryAfterDiskApply(hub, tool, toolName, pathInput, userConfig, ctx);
+		notifyPageEvent(hub, toolName, result);
 		return c.json({ ok: true, result, appliedTo: 'disk', timestamp: nowIso() });
 	} catch (error) {
 		return errorResponse(c, error);
@@ -283,27 +306,70 @@ async function runOnDisk(
 }
 
 /**
+ * Bring the `RevisionRegistry` back in line with disk after a tool wrote
+ * (or read) a page directly. The browser-relay path bumps the registry
+ * itself, but a disk-applied mutation (`front_matter_set`,
+ * `block_ensure_id`, a `block_*` with no tab open, …) changes the file
+ * without going through it — leaving `persistedHash` pointing at the
+ * pre-write content. The very next relayed op would then trip the
+ * "external-change" check against a change WE made and reject as
+ * `stale` with no way out. So: re-hash, bump when the content moved, and
+ * tell every tab on that page to reload (they're now behind disk). A
+ * read-only tool only seeds `persistedHash` when the page has never been
+ * seen, so the external-change check has a baseline from the first read.
  * @param hub
+ * @param tool
  * @param toolName
  * @param pathInput
  * @param userConfig
- * @param result
+ * @param ctx
  */
-function notifyAffectedTabs(
+async function syncRegistryAfterDiskApply(
 	hub: AgentHub,
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	tool: any,
 	toolName: string,
 	pathInput: string | undefined,
 	userConfig: LocalServerConfig,
-	result: unknown,
-): void {
-	const normalizedPage = pathInput
-		? normalizeLogicalPath(pathInput, userConfig.indexFileName)
-		: undefined;
-	if (toolName === 'front_matter_set' && normalizedPage) {
-		const entry = hub.revisions.ensure(normalizedPage);
-		hub.tabHub.reloadOthers(normalizedPage, null, entry.revision, 'front-matter');
+	ctx: CliContext,
+): Promise<void> {
+	if (!pathInput) {
 		return;
 	}
+	const normalizedPage = normalizeLogicalPath(pathInput, userConfig.indexFileName);
+	let currentHash: string;
+	try {
+		const filePath = resolvePathInput(pathInput, ctx.config, ctx.resolverState);
+		currentHash = await computeContentHash(filePath);
+	} catch {
+		// page_delete / page_rename leave nothing to hash at `pathInput`.
+		return;
+	}
+	const entry = hub.revisions.ensure(normalizedPage);
+	if (tool.annotations?.readOnlyHint) {
+		if (entry.persistedHash === null) {
+			hub.revisions.setPersistedHash(normalizedPage, currentHash);
+		}
+		return;
+	}
+	if (entry.persistedHash === currentHash) {
+		return;
+	}
+	const bumped = hub.revisions.bump(normalizedPage, currentHash);
+	hub.tabHub.reloadOthers(
+		normalizedPage,
+		null,
+		bumped.revision,
+		toolName === 'front_matter_set' ? 'front-matter' : 'other-tab',
+	);
+}
+
+/**
+ * @param hub
+ * @param toolName
+ * @param result
+ */
+function notifyPageEvent(hub: AgentHub, toolName: string, result: unknown): void {
 	if (
 		(toolName === 'page_create' ||
 			toolName === 'page_delete' ||
@@ -320,10 +386,6 @@ function notifyAffectedTabs(
 					? 'deleted'
 					: 'renamed';
 		hub.tabHub.broadcast({ type: 'page-event', kind });
-		if (normalizedPage) {
-			const entry = hub.revisions.ensure(normalizedPage);
-			hub.tabHub.reloadOthers(normalizedPage, null, entry.revision, 'other-tab');
-		}
 	}
 }
 
@@ -444,17 +506,40 @@ async function runViaBrowserOrDisk(
 		const ops = buildBrowserOps(toolName, args, blocks, pathInput, blockHtml);
 
 		let lastHtml = loaded.editableContent;
-		for (const op of ops) {
-			log('sending op to tab %s for %s: %o', primary.id, normalizedPage, op);
-			const ack = await hub.tabHub.apply(
-				normalizedPage,
-				'main',
-				op,
-				entry.revision,
-				true,
-			);
-			log('tab %s acked, new revision=%s', primary.id, ack.revision);
-			lastHtml = ack.html;
+		let applied = 0;
+		try {
+			for (const [i, op] of ops.entries()) {
+				log('sending op to tab %s for %s: %o', primary.id, normalizedPage, op);
+				// Highlight only the first op of a batch — page_update's later ops
+				// would otherwise each pay the scroll + blink latency.
+				const ack = await hub.tabHub.apply(
+					normalizedPage,
+					'main',
+					op,
+					entry.revision,
+					i === 0,
+				);
+				log('tab %s acked, new revision=%s', primary.id, ack.revision);
+				lastHtml = ack.html;
+				applied++;
+			}
+		} catch (error) {
+			if (applied > 0) {
+				// A later op in a page_update batch failed after earlier ones
+				// already mutated the tab's DOM. Nothing was written to disk (the
+				// tool is all-or-nothing), so the tab is now AHEAD of disk with
+				// changes that will never be persisted — force it back to the
+				// on-disk state instead of leaving the two silently diverged.
+				log(
+					'op %d/%d failed after %d applied on tab %s — reloading it to discard the partial batch',
+					applied + 1,
+					ops.length,
+					applied,
+					primary.id,
+				);
+				hub.tabHub.reloadOne(primary.id, entry.revision, 'behind');
+			}
+			throw error;
 		}
 
 		await saveContent(

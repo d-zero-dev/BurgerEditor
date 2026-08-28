@@ -237,19 +237,34 @@ describe('POST /api/agent/invoke — front_matter_set always applies to disk', (
  * the file, parsing blocks) before it reaches `hub.tabHub.apply()` — a
  * single microtask tick isn't enough to observe the `apply` message.
  * @param sent
+ * @param after
  */
 async function waitForApply(
 	sent: readonly unknown[],
+	/** id of an `apply` already handled — keeps waiting until a DIFFERENT one arrives (multi-op batches). */
+	after?: string,
 ): Promise<{ type: string; id: string }> {
 	for (let i = 0; i < 100; i++) {
 		const last = sent.at(-1) as { type: string; id: string } | undefined;
-		if (last?.type === 'apply') {
+		if (last?.type === 'apply' && last.id !== after) {
 			return last;
 		}
 		await new Promise((resolve) => setTimeout(resolve, 5));
 	}
 	throw new Error('apply message never arrived');
 }
+
+/**
+ * What a real tab acks with: the editable area's INNER content (what
+ * `engine.content.getContentsAsString()` returns), never a full document.
+ * `saveContent` writes it back inside `editableArea`, so acking with a whole
+ * `<html>` document would nest a document inside `.content` and break every
+ * later block lookup on that page.
+ */
+const PAGE_INNER = PAGE_HTML.replace('<html><body><div class="content">', '').replace(
+	'</div></body></html>',
+	'',
+);
 
 describe('POST /api/agent/invoke — with a tab open', () => {
 	/**
@@ -294,12 +309,7 @@ describe('POST /api/agent/invoke — with a tab open', () => {
 			args: { path: '/index.html', target: { index: 0 }, readToken: token },
 		});
 		const applyMessage = await waitForApply(sent);
-		hub.tabHub.resolveAck(
-			sessionId,
-			applyMessage.id,
-			2,
-			'<html><body><div class="content"></div></body></html>',
-		);
+		hub.tabHub.resolveAck(sessionId, applyMessage.id, 2, '');
 
 		const res = await invokePromise;
 		expect(res.status).toBe(200);
@@ -318,12 +328,7 @@ describe('POST /api/agent/invoke — with a tab open', () => {
 		});
 
 		const applyMessage = await waitForApply(sent);
-		hub.tabHub.resolveAck(
-			sessionId,
-			applyMessage.id,
-			2,
-			'<html><body><div class="content"></div></body></html>',
-		);
+		hub.tabHub.resolveAck(sessionId, applyMessage.id, 2, '');
 
 		const res = await invokePromise;
 		expect(res.status).toBe(200);
@@ -397,5 +402,121 @@ describe('POST /api/agent/invoke — with a tab open', () => {
 		expect(body.message).toContain(
 			'this item type is disabled by editorOptions.isDisable',
 		);
+	});
+
+	test('malformed args are rejected with 400 invalid before anything reaches the tab', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const { sent } = connectPrimaryTab(hub);
+		const token = await readToken(app, '/a.html');
+
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 'zero' }, readToken: token },
+		});
+		expect(res.status).toBe(400);
+		const body = (await res.json()) as { error: string; message: string };
+		expect(body.error).toBe('invalid');
+		expect(body.message).toContain('target');
+		// Nothing but the welcome ever went to the tab — no apply, no 5 s
+		// ApplyTimeout dressed up as "tab stopped responding".
+		expect(sent.map((m) => (m as { type: string }).type)).toEqual(['welcome']);
+	});
+
+	test('a disk-applied mutation (front_matter_set) keeps the revision registry in sync, so the next relayed op is not rejected as stale', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const { sessionId, sent } = connectPrimaryTab(hub);
+
+		// A relayed op first, so the registry holds a persistedHash for the page.
+		let token = await readToken(app, '/a.html');
+		const firstInvoke = postJson(app, '/api/agent/invoke', {
+			tool: 'item_update',
+			args: {
+				path: '/a.html',
+				target: { index: 0 },
+				itemIndex: 0,
+				data: { wysiwyg: '<p>one</p>' },
+				readToken: token,
+			},
+		});
+		const firstApply = await waitForApply(sent);
+		hub.tabHub.resolveAck(
+			sessionId,
+			firstApply.id,
+			2,
+			PAGE_INNER.replace('hello', 'one'),
+		);
+		const firstRes = await firstInvoke;
+		expect(firstRes.status).toBe(200);
+
+		// Now a disk-applied write moves the file under the registry.
+		token = await readToken(app, '/a.html');
+		const fmRes = await postJson(app, '/api/agent/invoke', {
+			tool: 'front_matter_set',
+			args: { path: '/a.html', patch: { title: 'T' }, readToken: token },
+		});
+		expect(fmRes.status).toBe(200);
+		// The open tab was told to reload — it is behind disk now.
+		expect(
+			sent.some((m) => {
+				const msg = m as { type: string; reason?: string };
+				return msg.type === 'reload' && msg.reason === 'front-matter';
+			}),
+		).toBe(true);
+		// Simulate the tab having reloaded and re-synced.
+		hub.tabHub.setSyncedHash(sessionId, hub.revisions.get('/a.html')!.persistedHash!);
+
+		// The very next relayed op must NOT be rejected as stale.
+		token = await readToken(app, '/a.html');
+		const secondInvoke = postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 0 }, readToken: token },
+		});
+		const secondApply = await waitForApply(sent, firstApply.id);
+		hub.tabHub.resolveAck(sessionId, secondApply.id, 3, '');
+		const res = await secondInvoke;
+		expect(res.status).toBe(200);
+		expect(((await res.json()) as { appliedTo: string }).appliedTo).toBe('browser');
+	});
+
+	test('a page_update batch that fails mid-way reloads the tab so its partially-applied DOM is discarded', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const { sessionId, sent } = connectPrimaryTab(hub);
+		const token = await readToken(app, '/a.html');
+
+		const invokePromise = postJson(app, '/api/agent/invoke', {
+			tool: 'page_update',
+			args: {
+				path: '/a.html',
+				ops: [
+					{ op: 'delete', index: 0 },
+					{ op: 'delete', index: 99 },
+				],
+				readToken: token,
+			},
+		});
+		const firstApply = await waitForApply(sent);
+		hub.tabHub.resolveAck(sessionId, firstApply.id, 2, '');
+		const secondApply = await waitForApply(sent, firstApply.id);
+		expect(secondApply.id).not.toBe(firstApply.id);
+		hub.tabHub.resolveNack(
+			sessionId,
+			secondApply.id,
+			'range',
+			'Block index 99 out of range',
+		);
+
+		const res = await invokePromise;
+		expect(res.status).toBe(400);
+		expect(((await res.json()) as { error: string }).error).toBe('invalid');
+		// Disk untouched…
+		const written = await fs.readFile(path.join(documentRoot, 'a.html'), 'utf8');
+		expect(written).toContain('data-bge-name="text"');
+		// …and the tab, which already applied op 0, was told to reload.
+		expect(
+			sent.some((m) => {
+				const msg = m as { type: string; reason?: string };
+				return msg.type === 'reload' && msg.reason === 'behind';
+			}),
+		).toBe(true);
 	});
 });

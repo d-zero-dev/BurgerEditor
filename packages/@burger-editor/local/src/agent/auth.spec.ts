@@ -27,7 +27,7 @@ describe('createAgentAuth — non-loopback', () => {
 
 	test('mints a token and persists it 0600 under <configDir>/.burgereditor/agent-token', async () => {
 		tmp = await mkdtempDisposable('bge-auth-');
-		const auth = await createAgentAuth('192.168.1.50', tmp.path);
+		const auth = await createAgentAuth('192.0.2.50', tmp.path);
 		expect(auth.required).toBe(true);
 		expect(auth.token).toMatch(/^[0-9a-f]{48}$/);
 		expect(auth.tokenFilePath).toBe(path.join(tmp.path, '.burgereditor', 'agent-token'));
@@ -41,7 +41,7 @@ describe('createAgentAuth — non-loopback', () => {
 
 	test('verify accepts a matching cookie or bearer token and rejects everything else', async () => {
 		tmp = await mkdtempDisposable('bge-auth-');
-		const auth = await createAgentAuth('192.168.1.50', tmp.path);
+		const auth = await createAgentAuth('192.0.2.50', tmp.path);
 		expect(auth.verify(auth.token ?? undefined)).toBe(true);
 		expect(auth.verify(undefined, auth.token ?? undefined)).toBe(true);
 		expect(auth.verify('wrong')).toBe(false);
@@ -52,7 +52,7 @@ describe('createAgentAuth — non-loopback', () => {
 describe('loginUrl', () => {
 	test('returns null when auth is not required', () => {
 		expect(
-			loginUrl('http://192.168.1.50:5255', {
+			loginUrl('http://192.0.2.50:5255', {
 				required: false,
 				token: null,
 				tokenFilePath: null,
@@ -62,12 +62,12 @@ describe('loginUrl', () => {
 	});
 
 	test('appends ?token= when auth is required', () => {
-		const url = loginUrl('http://192.168.1.50:5255', {
+		const url = loginUrl('http://192.0.2.50:5255', {
 			required: true,
 			token: 'abc123',
 			tokenFilePath: '/x',
 			verify: () => true,
 		});
-		expect(url).toBe('http://192.168.1.50:5255/?token=abc123');
+		expect(url).toBe('http://192.0.2.50:5255/?token=abc123');
 	});
 });
