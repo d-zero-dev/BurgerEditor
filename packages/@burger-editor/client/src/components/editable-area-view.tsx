@@ -19,6 +19,31 @@ const CONTAINER_PADDING = 10;
 const CONTENT_ID = 'bge-editable-area';
 
 /**
+ *
+ * @param engine
+ * @param type
+ * @param value
+ * @param syncFromContent
+ */
+function commitEditableAreaSource(
+	engine: BurgerEditorEngine,
+	type: EditableAreaType,
+	value: string,
+	syncFromContent: (
+		content: NonNullable<ReturnType<typeof engine.getEditableContent>>,
+	) => void,
+) {
+	const content = engine.getEditableContent(type);
+	if (!content) {
+		return;
+	}
+	void content.replaceContents(value).then(() => {
+		engine.save();
+		syncFromContent(content);
+	});
+}
+
+/**
  * The React shell of one editable area: the iframe hosting the edited
  * content, the HTML source textarea, and the in-frame UI islands
  * (block menu, initial insertion button) rendered through a portal.
@@ -201,21 +226,13 @@ export function EditableAreaView({
 			if (nextSourceMode) {
 				setSourceText(content?.getContentsAsString() ?? '');
 			} else if (content) {
-				content.save(sourceTextRef.current);
-				const value = content.getContentsAsString();
-				setSourceText(value);
-				setIsEmpty(value.trim() === '');
+				commitEditableAreaSource(engine, type, sourceTextRef.current, syncFromContent);
 			}
 		});
 	}, [engine, type]);
 
 	const commitSource = (value: string) => {
-		const content = engine.getEditableContent(type);
-		if (!content) {
-			return;
-		}
-		content.save(value);
-		syncFromContent(content);
+		commitEditableAreaSource(engine, type, value, syncFromContent);
 	};
 
 	return (
