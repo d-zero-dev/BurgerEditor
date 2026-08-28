@@ -1,4 +1,4 @@
-import { browserLog } from '../helpers/browser-log.js';
+import { browserDebugLog, browserLog } from '../helpers/browser-log.js';
 
 const MIN_BACKOFF_MS = 500;
 const MAX_BACKOFF_MS = 10_000;
@@ -30,9 +30,10 @@ const LOG_TAG = '[bge-agent-ws]';
  * `bge:server-online` (the health monitor's "the dev server came back"
  * signal) to skip the wait instead of leaving a tab stuck mid-backoff for
  * up to 10s after the server is demonstrably reachable again. Every
- * connect / open / message / close / send is logged with the `[bge-agent-ws]`
+ * connect / open / close / dropped send is logged with the `[bge-agent-ws]`
  * prefix so a stuck integration is debuggable from the browser console
- * alone, without needing to reproduce under a debugger.
+ * alone; full frame payloads (`recv` / `send`) are logged only when
+ * `localStorage['bge:debug'] === '1'` (see `helpers/browser-log.ts`).
  * @param options
  */
 export function createWsTransport(options: WsTransportOptions): WsTransport {
@@ -41,34 +42,60 @@ export function createWsTransport(options: WsTransportOptions): WsTransport {
 	let backoffMs = MIN_BACKOFF_MS;
 	let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 	let disposed = false;
+	/** Set by `reconnectNow()`: when the current socket's `close` fires, connect again at once instead of backing off. */
+	let reconnectOnClose = false;
 
 	/**
-	 *
+	 * Every listener captures its own `ws` and ignores events once `socket`
+	 * has moved on to a newer instance — a late `close`/`error` from a
+	 * superseded socket must not schedule a second reconnect or close the
+	 * replacement.
 	 */
 	function connect(): void {
 		if (disposed) {
 			return;
 		}
 		browserLog(LOG_TAG, 'connecting', options.url);
-		socket = new WebSocketImpl(options.url);
-		socket.addEventListener('open', () => {
+		const ws = new WebSocketImpl(options.url);
+		socket = ws;
+		ws.addEventListener('open', () => {
+			if (socket !== ws) {
+				return;
+			}
 			browserLog(LOG_TAG, 'open');
 			backoffMs = MIN_BACKOFF_MS;
 			options.onOpen();
 		});
-		socket.addEventListener('message', (event: MessageEvent) => {
-			browserLog(LOG_TAG, 'recv', event.data);
+		ws.addEventListener('message', (event: MessageEvent) => {
+			if (socket !== ws) {
+				return;
+			}
+			browserDebugLog(LOG_TAG, 'recv', event.data);
 			if (typeof event.data === 'string') {
 				options.onMessage(event.data);
 			}
 		});
-		socket.addEventListener('close', (event: CloseEvent) => {
+		ws.addEventListener('close', (event: CloseEvent) => {
+			if (socket !== ws) {
+				return;
+			}
+			socket = null;
 			browserLog(LOG_TAG, 'close', { code: event.code, reason: event.reason });
+			if (disposed) {
+				return;
+			}
+			if (reconnectOnClose) {
+				reconnectOnClose = false;
+				connect();
+				return;
+			}
 			scheduleReconnect();
 		});
-		socket.addEventListener('error', () => {
-			browserLog(LOG_TAG, 'error, readyState=', socket?.readyState);
-			socket?.close();
+		ws.addEventListener('error', () => {
+			browserLog(LOG_TAG, 'error, readyState=', ws.readyState);
+			// The browser follows `error` with `close` on its own; closing here
+			// only shortens the wait for a socket stuck in CONNECTING.
+			ws.close();
 		});
 	}
 
@@ -94,7 +121,7 @@ export function createWsTransport(options: WsTransportOptions): WsTransport {
 	return {
 		send(raw) {
 			if (socket?.readyState === WebSocketImpl.OPEN) {
-				browserLog(LOG_TAG, 'send', raw);
+				browserDebugLog(LOG_TAG, 'send', raw);
 				socket.send(raw);
 				return;
 			}
@@ -107,21 +134,29 @@ export function createWsTransport(options: WsTransportOptions): WsTransport {
 		},
 		reconnectNow() {
 			browserLog(LOG_TAG, 'reconnectNow');
+			if (disposed) {
+				return;
+			}
 			if (reconnectTimer) {
 				clearTimeout(reconnectTimer);
 				reconnectTimer = null;
 			}
 			backoffMs = MIN_BACKOFF_MS;
-			socket?.close();
-			if (!socket || socket.readyState === WebSocketImpl.CLOSED) {
-				connect();
+			if (socket) {
+				// `close` is asynchronous on a real WebSocket — let its handler do
+				// the reconnect so exactly one new socket is created.
+				reconnectOnClose = true;
+				socket.close();
+				return;
 			}
+			connect();
 		},
 		dispose() {
 			browserLog(LOG_TAG, 'dispose');
 			disposed = true;
 			if (reconnectTimer) {
 				clearTimeout(reconnectTimer);
+				reconnectTimer = null;
 			}
 			socket?.close();
 		},

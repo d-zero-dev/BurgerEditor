@@ -99,6 +99,7 @@ ${
 		? `
    ${c.yellow('Agent access requires a token')} — open this URL once to authorize this browser:
    ${c.bold(agentLoginUrl)}
+   The token is also written to ${c.bold('.burgereditor/agent-token')} — add ${c.bold('.burgereditor/')} to .gitignore.
 `
 		: ''
 }

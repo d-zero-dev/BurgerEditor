@@ -21,7 +21,16 @@ const LOG_TAG = '[bge-agent-link]';
  */
 export interface EditorAdapter {
 	getUIState(): UIState;
-	applyOp(op: BlockOp, options: { highlight: boolean }): Promise<{ html: string }>;
+	/**
+	 * `onBeforeMutate` must be invoked synchronously right before the first
+	 * DOM mutation (after any highlight animation) — the link arms its
+	 * echo suppression there, so a human save that lands mid-highlight is
+	 * not mistaken for this op's own save.
+	 */
+	applyOp(
+		op: BlockOp,
+		options: { highlight: boolean; onBeforeMutate: () => void },
+	): Promise<{ html: string }>;
 	reload(): void;
 	/** Register a listener invoked whenever the UI state might have changed; returns an unsubscribe function. */
 	subscribeUIState(listener: () => void): () => void;
@@ -77,6 +86,8 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 	let echoPending = false;
 	let disposed = false;
 	let revision = 0;
+	/** Timers / subscriptions still waiting on a UI-state change; released by `dispose()`. */
+	const pendingCleanups = new Set<() => void>();
 
 	/**
 	 * @param message
@@ -95,18 +106,38 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 			return Promise.resolve(true);
 		}
 		return new Promise((resolve) => {
-			const timer = setTimeout(() => {
+			const cleanup = () => {
+				clearTimeout(timer);
 				unsubscribe();
+				pendingCleanups.delete(cleanup);
+			};
+			const timer = setTimeout(() => {
+				cleanup();
 				resolve(false);
 			}, PROCESSING_WAIT_TIMEOUT_MS);
 			const unsubscribe = adapter.subscribeUIState(() => {
 				if (!adapter.getUIState().processing) {
-					clearTimeout(timer);
-					unsubscribe();
+					cleanup();
 					resolve(true);
 				}
 			});
+			pendingCleanups.add(cleanup);
 		});
+	}
+
+	/**
+	 * Cross-realm safe error classification: the op runs against blocks that
+	 * live in the editor iframe, so `instanceof RangeError` / a core error
+	 * class from this bundle can be `false` for an error constructed there.
+	 * Match on `name` instead.
+	 * @param error
+	 */
+	function nackReasonFor(error: unknown): 'range' | 'disabled-block' {
+		const name = error instanceof Error ? error.name : '';
+		if (name === 'RangeError') {
+			return 'range';
+		}
+		return 'disabled-block';
 	}
 
 	/**
@@ -114,6 +145,9 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 	 */
 	async function handleApply(message: ApplyMessage): Promise<void> {
 		browserLog(LOG_TAG, 'apply received', message);
+		if (disposed) {
+			return;
+		}
 		if (isBusy(adapter.getUIState())) {
 			browserLog(
 				LOG_TAG,
@@ -135,8 +169,12 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 			return;
 		}
 		try {
-			echoPending = true;
-			const result = await adapter.applyOp(message.op, { highlight: message.highlight });
+			const result = await adapter.applyOp(message.op, {
+				highlight: message.highlight,
+				onBeforeMutate: () => {
+					echoPending = true;
+				},
+			});
 			revision = message.revision;
 			browserLog(LOG_TAG, 'apply succeeded, acking', {
 				id: message.id,
@@ -154,7 +192,7 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 			send({
 				type: 'nack',
 				id: message.id,
-				reason: error instanceof RangeError ? 'range' : 'disabled-block',
+				reason: nackReasonFor(error),
 				detail: error instanceof Error ? error.message : String(error),
 			});
 		}
@@ -169,12 +207,17 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 			adapter.reload();
 			return;
 		}
+		const cleanup = () => {
+			unsubscribe();
+			pendingCleanups.delete(cleanup);
+		};
 		const unsubscribe = adapter.subscribeUIState(() => {
 			if (!isBusy(adapter.getUIState())) {
-				unsubscribe();
+				cleanup();
 				adapter.reload();
 			}
 		});
+		pendingCleanups.add(cleanup);
 	}
 
 	const unsubscribeUIState = adapter.subscribeUIState(() => {
@@ -257,6 +300,9 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 		dispose() {
 			disposed = true;
 			unsubscribeUIState();
+			for (const cleanup of pendingCleanups) {
+				cleanup();
+			}
 		},
 	};
 }

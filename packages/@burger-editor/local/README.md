@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/@burger-editor%2Flocal.svg)](https://badge.fury.io/js/@burger-editor%2Flocal)
 
-ローカルファイルシステム上の HTML を **開発者・編集者がブラウザ UI で WYSIWYG 編集** するための BurgerEditor CMS 実装。Hono ベースの HTTP サーバー + Vite でビルドした `@burger-editor/client` (React) UI を `npx bge` 一発で起動する。
+ローカルファイルシステム上の HTML を **開発者・編集者がブラウザ UI で WYSIWYG 編集** するための BurgerEditor CMS 実装。Hono ベースの HTTP サーバー + Vite でビルドした `@burger-editor/client` (React) UI を `bge`（`@burger-editor/local` の bin）一発で起動する。
 
 ファイル I/O / 設定解決 / virtual-path-resolver / Front Matter の本体は [`@burger-editor/file-io`](../file-io/) に集約されており、`local` はそれを再エクスポートする薄いシムに痩身化されている。
 
@@ -100,6 +100,7 @@ npx bge search --help
 | `healthCheck`       | `{ enabled, interval, retryCount }`                                | `{ enabled: true, interval: 10000, retryCount: 3 }` | クライアント側の自動 health 監視（後述）     |
 | `virtualTree`       | `{ enabled, pathKey }`                                             | `{ enabled: false, pathKey: 'path' }`               | Virtual File Tree（後述）                    |
 | `experimental`      | `{ itemOptions?: { button?, wysiwyg? } }`                          | `undefined`                                         | 実験的機能（後述）                           |
+| `agent`             | `{ enabled }`                                                      | `{ enabled: true }`                                 | Agent Hub（後述）の有効 / 無効               |
 
 > `config` はクライアント側にもそのまま埋め込まれるため、シリアライズ可能な値のみ受け付ける。
 
@@ -171,6 +172,16 @@ Fix the conflicting front matter "path" values in the listed files and retry.
 ### ツリー表示
 
 仮想モード時、各リンクは `<論理ファイル名> (<id>)` 形式で表示（例: `maintenance.html (10)`）。CSS で `.file-id` をグレーアウト / 非表示にすることで見た目を調整できる。
+
+## Agent Hub
+
+AI エージェント（`@burger-editor/mcp-server` 経由）が、開いているブラウザタブへ直接ブロック操作を届けるための入口。ツール定義は [`@burger-editor/cli`](../cli/) の `agentTools` を共有しており、タブが開いていればそこへ、無ければディスクへ適用する。
+
+- **エンドポイント**: `GET /api/agent/tools`（ツール定義一覧）、`GET /api/agent/status`（到達確認）、`POST /api/agent/invoke`（ツール呼び出し）、WebSocket `/ws/editor`（ブラウザタブとの接続）
+- **無効化**: `agent: { enabled: false }` で上記すべてがマウントされなくなる
+- **非ループバック bind 時のトークン**: `host` を LAN IP や `0.0.0.0` にすると、起動ごとのトークンが必要になる。起動バナーに `http://<host>:<port>/?token=…` が表示されるので **一度だけそれを開く**と `bge_session` cookie が発行され、以後そのブラウザは認可される。同じトークンは `<configDir>/.burgereditor/agent-token`（mode 0600、終了時に削除）にも書かれる。**`.burgereditor/` を `.gitignore` に追加すること**。同じマシンで動く `mcp-server` はこのファイルを自動で読むので設定は不要。別マシンや任意の値を使いたいときは環境変数 `BGE_AGENT_TOKEN` で上書きできる。`localhost` / `127.0.0.1` / `::1` に bind している間はトークン不要
+- **利用側**: `@burger-editor/mcp-server --mode local`（既定の `auto` でも、`local` に到達できれば自動的にここへ転送される）
+- **デバッグ**: サーバー側は `DEBUG=@bge:local`、ブラウザ側は console の `[bge-agent-ws]` / `[bge-agent-link]` 行。ブラウザ側でフレーム全文のログを有効にするには `localStorage.setItem('bge:debug', '1')`（この設定は並行して実装中）。`/api/agent/*` の応答に付く ISO `timestamp` で両者を突き合わせられる
 
 ## Front Matter 編集 UI
 

@@ -13,3 +13,32 @@ export function browserLog(tag: string, ...args: unknown[]): void {
 	// eslint-disable-next-line no-console
 	console.log(new Date().toISOString(), tag, ...args);
 }
+
+const DEBUG_STORAGE_KEY = 'bge:debug';
+
+/**
+ * Whether verbose (per-frame) Agent Hub logging is switched on for this
+ * browser: `localStorage.setItem('bge:debug', '1')`. Lifecycle events are
+ * always logged; full frame payloads only under this flag, because a busy
+ * session otherwise floods the console with every ping/pong and ack body.
+ */
+export function isBrowserDebugEnabled(): boolean {
+	try {
+		return globalThis.localStorage?.getItem(DEBUG_STORAGE_KEY) === '1';
+	} catch {
+		// Accessing localStorage throws in sandboxed / storage-blocked
+		// contexts; treat that as "debug off" rather than breaking the link.
+		return false;
+	}
+}
+
+/**
+ * `browserLog` gated by {@link isBrowserDebugEnabled}.
+ * @param tag
+ * @param args
+ */
+export function browserDebugLog(tag: string, ...args: unknown[]): void {
+	if (isBrowserDebugEnabled()) {
+		browserLog(tag, ...args);
+	}
+}

@@ -3,6 +3,7 @@ import type { LocalServerConfig } from '../types.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import { computeContentHash, encodeReadToken } from '@burger-editor/cli';
 import { mkdtempDisposable } from '@d-zero/shared/mkdtemp-disposable';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
@@ -10,7 +11,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { setRoute } from '../route.js';
 
 import { createAgentAuth } from './auth.js';
-import { createAgentHub } from './hub.js';
+import { createAgentHub, type AgentHub } from './hub.js';
 
 const PAGE_HTML =
 	'<html><body><div class="content"><div data-bge-name="text" data-bge-container="grid:1" id="bge-1">' +
@@ -94,10 +95,16 @@ function makeConfig(documentRoot: string): LocalServerConfig {
 
 /**
  * @param userConfig
+ * @param hubOptions
+ * @param hubOptions.now
  */
-async function buildApp(userConfig: LocalServerConfig) {
+async function buildApp(
+	userConfig: LocalServerConfig,
+	hubOptions: { readonly now?: () => number } = {},
+) {
 	const app = new Hono();
-	const hub = createAgentHub({ indexFileName: userConfig.indexFileName });
+	const hub = createAgentHub({ indexFileName: userConfig.indexFileName, ...hubOptions });
+	hubs.push(hub);
 	const auth = await createAgentAuth('localhost', '/tmp/unused');
 	// These tests exercise HTTP only — `upgradeWebSocket` just needs to be
 	// callable at route-registration time; it's never actually invoked as a
@@ -123,14 +130,21 @@ async function readToken(app: Hono, pathInput: string): Promise<string> {
 
 let tmp: ({ path: string } & AsyncDisposable) | undefined;
 let documentRoot: string;
+/** Every hub `buildApp` created in the current test — disposed in `afterEach` so no ping interval outlives its test. */
+const hubs: AgentHub[] = [];
 
 beforeEach(async () => {
 	({ documentRoot, tmp } = await makeTmpDocumentRoot());
 });
 
 afterEach(async () => {
+	for (const hub of hubs.splice(0)) {
+		hub.dispose();
+	}
 	await tmp?.[Symbol.asyncDispose]();
 });
+
+const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
 describe('GET /api/agent/tools', () => {
 	test('returns every agent tool with a JSON schema and the shared instructions', async () => {
@@ -155,6 +169,92 @@ describe('GET /api/agent/status', () => {
 		const body = (await res.json()) as { documentRoot: string; sessions: unknown[] };
 		expect(body.documentRoot).toBe(documentRoot);
 		expect(body.sessions).toEqual([]);
+	});
+
+	test('reports protocolVersion "1"', async () => {
+		const { app } = await buildApp(makeConfig(documentRoot));
+		const res = await req(app, '/api/agent/status');
+		const body = (await res.json()) as { protocolVersion: string; version: string };
+		expect(body.protocolVersion).toBe('1');
+		expect(body.version).toBe('0.0.0-test');
+	});
+
+	test('GET /api/agent/tools also reports protocolVersion "1"', async () => {
+		const { app } = await buildApp(makeConfig(documentRoot));
+		const res = await req(app, '/api/agent/tools');
+		const body = (await res.json()) as { protocolVersion: string };
+		expect(body.protocolVersion).toBe('1');
+	});
+});
+
+describe('POST /api/agent/invoke — every JSON response carries an ISO timestamp', () => {
+	test('a successful disk-applied invoke', async () => {
+		const { app } = await buildApp(makeConfig(documentRoot));
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'page_blocks',
+			args: { path: '/a.html' },
+		});
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { timestamp: string };
+		expect(body.timestamp).toMatch(ISO_TIMESTAMP);
+	});
+
+	test('a 400 read-required error', async () => {
+		const { app } = await buildApp(makeConfig(documentRoot));
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 0 } },
+		});
+		expect(res.status).toBe(400);
+		const body = (await res.json()) as { timestamp: string };
+		expect(body.timestamp).toMatch(ISO_TIMESTAMP);
+	});
+
+	test('a 404 unknown-tool error', async () => {
+		const { app } = await buildApp(makeConfig(documentRoot));
+		const res = await postJson(app, '/api/agent/invoke', { tool: 'nope', args: {} });
+		expect(res.status).toBe(404);
+		const body = (await res.json()) as { timestamp: string };
+		expect(body.timestamp).toMatch(ISO_TIMESTAMP);
+	});
+
+	test('a 400 malformed-body error', async () => {
+		const { app } = await buildApp(makeConfig(documentRoot));
+		const res = await postJson(app, '/api/agent/invoke', { nope: true });
+		expect(res.status).toBe(400);
+		const body = (await res.json()) as { timestamp: string };
+		expect(body.timestamp).toMatch(ISO_TIMESTAMP);
+	});
+
+	test('editor_state_get', async () => {
+		const { app } = await buildApp(makeConfig(documentRoot));
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'editor_state_get',
+			args: {},
+		});
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { timestamp: string; result: unknown };
+		expect(body.timestamp).toMatch(ISO_TIMESTAMP);
+		expect(body.result).toEqual({ mode: 'local', sessions: [] });
+	});
+});
+
+describe('POST /api/agent/invoke — editor_wait_for_event', () => {
+	test('is refused with 400 invalid and points the caller at editor_state_get', async () => {
+		const { app } = await buildApp(makeConfig(documentRoot));
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'editor_wait_for_event',
+			args: {},
+		});
+		expect(res.status).toBe(400);
+		const body = (await res.json()) as {
+			error: string;
+			message: string;
+			timestamp: string;
+		};
+		expect(body.error).toBe('invalid');
+		expect(body.message).toContain('editor_state_get');
+		expect(body.timestamp).toMatch(ISO_TIMESTAMP);
 	});
 });
 
@@ -476,6 +576,132 @@ describe('POST /api/agent/invoke — with a tab open', () => {
 		const res = await secondInvoke;
 		expect(res.status).toBe(200);
 		expect(((await res.json()) as { appliedTo: string }).appliedTo).toBe('browser');
+	});
+
+	test('a tab that disconnects while an apply is pending yields 504 local-unreachable', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const { sessionId, sent } = connectPrimaryTab(hub);
+		const token = await readToken(app, '/a.html');
+
+		const invokePromise = postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 0 }, readToken: token },
+		});
+		await waitForApply(sent);
+		// The browser tab goes away (socket close → onClose → disconnect).
+		hub.tabHub.disconnect(sessionId);
+
+		const res = await invokePromise;
+		expect(res.status).toBe(504);
+		const body = (await res.json()) as { error: string; message: string };
+		expect(body.error).toBe('local-unreachable');
+		expect(body.message).toContain('disconnected');
+		// Disk untouched — nothing was acked.
+		const written = await fs.readFile(path.join(documentRoot, 'a.html'), 'utf8');
+		expect(written).toContain('data-bge-name="text"');
+	});
+
+	test('an external disk edit is reported as stale + external-change reload, and a page_blocks re-read clears it so the next mutation relays again', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const { sessionId, sent } = connectPrimaryTab(hub);
+		const filePath = path.join(documentRoot, 'a.html');
+
+		// page_blocks (read-only) seeds persistedHash for the page.
+		await readToken(app, '/a.html');
+		const seededHash = await computeContentHash(filePath);
+		expect(hub.revisions.get('/a.html')).toEqual({
+			revision: 1,
+			persistedHash: seededHash,
+		});
+
+		// An IDE rewrites the file behind local's back.
+		await fs.writeFile(filePath, PAGE_HTML.replace('hello', 'externally edited'), 'utf8');
+		// A readToken that matches the NEW disk content — as if minted by a
+		// disk-mode reader — so the readToken check passes and the
+		// persistedHash drift is what gets detected.
+		const freshDiskToken = encodeReadToken({
+			path: '/a.html',
+			contentHash: await computeContentHash(filePath),
+		});
+
+		const staleRes = await postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 0 }, readToken: freshDiskToken },
+		});
+		expect(staleRes.status).toBe(409);
+		const staleBody = (await staleRes.json()) as { error: string; message: string };
+		expect(staleBody.error).toBe('stale');
+		expect(staleBody.message).toContain('outside local');
+		expect(sent).toEqual([
+			{ type: 'welcome', sessionId, revision: 1 },
+			{ type: 'reload', revision: 1, reason: 'external-change' },
+		]);
+
+		// The agent does what the error says: re-reads the page.
+		const reRead = await postJson(app, '/api/agent/invoke', {
+			tool: 'page_blocks',
+			args: { path: '/a.html' },
+		});
+		expect(reRead.status).toBe(200);
+		const reReadToken = ((await reRead.json()) as { result: { readToken: string } })
+			.result.readToken;
+		const currentHash = await computeContentHash(filePath);
+		expect(hub.revisions.get('/a.html')).toEqual({
+			revision: 1,
+			persistedHash: currentHash,
+		});
+		// The tab reloaded and now matches disk.
+		hub.tabHub.setSyncedHash(sessionId, currentHash);
+
+		// The next mutation is relayed to the tab again instead of being stuck on stale.
+		const invokePromise = postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 0 }, readToken: reReadToken },
+		});
+		const applyMessage = await waitForApply(sent);
+		expect(applyMessage.type).toBe('apply');
+		hub.tabHub.resolveAck(sessionId, applyMessage.id, 2, '');
+		const res = await invokePromise;
+		expect(res.status).toBe(200);
+		expect(((await res.json()) as { appliedTo: string }).appliedTo).toBe('browser');
+	});
+
+	test('with two tabs on the page, the primary gets apply, the other gets reload other-tab after the disk save, and only the primary is marked synced', async () => {
+		let now = 0;
+		const { app, hub } = await buildApp(makeConfig(documentRoot), { now: () => now });
+		const other = connectPrimaryTab(hub);
+		now = 10;
+		const primary = connectPrimaryTab(hub);
+		expect(hub.tabHub.primaryTabFor('/a.html')?.id).toBe(primary.sessionId);
+		const token = await readToken(app, '/a.html');
+
+		const invokePromise = postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 0 }, readToken: token },
+		});
+		const applyMessage = await waitForApply(primary.sent);
+		expect(other.sent).toEqual([
+			{ type: 'welcome', sessionId: other.sessionId, revision: 1 },
+		]);
+		hub.tabHub.resolveAck(primary.sessionId, applyMessage.id, 2, '');
+
+		const res = await invokePromise;
+		expect(res.status).toBe(200);
+		const savedHash = await computeContentHash(path.join(documentRoot, 'a.html'));
+		expect(hub.revisions.get('/a.html')).toEqual({
+			revision: 2,
+			persistedHash: savedHash,
+		});
+		expect(other.sent).toEqual([
+			{ type: 'welcome', sessionId: other.sessionId, revision: 1 },
+			{ type: 'reload', revision: 2, reason: 'other-tab' },
+		]);
+		expect(primary.sent.map((m) => (m as { type: string }).type)).toEqual([
+			'welcome',
+			'apply',
+		]);
+		expect(hub.tabHub.get(primary.sessionId)?.syncedHash).toBe(savedHash);
+		expect(hub.tabHub.get(other.sessionId)?.syncedHash).toBeNull();
 	});
 
 	test('a page_update batch that fails mid-way reloads the tab so its partially-applied DOM is discarded', async () => {

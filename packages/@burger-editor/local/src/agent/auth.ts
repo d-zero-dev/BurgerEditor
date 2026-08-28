@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -54,9 +54,28 @@ export async function createAgentAuth(
 		token,
 		tokenFilePath,
 		verify(cookieValue, bearerValue) {
-			return cookieValue === token || bearerValue === token;
+			return safeEquals(cookieValue, token) || safeEquals(bearerValue, token);
 		},
 	};
+}
+
+/**
+ * Constant-time string comparison so a remote client cannot narrow the
+ * token byte-by-byte from response timing. A length mismatch returns early,
+ * which leaks only the token length — fixed at 48 hex chars anyway.
+ * @param candidate
+ * @param expected
+ */
+function safeEquals(candidate: string | undefined, expected: string): boolean {
+	if (candidate === undefined) {
+		return false;
+	}
+	const a = Buffer.from(candidate, 'utf8');
+	const b = Buffer.from(expected, 'utf8');
+	if (a.length !== b.length) {
+		return false;
+	}
+	return timingSafeEqual(a, b);
 }
 
 /**

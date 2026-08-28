@@ -11,9 +11,10 @@ import path from 'node:path';
 
 import { computeContentHash } from '@burger-editor/cli';
 import { zValidator } from '@hono/zod-validator';
+import { setCookie } from 'hono/cookie';
 import { z } from 'zod';
 
-import { isAgentAuthed } from './agent/auth.js';
+import { AGENT_SESSION_COOKIE, isAgentAuthed } from './agent/auth.js';
 import { hostGuard } from './agent/host-guard.js';
 import { setAgentRoute } from './agent/route.js';
 import { HEALTH_CHECK_END_POINT } from './constants.js';
@@ -139,6 +140,31 @@ export function setRoute(
 	}
 
 	if (agentDeps) {
+		if (agentDeps.auth.required) {
+			// The one-time login the startup banner points at: `?token=<token>`
+			// on any page URL exchanges the per-launch token for the HttpOnly
+			// `bge_session` cookie the WS upgrade and `/api/agent/*` then check,
+			// and redirects to the same URL without the query so the token
+			// doesn't linger in the address bar / history. Only exists for
+			// non-loopback binds — loopback needs no auth at all.
+			app.use('*', async (c, next) => {
+				const token = c.req.query('token');
+				if (token === undefined) {
+					return await next();
+				}
+				if (!agentDeps.auth.verify(undefined, token)) {
+					return c.text('Unauthorized: invalid token', 401);
+				}
+				setCookie(c, AGENT_SESSION_COOKIE, token, {
+					httpOnly: true,
+					sameSite: 'Strict',
+					path: '/',
+				});
+				const url = new URL(c.req.url);
+				url.searchParams.delete('token');
+				return c.redirect(url.pathname + url.search);
+			});
+		}
 		setAgentRoute(app, userConfig, agentDeps.hub, agentDeps.auth, {
 			withStateLock,
 			getResolverState: () => resolverState,

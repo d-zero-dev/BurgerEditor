@@ -4,6 +4,7 @@ import {
 	ApplyNackError,
 	ApplyTimeoutError,
 	NoPrimaryTabError,
+	TabDisconnectedError,
 	TabHub,
 } from './tab-hub.js';
 
@@ -185,6 +186,98 @@ describe('TabHub — apply', () => {
 		const applyPromise = hub.apply('/a.html', 'main', { op: 'delete', index: 0 }, 1);
 		hub.disconnect(id);
 		await expect(applyPromise).rejects.toThrow('disconnected');
+	});
+
+	test('disconnect() while an apply is pending rejects it with TabDisconnectedError (name: "TabDisconnectedError")', async () => {
+		const { hub, id } = connectedHub();
+		const applyPromise = hub.apply('/a.html', 'main', { op: 'delete', index: 0 }, 1);
+		hub.disconnect(id);
+		const error = await applyPromise.catch((error_: unknown) => error_);
+		expect(error).toBeInstanceOf(TabDisconnectedError);
+		expect((error as Error).name).toBe('TabDisconnectedError');
+		expect((error as Error).message).toBe('Tab disconnected before responding');
+	});
+
+	test('sends the apply frame with the exact shape { type, id, area, op, baseRevision, revision, highlight }', () => {
+		const { hub, sent } = connectedHub();
+		void hub
+			.apply('/a.html', 'main', { op: 'delete', index: 0 }, 1, false)
+			.catch(() => {});
+		const applyMessage = sent.at(-1) as { id: string };
+		expect(applyMessage).toEqual({
+			type: 'apply',
+			id: applyMessage.id,
+			area: 'main',
+			op: { op: 'delete', index: 0 },
+			baseRevision: 1,
+			revision: 2,
+			highlight: false,
+		});
+	});
+});
+
+describe('TabHub — apply with a pinned sessionId', () => {
+	/**
+	 * Two idle tabs on the same page; B is more recently active, so B is the
+	 * tab `#selectPrimary` would choose.
+	 */
+	function twoTabsHub() {
+		let now = 0;
+		const hub = new TabHub({ serverSession: 's', applyTimeoutMs: 50, now: () => now });
+		const a = fakeSocket();
+		const b = fakeSocket();
+		const idA = hub.register(a.socket);
+		hub.hello(idA, {
+			page: '/a.html',
+			revision: 1,
+			serverSession: 's',
+			uiState: idleUiState(),
+		});
+		now = 10;
+		const idB = hub.register(b.socket);
+		hub.hello(idB, {
+			page: '/a.html',
+			revision: 1,
+			serverSession: 's',
+			uiState: idleUiState(),
+		});
+		return { hub, idA, idB, a, b };
+	}
+
+	test('an explicit sessionId sends apply to THAT tab even though another tab on the page is more recently active', () => {
+		const { hub, idA, idB, a, b } = twoTabsHub();
+		expect(hub.primaryTabFor('/a.html')?.id).toBe(idB);
+
+		void hub
+			.apply('/a.html', 'main', { op: 'delete', index: 0 }, 1, true, idA)
+			.catch(() => {});
+
+		expect(a.sent.map((m) => (m as { type: string }).type)).toEqual(['welcome', 'apply']);
+		expect(b.sent.map((m) => (m as { type: string }).type)).toEqual(['welcome']);
+	});
+
+	test('an unknown sessionId falls back to the selected primary for the page', () => {
+		const { hub, idB, a, b } = twoTabsHub();
+		expect(hub.primaryTabFor('/a.html')?.id).toBe(idB);
+
+		void hub
+			.apply('/a.html', 'main', { op: 'delete', index: 0 }, 1, true, 'no-such-session')
+			.catch(() => {});
+
+		expect(a.sent.map((m) => (m as { type: string }).type)).toEqual(['welcome']);
+		expect(b.sent.map((m) => (m as { type: string }).type)).toEqual(['welcome', 'apply']);
+	});
+
+	test('a pinned tab that is busy still receives the apply — pinning is not re-selection', () => {
+		const { hub, idA, a, b } = twoTabsHub();
+		hub.setUIState(idA, idleUiState({ sourceMode: true }));
+
+		void hub
+			.apply('/a.html', 'main', { op: 'delete', index: 0 }, 1, true, idA)
+			.catch(() => {});
+
+		expect(a.sent.map((m) => (m as { type: string }).type)).toEqual(['welcome', 'apply']);
+		expect(b.sent.map((m) => (m as { type: string }).type)).toEqual(['welcome']);
 	});
 });
 

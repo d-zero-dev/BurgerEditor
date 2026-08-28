@@ -1,7 +1,7 @@
 import type { AgentAuth } from './auth.js';
 import type { AgentHub } from './hub.js';
 import type { LocalServerConfig } from '../types.js';
-import type { CliContext } from '@burger-editor/cli';
+import type { AgentTool, CliContext } from '@burger-editor/cli';
 import type { BlockOp } from '@burger-editor/cli/block-op';
 import type { BurgerEditorConfig, ResolverState } from '@burger-editor/file-io';
 import type { Context, Hono } from 'hono';
@@ -31,7 +31,7 @@ import { normalizeLogicalPath } from '../helpers/normalize-logical-path.js';
 import { isAgentAuthed } from './auth.js';
 import { BROWSER_APPLICABLE_TOOLS, buildBrowserOps } from './block-op-builder.js';
 import { hostGuard } from './host-guard.js';
-import { ApplyNackError, ApplyTimeoutError } from './tab-hub.js';
+import { ApplyNackError, ApplyTimeoutError, TabDisconnectedError } from './tab-hub.js';
 
 /**
  * `LocalServerConfig` is a `Pick` over `BurgerEditorConfig` for surface-area
@@ -54,6 +54,13 @@ function toCliContext(
 		invalidPages: [],
 	};
 }
+
+/**
+ * Version of the `/api/agent/*` request/response contract. Bump when a
+ * response shape or error code changes incompatibly; `mcp-server` reads it
+ * from `GET /api/agent/status`.
+ */
+const AGENT_PROTOCOL_VERSION = '1';
 
 const STATUS_BY_CODE: Record<string, number> = {
 	'read-required': 400,
@@ -115,7 +122,7 @@ export function setAgentRoute(
 			return c.text('Unauthorized', 401);
 		}
 		return c.json({
-			protocolVersion: '1',
+			protocolVersion: AGENT_PROTOCOL_VERSION,
 			instructions: agentInstructions,
 			tools: agentTools.map((tool) => ({
 				name: tool.name,
@@ -129,7 +136,10 @@ export function setAgentRoute(
 
 	app.get('/api/agent/status', (c) => {
 		if (!isAgentAuthed(auth, c.req)) {
-			return c.json({ protocolVersion: '1', version: userConfig.version });
+			return c.json({
+				protocolVersion: AGENT_PROTOCOL_VERSION,
+				version: userConfig.version,
+			});
 		}
 		const sessions = [...hub.tabHub.snapshotAll()]
 			.filter((session) => session.page !== null)
@@ -140,7 +150,7 @@ export function setAgentRoute(
 				connectedAt: session.lastActiveAt,
 			}));
 		return c.json({
-			protocolVersion: '1',
+			protocolVersion: AGENT_PROTOCOL_VERSION,
 			version: userConfig.version,
 			pid: process.pid,
 			startedAt,
@@ -214,6 +224,21 @@ export function setAgentRoute(
 			});
 		}
 
+		if (toolName === 'editor_wait_for_event') {
+			// Long-polling is not served by this endpoint; answer explicitly
+			// rather than letting `tool.run()` (the disk implementation) throw
+			// `local-required` while running inside local itself.
+			return c.json(
+				{
+					error: 'invalid',
+					message:
+						'editor_wait_for_event is not available on this server. Poll editor_state_get instead.',
+					timestamp: nowIso(),
+				},
+				400,
+			);
+		}
+
 		const pathInput = hasStringPath(args) ? args.path : undefined;
 		const isDryRun = hasDryRun(args);
 		const isBlockOpTool = !!pathInput && BROWSER_APPLICABLE_TOOLS.has(toolName);
@@ -272,8 +297,7 @@ function hasDryRun(value: unknown): boolean {
  */
 async function runOnDisk(
 	c: Context,
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	tool: any,
+	tool: AgentTool<unknown, unknown>,
 	toolName: string,
 	args: unknown,
 	userConfig: LocalServerConfig,
@@ -326,8 +350,7 @@ async function runOnDisk(
  */
 async function syncRegistryAfterDiskApply(
 	hub: AgentHub,
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	tool: any,
+	tool: AgentTool<unknown, unknown>,
 	toolName: string,
 	pathInput: string | undefined,
 	userConfig: LocalServerConfig,
@@ -341,15 +364,21 @@ async function syncRegistryAfterDiskApply(
 	try {
 		const filePath = resolvePathInput(pathInput, ctx.config, ctx.resolverState);
 		currentHash = await computeContentHash(filePath);
-	} catch {
+	} catch (error) {
 		// page_delete / page_rename leave nothing to hash at `pathInput`.
-		return;
+		if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+			return;
+		}
+		throw error;
 	}
 	const entry = hub.revisions.ensure(normalizedPage);
 	if (tool.annotations?.readOnlyHint) {
-		if (entry.persistedHash === null) {
-			hub.revisions.setPersistedHash(normalizedPage, currentHash);
-		}
+		// A read is the agent's acknowledgement of the current disk state:
+		// re-seed persistedHash so an external edit that already happened is
+		// not re-reported as `stale` on the next browser-relayed op after the
+		// agent has re-read the page (the tabs were told to reload when the
+		// drift was first detected).
+		hub.revisions.setPersistedHash(normalizedPage, currentHash);
 		return;
 	}
 	if (entry.persistedHash === currentHash) {
@@ -392,7 +421,7 @@ function notifyPageEvent(hub: AgentHub, toolName: string, result: unknown): void
 /**
  * The BlockOp-authoritative path: `path` has a tab open, so relay the op to
  * the browser instead of writing the string mutation to disk directly. Runs
- * the two-way staleness check from the design doc before relaying — a
+ * a two-way staleness check before relaying — a
  * `readToken` that matches disk content isn't enough on its own if disk
  * itself has drifted from what `local` last wrote/read (`persistedHash`), or
  * if the primary tab hasn't caught up to that (`syncedHash`).
@@ -409,8 +438,7 @@ function notifyPageEvent(hub: AgentHub, toolName: string, result: unknown): void
  */
 async function runViaBrowserOrDisk(
 	c: Context,
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	tool: any,
+	tool: AgentTool<unknown, unknown>,
 	toolName: string,
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	args: any,
@@ -512,12 +540,16 @@ async function runViaBrowserOrDisk(
 				log('sending op to tab %s for %s: %o', primary.id, normalizedPage, op);
 				// Highlight only the first op of a batch — page_update's later ops
 				// would otherwise each pay the scroll + blink latency.
+				// Pin the target to the tab whose syncedHash was just checked —
+				// re-selecting inside apply() could pick a different tab if one
+				// connected or went idle in between.
 				const ack = await hub.tabHub.apply(
 					normalizedPage,
 					'main',
 					op,
 					entry.revision,
 					i === 0,
+					primary.id,
 				);
 				log('tab %s acked, new revision=%s', primary.id, ack.revision);
 				lastHtml = ack.html;
@@ -667,6 +699,12 @@ function tabHubErrorToAgentError(error: unknown): AgentError | null {
 	}
 	if (error instanceof ApplyTimeoutError) {
 		return new AgentError('local-unreachable', 'The open tab stopped responding.');
+	}
+	if (error instanceof TabDisconnectedError) {
+		return new AgentError(
+			'local-unreachable',
+			'The open tab disconnected before it could apply the change. Retry; if no tab is open the change will be written to disk.',
+		);
 	}
 	return null;
 }

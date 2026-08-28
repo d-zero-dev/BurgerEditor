@@ -48,6 +48,14 @@ export class ApplyTimeoutError extends Error {
 	}
 }
 
+/** Thrown by `apply()` when the target tab disconnected before acking/nacking — a transport failure, not a rejection of the op. */
+export class TabDisconnectedError extends Error {
+	constructor() {
+		super('Tab disconnected before responding');
+		this.name = 'TabDisconnectedError';
+	}
+}
+
 export interface AckResult {
 	readonly revision: number;
 	readonly html: string;
@@ -105,8 +113,10 @@ export interface TabHubOptions {
 
 /**
  * Tracks connected browser tabs and relays `BlockOp`s to whichever one is
- * "primary" for a page — the browser-authority half of the Agent Hub design
- * (see `local/docs/agent-hub.md`). Pure logic over an injected `Socket`
+ * "primary" for a page — the browser-authority half of the Agent Hub: when a
+ * tab has the page open, the tab's live engine applies the op and the
+ * server persists what the tab acks, instead of the server mutating the
+ * HTML string itself. Pure logic over an injected `Socket`
  * (`{ send, close }`) so it's testable without a real WebSocket.
  *
  * Deliberately does NOT know about disk state (`RevisionRegistry`) or the
@@ -130,16 +140,25 @@ export class TabHub {
 	}
 
 	/**
-	 * Send a `BlockOp` to the primary tab for `page` and wait for its
-	 * ack/nack. Resolves with the browser's post-apply HTML on ack; rejects
-	 * with {@link ApplyNackError} on nack, {@link NoPrimaryTabError} when no
-	 * tab has the page open, or {@link ApplyTimeoutError} if the tab never
-	 * responds.
+	 * Send a `BlockOp` to one tab and wait for its ack/nack. Resolves with the
+	 * browser's post-apply HTML on ack; rejects with {@link ApplyNackError} on
+	 * nack, {@link NoPrimaryTabError} when no tab has the page open,
+	 * {@link ApplyTimeoutError} if the tab never responds, or
+	 * {@link TabDisconnectedError} if it disconnects first.
+	 *
+	 * `sessionId` pins the target to a tab the caller already chose (via
+	 * {@link primaryTabFor}) — re-selecting here would let a `ui-state` or
+	 * `pong` that arrived during the caller's own awaits swing the choice to
+	 * a different tab, so a multi-op `page_update` could scatter across tabs
+	 * and the caller's `syncedHash`/`reload` bookkeeping would name a tab
+	 * that never applied anything. Without `sessionId` (or if that tab is
+	 * gone) the primary for `page` is selected here.
 	 * @param page
 	 * @param area
 	 * @param op
 	 * @param baseRevision
 	 * @param highlight
+	 * @param sessionId
 	 */
 	apply(
 		page: string,
@@ -147,14 +166,13 @@ export class TabHub {
 		op: BlockOp,
 		baseRevision: number,
 		highlight = true,
+		sessionId?: string,
 	): Promise<AckResult> {
-		const candidates = [...this.#sessions.values()].filter((s) => s.page === page);
-		if (candidates.length === 0) {
+		const pinned = sessionId === undefined ? undefined : this.#sessions.get(sessionId);
+		const target = pinned ?? this.#selectPrimary(page);
+		if (!target) {
 			return Promise.reject(new NoPrimaryTabError(page));
 		}
-		const idle = candidates.filter((s) => isIdle(s.uiState));
-		const pool = idle.length > 0 ? idle : candidates;
-		const target = mostRecentlyActive(pool);
 
 		const id = randomUUID();
 		const revision = target.revision + 1;
@@ -193,7 +211,7 @@ export class TabHub {
 		}
 		for (const pending of session.pendingApplies.values()) {
 			clearTimeout(pending.timer);
-			pending.reject(new Error('Tab disconnected before responding'));
+			pending.reject(new TabDisconnectedError());
 		}
 		this.#sessions.delete(sessionId);
 	}
@@ -271,14 +289,8 @@ export class TabHub {
 	 * @param page
 	 */
 	primaryTabFor(page: string): TabSessionSnapshot | null {
-		const candidates = [...this.#sessions.values()].filter((s) => s.page === page);
-		if (candidates.length === 0) {
-			return null;
-		}
-		const idle = candidates.filter((s) => isIdle(s.uiState));
-		const pool = idle.length > 0 ? idle : candidates;
-		const winner = mostRecentlyActive(pool);
-		return snapshot(winner);
+		const winner = this.#selectPrimary(page);
+		return winner ? snapshot(winner) : null;
 	}
 	/**
 	 * @param socket
@@ -399,6 +411,23 @@ export class TabHub {
 		if (session) {
 			session.lastActiveAt = this.#now();
 		}
+	}
+
+	/**
+	 * The single primary-tab selection rule, shared by `primaryTabFor()` and
+	 * `apply()`: among tabs on `page`, prefer idle ones, then the most
+	 * recently active. Kept private so callers cannot end up computing the
+	 * target twice with two different answers.
+	 * @param page
+	 */
+	#selectPrimary(page: string): TabSessionInternal | null {
+		const candidates = [...this.#sessions.values()].filter((s) => s.page === page);
+		if (candidates.length === 0) {
+			return null;
+		}
+		const idle = candidates.filter((s) => isIdle(s.uiState));
+		const pool = idle.length > 0 ? idle : candidates;
+		return mostRecentlyActive(pool);
 	}
 
 	#send(session: TabSessionInternal, message: ServerToBrowserMessage): void {
