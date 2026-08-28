@@ -17,6 +17,7 @@ import '@burger-editor/client/style';
 import { hc } from 'hono/client';
 
 import { $upload } from '../helpers/$upload.js';
+import { browserLog } from '../helpers/browser-log.js';
 import { normalizeLogicalPath } from '../helpers/normalize-logical-path.js';
 
 import { createAgentLink, type AgentLink } from './agent-link.js';
@@ -281,8 +282,7 @@ export async function createEditor() {
 		const page = normalizeLogicalPath(location.pathname, config.indexFileName);
 		const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
 		const wsUrl = `${wsProtocol}//${location.host}/ws/editor`;
-		// eslint-disable-next-line no-console
-		console.log('[bge-agent-link] wiring up', { wsUrl, page });
+		browserLog('[bge-agent-link]', 'wiring up', { wsUrl, page });
 		const transport = createWsTransport({
 			url: wsUrl,
 			onMessage: (raw) => agentLink?.handleMessage(raw),
@@ -296,9 +296,9 @@ export async function createEditor() {
 		});
 		engine.el.addEventListener('bge:server-online', () => transport.reconnectNow());
 	} else {
-		// eslint-disable-next-line no-console
-		console.log(
-			'[bge-agent-link] #server-session not found — agent.enabled is false, skipping WS wiring',
+		browserLog(
+			'[bge-agent-link]',
+			'#server-session not found — agent.enabled is false, skipping WS wiring',
 		);
 	}
 }

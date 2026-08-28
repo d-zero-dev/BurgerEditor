@@ -158,14 +158,21 @@ export function setAgentRoute(
 		const parsedBody = invokeBodySchema.safeParse(json);
 		if (!parsedBody.success) {
 			return c.json(
-				{ error: 'invalid', message: 'Body must be { tool: string, args: unknown }.' },
+				{
+					error: 'invalid',
+					message: 'Body must be { tool: string, args: unknown }.',
+					timestamp: nowIso(),
+				},
 				400,
 			);
 		}
 		const { tool: toolName, args } = parsedBody.data;
 		const tool = agentTools.find((t) => t.name === toolName);
 		if (!tool) {
-			return c.json({ error: 'not-found', message: `Unknown tool: ${toolName}` }, 404);
+			return c.json(
+				{ error: 'not-found', message: `Unknown tool: ${toolName}`, timestamp: nowIso() },
+				404,
+			);
 		}
 
 		if (toolName === 'editor_state_get') {
@@ -177,7 +184,12 @@ export function setAgentRoute(
 					uiState: session.uiState,
 					connectedAt: session.lastActiveAt,
 				}));
-			return c.json({ ok: true, result: { mode: 'local', sessions }, appliedTo: 'disk' });
+			return c.json({
+				ok: true,
+				result: { mode: 'local', sessions },
+				appliedTo: 'disk',
+				timestamp: nowIso(),
+			});
 		}
 
 		const pathInput = hasStringPath(args) ? args.path : undefined;
@@ -264,7 +276,7 @@ async function runOnDisk(
 			deps.setResolverState(state);
 		}
 		notifyAffectedTabs(hub, toolName, pathInput, userConfig, result);
-		return c.json({ ok: true, result, appliedTo: 'disk' });
+		return c.json({ ok: true, result, appliedTo: 'disk', timestamp: nowIso() });
 	} catch (error) {
 		return errorResponse(c, error);
 	}
@@ -463,6 +475,7 @@ async function runViaBrowserOrDisk(
 			ok: true,
 			result: { ...result, readToken, appliedTo: 'browser' },
 			appliedTo: 'browser',
+			timestamp: nowIso(),
 		});
 	} catch (error) {
 		return errorResponse(c, error);
@@ -580,5 +593,19 @@ function tabHubErrorToAgentError(error: unknown): AgentError | null {
 function errorResponse(c: Context, error: unknown) {
 	const agentError = tabHubErrorToAgentError(error) ?? toAgentError(error);
 	log('invoke failed: %s — %s', agentError.code, agentError.message);
-	return c.json(agentError.toPayload(), statusForCode(agentError.code));
+	return c.json(
+		{ ...agentError.toPayload(), timestamp: nowIso() },
+		statusForCode(agentError.code),
+	);
+}
+
+/**
+ * ISO timestamp attached to every `/api/agent/*` JSON response — lets a
+ * caller correlate a tool's result against `DEBUG=@bge:local` server logs
+ * and the browser console's `[bge-agent-ws]`/`[bge-agent-link]` logs
+ * (which are stamped with the same `Date`-based format), instead of
+ * guessing from wall-clock proximity alone.
+ */
+function nowIso(): string {
+	return new Date().toISOString();
 }

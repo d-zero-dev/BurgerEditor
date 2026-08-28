@@ -1,3 +1,5 @@
+import { browserLog } from '../helpers/browser-log.js';
+
 const MIN_BACKOFF_MS = 500;
 const MAX_BACKOFF_MS = 10_000;
 
@@ -47,30 +49,25 @@ export function createWsTransport(options: WsTransportOptions): WsTransport {
 		if (disposed) {
 			return;
 		}
-		// eslint-disable-next-line no-console
-		console.log(LOG_TAG, 'connecting', options.url);
+		browserLog(LOG_TAG, 'connecting', options.url);
 		socket = new WebSocketImpl(options.url);
 		socket.addEventListener('open', () => {
-			// eslint-disable-next-line no-console
-			console.log(LOG_TAG, 'open');
+			browserLog(LOG_TAG, 'open');
 			backoffMs = MIN_BACKOFF_MS;
 			options.onOpen();
 		});
 		socket.addEventListener('message', (event: MessageEvent) => {
-			// eslint-disable-next-line no-console
-			console.log(LOG_TAG, 'recv', event.data);
+			browserLog(LOG_TAG, 'recv', event.data);
 			if (typeof event.data === 'string') {
 				options.onMessage(event.data);
 			}
 		});
 		socket.addEventListener('close', (event: CloseEvent) => {
-			// eslint-disable-next-line no-console
-			console.log(LOG_TAG, 'close', { code: event.code, reason: event.reason });
+			browserLog(LOG_TAG, 'close', { code: event.code, reason: event.reason });
 			scheduleReconnect();
 		});
 		socket.addEventListener('error', () => {
-			// eslint-disable-next-line no-console
-			console.log(LOG_TAG, 'error, readyState=', socket?.readyState);
+			browserLog(LOG_TAG, 'error, readyState=', socket?.readyState);
 			socket?.close();
 		});
 	}
@@ -84,8 +81,7 @@ export function createWsTransport(options: WsTransportOptions): WsTransport {
 		}
 		const jitter = Math.random() * backoffMs * 0.2;
 		const delay = backoffMs + jitter;
-		// eslint-disable-next-line no-console
-		console.log(LOG_TAG, `reconnecting in ${Math.round(delay)}ms`);
+		browserLog(LOG_TAG, `reconnecting in ${Math.round(delay)}ms`);
 		reconnectTimer = setTimeout(() => {
 			reconnectTimer = null;
 			connect();
@@ -98,13 +94,11 @@ export function createWsTransport(options: WsTransportOptions): WsTransport {
 	return {
 		send(raw) {
 			if (socket?.readyState === WebSocketImpl.OPEN) {
-				// eslint-disable-next-line no-console
-				console.log(LOG_TAG, 'send', raw);
+				browserLog(LOG_TAG, 'send', raw);
 				socket.send(raw);
 				return;
 			}
-			// eslint-disable-next-line no-console
-			console.log(
+			browserLog(
 				LOG_TAG,
 				'dropped send (socket not open), readyState=',
 				socket?.readyState,
@@ -112,8 +106,7 @@ export function createWsTransport(options: WsTransportOptions): WsTransport {
 			);
 		},
 		reconnectNow() {
-			// eslint-disable-next-line no-console
-			console.log(LOG_TAG, 'reconnectNow');
+			browserLog(LOG_TAG, 'reconnectNow');
 			if (reconnectTimer) {
 				clearTimeout(reconnectTimer);
 				reconnectTimer = null;
@@ -125,8 +118,7 @@ export function createWsTransport(options: WsTransportOptions): WsTransport {
 			}
 		},
 		dispose() {
-			// eslint-disable-next-line no-console
-			console.log(LOG_TAG, 'dispose');
+			browserLog(LOG_TAG, 'dispose');
 			disposed = true;
 			if (reconnectTimer) {
 				clearTimeout(reconnectTimer);

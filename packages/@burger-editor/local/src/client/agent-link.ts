@@ -6,6 +6,7 @@ import type {
 	UIState,
 } from '../protocol/ws-messages.js';
 
+import { browserLog } from '../helpers/browser-log.js';
 import { serverToBrowserMessageSchema } from '../protocol/ws-messages.js';
 
 const PROCESSING_WAIT_TIMEOUT_MS = 2000;
@@ -112,11 +113,9 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 	 * @param message
 	 */
 	async function handleApply(message: ApplyMessage): Promise<void> {
-		// eslint-disable-next-line no-console
-		console.log(LOG_TAG, 'apply received', message);
+		browserLog(LOG_TAG, 'apply received', message);
 		if (isBusy(adapter.getUIState())) {
-			// eslint-disable-next-line no-console
-			console.log(
+			browserLog(
 				LOG_TAG,
 				'apply nacked: busy (dialog open or source mode)',
 				adapter.getUIState(),
@@ -131,8 +130,7 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 		}
 		const settled = await waitUntilNotProcessing();
 		if (!settled) {
-			// eslint-disable-next-line no-console
-			console.log(LOG_TAG, 'apply nacked: processing-timeout');
+			browserLog(LOG_TAG, 'apply nacked: processing-timeout');
 			send({ type: 'nack', id: message.id, reason: 'processing-timeout' });
 			return;
 		}
@@ -140,8 +138,7 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 			echoPending = true;
 			const result = await adapter.applyOp(message.op, { highlight: message.highlight });
 			revision = message.revision;
-			// eslint-disable-next-line no-console
-			console.log(LOG_TAG, 'apply succeeded, acking', {
+			browserLog(LOG_TAG, 'apply succeeded, acking', {
 				id: message.id,
 				revision: message.revision,
 			});
@@ -153,8 +150,7 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 			});
 		} catch (error) {
 			echoPending = false;
-			// eslint-disable-next-line no-console
-			console.log(LOG_TAG, 'apply threw, nacking', error);
+			browserLog(LOG_TAG, 'apply threw, nacking', error);
 			send({
 				type: 'nack',
 				id: message.id,
@@ -204,14 +200,12 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 			try {
 				parsed = JSON.parse(raw);
 			} catch (error) {
-				// eslint-disable-next-line no-console
-				console.log(LOG_TAG, 'received frame is not valid JSON, ignoring', raw, error);
+				browserLog(LOG_TAG, 'received frame is not valid JSON, ignoring', raw, error);
 				return;
 			}
 			const result = serverToBrowserMessageSchema.safeParse(parsed);
 			if (!result.success) {
-				// eslint-disable-next-line no-console
-				console.log(
+				browserLog(
 					LOG_TAG,
 					'received frame failed schema validation, ignoring',
 					parsed,
@@ -226,21 +220,18 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 					break;
 				}
 				case 'welcome': {
-					// eslint-disable-next-line no-console
-					console.log(LOG_TAG, 'welcome', message);
+					browserLog(LOG_TAG, 'welcome', message);
 					revision = message.revision;
 					break;
 				}
 				case 'reload': {
-					// eslint-disable-next-line no-console
-					console.log(LOG_TAG, 'reload requested', message);
+					browserLog(LOG_TAG, 'reload requested', message);
 					reloadWhenIdle();
 					break;
 				}
 				case 'committed':
 				case 'page-event': {
-					// eslint-disable-next-line no-console
-					console.log(LOG_TAG, message.type, message);
+					browserLog(LOG_TAG, message.type, message);
 					break;
 				}
 				case 'ping': {
@@ -250,8 +241,7 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 			}
 		},
 		handleOpen() {
-			// eslint-disable-next-line no-console
-			console.log(LOG_TAG, 'connection open, sending hello', {
+			browserLog(LOG_TAG, 'connection open, sending hello', {
 				page: options.page,
 				revision,
 				serverSession: options.serverSession,
