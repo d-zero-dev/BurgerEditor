@@ -26,6 +26,7 @@ import {
 import { z } from 'zod';
 
 import { log } from '../helpers/debug.js';
+import { normalizeLogicalPath } from '../helpers/normalize-logical-path.js';
 
 import { isAgentAuthed } from './auth.js';
 import { BROWSER_APPLICABLE_TOOLS, buildBrowserOps } from './block-op-builder.js';
@@ -262,7 +263,7 @@ async function runOnDisk(
 			);
 			deps.setResolverState(state);
 		}
-		notifyAffectedTabs(hub, toolName, pathInput, result);
+		notifyAffectedTabs(hub, toolName, pathInput, userConfig, result);
 		return c.json({ ok: true, result, appliedTo: 'disk' });
 	} catch (error) {
 		return errorResponse(c, error);
@@ -273,17 +274,22 @@ async function runOnDisk(
  * @param hub
  * @param toolName
  * @param pathInput
+ * @param userConfig
  * @param result
  */
 function notifyAffectedTabs(
 	hub: AgentHub,
 	toolName: string,
 	pathInput: string | undefined,
+	userConfig: LocalServerConfig,
 	result: unknown,
 ): void {
-	if (toolName === 'front_matter_set' && pathInput) {
-		const entry = hub.revisions.ensure(pathInput);
-		hub.tabHub.reloadOthers(pathInput, null, entry.revision, 'front-matter');
+	const normalizedPage = pathInput
+		? normalizeLogicalPath(pathInput, userConfig.indexFileName)
+		: undefined;
+	if (toolName === 'front_matter_set' && normalizedPage) {
+		const entry = hub.revisions.ensure(normalizedPage);
+		hub.tabHub.reloadOthers(normalizedPage, null, entry.revision, 'front-matter');
 		return;
 	}
 	if (
@@ -302,9 +308,9 @@ function notifyAffectedTabs(
 					? 'deleted'
 					: 'renamed';
 		hub.tabHub.broadcast({ type: 'page-event', kind });
-		if (pathInput) {
-			const entry = hub.revisions.ensure(pathInput);
-			hub.tabHub.reloadOthers(pathInput, null, entry.revision, 'other-tab');
+		if (normalizedPage) {
+			const entry = hub.revisions.ensure(normalizedPage);
+			hub.tabHub.reloadOthers(normalizedPage, null, entry.revision, 'other-tab');
 		}
 	}
 }
@@ -343,10 +349,24 @@ async function runViaBrowserOrDisk(
 	hub: AgentHub,
 ) {
 	const ctx = toCliContext(userConfig, deps.getResolverState());
-	const primary = hub.tabHub.primaryTabFor(pathInput);
-	log('invoke %s for %s: primary tab = %o', toolName, pathInput, primary);
+	// `pathInput` is whatever string the agent read via page_list/page_blocks
+	// (often the full file name, e.g. "/index.html") and is what readToken /
+	// resolvePathInput key off of. A browser tab's `page` is its own
+	// `location.pathname` (e.g. "/" for the site root) — normalize BOTH the
+	// same way (`/` -> `/<indexFileName>`) before using either as a TabHub /
+	// RevisionRegistry key, or a root-page tab never matches an agent's
+	// fully-qualified path (see create-editor.ts's matching normalization).
+	const normalizedPage = normalizeLogicalPath(pathInput, userConfig.indexFileName);
+	const primary = hub.tabHub.primaryTabFor(normalizedPage);
+	log(
+		'invoke %s for %s (normalized: %s): primary tab = %o',
+		toolName,
+		pathInput,
+		normalizedPage,
+		primary,
+	);
 	if (!primary) {
-		log('no tab has %s open, falling back to disk', pathInput);
+		log('no tab has %s open, falling back to disk', normalizedPage);
 		return runOnDisk(c, tool, toolName, args, userConfig, deps, hub, pathInput);
 	}
 
@@ -363,15 +383,15 @@ async function runViaBrowserOrDisk(
 		}
 
 		const currentHash = await computeContentHash(filePath);
-		const entry = hub.revisions.ensure(pathInput);
+		const entry = hub.revisions.ensure(normalizedPage);
 		if (entry.persistedHash !== null && entry.persistedHash !== currentHash) {
 			log(
 				'disk hash for %s drifted from persistedHash (external-change): %s vs %s',
-				pathInput,
+				normalizedPage,
 				currentHash,
 				entry.persistedHash,
 			);
-			hub.tabHub.reloadOthers(pathInput, null, entry.revision, 'external-change');
+			hub.tabHub.reloadOthers(normalizedPage, null, entry.revision, 'external-change');
 			throw new AgentError(
 				'stale',
 				'The page on disk changed outside local (e.g. an external editor). ' +
@@ -381,7 +401,7 @@ async function runViaBrowserOrDisk(
 		if (primary.syncedHash !== null && primary.syncedHash !== entry.persistedHash) {
 			log(
 				'primary tab for %s is behind (syncedHash %s vs persistedHash %s)',
-				pathInput,
+				normalizedPage,
 				primary.syncedHash,
 				entry.persistedHash,
 			);
@@ -413,8 +433,14 @@ async function runViaBrowserOrDisk(
 
 		let lastHtml = loaded.editableContent;
 		for (const op of ops) {
-			log('sending op to tab %s for %s: %o', primary.id, pathInput, op);
-			const ack = await hub.tabHub.apply(pathInput, 'main', op, entry.revision, true);
+			log('sending op to tab %s for %s: %o', primary.id, normalizedPage, op);
+			const ack = await hub.tabHub.apply(
+				normalizedPage,
+				'main',
+				op,
+				entry.revision,
+				true,
+			);
 			log('tab %s acked, new revision=%s', primary.id, ack.revision);
 			lastHtml = ack.html;
 		}
@@ -427,9 +453,9 @@ async function runViaBrowserOrDisk(
 			loaded.originalFrontMatter,
 		);
 		const newHash = await computeContentHash(filePath);
-		const bumped = hub.revisions.bump(pathInput, newHash);
+		const bumped = hub.revisions.bump(normalizedPage, newHash);
 		hub.tabHub.setSyncedHash(primary.id, newHash);
-		hub.tabHub.reloadOthers(pathInput, primary.id, bumped.revision, 'other-tab');
+		hub.tabHub.reloadOthers(normalizedPage, primary.id, bumped.revision, 'other-tab');
 
 		const readToken = await issueReadToken(pathInput, filePath);
 		const result = buildBrowserResult(toolName, pathInput, ops, lastHtml);

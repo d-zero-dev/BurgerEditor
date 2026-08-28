@@ -97,7 +97,7 @@ function makeConfig(documentRoot: string): LocalServerConfig {
  */
 async function buildApp(userConfig: LocalServerConfig) {
 	const app = new Hono();
-	const hub = createAgentHub();
+	const hub = createAgentHub({ indexFileName: userConfig.indexFileName });
 	const auth = await createAgentAuth('localhost', '/tmp/unused');
 	// These tests exercise HTTP only — `upgradeWebSocket` just needs to be
 	// callable at route-registration time; it's never actually invoked as a
@@ -254,15 +254,19 @@ async function waitForApply(
 describe('POST /api/agent/invoke — with a tab open', () => {
 	/**
 	 * @param hub
+	 * @param page
 	 */
-	function connectPrimaryTab(hub: Awaited<ReturnType<typeof buildApp>>['hub']) {
+	function connectPrimaryTab(
+		hub: Awaited<ReturnType<typeof buildApp>>['hub'],
+		page = '/a.html',
+	) {
 		const sent: unknown[] = [];
 		const sessionId = hub.tabHub.register({
 			send: (data) => sent.push(JSON.parse(data)),
 			close: () => {},
 		});
 		hub.tabHub.hello(sessionId, {
-			page: '/a.html',
+			page,
 			revision: 1,
 			serverSession: hub.serverSession,
 			uiState: {
@@ -274,6 +278,34 @@ describe('POST /api/agent/invoke — with a tab open', () => {
 		});
 		return { sessionId, sent };
 	}
+
+	test('matches a root-page tab (hello page: "/") against an agent path of "/index.html"', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		await fs.writeFile(path.join(documentRoot, 'index.html'), PAGE_HTML, 'utf8');
+		// The browser tab at the site root sends its own location.pathname
+		// ("/"), while the agent addresses the same file by its full name —
+		// both must resolve to the same TabHub key (agent/route.ts's
+		// normalizedPage) or this always falls back to disk.
+		const { sessionId, sent } = connectPrimaryTab(hub, '/');
+		const token = await readToken(app, '/index.html');
+
+		const invokePromise = postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/index.html', target: { index: 0 }, readToken: token },
+		});
+		const applyMessage = await waitForApply(sent);
+		hub.tabHub.resolveAck(
+			sessionId,
+			applyMessage.id,
+			2,
+			'<html><body><div class="content"></div></body></html>',
+		);
+
+		const res = await invokePromise;
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { appliedTo: string };
+		expect(body.appliedTo).toBe('browser');
+	});
 
 	test('relays a block_delete to the primary tab and persists its ack html', async () => {
 		const { app, hub } = await buildApp(makeConfig(documentRoot));

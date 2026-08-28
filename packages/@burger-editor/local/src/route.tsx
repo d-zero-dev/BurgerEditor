@@ -20,6 +20,7 @@ import { HEALTH_CHECK_END_POINT } from './constants.js';
 import { log } from './helpers/debug.js';
 import { FileNotFoundError, loadContent, saveContent } from './helpers/edit-content.js';
 import { NoEditableAreaError } from './helpers/no-editable-area-error.js';
+import { normalizeLogicalPath } from './helpers/normalize-logical-path.js';
 import { defaultConfig } from './model/default-config.js';
 import { FileListManager } from './model/file-list-manager.js';
 import { buildFileTreeFromLogicalPaths, generateFileTree } from './model/file-tree.js';
@@ -368,10 +369,7 @@ export function setRoute(
 		})
 		.post('/api/content', zValidator('json', apiSchema), async (c) => {
 			const data = c.req.valid('json');
-			let normalizedPath = data.path;
-			if (normalizedPath.endsWith('/')) {
-				normalizedPath += userConfig.indexFileName;
-			}
+			const normalizedPath = normalizeLogicalPath(data.path, userConfig.indexFileName);
 
 			return withStateLock(async () => {
 				let targetFilePath: string;

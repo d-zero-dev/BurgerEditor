@@ -7,6 +7,8 @@ import { RevisionRegistry } from './revision-registry.js';
 import { TabHub } from './tab-hub.js';
 
 export interface AgentHubOptions {
+	/** Forwarded to `TabHub` — see its doc comment for why a `hello`'s `page` needs this. Defaults to `'index.html'`. */
+	readonly indexFileName?: string;
 	/** Milliseconds between `ping` broadcasts. Defaults to 30000. */
 	readonly pingIntervalMs?: number;
 	readonly now?: () => number;
@@ -40,7 +42,11 @@ export interface AgentHub {
  */
 export function createAgentHub(options: AgentHubOptions = {}): AgentHub {
 	const serverSession = randomUUID();
-	const tabHub = new TabHub({ serverSession, now: options.now });
+	const tabHub = new TabHub({
+		serverSession,
+		now: options.now,
+		indexFileName: options.indexFileName,
+	});
 	const revisions = new RevisionRegistry();
 	const pingIntervalMs = options.pingIntervalMs ?? 30_000;
 	const timer = setInterval(() => tabHub.pingAll(), pingIntervalMs);

@@ -17,6 +17,7 @@ import '@burger-editor/client/style';
 import { hc } from 'hono/client';
 
 import { $upload } from '../helpers/$upload.js';
+import { normalizeLogicalPath } from '../helpers/normalize-logical-path.js';
 
 import { createAgentLink, type AgentLink } from './agent-link.js';
 import { createEngineAdapter } from './engine-adapter.js';
@@ -272,10 +273,16 @@ export async function createEditor() {
 		'server-session',
 	) as HTMLInputElement | null;
 	if (serverSessionInput) {
+		// A tab at the site root sends `/` as `location.pathname`, but an agent
+		// tool call addresses the same page by its full file name (e.g.
+		// `/index.html`, read from page_list/page_blocks) — normalize the same
+		// way `/api/content` does so TabHub can match the two as one page
+		// (see agent/route.ts's matching normalization).
+		const page = normalizeLogicalPath(location.pathname, config.indexFileName);
 		const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
 		const wsUrl = `${wsProtocol}//${location.host}/ws/editor`;
 		// eslint-disable-next-line no-console
-		console.log('[bge-agent-link] wiring up', { wsUrl, page: location.pathname });
+		console.log('[bge-agent-link] wiring up', { wsUrl, page });
 		const transport = createWsTransport({
 			url: wsUrl,
 			onMessage: (raw) => agentLink?.handleMessage(raw),
@@ -284,7 +291,7 @@ export async function createEditor() {
 		agentLink = createAgentLink({
 			adapter: createEngineAdapter(engine),
 			transport,
-			page: location.pathname,
+			page,
 			serverSession: serverSessionInput.value,
 		});
 		engine.el.addEventListener('bge:server-online', () => transport.reconnectNow());

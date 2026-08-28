@@ -79,10 +79,11 @@ afterEach(async () => {
  */
 async function bootServer() {
 	const app = new Hono();
-	const hub = createAgentHub();
+	const userConfig = makeConfig(documentRoot);
+	const hub = createAgentHub({ indexFileName: userConfig.indexFileName });
 	const auth = await createAgentAuth('localhost', '/tmp/unused');
 	const { upgradeWebSocket, injectWebSocket } = createNodeWebSocket({ app });
-	setRoute(app, makeConfig(documentRoot), null, { hub, auth, upgradeWebSocket });
+	setRoute(app, userConfig, null, { hub, auth, upgradeWebSocket });
 	server = serve({ fetch: app.fetch, hostname: 'localhost', port: 0 });
 	injectWebSocket(server);
 	await new Promise((resolve) => server!.once('listening', resolve));

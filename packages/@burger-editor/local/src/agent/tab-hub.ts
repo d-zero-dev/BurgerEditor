@@ -8,6 +8,7 @@ import type { BlockOp } from '@burger-editor/cli';
 import { randomUUID } from 'node:crypto';
 
 import { log } from '../helpers/debug.js';
+import { normalizeLogicalPath } from '../helpers/normalize-logical-path.js';
 
 /**
  * The transport `TabHub` needs from a WebSocket connection — narrowed so
@@ -90,6 +91,15 @@ export interface TabHubOptions {
 	readonly applyTimeoutMs?: number;
 	/** This server process's session token — a `hello` carrying a different one means the tab is talking to a stale process and gets an immediate `server-restart` reload. */
 	readonly serverSession: string;
+	/**
+	 * A root-page tab's `hello` carries its own `location.pathname` ("/"),
+	 * while an agent tool call addresses the same page by its full file name
+	 * (e.g. "/index.html", read from page_list/page_blocks) — every `hello`'s
+	 * `page` is normalized against this the same way `/api/content` does, so
+	 * `primaryTabFor`/`apply` key off one canonical page string regardless of
+	 * which side sent it. Defaults to `'index.html'`.
+	 */
+	readonly indexFileName?: string;
 	readonly now?: () => number;
 }
 
@@ -107,12 +117,14 @@ export interface TabHubOptions {
  */
 export class TabHub {
 	#applyTimeoutMs: number;
+	#indexFileName: string;
 	#now: () => number;
 	#serverSession: string;
 	#sessions = new Map<string, TabSessionInternal>();
 
 	constructor(options: TabHubOptions) {
 		this.#applyTimeoutMs = options.applyTimeoutMs ?? 5000;
+		this.#indexFileName = options.indexFileName ?? 'index.html';
 		this.#serverSession = options.serverSession;
 		this.#now = options.now ?? (() => Date.now());
 	}
@@ -208,7 +220,7 @@ export class TabHub {
 			log('hello from unknown session %s, ignoring', sessionId);
 			return;
 		}
-		session.page = payload.page;
+		session.page = normalizeLogicalPath(payload.page, this.#indexFileName);
 		session.revision = payload.revision;
 		session.uiState = payload.uiState;
 		session.lastActiveAt = this.#now();
@@ -227,8 +239,9 @@ export class TabHub {
 			return;
 		}
 		log(
-			'hello from %s: page=%s revision=%d — sending welcome',
+			'hello from %s: page=%s (raw: %s) revision=%d — sending welcome',
 			sessionId,
+			session.page,
 			payload.page,
 			payload.revision,
 		);

@@ -53,7 +53,7 @@ export async function runServerCommand(): Promise<void> {
 	let auth: AgentAuth | undefined;
 	let injectWebSocket: ((server: ServerType) => void) | undefined;
 	if (userConfig.agent.enabled) {
-		hub = createAgentHub();
+		hub = createAgentHub({ indexFileName: userConfig.indexFileName });
 		auth = await createAgentAuth(userConfig.host, configDir);
 		const ws = createNodeWebSocket({ app });
 		agentDeps = { hub, auth, upgradeWebSocket: ws.upgradeWebSocket };
