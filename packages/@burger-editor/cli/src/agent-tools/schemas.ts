@@ -1,7 +1,27 @@
 import { z } from 'zod';
 
+/**
+ * Mirrors `local`'s `isSafeLogicalPath` (route.tsx) so a traversing path is a
+ * 400 schema error at the edge, before it ever reaches a handler. This is
+ * defense in depth: `resolvePathInput` (`@burger-editor/file-io`) is the
+ * actual containment check and rejects the RESOLVED path, which also catches
+ * spellings this string test can't see (a virtual-tree entry registered with
+ * a traversing disk path, an absolute path outside documentRoot, …).
+ * @param input
+ */
+function hasNoTraversalSegments(input: string): boolean {
+	if (input.includes('\0')) {
+		return false;
+	}
+	return !input.split(/[/\\]/).some((segment) => segment === '.' || segment === '..');
+}
+
 export const pathArg = z
 	.string()
+	.refine(hasNoTraversalSegments, {
+		message:
+			'path must not contain "." or ".." segments or NUL bytes — only pages under documentRoot can be addressed',
+	})
 	.describe('Page path — either a real file path or a virtual/logical path');
 
 /**

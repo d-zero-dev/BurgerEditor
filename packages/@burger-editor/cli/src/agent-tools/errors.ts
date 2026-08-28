@@ -1,4 +1,5 @@
 import { NoEditableAreaError } from '@burger-editor/core';
+import { PathOutsideDocumentRootError } from '@burger-editor/file-io';
 import { z } from 'zod';
 
 import { PageAlreadyExistsError } from '../handlers.js';
@@ -82,6 +83,11 @@ export function toAgentError(error: unknown): AgentError {
 	}
 	if (error instanceof NoEditableAreaError) {
 		return new AgentError('no-such-area', error.message);
+	}
+	if (error instanceof PathOutsideDocumentRootError) {
+		// Deliberately the same `invalid` code a schema failure gets — the
+		// caller learns the path is unusable, not where documentRoot is.
+		return new AgentError('invalid', error.message);
 	}
 	if (error instanceof RangeError) {
 		return new AgentError('range', error.message);

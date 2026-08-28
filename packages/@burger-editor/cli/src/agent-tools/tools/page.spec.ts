@@ -66,6 +66,54 @@ describe('page_create', () => {
 	});
 });
 
+describe('documentRoot containment — no page path may escape the project', () => {
+	// The MCP server, the CLI and local's /api/agent/invoke all hand these
+	// path strings to the same handlers; a `..` that slipped through would
+	// read, create or delete files the project does not own.
+	test('the input schema rejects a traversing path up front (400 at the edge)', () => {
+		expect(pageGetTool.input.safeParse({ path: '../../.env' }).success).toBe(false);
+		expect(pageCreateTool.input.safeParse({ path: 'foo/../../x.html' }).success).toBe(
+			false,
+		);
+		expect(pageGetTool.input.safeParse({ path: 'about.html' }).success).toBe(true);
+	});
+
+	test('page_get rejects a traversing path even when the schema is bypassed (run() called directly)', async () => {
+		const error = await pageGetTool
+			.run(fixture.ctx, { path: '../../.env' })
+			.catch((error_: unknown) => error_);
+		expect(error).toBeInstanceOf(AgentError);
+		expect((error as AgentError).code).toBe('invalid');
+		expect((error as AgentError).message).toContain('outside documentRoot');
+	});
+
+	test('page_create refuses to create a file outside documentRoot', async () => {
+		const error = await pageCreateTool
+			.run(fixture.ctx, { path: '../escaped.html' })
+			.catch((error_: unknown) => error_);
+		expect((error as AgentError).code).toBe('invalid');
+		const outside = path.join(fixture.ctx.config.documentRoot, '..', 'escaped.html');
+		await expect(fs.stat(outside)).rejects.toMatchObject({ code: 'ENOENT' });
+	});
+
+	test('page_copy refuses a traversing destination', async () => {
+		const token = await readToken();
+		const error = await pageCopyTool
+			.run(fixture.ctx, { from: 'about.html', to: '../out.html', readToken: token })
+			.catch((error_: unknown) => error_);
+		expect((error as AgentError).code).toBe('invalid');
+	});
+
+	test('page_delete on a traversing path fails as invalid — NOT read-required, so no readToken for that path is ever handed back', async () => {
+		const error = await pageDeleteTool
+			.run(fixture.ctx, { path: '../../victim.html', readToken: undefined })
+			.catch((error_: unknown) => error_);
+		expect(error).toBeInstanceOf(AgentError);
+		expect((error as AgentError).code).toBe('invalid');
+		expect((error as AgentError).extra.readToken).toBeUndefined();
+	});
+});
+
 describe('page_delete / page_rename / page_copy require readToken', () => {
 	test('page_delete rejects without a readToken', async () => {
 		const error = await pageDeleteTool
