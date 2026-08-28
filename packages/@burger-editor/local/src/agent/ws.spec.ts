@@ -45,7 +45,10 @@ const LAN_HOST = '203.0.113.10';
  * @param documentRoot
  * @param host
  */
-function makeConfig(documentRoot: string, host = 'localhost'): LocalServerConfig {
+function makeConfig(
+	documentRoot: string,
+	host: LocalServerConfig['host'] = 'localhost',
+): LocalServerConfig {
 	return {
 		version: '0.0.0-test',
 		port: 0,
@@ -105,7 +108,7 @@ afterEach(async () => {
  * @param options
  * @param options.host
  */
-async function bootServer(options: { readonly host?: string } = {}) {
+async function bootServer(options: { readonly host?: LocalServerConfig['host'] } = {}) {
 	const host = options.host ?? 'localhost';
 	const app = new Hono();
 	const userConfig = makeConfig(documentRoot, host);

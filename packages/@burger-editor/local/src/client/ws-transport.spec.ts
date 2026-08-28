@@ -1,3 +1,5 @@
+import type { MockInstance } from 'vitest';
+
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { createWsTransport } from './ws-transport.js';
@@ -237,8 +239,8 @@ describe('createWsTransport — logging', () => {
 	 * @param logSpy
 	 * @param marker
 	 */
-	function callsIncluding(logSpy: ReturnType<typeof vi.spyOn>, marker: string) {
-		return logSpy.mock.calls.filter((args) => args.includes(marker));
+	function callsIncluding(logSpy: MockInstance<typeof console.log>, marker: string) {
+		return logSpy.mock.calls.filter((args: unknown[]) => args.includes(marker));
 	}
 
 	test('without the bge:debug flag, an inbound frame is not logged as recv while open is still logged', () => {
