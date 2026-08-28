@@ -59,7 +59,8 @@ function createMockEngine(contents?: {
 	const uiState = new UIStateStore();
 	const content = {
 		getContentsAsString: contents?.getContentsAsString ?? (() => ''),
-		replaceContents: contents?.replaceContents ?? vi.fn().mockResolvedValue(),
+		replaceContents:
+			contents?.replaceContents ?? vi.fn().mockImplementation(() => Promise.resolve()),
 	};
 	return {
 		el,
@@ -164,7 +165,7 @@ test('ソースモード切替でtextareaとiframeの表示が反転しモード
 });
 
 test('ソースモードを抜けるとtextareaの内容がreplaceContentsでコミットされる', async () => {
-	const replaceContents = vi.fn().mockResolvedValue();
+	const replaceContents = vi.fn().mockImplementation(() => Promise.resolve());
 	const engine = createMockEngine({
 		getContentsAsString: () => '<p>saved</p>',
 		replaceContents,
@@ -191,7 +192,7 @@ test('ソースモードを抜けるとtextareaの内容がreplaceContentsでコ
 });
 
 test('textareaのblurで編集内容がコンテンツにコミットされる', async () => {
-	const replaceContents = vi.fn().mockResolvedValue();
+	const replaceContents = vi.fn().mockImplementation(() => Promise.resolve());
 	const engine = createMockEngine({
 		getContentsAsString: () => '<p>saved</p>',
 		replaceContents,
