@@ -1,6 +1,8 @@
+import type { BlockOp } from '../block/types.js';
 import type { BurgerEditorView } from '../types.js';
+import type { MockInstance } from 'vitest';
 
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { BurgerBlock } from '../block/block.js';
 import { Item } from '../item/item.js';
@@ -417,5 +419,257 @@ describe('applyLiveBlockOp — container inside an iframe (cross-realm)', () => 
 			{ highlight: false },
 		);
 		expect(result.touched && textOf(result.touched)).toBe('updated');
+	});
+});
+
+/**
+ * Count `bge:saved` dispatches on the engine element for the lifetime of the
+ * returned counter — the same event `onUpdated` and the Agent Hub echo
+ * suppression listen to.
+ * @param target
+ */
+function countSaved(target: BurgerEditorEngine): { readonly count: () => number } {
+	let n = 0;
+	target.el.addEventListener('bge:saved', () => {
+		n++;
+	});
+	return { count: () => n };
+}
+
+const SAVE_ONCE_OPS: readonly [string, BlockOp][] = [
+	['insert', { op: 'insert', index: 1, blockHtml: blockHtml('new') }],
+	['replace', { op: 'replace', index: 1, blockHtml: blockHtml('replaced') }],
+	['delete', { op: 'delete', index: 1 }],
+	['move', { op: 'move', from: 0, to: 2 }],
+	['duplicate', { op: 'duplicate', index: 1 }],
+	[
+		'update-item',
+		{ op: 'update-item', index: 0, itemIndex: 0, data: { wysiwyg: '<p>u</p>' } },
+	],
+	['set-id', { op: 'set-id', index: 0, id: 'bge-9' }],
+];
+
+describe('applyLiveBlockOp — dispatches exactly one bge:saved per applied op', () => {
+	test.each(SAVE_ONCE_OPS)('%s', async (_name, op) => {
+		const saved = countSaved(engine);
+		await applyLiveBlockOp(engine, engine.content, op, { highlight: false });
+		expect(saved.count()).toBe(1);
+	});
+});
+
+describe('applyLiveBlockOp — highlight option', () => {
+	let highlightSpy: MockInstance<BurgerBlock['highlight']>;
+
+	beforeEach(() => {
+		highlightSpy = vi
+			.spyOn(BurgerBlock.prototype, 'highlight')
+			.mockImplementation(() => Promise.resolve());
+	});
+
+	afterEach(() => {
+		highlightSpy.mockRestore();
+	});
+
+	test('defaults to true: replace with no options object highlights the block at the target index exactly once', async () => {
+		const target = listLiveBlocks(engine.content)[1]!;
+		await applyLiveBlockOp(engine, engine.content, {
+			op: 'replace',
+			index: 1,
+			blockHtml: blockHtml('replaced'),
+		});
+		expect(highlightSpy).toHaveBeenCalledTimes(1);
+		expect(highlightSpy.mock.instances[0]).toBe(target);
+	});
+
+	test('{ highlight: false } never calls highlight()', async () => {
+		await applyLiveBlockOp(
+			engine,
+			engine.content,
+			{ op: 'replace', index: 1, blockHtml: blockHtml('replaced') },
+			{ highlight: false },
+		);
+		expect(highlightSpy).toHaveBeenCalledTimes(0);
+	});
+
+	test('insert highlights the adjacent block the new block lands before (index 1 → block b)', async () => {
+		const adjacent = listLiveBlocks(engine.content)[1]!;
+		await applyLiveBlockOp(engine, engine.content, {
+			op: 'insert',
+			index: 1,
+			blockHtml: blockHtml('new'),
+		});
+		expect(highlightSpy).toHaveBeenCalledTimes(1);
+		expect(highlightSpy.mock.instances[0]).toBe(adjacent);
+	});
+
+	test('insert past the end highlights the last block (the one the new block lands after)', async () => {
+		const last = listLiveBlocks(engine.content)[2]!;
+		await applyLiveBlockOp(engine, engine.content, {
+			op: 'insert',
+			index: 999,
+			blockHtml: blockHtml('new'),
+		});
+		expect(highlightSpy).toHaveBeenCalledTimes(1);
+		expect(highlightSpy.mock.instances[0]).toBe(last);
+	});
+
+	test('move highlights blocks[from], not blocks[to]', async () => {
+		const from = listLiveBlocks(engine.content)[0]!;
+		await applyLiveBlockOp(engine, engine.content, { op: 'move', from: 0, to: 2 });
+		expect(highlightSpy).toHaveBeenCalledTimes(1);
+		expect(highlightSpy.mock.instances[0]).toBe(from);
+	});
+});
+
+describe('applyLiveBlockOp — onBeforeMutate', () => {
+	let highlightSpy: MockInstance<BurgerBlock['highlight']>;
+
+	afterEach(() => {
+		highlightSpy?.mockRestore();
+	});
+
+	test('is invoked exactly once, after highlight() resolved and before the DOM changes, and bge:saved follows it', async () => {
+		const order: string[] = [];
+		let resolveHighlight!: () => void;
+		const pending = new Promise<void>((resolve) => {
+			resolveHighlight = resolve;
+		});
+		highlightSpy = vi.spyOn(BurgerBlock.prototype, 'highlight').mockImplementation(() => {
+			order.push('highlight');
+			return pending;
+		});
+		engine.el.addEventListener('bge:saved', () => {
+			order.push('saved');
+		});
+
+		let countInsideCallback = -1;
+		let textsInsideCallback: string[] = [];
+		const onBeforeMutate = vi.fn(() => {
+			order.push('onBeforeMutate');
+			const blocks = listLiveBlocks(engine.content);
+			countInsideCallback = blocks.length;
+			textsInsideCallback = blocks.map((b) => textOf(b));
+		});
+
+		const applied = applyLiveBlockOp(
+			engine,
+			engine.content,
+			{ op: 'delete', index: 1 },
+			{ onBeforeMutate },
+		);
+
+		// Let the microtask queue drain: highlight is awaited, so nothing past
+		// it may have run yet.
+		await Promise.resolve();
+		await Promise.resolve();
+		expect(highlightSpy).toHaveBeenCalledTimes(1);
+		expect(onBeforeMutate).toHaveBeenCalledTimes(0);
+		expect(listLiveBlocks(engine.content).map((b) => textOf(b))).toEqual(['a', 'b', 'c']);
+
+		resolveHighlight();
+		await applied;
+
+		expect(onBeforeMutate).toHaveBeenCalledTimes(1);
+		expect(countInsideCallback).toBe(3);
+		expect(textsInsideCallback).toEqual(['a', 'b', 'c']);
+		expect(listLiveBlocks(engine.content).map((b) => textOf(b))).toEqual(['a', 'c']);
+		expect(order).toEqual(['highlight', 'onBeforeMutate', 'saved']);
+	});
+
+	test('is still invoked exactly once when highlight is disabled', async () => {
+		const onBeforeMutate = vi.fn();
+		await applyLiveBlockOp(
+			engine,
+			engine.content,
+			{ op: 'set-id', index: 0, id: 'bge-1' },
+			{ highlight: false, onBeforeMutate },
+		);
+		expect(onBeforeMutate).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe('BurgerEditorEngine live-block methods', () => {
+	test('getLiveBlocks() returns the very same instances as listLiveBlocks(engine.content)', () => {
+		const viaEngine = engine.getLiveBlocks();
+		const viaFunction = listLiveBlocks(engine.content);
+		expect(viaEngine.length).toBe(3);
+		expect(viaEngine[0]).toBe(viaFunction[0]);
+		expect(viaEngine[1]).toBe(viaFunction[1]);
+		expect(viaEngine[2]).toBe(viaFunction[2]);
+	});
+
+	test('getLiveBlockIndex() returns the DOM position of a live block', () => {
+		const blocks = engine.getLiveBlocks();
+		expect(engine.getLiveBlockIndex(blocks[0]!)).toBe(0);
+		expect(engine.getLiveBlockIndex(blocks[2]!)).toBe(2);
+	});
+
+	test('getLiveBlockIndex() returns -1 for a block that was detached from the area', async () => {
+		const detached = engine.getLiveBlocks()[1]!;
+		await engine.applyLiveBlockOp({ op: 'delete', index: 1 }, { highlight: false });
+		expect(engine.getLiveBlockIndex(detached)).toBe(-1);
+	});
+
+	test('applyLiveBlockOp() delete removes the block and reports touched: null', async () => {
+		const result = await engine.applyLiveBlockOp(
+			{ op: 'delete', index: 1 },
+			{ highlight: false },
+		);
+		expect(result.touched).toBeNull();
+		expect(engine.getLiveBlocks().map((b) => textOf(b))).toEqual(['a', 'c']);
+	});
+});
+
+const OUT_OF_RANGE_OPS: readonly [string, BlockOp, string][] = [
+	[
+		'replace (index 99)',
+		{ op: 'replace', index: 99, blockHtml: blockHtml('x') },
+		'Block index 99 out of range (length=3)',
+	],
+	[
+		'delete (index 3)',
+		{ op: 'delete', index: 3 },
+		'Block index 3 out of range (length=3)',
+	],
+	[
+		'delete (index -1)',
+		{ op: 'delete', index: -1 },
+		'Block index -1 out of range (length=3)',
+	],
+	[
+		'move (from 5)',
+		{ op: 'move', from: 5, to: 0 },
+		'Block index 5 out of range (length=3)',
+	],
+	[
+		'duplicate (index 3)',
+		{ op: 'duplicate', index: 3 },
+		'Block index 3 out of range (length=3)',
+	],
+	[
+		'update-item (block index 7)',
+		{ op: 'update-item', index: 7, itemIndex: 0, data: {} },
+		'Block index 7 out of range (length=3)',
+	],
+	[
+		'update-item (item index 99)',
+		{ op: 'update-item', index: 0, itemIndex: 99, data: {} },
+		'Item index 99 out of range for block 0 (length=1)',
+	],
+	[
+		'set-id (index 3)',
+		{ op: 'set-id', index: 3, id: 'x' },
+		'Block index 3 out of range (length=3)',
+	],
+];
+
+describe('applyLiveBlockOp — RangeError for out-of-range indices', () => {
+	test.each(OUT_OF_RANGE_OPS)('%s', async (_name, op, message) => {
+		const saved = countSaved(engine);
+		const promise = applyLiveBlockOp(engine, engine.content, op, { highlight: false });
+		await expect(promise).rejects.toThrow(RangeError);
+		await expect(promise).rejects.toThrow(message);
+		expect(saved.count()).toBe(0);
+		expect(listLiveBlocks(engine.content).map((b) => textOf(b))).toEqual(['a', 'b', 'c']);
 	});
 });

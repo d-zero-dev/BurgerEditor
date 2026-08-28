@@ -170,6 +170,14 @@ function resolveHighlightTarget(
 export interface ApplyLiveBlockOpOptions {
 	/** Highlight the affected block before applying the op. Defaults to `true`. */
 	readonly highlight?: boolean;
+	/**
+	 * Invoked synchronously right before the DOM is mutated — i.e. after the
+	 * (possibly seconds-long) highlight animation has finished. A caller that
+	 * needs to suppress the `bge:saved` echo this op will trigger should arm
+	 * that suppression here rather than before calling `applyLiveBlockOp`,
+	 * or a human save landing during the highlight would be swallowed instead.
+	 */
+	readonly onBeforeMutate?: () => void;
 }
 
 export interface ApplyLiveBlockOpResult {
@@ -197,13 +205,14 @@ export async function applyLiveBlockOp(
 	op: BlockOp,
 	options: ApplyLiveBlockOpOptions = {},
 ): Promise<ApplyLiveBlockOpResult> {
-	const { highlight = true } = options;
+	const { highlight = true, onBeforeMutate } = options;
 	if (highlight) {
 		const highlightTarget = resolveHighlightTarget(listLiveBlocks(content), op);
 		if (highlightTarget) {
 			await highlightTarget.highlight();
 		}
 	}
+	onBeforeMutate?.();
 
 	switch (op.op) {
 		case 'insert': {

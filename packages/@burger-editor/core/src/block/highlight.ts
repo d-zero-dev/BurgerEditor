@@ -1,3 +1,13 @@
+/**
+ * Which parts of `highlightElement`'s attention cue to run. Both default to
+ * `true`; a caller that has already scrolled (or that highlights many blocks
+ * in a row and only wants one scroll) opts out per part rather than
+ * re-implementing the blink.
+ * @example
+ * ```ts
+ * await highlightElement(el, { scroll: false }); // blink in place
+ * ```
+ */
 export interface HighlightOptions {
 	readonly scroll?: boolean;
 	readonly blink?: boolean;
@@ -41,7 +51,7 @@ export async function highlightElement(
 }
 
 /**
- * @param el
+ * Whether the viewer asked their OS for reduced motion.
  */
 function prefersReducedMotion(): boolean {
 	return (

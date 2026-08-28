@@ -36,6 +36,10 @@ export type CreateItemElement = (
  * without core depending on cli. `blockHtml` is pre-rendered HTML (from a
  * disk-side catalog lookup); this vocabulary never resolves a catalog
  * entry itself.
+ * @example
+ * ```ts
+ * const op: BlockOp = { op: 'move', from: 0, to: 2 }; // [A,B,C,D] -> [B,C,A,D]
+ * ```
  */
 export type BlockOp =
 	| { readonly op: 'insert'; readonly index: number; readonly blockHtml: string }
