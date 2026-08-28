@@ -164,7 +164,7 @@ graph TD
   1. **JSON-only stdout** — 成功時は単一 JSON 行のみ。ユーザー設定の `dotenv` バナー等は stderr にリダイレクトされ、最終 JSON は drain callback で確実に flush される
   2. **3-way spec input** — `--spec`（インライン）/ `--spec-file`（ファイル）/ stdin の優先順で受け取り。シェルクォート地獄を回避
   3. **atomic 操作** — `page-create` は `fs.writeFile(... flag: 'wx')` で原子的に reserve、`page-rename` は rename 失敗時に作成済みディレクトリを巻き戻す
-  4. **ハンドラの再利用** — `src/handlers.ts` の各関数は `mcp-server` の v4 ツールがそのままラップして公開する
+  4. **ツール定義の一本化** — AI エージェント向けツールは `src/agent-tools/tools/*.ts` に 1 ツール 1 定義（`agentTools` 配列）。`mcp-server` と `local` の Agent Hub は同じ配列を登録するだけ
 - **詳細ドキュメント**: [`packages/@burger-editor/cli/README.md`](packages/@burger-editor/cli/README.md)
 
 **`@burger-editor/inspector`**
@@ -239,7 +239,7 @@ graph TD
 **`@burger-editor/mcp-server`**
 
 - MCP (Model Context Protocol) サーバー実装
-- 依存関係: core, legacy, migrator, utils
+- 依存関係: cli, core, legacy, migrator, utils
 - 責任: AIアシスタント（Claude等）にBurgerEditor機能を提供
 - 機能:
   - v3 ツール 3 個（`create_block_v3` / `get_block_data_params_v3` / `get_block_type`）— v3 プロジェクト互換
@@ -350,6 +350,15 @@ core（uiState ストア + view port 定義） ← client（React 実装を注�
 **アイテムエディタ契約:**
 
 各アイテムは `createItem()` に `Editor`（型付き React コンポーネント）と純関数 `toEditorState` / `toItemData` を渡します。旧来の `editor.html` 文字列テンプレートと命令的ライフサイクルフック（`beforeOpen`/`open`/`beforeChange`/`onSubmit`）は廃止されました。コンテンツ出力側（`template.html` + frozen-patty の `data-bge` バインディング）は従来どおりで、React には依存しません。
+
+### 6. 不変条件と否定的知識
+
+「なぜそう書いてはいけないか」が実装から読み取りにくい制約。詳細な WHY は各リンク先の JSDoc に置く。
+
+- **`local` のブラウザバンドルには core が 2 コピー存在する** — `@burger-editor/client` の dist に inline されたものと、`@burger-editor/core` から直接 import されたもの。`BurgerBlock` / `Item` のレジストリは static な WeakMap（モジュールレベル状態）なので、片方のコピーの自由関数や `BurgerBlock.getBlock` からはもう片方が登録したブロックが見えない。ブラウザ側コードはライブブロックに対して必ずエンジンの**メソッド**（`engine.getLiveBlocks()` / `engine.applyLiveBlockOp()`）を呼び、core の自由関数を import しない。→ [`core/src/engine/engine.ts`](packages/@burger-editor/core/src/engine/engine.ts)、[`local/src/client/engine-adapter.ts`](packages/@burger-editor/local/src/client/engine-adapter.ts)
+- **`local` のブラウザ側コードは `@burger-editor/cli` を `@burger-editor/cli/block-op` サブパス経由でしか import しない** — main entry は `handlers.ts` を再 export しており `node:fs` / `node:crypto` を引き込むため、`vite build` のブラウザバンドルを壊す。`./block-op` は core と zod にしか依存しない。→ [`local/src/protocol/ws-messages.ts`](packages/@burger-editor/local/src/protocol/ws-messages.ts)
+- **`BlockOp` 型の所有者は core** — [`core/src/block/types.ts`](packages/@burger-editor/core/src/block/types.ts) が定義し、`cli` の zod `blockOpSchema`（[`cli/src/agent-tools/block-op.ts`](packages/@burger-editor/cli/src/agent-tools/block-op.ts)）はそれを検証するだけ。core は cli に依存してはならない（依存方向は Platform → Core の一方向）
+- **`readToken` は署名されておらず、セキュリティ境界ではない** — 「読んでから書く」を**手順**として強制するための内容ハッシュ束縛トークンであり、偽造耐性は意図的に持たない。パスに関するセキュリティ境界は `resolvePathInput` の documentRoot 封じ込め（`PathOutsideDocumentRootError`）にある。→ [`cli/src/agent-tools/read-token.ts`](packages/@burger-editor/cli/src/agent-tools/read-token.ts)、[`file-io/src/path-input.ts`](packages/@burger-editor/file-io/src/path-input.ts)
 
 ## テストアーキテクチャ
 

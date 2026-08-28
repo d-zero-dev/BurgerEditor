@@ -156,7 +156,10 @@ export default defineConfig({
 				extends: './packages/@burger-editor/local/vite.config.ts',
 				test: {
 					name: 'local/client',
-					include: ['packages/@burger-editor/local/src/client/**/*.spec.{ts,tsx}'],
+					include: [
+						'packages/@burger-editor/local/src/client/**/*.spec.{ts,tsx}',
+						'!packages/@burger-editor/local/src/client/**/*.browser.spec.ts',
+					],
 					...jsdomConfig,
 				},
 				resolve: {
@@ -169,6 +172,30 @@ export default defineConfig({
 					},
 				},
 				plugins: [cssAsRaw()],
+			},
+			{
+				// Agent Hub のブラウザ側（agent-link + engine-adapter）を本物の
+				// BurgerEditorEngine と組み合わせて実ブラウザで検証する
+				test: {
+					name: 'local/client-browser',
+					include: ['packages/@burger-editor/local/src/client/**/*.browser.spec.ts'],
+					browser: {
+						enabled: true,
+						provider: playwright(),
+						instances: [{ browser: 'chromium' }],
+						headless: true,
+						viewport: { width: 1280, height: 720 },
+						screenshotFailures: false,
+					},
+				},
+				resolve: {
+					alias: {
+						// ビルド済み dist に依存せず core のソースをそのまま読む
+						'@burger-editor/core': path.resolve(
+							'./packages/@burger-editor/core/src/index.ts',
+						),
+					},
+				},
 			},
 			{
 				test: {

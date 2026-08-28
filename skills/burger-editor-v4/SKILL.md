@@ -64,40 +64,40 @@ npx @burger-editor/cli <subcommand>
 
 CLI（kebab-case）と MCP ツール（snake_case）は **同じ機能の表記違い** です。同じ行同士が同一機能。「readToken」列が✓のツールは前節の契約が適用されます。
 
-| CLI（`npx @burger-editor/cli ...`）           | MCP ツール               | readToken | 種別                                                                 |
-| --------------------------------------------- | ------------------------ | :-------: | -------------------------------------------------------------------- |
-| `page-list`                                   | `page_list`              |           | 読み — `invalidPages` も返す                                         |
-| `page-get <path>`                             | `page_get`               |           | 読み — 生コンテンツ + Front Matter                                   |
-| `page-blocks <path>`                          | `page_blocks`            |     ✓     | 読み — 2 段プロトコル（後述）                                        |
-| `page-create <path>`                          | `page_create`            |           | 書き — atomic、初期ブロック可                                        |
-| `page-delete <path>`                          | `page_delete`            |     ✓     | 書き                                                                 |
-| `page-rename <from> <to>`                     | `page_rename`            |     ✓     | 書き — 宛先が既存なら `exists`                                       |
-| `page-copy <from> <to>`                       | `page_copy`              |     ✓     | 書き — 宛先が既存なら `exists`                                       |
-| `page-concat <target> <source...>`            | `page_concat`            |     ✓     | 書き — source は 1 つ以上必須。`to` は無ければ新規作成               |
-| `front-matter-get <path>`                     | `front_matter_get`       |           | 読み                                                                 |
-| `front-matter-set <path>`                     | `front_matter_set`       |     ✓     | 書き — `--replace` で全置換                                          |
-| `block-get <path> <index>`                    | `block_get`              |     ✓     | 読み — `target: {index}` または `{id}`                               |
-| `block-insert <path> <atIndex>`               | `block_insert`           |     ✓     | 書き — `--dry-run` 可                                                |
-| `block-replace <path> <index>`                | `block_replace`          |     ✓     | 書き — `--dry-run` 可                                                |
-| `block-delete <path> <index>`                 | `block_delete`           |     ✓     | 書き — `--dry-run` 可                                                |
-| `block-move <path> <from> <to>`               | `block_move`             |     ✓     | 書き — `--dry-run` 可 / `to` は最終配列 index                        |
-| `block-duplicate <path> <index>`              | `block_duplicate`        |     ✓     | 書き — 直後に複製を挿入（id なし）。`--dry-run` 可                   |
-| `block-ensure-id <path> <index>`              | `block_ensure_id`        |     ✓     | 書き — id 未設定のブロックに `bge-<n>` を付与（idempotent）          |
-| `item-update <path> <blockIndex> <itemIndex>` | `item_update`            |     ✓     | 書き — アイテム 1 個のデータをマージ。`--dry-run` 可                 |
-| （CLI 単独）                                  | `page_update`            |     ✓     | 書き — `ops: BlockOp[]` バッチ。`--dry-run` 可（後述の注意点を参照） |
-| `catalog-list`                                | `catalog_list`           |           | 読み                                                                 |
-| `catalog-get <name>`                          | `catalog_get`            |           | 読み — `template` 付き（spec として直渡し可）                        |
-| `item-list`                                   | `item_list`              |           | 読み                                                                 |
-| `item-schema <name>`                          | `item_schema`            |           | 読み — `dataKeys: [camelCase, ...]` 付き                             |
-| `style-options-list`                          | `style_options_list`     |           | 読み                                                                 |
-| `container-options-list`                      | `container_options_list` |           | 読み                                                                 |
-| `config-resolve`                              | `config_resolve`         |           | 読み                                                                 |
-| （CLI 単独）                                  | `editor_state_get`       |           | 読み — ローカル開発サーバー起動時のみ意味を持つ（未起動時は空配列）  |
-| （CLI 単独）                                  | `editor_wait_for_event`  |           | 読み — ローカル開発サーバー必須。未起動時は `local-required` エラー  |
+| CLI（`npx @burger-editor/cli ...`）           | MCP ツール               | readToken | 種別                                                                   |
+| --------------------------------------------- | ------------------------ | :-------: | ---------------------------------------------------------------------- |
+| `page-list`                                   | `page_list`              |           | 読み — `invalidPages` も返す                                           |
+| `page-get <path>`                             | `page_get`               |           | 読み — 生コンテンツ + Front Matter                                     |
+| `page-blocks <path>`                          | `page_blocks`            |     ✓     | 読み — 2 段プロトコル（後述）。CLI は 2 段を内部で完結させて一覧を返す |
+| `page-create <path>`                          | `page_create`            |           | 書き — atomic、初期ブロック可                                          |
+| `page-delete <path>`                          | `page_delete`            |     ✓     | 書き                                                                   |
+| `page-rename <from> <to>`                     | `page_rename`            |     ✓     | 書き — 宛先が既存なら `exists`                                         |
+| `page-copy <from> <to>`                       | `page_copy`              |     ✓     | 書き — 宛先が既存なら `exists`                                         |
+| `page-concat <target> <source...>`            | `page_concat`            |     ✓     | 書き — source は 1 つ以上必須。`to` は無ければ新規作成                 |
+| `front-matter-get <path>`                     | `front_matter_get`       |           | 読み                                                                   |
+| `front-matter-set <path>`                     | `front_matter_set`       |     ✓     | 書き — `--replace` で全置換                                            |
+| `block-get <path> <index>`                    | `block_get`              |     ✓     | 読み — `target: {index}` または `{id}`                                 |
+| `block-insert <path> <atIndex>`               | `block_insert`           |     ✓     | 書き — `--dry-run` 可                                                  |
+| `block-replace <path> <index>`                | `block_replace`          |     ✓     | 書き — `--dry-run` 可                                                  |
+| `block-delete <path> <index>`                 | `block_delete`           |     ✓     | 書き — `--dry-run` 可                                                  |
+| `block-move <path> <from> <to>`               | `block_move`             |     ✓     | 書き — `--dry-run` 可 / `to` は最終配列 index                          |
+| `block-duplicate <path> <index>`              | `block_duplicate`        |     ✓     | 書き — 直後に複製を挿入（id なし）。`--dry-run` 可                     |
+| `block-ensure-id <path> <index>`              | `block_ensure_id`        |     ✓     | 書き — id 未設定のブロックに `bge-<n>` を付与（idempotent）            |
+| `item-update <path> <blockIndex> <itemIndex>` | `item_update`            |     ✓     | 書き — アイテム 1 個のデータをマージ。`--dry-run` 可                   |
+| （CLI なし）                                  | `page_update`            |     ✓     | 書き — `ops: BlockOp[]` バッチ。`dryRun` 可（後述の注意点を参照）      |
+| `catalog-list`                                | `catalog_list`           |           | 読み                                                                   |
+| `catalog-get <name>`                          | `catalog_get`            |           | 読み — `template` 付き（spec として直渡し可）                          |
+| `item-list`                                   | `item_list`              |           | 読み                                                                   |
+| `item-schema <name>`                          | `item_schema`            |           | 読み — `dataKeys: [camelCase, ...]` 付き                               |
+| `style-options-list`                          | `style_options_list`     |           | 読み                                                                   |
+| `container-options-list`                      | `container_options_list` |           | 読み                                                                   |
+| `config-resolve`                              | `config_resolve`         |           | 読み                                                                   |
+| （CLI なし）                                  | `editor_state_get`       |           | 読み — ローカル開発サーバー起動時のみ意味を持つ（未起動時は空配列）    |
+| （CLI なし）                                  | `editor_wait_for_event`  |           | 読み — ローカル開発サーバー必須。未起動時は `local-required` エラー    |
 
 ## ブロックの特定 — `page_blocks`（2 段プロトコル）
 
-`block_list` は廃止されました。ブロック一覧の取得は `page_blocks` を **2 回** 呼びます。
+ブロック一覧の取得は `page_blocks` を **2 回** 呼びます。
 
 ```
 // 1 回目: readToken を付けずに呼ぶ
@@ -116,7 +116,7 @@ page_blocks { path: "<page>", readToken: "<1回目のreadToken>" }
 
 ## dry-run（書き込み系のプレビュー）
 
-`block_insert` / `block_replace` / `block_delete` / `block_move` / `block_duplicate` / `item_update` / `page_update`（CLI / MCP 双方）は `--dry-run` / `dryRun: true` を受け付けます。書き込みを行わず、`diff: { before, after }` を返します。`block_*` / `item_update` は変更前後の該当ブロック HTML（`insert` は `before: null`、`delete` は `after: null`）、`page_update` は複数ブロックにまたがりうるため変更前後の**編集可能領域全体**の HTML です。CI でのレビュー、差分プレビューに使ってください。
+`block_insert` / `block_replace` / `block_delete` / `block_move` / `block_duplicate` / `item_update` / `page_update` は `dryRun: true`（MCP）/ `--dry-run`（CLI、`page_update` を除く）を受け付けます。MCP では書き込みを行わず `diff: { before, after }` を返します（CLI は `previewContent` に書き込まれるはずの編集可能領域 HTML を返します）。`block_*` / `item_update` は変更前後の該当ブロック HTML（`insert` は `before: null`、`delete` は `after: null`）、`page_update` は複数ブロックにまたがりうるため変更前後の**編集可能領域全体**の HTML です。CI でのレビュー、差分プレビューに使ってください。
 
 ```jsonc
 // block_replace dryRun の例
@@ -130,7 +130,7 @@ page_blocks { path: "<page>", readToken: "<1回目のreadToken>" }
 
 dryRun は必須の事前確認ではありません。中立なツールとして「見せたいときだけ」使ってください。副作用なし — 対象ページが存在しないと `Cannot dry-run mutation on a non-existent page` エラーを返します。
 
-`page_update` の `ops` は各要素が `{ op: 'insert'|'replace', index, blockHtml }` のように **レンダリング済み HTML 文字列** を要求します（`block_insert` 等の `spec` とは異なる、低レベルな形）。すでにレンダリング済みの HTML を持っている場合（`block_get` の戻り値の再利用、`dryRun` の `diff.after` 等）以外は、個別の `block_*` ツールを順番に呼ぶ方が単純です。失敗した op があれば、そこまでの変更は**一切ディスクへ書き込まれません**（全 op 成功時のみ 1 回で保存する all-or-nothing）。
+`page_update` の `ops` は各要素が `{ op: 'insert'|'replace', index, blockHtml }` のように **レンダリング済み HTML 文字列** を要求します（`block_insert` 等の `spec` とは異なる、低レベルな形）。すでにレンダリング済みの HTML を持っている場合（`block_get` の戻り値の再利用、`dryRun` の `diff.after` 等）以外は、個別の `block_*` ツールを順番に呼ぶ方が単純です。失敗した op があれば、そこまでの変更は**一切ディスクへ書き込まれません**（全 op 成功時のみ 1 回で保存する all-or-nothing）。失敗時のエラー `message` は `page_update op N (<op>) failed: … page_update is all-or-nothing — nothing from this call was persisted.` の形で、`N` が失敗した op の位置（0 始まり）です。
 
 ## invalidPages（壊れた / 移行待ちページ）
 

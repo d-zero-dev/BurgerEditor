@@ -36,6 +36,9 @@
 		"nack",
 		"nacked",
 		"nacking",
-		"nacks"
+		"nacks",
+
+		// Vitest API (vi.unstubAllGlobals)
+		"unstub"
 	]
 }

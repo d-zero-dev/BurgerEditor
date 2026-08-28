@@ -87,7 +87,7 @@ page_update {
 
 - `ops` は順次適用される。`delete` や `insert` を挟むと **以降の index は変化** する。ユーザーが「2 つ削除して 1 つ足す」と言ったとき、後段の index を再計算するか、より単純な順序に並べ替える
 - `ops` の `insert` / `replace` は **レンダリング済み HTML 文字列**（`blockHtml`）を要求する、`spec` とは別の低レベルな形。すでに HTML を持っている場合（`block_get` の戻り値の再利用等）以外は、`block_insert` / `block_replace` を個別に順番に呼ぶ方が単純
-- 途中の op が失敗すると **それまでの変更は一切ディスクへ書き込まれない**（全 op 成功して初めて 1 回で保存される all-or-nothing）。`failedAt` で失敗した op の位置がわかる
+- 途中の op が失敗すると **それまでの変更は一切ディスクへ書き込まれない**（全 op 成功して初めて 1 回で保存される all-or-nothing）。失敗は `page_update op N (<op>) failed: … page_update is all-or-nothing — nothing from this call was persisted.` という `message` を持つエラーとして返り、`N`（0 始まり）が失敗した op の位置
 
 **move の意味**：`block_move { target, to }` の `to` は **移動後の最終配列における index**（Array.prototype.splice と同じ慣用）。例：`[A,B,C,D]` で `move({index:0}, 2)` は `[B,C,A,D]` になり A は最終 index 2 に着地する。「現在 index 2 の要素（C）の手前に置く」と解釈してはいけない。
 
