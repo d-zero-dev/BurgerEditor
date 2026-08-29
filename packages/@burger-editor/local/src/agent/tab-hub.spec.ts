@@ -47,30 +47,43 @@ afterEach(() => {
 });
 
 describe('TabHub — hello / welcome', () => {
-	test('sends welcome when serverSession matches', () => {
+	test('sends welcome and returns "accepted" when serverSession matches', () => {
 		const hub = new TabHub({ serverSession: 'srv-1' });
 		const { socket, sent } = fakeSocket();
 		const id = hub.register(socket);
-		hub.hello(id, {
+		const outcome = hub.hello(id, {
 			page: '/a.html',
 			revision: 1,
 			serverSession: 'srv-1',
 			uiState: idleUiState(),
 		});
 		expect(sent).toEqual([{ type: 'welcome', sessionId: id, revision: 1 }]);
+		expect(outcome).toBe('accepted');
 	});
 
-	test('sends a server-restart reload instead of welcome when serverSession differs', () => {
+	test('sends a server-restart reload instead of welcome and returns "stale" when serverSession differs', () => {
 		const hub = new TabHub({ serverSession: 'srv-current' });
 		const { socket, sent } = fakeSocket();
 		const id = hub.register(socket);
-		hub.hello(id, {
+		const outcome = hub.hello(id, {
 			page: '/a.html',
 			revision: 3,
 			serverSession: 'srv-stale',
 			uiState: idleUiState(),
 		});
 		expect(sent).toEqual([{ type: 'reload', revision: 3, reason: 'server-restart' }]);
+		expect(outcome).toBe('stale');
+	});
+
+	test('ignores a hello for an unregistered sessionId and returns "unknown"', () => {
+		const hub = new TabHub({ serverSession: 'srv-1' });
+		const outcome = hub.hello('ghost', {
+			page: '/a.html',
+			revision: 1,
+			serverSession: 'srv-1',
+			uiState: idleUiState(),
+		});
+		expect(outcome).toBe('unknown');
 	});
 });
 
@@ -308,5 +321,42 @@ describe('TabHub — reload broadcast', () => {
 			{ type: 'welcome', sessionId: idB, revision: 1 },
 			{ type: 'reload', revision: 2, reason: 'other-tab' },
 		]);
+	});
+});
+
+describe('TabHub — pingAll', () => {
+	test('returns an empty array when every socket accepts the ping', () => {
+		const hub = new TabHub({ serverSession: 's' });
+		const { socket } = fakeSocket();
+		const id = hub.register(socket);
+		hub.hello(id, {
+			page: '/a.html',
+			revision: 1,
+			serverSession: 's',
+			uiState: idleUiState(),
+		});
+
+		expect(hub.pingAll()).toEqual([]);
+		expect(hub.get(id)).not.toBeUndefined();
+	});
+
+	test('disconnects a socket that throws and returns its pre-disconnect snapshot', () => {
+		const hub = new TabHub({ serverSession: 's' });
+		const socket = { send: vi.fn(() => {}), close: vi.fn() };
+		const id = hub.register(socket);
+		hub.hello(id, {
+			page: '/a.html',
+			revision: 1,
+			serverSession: 's',
+			uiState: idleUiState(),
+		});
+		socket.send.mockImplementation(() => {
+			throw new Error('socket closed');
+		});
+
+		const disconnected = hub.pingAll();
+
+		expect(disconnected).toEqual([expect.objectContaining({ id, page: '/a.html' })]);
+		expect(hub.get(id)).toBeUndefined();
 	});
 });

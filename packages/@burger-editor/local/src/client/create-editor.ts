@@ -22,6 +22,8 @@ import { normalizeLogicalPath } from '../helpers/normalize-logical-path.js';
 
 import { createAgentLink, type AgentLink } from './agent-link.js';
 import { createEngineAdapter } from './engine-adapter.js';
+import { hydrateNavTree } from './nav-tree.js';
+import { pageGoneBannerFor, showPageGoneBanner } from './page-event-banner.js';
 import { saveContentRequest } from './save-content-request.js';
 import { createWsTransport } from './ws-transport.js';
 
@@ -293,6 +295,13 @@ export async function createEditor() {
 			transport,
 			page,
 			serverSession: serverSessionInput.value,
+			onPageEvent: (message) => {
+				void hydrateNavTree();
+				const banner = pageGoneBannerFor(message, page, config.indexFileName);
+				if (banner) {
+					showPageGoneBanner(banner);
+				}
+			},
 		});
 		engine.el.addEventListener('bge:server-online', () => transport.reconnectNow());
 	} else {

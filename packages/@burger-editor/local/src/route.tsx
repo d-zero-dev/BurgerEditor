@@ -286,7 +286,7 @@ export function setRoute(
 					},
 					onClose() {
 						if (sessionId) {
-							agentDeps.hub.tabHub.disconnect(sessionId);
+							agentDeps.hub.closeSession(sessionId);
 						}
 					},
 				};

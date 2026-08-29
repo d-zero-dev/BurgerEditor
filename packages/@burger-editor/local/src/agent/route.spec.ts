@@ -6,7 +6,7 @@ import path from 'node:path';
 import { computeContentHash, encodeReadToken } from '@burger-editor/cli';
 import { mkdtempDisposable } from '@d-zero/shared/mkdtemp-disposable';
 import { Hono } from 'hono';
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { setRoute } from '../route.js';
 
@@ -240,21 +240,98 @@ describe('POST /api/agent/invoke — every JSON response carries an ISO timestam
 });
 
 describe('POST /api/agent/invoke — editor_wait_for_event', () => {
-	test('is refused with 400 invalid and points the caller at editor_state_get', async () => {
+	test('times out with an empty event list when nothing happens', async () => {
 		const { app } = await buildApp(makeConfig(documentRoot));
 		const res = await postJson(app, '/api/agent/invoke', {
 			tool: 'editor_wait_for_event',
-			args: {},
+			args: { timeoutMs: 20 },
+		});
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as {
+			ok: boolean;
+			result: { events: unknown[]; timedOut: boolean; nextSince: number };
+		};
+		expect(body.ok).toBe(true);
+		expect(body.result).toEqual({
+			events: [],
+			nextSince: 0,
+			timedOut: true,
+			overflowed: false,
+		});
+	});
+
+	test('resolves immediately with an event already past `since`', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		hub.events.append('content-saved', { path: '/a.html' });
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'editor_wait_for_event',
+			args: { since: 0, timeoutMs: 1000 },
+		});
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as {
+			result: { events: { type: string }[]; timedOut: boolean };
+		};
+		expect(body.result.timedOut).toBe(false);
+		expect(body.result.events).toEqual([
+			expect.objectContaining({ type: 'content-saved' }),
+		]);
+	});
+
+	test('rejects an unknown `types` filter with 400', async () => {
+		const { app } = await buildApp(makeConfig(documentRoot));
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'editor_wait_for_event',
+			args: { types: ['not-a-real-type'] },
 		});
 		expect(res.status).toBe(400);
-		const body = (await res.json()) as {
-			error: string;
-			message: string;
-			timestamp: string;
-		};
+		const body = (await res.json()) as { error: string; message: string };
 		expect(body.error).toBe('invalid');
-		expect(body.message).toContain('editor_state_get');
-		expect(body.timestamp).toMatch(ISO_TIMESTAMP);
+		expect(body.message).toContain('not-a-real-type');
+	});
+});
+
+describe('GET /api/agent/events', () => {
+	test('times out with `timedOut: true` when nothing happens within timeoutMs', async () => {
+		const { app } = await buildApp(makeConfig(documentRoot));
+		const res = await req(app, '/api/agent/events?since=0&timeoutMs=20');
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { events: unknown[]; timedOut: boolean };
+		expect(body).toMatchObject({ events: [], timedOut: true, overflowed: false });
+	});
+
+	test('returns an event already past `since` immediately', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		hub.events.append('session-connected', { sessionId: 'x' });
+		const res = await req(app, '/api/agent/events?since=0&timeoutMs=1000');
+		const body = (await res.json()) as { events: { type: string }[]; timedOut: boolean };
+		expect(body.timedOut).toBe(false);
+		expect(body.events).toEqual([expect.objectContaining({ type: 'session-connected' })]);
+	});
+
+	test('clamps `timeoutMs` above 30000 to 30000', async () => {
+		vi.useFakeTimers();
+		try {
+			const { app } = await buildApp(makeConfig(documentRoot));
+			const pending = req(app, '/api/agent/events?since=0&timeoutMs=999999');
+			// If the clamp were NOT applied and 999999 reached `setTimeout`
+			// directly, advancing only 30s would not be enough to resolve this —
+			// the assertion below would then hang until the outer test timeout.
+			await vi.advanceTimersByTimeAsync(30_000);
+			const res = await pending;
+			expect(res.status).toBe(200);
+			const body = (await res.json()) as { timedOut: boolean };
+			expect(body.timedOut).toBe(true);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	test('rejects an unknown `types` filter with 400', async () => {
+		const { app } = await buildApp(makeConfig(documentRoot));
+		const res = await req(app, '/api/agent/events?types=bogus');
+		expect(res.status).toBe(400);
+		const body = (await res.json()) as { error: string };
+		expect(body.error).toBe('invalid');
 	});
 });
 
@@ -282,6 +359,33 @@ describe('POST /api/agent/invoke — no tab open', () => {
 		expect(res.status).toBe(400);
 		const body = (await res.json()) as { error: string };
 		expect(body.error).toBe('read-required');
+	});
+
+	test('appends a `content-saved` event', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const token = await readToken(app, '/a.html');
+		await postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 0 }, readToken: token },
+		});
+		const { events } = hub.events.since(0);
+		expect(events).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					type: 'content-saved',
+					payload: expect.objectContaining({ appliedTo: 'disk' }),
+				}),
+			]),
+		);
+	});
+
+	test('a read-only tool (page_blocks) does not append a `content-saved` event', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		await postJson(app, '/api/agent/invoke', {
+			tool: 'page_blocks',
+			args: { path: '/a.html' },
+		});
+		expect(hub.events.since(0).events).toEqual([]);
 	});
 
 	test('unknown tool name is a 404', async () => {
@@ -329,6 +433,18 @@ describe('POST /api/agent/invoke — front_matter_set always applies to disk', (
 		const body = (await res.json()) as { appliedTo: string };
 		expect(body.appliedTo).toBe('disk');
 		expect(sent.some((m) => (m as { type: string }).type === 'reload')).toBe(true);
+	});
+
+	test('appends a `front-matter-changed` event, not a generic `content-saved`', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const token = await readToken(app, '/a.html');
+		await postJson(app, '/api/agent/invoke', {
+			tool: 'front_matter_set',
+			args: { path: '/a.html', patch: { title: 'New Title' }, readToken: token },
+		});
+		const { events } = hub.events.since(0);
+		expect(events.some((e) => e.type === 'front-matter-changed')).toBe(true);
+		expect(events.some((e) => e.type === 'content-saved')).toBe(false);
 	});
 });
 
@@ -436,6 +552,7 @@ describe('POST /api/agent/invoke — with a tab open', () => {
 		expect(body.appliedTo).toBe('browser');
 		const written = await fs.readFile(path.join(documentRoot, 'a.html'), 'utf8');
 		expect(written).not.toContain('data-bge-name="text"');
+		expect(hub.events.since(0).events.some((e) => e.type === 'content-saved')).toBe(true);
 	});
 
 	test('rejects with stale when the readToken no longer matches disk content', async () => {
@@ -636,6 +753,9 @@ describe('POST /api/agent/invoke — with a tab open', () => {
 			{ type: 'welcome', sessionId, revision: 1 },
 			{ type: 'reload', revision: 1, reason: 'external-change' },
 		]);
+		expect(hub.events.since(0).events.some((e) => e.type === 'content-changed')).toBe(
+			true,
+		);
 
 		// The agent does what the error says: re-reads the page.
 		const reRead = await postJson(app, '/api/agent/invoke', {
@@ -744,6 +864,130 @@ describe('POST /api/agent/invoke — with a tab open', () => {
 				return msg.type === 'reload' && msg.reason === 'behind';
 			}),
 		).toBe(true);
+	});
+});
+
+describe('POST /api/agent/invoke — page_create', () => {
+	test('broadcasts a page-event and appends a page-created event, not content-saved', async () => {
+		// `page_create` writes `newFileContent` as the new page's starting
+		// content — it must actually contain `editableArea` (`.content`) or
+		// the create itself fails with `NoEditableAreaError`. Every other
+		// test in this file only exercises `page_create`'s failure paths, so
+		// `makeConfig`'s placeholder `newFileContent` was never exercised
+		// against a REAL create until now.
+		const config = {
+			...makeConfig(documentRoot),
+			newFileContent: '<div class="content"></div>',
+		};
+		const { app, hub } = await buildApp(config);
+		const sent: unknown[] = [];
+		const sessionId = hub.tabHub.register({
+			send: (data) => sent.push(JSON.parse(data)),
+			close: () => {},
+		});
+		hub.tabHub.hello(sessionId, {
+			page: '/b.html',
+			revision: 1,
+			serverSession: hub.serverSession,
+			uiState: {
+				openDialog: null,
+				sourceMode: false,
+				processing: false,
+				editingBlockIndex: null,
+			},
+		});
+
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'page_create',
+			args: { path: '/b.html' },
+		});
+		expect(res.status).toBe(200);
+		expect(sent).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ type: 'page-event', kind: 'created', to: '/b.html' }),
+			]),
+		);
+		const { events } = hub.events.since(0);
+		expect(events.some((e) => e.type === 'page-created')).toBe(true);
+		expect(events.some((e) => e.type === 'content-saved')).toBe(false);
+	});
+});
+
+describe('POST /api/agent/invoke — page_delete', () => {
+	test('broadcasts a page-event with `from` set to the deleted path', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const sent: unknown[] = [];
+		hub.tabHub.register({
+			send: (data) => sent.push(JSON.parse(data)),
+			close: () => {},
+		});
+		const token = await readToken(app, '/a.html');
+
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'page_delete',
+			args: { path: '/a.html', readToken: token },
+		});
+		expect(res.status).toBe(200);
+		expect(sent).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ type: 'page-event', kind: 'deleted', from: '/a.html' }),
+			]),
+		);
+	});
+});
+
+describe('POST /api/agent/invoke — page_rename', () => {
+	test('broadcasts a page-event with both `from` and `to`', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const sent: unknown[] = [];
+		hub.tabHub.register({
+			send: (data) => sent.push(JSON.parse(data)),
+			close: () => {},
+		});
+		const token = await readToken(app, '/a.html');
+
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'page_rename',
+			args: { from: '/a.html', to: '/renamed.html', readToken: token },
+		});
+		expect(res.status).toBe(200);
+		expect(sent).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					type: 'page-event',
+					kind: 'renamed',
+					from: '/a.html',
+					to: '/renamed.html',
+				}),
+			]),
+		);
+	});
+});
+
+describe('POST /api/agent/invoke — page_copy', () => {
+	test('broadcasts a page-event with `to` set to the copy destination', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const sent: unknown[] = [];
+		hub.tabHub.register({
+			send: (data) => sent.push(JSON.parse(data)),
+			close: () => {},
+		});
+		const token = await readToken(app, '/a.html');
+
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'page_copy',
+			args: { from: '/a.html', to: '/copy.html', readToken: token },
+		});
+		expect(res.status).toBe(200);
+		expect(sent).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					type: 'page-event',
+					kind: 'created',
+					to: '/copy.html',
+				}),
+			]),
+		);
 	});
 });
 

@@ -1,4 +1,5 @@
 import type { AgentAuth } from '../agent/auth.js';
+import type { FsWatcher } from '../agent/fs-watcher.js';
 import type { AgentHub } from '../agent/hub.js';
 import type { AgentRouteDeps } from '../route.js';
 import type { ServerType } from '@hono/node-server';
@@ -13,6 +14,7 @@ import { Hono } from 'hono';
 import open from 'open';
 
 import { createAgentAuth, loginUrl } from '../agent/auth.js';
+import { createFsWatcher } from '../agent/fs-watcher.js';
 import { createAgentHub } from '../agent/hub.js';
 import { log } from '../helpers/debug.js';
 import { getUserConfig } from '../model/get-user-config.js';
@@ -52,12 +54,22 @@ export async function runServerCommand(): Promise<void> {
 	let hub: AgentHub | undefined;
 	let auth: AgentAuth | undefined;
 	let injectWebSocket: ((server: ServerType) => void) | undefined;
+	let fsWatcher: FsWatcher | undefined;
 	if (userConfig.agent.enabled) {
 		hub = createAgentHub({ indexFileName: userConfig.indexFileName });
 		auth = await createAgentAuth(userConfig.host, configDir);
 		const ws = createNodeWebSocket({ app });
 		agentDeps = { hub, auth, upgradeWebSocket: ws.upgradeWebSocket };
 		injectWebSocket = ws.injectWebSocket;
+		// Only meaningful when a page's disk path IS its logical path — see
+		// `fs-watcher.ts`'s doc comment for why virtualTree-enabled sites stay
+		// on the existing per-invoke passive detection instead.
+		if (!userConfig.virtualTree.enabled) {
+			fsWatcher = createFsWatcher(userConfig.documentRoot, {
+				hub,
+				indexFileName: userConfig.indexFileName,
+			});
+		}
 	}
 
 	setRoute(app, userConfig, resolverState, agentDeps);
@@ -70,6 +82,7 @@ export async function runServerCommand(): Promise<void> {
 	injectWebSocket?.(server);
 
 	const shutdown = async () => {
+		fsWatcher?.dispose();
 		hub?.dispose();
 		if (auth?.tokenFilePath) {
 			await fs.unlink(auth.tokenFilePath).catch(() => {});
