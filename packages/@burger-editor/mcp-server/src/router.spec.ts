@@ -17,7 +17,11 @@ import {
 } from 'vitest';
 
 import { __resetV4ContextCache } from './context.js';
-import { __resetReachabilityCache, routeToolCall } from './router.js';
+import {
+	computeWaitForEventTimeoutMs,
+	__resetReachabilityCache,
+	routeToolCall,
+} from './router.js';
 
 const pageListTool = agentTools.find((t) => t.name === 'page_list')!;
 const pageCreateTool = agentTools.find((t) => t.name === 'page_create')!;
@@ -453,5 +457,52 @@ describe('routeToolCall — auto mode', () => {
 			},
 		);
 		expect(second.appliedTo).toBe('disk');
+	});
+
+	test('a local that never answers editor_wait_for_event resolves as a graceful timeout once the client-side abort margin elapses, instead of erroring', async () => {
+		fakeLocal = await startFakeLocal((req, res) => {
+			if (req.url === '/api/agent/status') {
+				res.writeHead(200, { 'content-type': 'application/json' });
+				res.end(JSON.stringify({ protocolVersion: 1 }));
+				return;
+			}
+			// Never call res.end(): the client-side abort must fire on its own.
+			// `local` is presumably still alive (just slower than the margin
+			// allows), so this must NOT surface as `local-unreachable` /
+			// `local-required` — that would make `auto` mode drop the
+			// reachability cache and fall back to disk for what is really just
+			// a slow long-poll.
+		});
+		const result = await routeToolCall(
+			editorWaitForEventTool,
+			{ since: 7, timeoutMs: 0 },
+			{ mode: 'local', localUrl: fakeLocal.url },
+		);
+		expect(result).toEqual({
+			result: { events: [], nextSince: 7, timedOut: true, overflowed: false },
+			appliedTo: 'disk',
+		});
+	}, 10_000);
+});
+
+describe('computeWaitForEventTimeoutMs', () => {
+	test('defaults to 10s plus the margin when timeoutMs is omitted', () => {
+		expect(computeWaitForEventTimeoutMs({})).toBe(10_000 + 5000);
+	});
+
+	test('adds the margin on top of a requested timeoutMs', () => {
+		expect(computeWaitForEventTimeoutMs({ timeoutMs: 2000 })).toBe(2000 + 5000);
+	});
+
+	test('clamps a requested timeoutMs above 30s to 30s before adding the margin', () => {
+		expect(computeWaitForEventTimeoutMs({ timeoutMs: 999_999 })).toBe(30_000 + 5000);
+	});
+
+	test('clamps a negative timeoutMs to 0 before adding the margin', () => {
+		expect(computeWaitForEventTimeoutMs({ timeoutMs: -5 })).toBe(5000);
+	});
+
+	test('ignores a non-numeric timeoutMs and falls back to the default', () => {
+		expect(computeWaitForEventTimeoutMs({ timeoutMs: 'soon' })).toBe(10_000 + 5000);
 	});
 });

@@ -21,6 +21,14 @@ export interface RouteResult {
 
 const REACHABILITY_TTL_MS = 5000;
 const STATUS_TIMEOUT_MS = 500;
+// Must stay comfortably above what `local`'s `GET /api/agent/events` /
+// `editor_wait_for_event` handler promises to respond within (its own
+// `timeoutMs`, clamped to 30s) — this is a safety net against a hung
+// connection, not the mechanism that ends the wait. Normal operation always
+// resolves via `local`'s own 200 response first.
+const WAIT_FOR_EVENT_TIMEOUT_MARGIN_MS = 5000;
+const WAIT_FOR_EVENT_DEFAULT_TIMEOUT_MS = 10_000;
+const WAIT_FOR_EVENT_MAX_TIMEOUT_MS = 30_000;
 
 interface ReachabilityCache {
 	readonly reachable: boolean;
@@ -61,6 +69,60 @@ async function checkReachable(localUrl: string): Promise<boolean> {
 /** Test-only: clear the reachability cache between cases. */
 export function __resetReachabilityCache(): void {
 	reachabilityCache = null;
+}
+
+/**
+ * The client-side abort deadline for an `editor_wait_for_event` forward:
+ * `local`'s own clamped `timeoutMs` plus a fixed margin. Exported (pure, no
+ * `AbortSignal` construction) so its clamping/margin math has fast unit
+ * tests without actually waiting the computed duration out.
+ * @param args
+ */
+export function computeWaitForEventTimeoutMs(args: unknown): number {
+	const requested = hasTimeoutMs(args) ? args.timeoutMs : undefined;
+	const timeoutMs = Math.min(
+		Math.max(requested ?? WAIT_FOR_EVENT_DEFAULT_TIMEOUT_MS, 0),
+		WAIT_FOR_EVENT_MAX_TIMEOUT_MS,
+	);
+	return timeoutMs + WAIT_FOR_EVENT_TIMEOUT_MARGIN_MS;
+}
+
+/**
+ * `editor_wait_for_event` is the one tool whose forwarded request is
+ * expected to sit open for seconds — every other tool's fetch is left
+ * without a client-side timeout on purpose (a network failure, not a slow
+ * response, is what should end it). Bounding just this one request guards
+ * against `local` hanging without ever emitting its own `timedOut` response.
+ * @param toolName
+ * @param args
+ */
+function abortSignalForInvoke(toolName: string, args: unknown): AbortSignal | undefined {
+	if (toolName !== 'editor_wait_for_event') {
+		return undefined;
+	}
+	return AbortSignal.timeout(computeWaitForEventTimeoutMs(args));
+}
+
+/**
+ * @param value
+ */
+function hasTimeoutMs(value: unknown): value is { timeoutMs: number } {
+	return (
+		!!value &&
+		typeof value === 'object' &&
+		typeof (value as { timeoutMs?: unknown }).timeoutMs === 'number'
+	);
+}
+
+/**
+ * @param value
+ */
+function hasSince(value: unknown): value is { since: number } {
+	return (
+		!!value &&
+		typeof value === 'object' &&
+		typeof (value as { since?: unknown }).since === 'number'
+	);
 }
 
 /**
@@ -135,14 +197,43 @@ async function invokeRemote(
 	// JSON SyntaxError escape here would masquerade an auth failure as a
 	// crash and, in auto mode, silently re-run a mutation on disk, bypassing
 	// the open tab the user is looking at.
-	const res = await fetch(new URL('/api/agent/invoke', localUrl), {
-		method: 'POST',
-		headers: {
-			'content-type': 'application/json',
-			...(token && { authorization: `Bearer ${token}` }),
-		},
-		body: JSON.stringify({ tool: toolName, args }),
-	});
+	let res: Response;
+	try {
+		res = await fetch(new URL('/api/agent/invoke', localUrl), {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+				...(token && { authorization: `Bearer ${token}` }),
+			},
+			body: JSON.stringify({ tool: toolName, args }),
+			signal: abortSignalForInvoke(toolName, args),
+		});
+	} catch (error) {
+		if (
+			toolName === 'editor_wait_for_event' &&
+			error instanceof Error &&
+			error.name === 'TimeoutError'
+		) {
+			// Our own client-side safety-net abort fired (see
+			// `abortSignalForInvoke`) — `local` is presumably still alive,
+			// just slower than the margin allows, NOT gone. Answer exactly
+			// like `local`'s own graceful long-poll timeout instead of
+			// letting this masquerade as "local died", which would make
+			// `routeToolCall` drop the reachability cache and, in auto mode,
+			// fall back to disk — whose `editor_wait_for_event` always throws
+			// `local-required`, a much more confusing error than a timeout.
+			return {
+				result: {
+					events: [],
+					nextSince: hasSince(args) ? args.since : 0,
+					timedOut: true,
+					overflowed: false,
+				},
+				appliedTo: 'disk',
+			};
+		}
+		throw error;
+	}
 	if (res.status === 401 || res.status === 403) {
 		throw new AgentError(
 			'unauthorized',
