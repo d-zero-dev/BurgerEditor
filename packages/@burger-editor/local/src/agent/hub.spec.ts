@@ -216,6 +216,85 @@ describe('AgentHub.handleSocketMessage', () => {
 		});
 	});
 
+	test('a `ui-state` frame always appends a `ui-state` event', () => {
+		hub = createAgentHub({ pingIntervalMs: 60_000 });
+		const { socket } = fakeSocket();
+		const sessionId = connectTab(hub, socket);
+		hub.handleSocketMessage(
+			sessionId,
+			JSON.stringify({
+				type: 'ui-state',
+				openDialog: 'item-editor',
+				sourceMode: false,
+				processing: false,
+				editingBlockIndex: 3,
+			}),
+		);
+		const { events } = hub.events.since(0);
+		expect(events.map((e) => e.type)).toContain('ui-state');
+	});
+
+	test('a busy -> idle `ui-state` transition additionally appends a `ui-idle` event', () => {
+		hub = createAgentHub({ pingIntervalMs: 60_000 });
+		const { socket } = fakeSocket();
+		const sessionId = connectTab(hub, socket);
+		hub.handleSocketMessage(
+			sessionId,
+			JSON.stringify({
+				type: 'ui-state',
+				openDialog: 'item-editor',
+				sourceMode: false,
+				processing: false,
+				editingBlockIndex: 3,
+			}),
+		);
+		hub.handleSocketMessage(
+			sessionId,
+			JSON.stringify({
+				type: 'ui-state',
+				openDialog: null,
+				sourceMode: false,
+				processing: false,
+				editingBlockIndex: null,
+			}),
+		);
+		const { events } = hub.events.since(0);
+		expect(events.filter((e) => e.type === 'ui-idle')).toHaveLength(1);
+	});
+
+	test('a `ui-state` frame for an unknown/already-disconnected sessionId appends no event', () => {
+		hub = createAgentHub({ pingIntervalMs: 60_000 });
+		hub.handleSocketMessage(
+			'ghost',
+			JSON.stringify({
+				type: 'ui-state',
+				openDialog: null,
+				sourceMode: false,
+				processing: false,
+				editingBlockIndex: null,
+			}),
+		);
+		expect(hub.events.since(0).events).toEqual([]);
+	});
+
+	test('an idle -> idle `ui-state` transition does not append a `ui-idle` event', () => {
+		hub = createAgentHub({ pingIntervalMs: 60_000 });
+		const { socket } = fakeSocket();
+		const sessionId = connectTab(hub, socket);
+		hub.handleSocketMessage(
+			sessionId,
+			JSON.stringify({
+				type: 'ui-state',
+				openDialog: null,
+				sourceMode: false,
+				processing: false,
+				editingBlockIndex: null,
+			}),
+		);
+		const { events } = hub.events.since(0);
+		expect(events.filter((e) => e.type === 'ui-idle')).toHaveLength(0);
+	});
+
 	test('a `pong` frame touches lastActiveAt', () => {
 		let now = 0;
 		hub = createAgentHub({ pingIntervalMs: 60_000, now: () => now });
@@ -227,7 +306,101 @@ describe('AgentHub.handleSocketMessage', () => {
 	});
 });
 
+describe('AgentHub.events', () => {
+	test('an accepted `hello` appends a `session-connected` event', () => {
+		hub = createAgentHub({ pingIntervalMs: 60_000 });
+		const { socket } = fakeSocket();
+		const sessionId = hub.tabHub.register(socket);
+		hub.handleSocketMessage(
+			sessionId,
+			JSON.stringify({
+				type: 'hello',
+				page: '/a.html',
+				revision: 1,
+				serverSession: hub.serverSession,
+				uiState: {
+					openDialog: null,
+					sourceMode: false,
+					processing: false,
+					editingBlockIndex: null,
+				},
+			}),
+		);
+		const { events } = hub.events.since(0);
+		expect(events).toEqual([
+			expect.objectContaining({
+				type: 'session-connected',
+				payload: { sessionId, page: '/a.html' },
+			}),
+		]);
+	});
+
+	test('a stale `hello` (mismatched serverSession) does not append a `session-connected` event', () => {
+		hub = createAgentHub({ pingIntervalMs: 60_000 });
+		const { socket } = fakeSocket();
+		const sessionId = hub.tabHub.register(socket);
+		hub.handleSocketMessage(
+			sessionId,
+			JSON.stringify({
+				type: 'hello',
+				page: '/a.html',
+				revision: 1,
+				serverSession: 'some-other-session',
+				uiState: {
+					openDialog: null,
+					sourceMode: false,
+					processing: false,
+					editingBlockIndex: null,
+				},
+			}),
+		);
+		expect(hub.events.since(0).events).toEqual([]);
+	});
+
+	test('closeSession appends a `session-disconnected` event and forgets the tab', () => {
+		hub = createAgentHub({ pingIntervalMs: 60_000 });
+		const { socket } = fakeSocket();
+		const sessionId = connectTab(hub, socket);
+
+		hub.closeSession(sessionId);
+
+		expect(hub.tabHub.get(sessionId)).toBeUndefined();
+		expect(hub.events.since(0).events).toEqual([
+			expect.objectContaining({
+				type: 'session-disconnected',
+				payload: { sessionId, page: '/a.html' },
+			}),
+		]);
+	});
+
+	test('closeSession on an unknown sessionId does not append an event', () => {
+		hub = createAgentHub({ pingIntervalMs: 60_000 });
+		expect(() => hub!.closeSession('ghost')).not.toThrow();
+		expect(hub.events.since(0).events).toEqual([]);
+	});
+});
+
 describe('AgentHub ping interval', () => {
+	test('appends session-disconnected when a ping fails to reach a crashed/killed tab', () => {
+		vi.useFakeTimers();
+		hub = createAgentHub({ pingIntervalMs: 1000 });
+		const socket = { send: vi.fn(() => {}), close: vi.fn() };
+		const sessionId = connectTab(hub, socket);
+		socket.send.mockImplementation(() => {
+			throw new Error('socket closed');
+		});
+
+		vi.advanceTimersByTime(1000);
+
+		expect(hub.tabHub.get(sessionId)).toBeUndefined();
+		expect(hub.events.since(0).events).toEqual([
+			expect.objectContaining({
+				type: 'session-disconnected',
+				payload: { sessionId, page: '/a.html' },
+			}),
+		]);
+	});
+
 	test('sends a ping frame to every connected tab once per pingIntervalMs', () => {
 		vi.useFakeTimers();
 		hub = createAgentHub({ pingIntervalMs: 1000 });

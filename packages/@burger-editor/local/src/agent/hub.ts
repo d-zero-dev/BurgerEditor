@@ -1,10 +1,13 @@
+import type { EventLog } from './event-log.js';
+
 import { randomUUID } from 'node:crypto';
 
 import { log } from '../helpers/debug.js';
 import { browserToServerMessageSchema } from '../protocol/ws-messages.js';
 
+import { createEventLog } from './event-log.js';
 import { RevisionRegistry } from './revision-registry.js';
-import { TabHub } from './tab-hub.js';
+import { isIdle, TabHub } from './tab-hub.js';
 
 export interface AgentHubOptions {
 	/** Forwarded to `TabHub` — see its doc comment for why a `hello`'s `page` needs this. Defaults to `'index.html'`. */
@@ -24,6 +27,7 @@ export interface AgentHubOptions {
 export interface AgentHub {
 	readonly tabHub: TabHub;
 	readonly revisions: RevisionRegistry;
+	readonly events: EventLog;
 	readonly serverSession: string;
 	/**
 	 * Parse and dispatch one raw WebSocket text frame from `sessionId` to the
@@ -34,6 +38,14 @@ export interface AgentHub {
 	 * @param raw
 	 */
 	handleSocketMessage(sessionId: string, raw: string): void;
+	/**
+	 * A tab's `/ws/editor` socket closed — disconnects it from `tabHub` and
+	 * appends `session-disconnected` to `events`. `route.tsx`'s `onClose`
+	 * calls this instead of `tabHub.disconnect` directly so the two never
+	 * drift apart.
+	 * @param sessionId
+	 */
+	closeSession(sessionId: string): void;
 	dispose(): void;
 }
 
@@ -48,12 +60,21 @@ export function createAgentHub(options: AgentHubOptions = {}): AgentHub {
 		indexFileName: options.indexFileName,
 	});
 	const revisions = new RevisionRegistry();
+	const events = createEventLog();
 	const pingIntervalMs = options.pingIntervalMs ?? 30_000;
-	const timer = setInterval(() => tabHub.pingAll(), pingIntervalMs);
+	const timer = setInterval(() => {
+		for (const disconnected of tabHub.pingAll()) {
+			events.append('session-disconnected', {
+				sessionId: disconnected.id,
+				page: disconnected.page,
+			});
+		}
+	}, pingIntervalMs);
 
 	return {
 		tabHub,
 		revisions,
+		events,
 		serverSession,
 		handleSocketMessage(sessionId, raw) {
 			let parsed: unknown;
@@ -82,7 +103,10 @@ export function createAgentHub(options: AgentHubOptions = {}): AgentHub {
 			log('socket %s -> %s: %o', sessionId, message.type, message);
 			switch (message.type) {
 				case 'hello': {
-					tabHub.hello(sessionId, message);
+					const outcome = tabHub.hello(sessionId, message);
+					if (outcome === 'accepted') {
+						events.append('session-connected', { sessionId, page: message.page });
+					}
 					break;
 				}
 				case 'focus': {
@@ -90,12 +114,27 @@ export function createAgentHub(options: AgentHubOptions = {}): AgentHub {
 					break;
 				}
 				case 'ui-state': {
-					tabHub.setUIState(sessionId, {
+					// A frame for a session already gone (disconnected between send
+					// and receipt, a ping-detected crash, …) must not append a
+					// ghost `ui-state`/`ui-idle` with no matching
+					// `session-connected` — `tabHub.setUIState` itself already
+					// no-ops on an unknown sessionId, but silently, so check first.
+					const existing = tabHub.get(sessionId);
+					if (!existing) {
+						break;
+					}
+					const wasIdle = isIdle(existing.uiState);
+					const nextUiState = {
 						openDialog: message.openDialog,
 						sourceMode: message.sourceMode,
 						processing: message.processing,
 						editingBlockIndex: message.editingBlockIndex,
-					});
+					};
+					tabHub.setUIState(sessionId, nextUiState);
+					events.append('ui-state', { sessionId, uiState: nextUiState });
+					if (!wasIdle && isIdle(nextUiState)) {
+						events.append('ui-idle', { sessionId });
+					}
 					break;
 				}
 				case 'ack': {
@@ -112,6 +151,13 @@ export function createAgentHub(options: AgentHubOptions = {}): AgentHub {
 					tabHub.touch(sessionId);
 					break;
 				}
+			}
+		},
+		closeSession(sessionId) {
+			const snapshot = tabHub.get(sessionId);
+			tabHub.disconnect(sessionId);
+			if (snapshot) {
+				events.append('session-disconnected', { sessionId, page: snapshot.page });
 			}
 		},
 		dispose() {

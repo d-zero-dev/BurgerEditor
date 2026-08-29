@@ -231,12 +231,17 @@ export class TabHub {
 	/**
 	 * @param sessionId
 	 * @param payload
+	 * @returns `'accepted'` once `welcome` was sent, `'stale'` when the
+	 *   session was instead sent a `server-restart` reload, or `'unknown'` for
+	 *   a `sessionId` this hub never registered. `agent/hub.ts` uses this to
+	 *   decide whether to log a `session-connected` event — a stale reconnect
+	 *   is the same physical tab as before, not a new observable session.
 	 */
-	hello(sessionId: string, payload: HelloPayload): void {
+	hello(sessionId: string, payload: HelloPayload): 'accepted' | 'stale' | 'unknown' {
 		const session = this.#sessions.get(sessionId);
 		if (!session) {
 			log('hello from unknown session %s, ignoring', sessionId);
-			return;
+			return 'unknown';
 		}
 		session.page = normalizeLogicalPath(payload.page, this.#indexFileName);
 		session.revision = payload.revision;
@@ -254,7 +259,7 @@ export class TabHub {
 				revision: payload.revision,
 				reason: 'server-restart',
 			});
-			return;
+			return 'stale';
 		}
 		log(
 			'hello from %s: page=%s (raw: %s) revision=%d — sending welcome',
@@ -264,21 +269,30 @@ export class TabHub {
 			payload.revision,
 		);
 		this.#send(session, { type: 'welcome', sessionId, revision: payload.revision });
+		return 'accepted';
 	}
 	/**
 	 * Ping every connected tab; disconnect (rejecting any in-flight applies)
 	 * whichever session's socket throws. Callers on a real WebSocket transport
 	 * additionally track pong timeouts at the transport layer — this hub only
 	 * owns message shape, not liveness bookkeeping across ticks.
+	 * @returns A snapshot of each session force-disconnected this way, taken
+	 *   before it was removed — `agent/hub.ts`'s ping interval uses this to
+	 *   append `session-disconnected` for a tab that vanished (crashed, was
+	 *   killed) without a clean `/ws/editor` close, which never otherwise
+	 *   goes through `AgentHub.closeSession`.
 	 */
-	pingAll(): void {
+	pingAll(): readonly TabSessionSnapshot[] {
+		const disconnected: TabSessionSnapshot[] = [];
 		for (const session of this.#sessions.values()) {
 			try {
 				this.#send(session, { type: 'ping' });
 			} catch {
+				disconnected.push(snapshot(session));
 				this.disconnect(session.id);
 			}
 		}
+		return disconnected;
 	}
 	/**
 	 * The tab BurgerEditor should apply an op through: the most recently
@@ -449,9 +463,13 @@ function mostRecentlyActive(pool: readonly TabSessionInternal[]): TabSessionInte
 }
 
 /**
+ * Whether a tab reporting `uiState` isn't mid-edit — shared by
+ * `TabHub`'s own primary-tab selection and `agent/hub.ts`'s `ui-idle` event
+ * detection (a busy→idle transition on `ui-state` receipt), so the two never
+ * disagree about what "idle" means.
  * @param uiState
  */
-function isIdle(uiState: UIState | null): boolean {
+export function isIdle(uiState: UIState | null): boolean {
 	if (!uiState) {
 		return true;
 	}

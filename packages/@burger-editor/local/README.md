@@ -177,8 +177,9 @@ Fix the conflicting front matter "path" values in the listed files and retry.
 
 AI エージェント（`@burger-editor/mcp-server` 経由）が、開いているブラウザタブへ直接ブロック操作を届けるための入口。ツール定義は [`@burger-editor/cli`](../cli/) の `agentTools` を共有しており、タブが開いていればそこへ、無ければディスクへ適用する。
 
-- **エンドポイント**: `GET /api/agent/tools`（ツール定義一覧）、`GET /api/agent/status`（到達確認）、`POST /api/agent/invoke`（ツール呼び出し）、WebSocket `/ws/editor`（ブラウザタブとの接続）
+- **エンドポイント**: `GET /api/agent/tools`（ツール定義一覧）、`GET /api/agent/status`（到達確認）、`GET /api/agent/events`（状態変化のロングポーリング）、`POST /api/agent/invoke`（ツール呼び出し）、WebSocket `/ws/editor`（ブラウザタブとの接続）
 - **無効化**: `agent: { enabled: false }` で上記すべてがマウントされなくなる
+- **状態観測・外部変更検知の詳細**: [`docs/agent-hub.md`](./docs/agent-hub.md) を参照（`GET /api/agent/events` / `editor_wait_for_event` の契約、`fs.watch` による外部変更の能動検知、ナビツリー再ハイドレート・通知バナー）
 - **非ループバック bind 時のトークン**: `host` を LAN IP や `0.0.0.0` にすると、起動ごとのトークンが必要になる。起動バナーに `http://<host>:<port>/?token=…` が表示されるので **一度だけそれを開く**と `bge_session` cookie が発行され、以後そのブラウザは認可される。同じトークンは `<configDir>/.burgereditor/agent-token`（mode 0600、終了時に削除）にも書かれる。**`.burgereditor/` を `.gitignore` に追加すること**。同じマシンで動く `mcp-server` はこのファイルを自動で読むので設定は不要。別マシンや任意の値を使いたいときは環境変数 `BGE_AGENT_TOKEN` で上書きできる。`localhost` / `127.0.0.1` / `::1` に bind している間はトークン不要
 - **利用側**: `@burger-editor/mcp-server --mode local`（既定の `auto` でも、`local` に到達できれば自動的にここへ転送される）
 - **デバッグ**: サーバー側は `DEBUG=@bge:local`、ブラウザ側は console の `[bge-agent-ws]` / `[bge-agent-link]` 行。ブラウザ側でフレーム全文のログを有効にするには `localStorage.setItem('bge:debug', '1')`（この設定は並行して実装中）。`/api/agent/*` の応答に付く ISO `timestamp` で両者を突き合わせられる

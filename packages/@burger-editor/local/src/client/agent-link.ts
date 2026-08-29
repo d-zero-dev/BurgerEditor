@@ -2,6 +2,7 @@ import type {
 	ApplyMessage,
 	BlockOp,
 	BrowserToServerMessage,
+	PageEventMessage,
 	ServerToBrowserMessage,
 	UIState,
 } from '../protocol/ws-messages.js';
@@ -63,6 +64,8 @@ export interface AgentLinkOptions {
 	readonly transport: Transport;
 	readonly page: string;
 	readonly serverSession: string;
+	/** Called for every `page-event` frame (a page created/deleted/renamed elsewhere) — wire to `nav-tree.ts`'s `hydrateNavTree()` and any "this page is gone" notification. */
+	readonly onPageEvent?: (message: PageEventMessage) => void;
 }
 
 /**
@@ -272,9 +275,13 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 					reloadWhenIdle();
 					break;
 				}
-				case 'committed':
+				case 'committed': {
+					browserLog(LOG_TAG, message.type, message);
+					break;
+				}
 				case 'page-event': {
 					browserLog(LOG_TAG, message.type, message);
+					options.onPageEvent?.(message);
 					break;
 				}
 				case 'ping': {

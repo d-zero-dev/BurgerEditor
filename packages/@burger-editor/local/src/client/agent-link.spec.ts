@@ -78,6 +78,39 @@ describe('createAgentLink — handleMessage', () => {
 		expect(sent).toEqual([]);
 	});
 
+	test('invokes onPageEvent for a page-event frame', () => {
+		const { adapter } = fakeAdapter();
+		const { transport } = fakeTransport();
+		const onPageEvent = vi.fn();
+		const link = createAgentLink({
+			adapter,
+			transport,
+			page: '/a.html',
+			serverSession: 's',
+			onPageEvent,
+		});
+
+		link.handleMessage(JSON.stringify({ type: 'page-event', kind: 'deleted' }));
+
+		expect(onPageEvent).toHaveBeenCalledTimes(1);
+		expect(onPageEvent).toHaveBeenCalledWith({ type: 'page-event', kind: 'deleted' });
+	});
+
+	test('a page-event frame with no onPageEvent configured does not throw', () => {
+		const { adapter } = fakeAdapter();
+		const { transport } = fakeTransport();
+		const link = createAgentLink({
+			adapter,
+			transport,
+			page: '/a.html',
+			serverSession: 's',
+		});
+
+		expect(() =>
+			link.handleMessage(JSON.stringify({ type: 'page-event', kind: 'created' })),
+		).not.toThrow();
+	});
+
 	test('responds to ping with pong', () => {
 		const { adapter } = fakeAdapter();
 		const { transport, sent } = fakeTransport();

@@ -1,4 +1,5 @@
 import type { AgentAuth } from './auth.js';
+import type { AgentEvent, AgentEventType } from './event-log.js';
 import type { AgentHub } from './hub.js';
 import type { LocalServerConfig } from '../types.js';
 import type { AgentTool, CliContext } from '@burger-editor/cli';
@@ -30,6 +31,8 @@ import { normalizeLogicalPath } from '../helpers/normalize-logical-path.js';
 
 import { isAgentAuthed } from './auth.js';
 import { BROWSER_APPLICABLE_TOOLS, buildBrowserOps } from './block-op-builder.js';
+import { AGENT_EVENT_TYPES } from './event-log.js';
+import { isExternallyChanged } from './hash-check.js';
 import { hostGuard } from './host-guard.js';
 import { ApplyNackError, ApplyTimeoutError, TabDisconnectedError } from './tab-hub.js';
 
@@ -160,6 +163,30 @@ export function setAgentRoute(
 		});
 	});
 
+	app.get('/api/agent/events', async (c) => {
+		if (!isAgentAuthed(auth, c.req)) {
+			return c.text('Unauthorized', 401);
+		}
+		const since = Number.parseInt(c.req.query('since') ?? '', 10);
+		const timeoutMsRaw = Number.parseInt(c.req.query('timeoutMs') ?? '', 10);
+		const typesRaw = c.req.query('types');
+		const result = await waitForAgentEvents(hub, c.req.raw.signal, {
+			since: Number.isFinite(since) ? since : undefined,
+			timeoutMs: Number.isFinite(timeoutMsRaw) ? timeoutMsRaw : undefined,
+			types: typesRaw ? typesRaw.split(',') : undefined,
+		});
+		if (!result.ok) {
+			return c.json(invalidEventTypePayload(result.invalidType), 400);
+		}
+		return c.json({
+			events: result.events,
+			nextSince: result.nextSince,
+			timedOut: result.timedOut,
+			overflowed: result.overflowed,
+			timestamp: nowIso(),
+		});
+	});
+
 	app.post('/api/agent/invoke', async (c) => {
 		if (!isAgentAuthed(auth, c.req)) {
 			return c.text('Unauthorized', 401);
@@ -225,18 +252,25 @@ export function setAgentRoute(
 		}
 
 		if (toolName === 'editor_wait_for_event') {
-			// Long-polling is not served by this endpoint; answer explicitly
-			// rather than letting `tool.run()` (the disk implementation) throw
-			// `local-required` while running inside local itself.
-			return c.json(
-				{
-					error: 'invalid',
-					message:
-						'editor_wait_for_event is not available on this server. Poll editor_state_get instead.',
-					timestamp: nowIso(),
+			// `tool.run()` (the disk implementation) always throws
+			// `local-required` — running inside local itself, serve the real
+			// long-poll instead of routing through it.
+			const waitArgs = args as { since?: number; types?: string[]; timeoutMs?: number };
+			const result = await waitForAgentEvents(hub, c.req.raw.signal, waitArgs);
+			if (!result.ok) {
+				return c.json(invalidEventTypePayload(result.invalidType), 400);
+			}
+			return c.json({
+				ok: true,
+				result: {
+					events: result.events,
+					nextSince: result.nextSince,
+					timedOut: result.timedOut,
+					overflowed: result.overflowed,
 				},
-				400,
-			);
+				appliedTo: 'disk',
+				timestamp: nowIso(),
+			});
 		}
 
 		const pathInput = hasStringPath(args) ? args.path : undefined;
@@ -253,6 +287,84 @@ export function setAgentRoute(
 			runViaBrowserOrDisk(c, tool, toolName, args, pathInput, userConfig, deps, hub),
 		);
 	});
+}
+
+const DEFAULT_WAIT_TIMEOUT_MS = 10_000;
+const MAX_WAIT_TIMEOUT_MS = 30_000;
+
+/**
+ * @param value
+ */
+function isAgentEventType(value: string): value is AgentEventType {
+	return (AGENT_EVENT_TYPES as readonly string[]).includes(value);
+}
+
+/**
+ * The one place that builds the "unknown event type" 400 body — shared by
+ * `GET /api/agent/events` and the `editor_wait_for_event` invoke branch via
+ * {@link waitForAgentEvents}'s `ok: false` result, so the two can't drift on
+ * the error shape or message wording.
+ * @param invalidType
+ */
+function invalidEventTypePayload(invalidType: string) {
+	return {
+		error: 'invalid',
+		message: `Unknown event type: ${invalidType}`,
+		timestamp: nowIso(),
+	};
+}
+
+type WaitForAgentEventsResult =
+	| {
+			readonly ok: true;
+			readonly events: readonly AgentEvent[];
+			readonly nextSince: number;
+			readonly timedOut: boolean;
+			readonly overflowed: boolean;
+	  }
+	| { readonly ok: false; readonly invalidType: string };
+
+/**
+ * Shared backing for `GET /api/agent/events` and the `editor_wait_for_event`
+ * tool's `invoke` branch — both long-poll the same {@link AgentHub.events},
+ * and both need the same `types` validation, so it lives here once rather
+ * than being checked twice by its callers. `since` omitted means "only
+ * events from now on", matching a fresh subscriber that has no cursor yet
+ * rather than replaying the whole buffer.
+ * @param hub
+ * @param signal Aborted when the HTTP request disconnects, so a caller that
+ *   gives up doesn't leave the wait dangling.
+ * @param options
+ * @param options.since
+ * @param options.types
+ * @param options.timeoutMs
+ */
+async function waitForAgentEvents(
+	hub: AgentHub,
+	signal: AbortSignal,
+	options: { since?: number; types?: readonly string[]; timeoutMs?: number },
+): Promise<WaitForAgentEventsResult> {
+	const invalidType = options.types?.find((t) => !isAgentEventType(t));
+	if (invalidType) {
+		return { ok: false, invalidType };
+	}
+	const cursor = options.since ?? hub.events.since(0).events.at(-1)?.seq ?? 0;
+	const timeoutMs = Math.min(
+		Math.max(options.timeoutMs ?? DEFAULT_WAIT_TIMEOUT_MS, 0),
+		MAX_WAIT_TIMEOUT_MS,
+	);
+	const result = await hub.events.waitFor(cursor, {
+		types: options.types as readonly AgentEventType[],
+		timeoutMs,
+		signal,
+	});
+	return {
+		ok: true,
+		events: result.events,
+		nextSince: result.nextCursor,
+		timedOut: result.timedOut,
+		overflowed: result.overflowed,
+	};
 }
 
 /**
@@ -323,6 +435,12 @@ async function runOnDisk(
 		}
 		await syncRegistryAfterDiskApply(hub, tool, toolName, pathInput, userConfig, ctx);
 		notifyPageEvent(hub, toolName, result);
+		if (!tool.annotations?.readOnlyHint && !(toolName in PAGE_STRUCTURAL_TOOL_KIND)) {
+			hub.events.append(
+				toolName === 'front_matter_set' ? 'front-matter-changed' : 'content-saved',
+				{ path: pathInput, appliedTo: 'disk' },
+			);
+		}
 		return c.json({ ok: true, result, appliedTo: 'disk', timestamp: nowIso() });
 	} catch (error) {
 		return errorResponse(c, error);
@@ -394,27 +512,78 @@ async function syncRegistryAfterDiskApply(
 }
 
 /**
+ * The single source of truth for which tools are page-structural and which
+ * `page-*` kind each produces — `runOnDisk` uses membership alone (skipping
+ * its generic `content-saved` for these so a structural change isn't
+ * double-reported under two different event types) while `notifyPageEvent`
+ * uses the kind to broadcast/log the right one. `pageEventTarget` still
+ * switches per exact tool name below it, since tools sharing a `kind` (e.g.
+ * `page_create` vs `page_copy` "created") name their result fields
+ * differently (`path` vs `to`).
+ */
+const PAGE_STRUCTURAL_TOOL_KIND: Record<string, 'created' | 'deleted' | 'renamed'> = {
+	page_create: 'created',
+	page_copy: 'created',
+	page_concat: 'created',
+	page_delete: 'deleted',
+	page_rename: 'renamed',
+};
+
+/**
+ * The page path(s) a structural tool's own result names, in the same
+ * agent-facing form the tool was called with (not the resolved disk path) —
+ * each tool's own result shape differs (`page.ts`'s `pageCreate`/
+ * `pageDelete`/`pageRename`/`pageCopy`/`pageConcat`), so this is the one
+ * place that knows how to read "which page(s)" back out of each.
+ * @param toolName
+ * @param result
+ */
+function pageEventTarget(
+	toolName: string,
+	result: Record<string, unknown>,
+): { from?: string; to?: string } {
+	switch (toolName) {
+		case 'page_create': {
+			return { to: typeof result.path === 'string' ? result.path : undefined };
+		}
+		case 'page_delete': {
+			return { from: typeof result.path === 'string' ? result.path : undefined };
+		}
+		case 'page_rename': {
+			return {
+				from: typeof result.from === 'string' ? result.from : undefined,
+				to: typeof result.to === 'string' ? result.to : undefined,
+			};
+		}
+		case 'page_copy': {
+			return { to: typeof result.to === 'string' ? result.to : undefined };
+		}
+		case 'page_concat': {
+			return { to: typeof result.target === 'string' ? result.target : undefined };
+		}
+		default: {
+			return {};
+		}
+	}
+}
+
+/**
  * @param hub
  * @param toolName
  * @param result
  */
 function notifyPageEvent(hub: AgentHub, toolName: string, result: unknown): void {
-	if (
-		(toolName === 'page_create' ||
-			toolName === 'page_delete' ||
-			toolName === 'page_rename' ||
-			toolName === 'page_copy' ||
-			toolName === 'page_concat') &&
-		result &&
-		typeof result === 'object'
-	) {
-		const kind =
-			toolName === 'page_create' || toolName === 'page_copy' || toolName === 'page_concat'
-				? 'created'
-				: toolName === 'page_delete'
-					? 'deleted'
-					: 'renamed';
-		hub.tabHub.broadcast({ type: 'page-event', kind });
+	const kind = PAGE_STRUCTURAL_TOOL_KIND[toolName];
+	if (kind && result && typeof result === 'object') {
+		const target = pageEventTarget(toolName, result as Record<string, unknown>);
+		hub.tabHub.broadcast({ type: 'page-event', kind, ...target });
+		const eventType =
+			kind === 'created'
+				? 'page-created'
+				: kind === 'deleted'
+					? 'page-deleted'
+					: 'page-renamed';
+		hub.events.append(eventType, { toolName, result });
 	}
 }
 
@@ -486,7 +655,7 @@ async function runViaBrowserOrDisk(
 
 		const currentHash = await computeContentHash(filePath);
 		const entry = hub.revisions.ensure(normalizedPage);
-		if (entry.persistedHash !== null && entry.persistedHash !== currentHash) {
+		if (isExternallyChanged(entry, currentHash)) {
 			log(
 				'disk hash for %s drifted from persistedHash (external-change): %s vs %s',
 				normalizedPage,
@@ -494,6 +663,7 @@ async function runViaBrowserOrDisk(
 				entry.persistedHash,
 			);
 			hub.tabHub.reloadOthers(normalizedPage, null, entry.revision, 'external-change');
+			hub.events.append('content-changed', { page: normalizedPage });
 			throw new AgentError(
 				'stale',
 				'The page on disk changed outside local (e.g. an external editor). ' +
@@ -585,6 +755,7 @@ async function runViaBrowserOrDisk(
 		const bumped = hub.revisions.bump(normalizedPage, newHash);
 		hub.tabHub.setSyncedHash(primary.id, newHash);
 		hub.tabHub.reloadOthers(normalizedPage, primary.id, bumped.revision, 'other-tab');
+		hub.events.append('content-saved', { page: normalizedPage, appliedTo: 'browser' });
 
 		const readToken = await issueReadToken(pathInput, filePath);
 		const result = buildBrowserResult(toolName, pathInput, ops, lastHtml);
