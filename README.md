@@ -32,7 +32,10 @@ Claude Code 等の AI エージェント、または非対話なスクリプト�
 
 - [@burger-editor/cli](./packages/@burger-editor/cli/) — JSON-only な CLI（`npx @burger-editor/cli <subcommand>`）
 - [@burger-editor/mcp-server](./packages/@burger-editor/mcp-server/) — Model Context Protocol サーバー。v3 / v4 両対応
-- [skills/burger-editor-v4/](./skills/burger-editor-v4/) — `npx skills add d-zero-dev/BurgerEditor` で配布される AI エージェント向け SKILL
+- [skills/editing-burger-editor-pages/](./skills/editing-burger-editor-pages/) — 既存ページのブロック編集向け SKILL
+- [skills/building-burger-editor-projects/](./skills/building-burger-editor-projects/) — プロジェクト構築・カスタムブロック向け SKILL
+
+`npx skills add d-zero-dev/BurgerEditor --skill editing-burger-editor-pages` のように `--skill` で個別に導入できます（省略すると両方が導入対象になります）。
 
 **主な内容:**
 

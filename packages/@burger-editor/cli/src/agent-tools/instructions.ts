@@ -43,7 +43,11 @@ BurgerEditor Agent Hub — working procedure
 7. appliedTo on a mutation's result ("browser" or "disk") is informational.
    Do not change your behavior based on it — the contract is identical
    either way.
-8. If a tool errors with local-unreachable or local-required, that means
+8. If a mutation is relayed to a browser tab and a human is using it (a
+   dialog is open, or they're in source mode), it fails with user-editing
+   instead of applying. Wait for editor_wait_for_event({ types: ['ui-idle']
+   }) and retry — do not treat this as a hard failure.
+9. If a tool errors with local-unreachable or local-required, that means
    the local dev server (\`bge\`, from \`@burger-editor/local\`) is not
    running. Report it to the user as informational; do not attempt to start
    it yourself.
