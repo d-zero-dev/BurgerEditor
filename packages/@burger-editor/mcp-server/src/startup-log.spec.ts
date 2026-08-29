@@ -13,10 +13,15 @@ const BIN_PATH = path.resolve(import.meta.dirname, '..', 'bin', 'index.js');
  * signal instead.
  * @param done regex that signals startup is far enough along to assert
  * @param timeoutMs hard cap so a hung child doesn't hang the test
+ * @param args extra CLI args (e.g. `--mode`, `--url`) appended after BIN_PATH
  */
-function captureStartupStderr(done: RegExp, timeoutMs = 15_000): Promise<string> {
+function captureStartupStderr(
+	done: RegExp,
+	timeoutMs = 15_000,
+	args: readonly string[] = [],
+): Promise<string> {
 	return new Promise((resolve, reject) => {
-		const child = spawn(process.execPath, [BIN_PATH], {
+		const child = spawn(process.execPath, [BIN_PATH, ...args], {
 			stdio: ['pipe', 'pipe', 'pipe'],
 		});
 		let stderr = '';
@@ -61,6 +66,23 @@ describe('mcp-server bin startup logging', () => {
 		// caught here, not in production.
 		const stderr = await captureStartupStderr(/\[burger-editor mcp\] ready on stdio/);
 		expect(stderr).toMatch(/\[burger-editor mcp\] ready on stdio/);
-		expect(stderr).toMatch(/v3 \+ v4 tools registered/);
+		expect(stderr).toMatch(/v3 \+ agent tools registered/);
+	}, 20_000);
+
+	test('the "starting" line reports the resolved mode and url, defaulting to auto / localhost:5255', async () => {
+		const stderr = await captureStartupStderr(/\[burger-editor mcp\] starting/);
+		expect(stderr).toMatch(/mode=auto/);
+		expect(stderr).toMatch(/url=http:\/\/localhost:5255/);
+	}, 20_000);
+
+	test('--mode and --url flags override the defaults in the "starting" line', async () => {
+		const stderr = await captureStartupStderr(/\[burger-editor mcp\] starting/, 15_000, [
+			'--mode',
+			'disk',
+			'--url',
+			'http://localhost:9999',
+		]);
+		expect(stderr).toMatch(/mode=disk/);
+		expect(stderr).toMatch(/url=http:\/\/localhost:9999/);
 	}, 20_000);
 });

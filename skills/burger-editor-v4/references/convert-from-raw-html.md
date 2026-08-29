@@ -65,16 +65,14 @@ Markdown 表で：
 
 **元ファイルを破壊しない順序**で進める：
 
-1. **バックアップを取る** — `page_copy { from, to: "<original>.bak.html" }`
+1. **バックアップを取る** — `page_copy { from, to: "<original>.bak.html", readToken }`（`readToken` は `from` を読んだときのもの）
 2. ブロック構造で **新規ページを別パスに作る** — `page_create { path: "<page>.new.html", blocks: [...] }`
 3. **ユーザーに見比べてもらう**
-4. OK なら `page_rename` で元のパスへ差し替え
-
-破棄して良いと明示されたら直接 `page_create` → `page_delete`（元）→ `page_rename`（新）でも可。
+4. OK なら、元のパスへの `page_rename` は宛先が既存だと `exists` エラーになる（上書きしない仕様）ので、**元ページを `page_delete` してから** `page_rename { from: "<page>.new.html", to: "<page>" }` で差し替える
 
 ### 6. 検証
 
-`block_list` で構造、`page_get` で見た目（HTML スニペット）を確認。違和感あれば該当ブロックを `block_replace` で微修正。
+`page_blocks` で構造、`page_get` で見た目（HTML スニペット）を確認。違和感あれば該当ブロックを `block_replace`（`target` + `readToken` 必須）で微修正。
 
 ## してはいけないこと
 

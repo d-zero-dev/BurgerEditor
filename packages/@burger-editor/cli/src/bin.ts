@@ -9,6 +9,7 @@ import type { BlockSpec } from './block-builder.js';
 
 import { parseCli } from '@d-zero/roar';
 
+import { pageBlocksTool } from './agent-tools/tools/page-blocks.js';
 import { loadContext } from './context.js';
 import * as h from './handlers.js';
 import { writeErrorJson } from './output.js';
@@ -72,7 +73,9 @@ const commands = {
 			},
 		},
 	},
-	'block-list': { desc: 'List blocks in a page — usage: block-list <path>' },
+	'page-blocks': {
+		desc: 'List every block in a page (id/text/headings summary) — usage: page-blocks <path>',
+	},
 	'block-get': { desc: 'Get a single block by index — usage: block-get <path> <index>' },
 	'block-insert': {
 		desc: 'Insert a block at index — usage: block-insert <path> <atIndex>',
@@ -102,6 +105,23 @@ const commands = {
 	'block-move': {
 		desc: 'Move a block — usage: block-move <path> <from> <to> (to = destination in FINAL list, splice convention)',
 		flags: {
+			dryRun: { type: 'boolean', desc: 'Compute the would-be HTML but do not write' },
+		},
+	},
+	'block-duplicate': {
+		desc: 'Duplicate a block right after itself — usage: block-duplicate <path> <index>',
+		flags: {
+			dryRun: { type: 'boolean', desc: 'Compute the would-be HTML but do not write' },
+		},
+	},
+	'block-ensure-id': {
+		desc: 'Assign a stable bge-<n> id to a block that has none (idempotent) — usage: block-ensure-id <path> <index>',
+	},
+	'item-update': {
+		desc: 'Merge new data into one item within a block — usage: item-update <path> <blockIndex> <itemIndex>',
+		flags: {
+			spec: { type: 'string', desc: 'Inline JSON data patch' },
+			specFile: { type: 'string', desc: 'Path to JSON data patch' },
 			dryRun: { type: 'boolean', desc: 'Compute the would-be HTML but do not write' },
 		},
 	},
@@ -228,11 +248,21 @@ async function main() {
 			const patch = raw as Record<string, unknown>;
 			return await h.frontMatterSet(ctx, result.args[0]!, patch, !flags.replace);
 		}
-		case 'block-list': {
-			return await h.blockList(ctx, result.args[0]!);
+		case 'page-blocks': {
+			// page_blocks is a two-call protocol (see its JSDoc) — the CLI's
+			// interactive/scripting use case wants "just give me the blocks",
+			// so drive both calls here rather than surfacing the readToken
+			// round trip to a human at the terminal.
+			const first = (await pageBlocksTool.run(ctx, { path: result.args[0]! })) as {
+				readToken: string;
+			};
+			return await pageBlocksTool.run(ctx, {
+				path: result.args[0]!,
+				readToken: first.readToken,
+			});
 		}
 		case 'block-get': {
-			return await h.blockGet(ctx, result.args[0]!, Number(result.args[1]));
+			return await h.blockGet(ctx, result.args[0]!, { index: Number(result.args[1]) });
 		}
 		case 'block-insert': {
 			const flags = result.flags as {
@@ -252,23 +282,65 @@ async function main() {
 				dryRun?: boolean;
 			};
 			const spec = expectBlockSpec(await resolveSpecForCommand('block-replace', flags));
-			return await h.blockReplace(ctx, result.args[0]!, Number(result.args[1]), spec, {
-				dryRun: Boolean(flags.dryRun),
-			});
+			return await h.blockReplace(
+				ctx,
+				result.args[0]!,
+				{ index: Number(result.args[1]) },
+				spec,
+				{ dryRun: Boolean(flags.dryRun) },
+			);
 		}
 		case 'block-delete': {
 			const flags = result.flags as { dryRun?: boolean };
-			return await h.blockDelete(ctx, result.args[0]!, Number(result.args[1]), {
-				dryRun: Boolean(flags.dryRun),
-			});
+			return await h.blockDelete(
+				ctx,
+				result.args[0]!,
+				{ index: Number(result.args[1]) },
+				{ dryRun: Boolean(flags.dryRun) },
+			);
 		}
 		case 'block-move': {
 			const flags = result.flags as { dryRun?: boolean };
 			return await h.blockMove(
 				ctx,
 				result.args[0]!,
-				Number(result.args[1]),
+				{ index: Number(result.args[1]) },
 				Number(result.args[2]),
+				{ dryRun: Boolean(flags.dryRun) },
+			);
+		}
+		case 'block-duplicate': {
+			const flags = result.flags as { dryRun?: boolean };
+			return await h.blockDuplicate(
+				ctx,
+				result.args[0]!,
+				{ index: Number(result.args[1]) },
+				{ dryRun: Boolean(flags.dryRun) },
+			);
+		}
+		case 'block-ensure-id': {
+			return await h.blockEnsureId(ctx, result.args[0]!, {
+				index: Number(result.args[1]),
+			});
+		}
+		case 'item-update': {
+			const flags = result.flags as {
+				spec?: string;
+				specFile?: string;
+				dryRun?: boolean;
+			};
+			const raw = await resolveSpecForCommand('item-update', flags);
+			if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+				throw new Error(
+					`item-update spec must be a JSON object (got ${Array.isArray(raw) ? 'array' : raw === null ? 'null' : typeof raw}).`,
+				);
+			}
+			return await h.itemUpdate(
+				ctx,
+				result.args[0]!,
+				{ index: Number(result.args[1]) },
+				Number(result.args[2]),
+				raw as Record<string, unknown>,
 				{ dryRun: Boolean(flags.dryRun) },
 			);
 		}

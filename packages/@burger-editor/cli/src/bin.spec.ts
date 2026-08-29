@@ -4,6 +4,9 @@ import path from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
+import { AgentError } from './agent-tools/errors.js';
+import { writeErrorJson } from './output.js';
+
 // End-to-end smoke for the compiled bin. Spawns `node dist/bin.js` against a
 // fixture project and asserts on stdout JSON + exit code. Catches regressions
 // in the layered stack (parseCli → loadContext → cosmiconfig walk → handlers
@@ -104,14 +107,12 @@ describe('bin.js end-to-end', () => {
 		expect(payload.documentRoot).toBe(path.join(FIXTURE_ROOT, 'src'));
 	}, 20_000);
 
-	test('block-list runs the full layered stack end-to-end', async () => {
-		const result = await run(['block-list', 'index.html']);
+	test('page-blocks runs the full layered stack end-to-end', async () => {
+		const result = await run(['page-blocks', 'index.html']);
 		expect(result.code).toBe(0);
-		const payload = JSON.parse(result.stdout) as {
-			blocks: { data: { name: string; items: unknown[][] } }[];
-		};
+		const payload = JSON.parse(result.stdout) as { blocks: { name: string }[] };
 		expect(payload.blocks).toHaveLength(1);
-		expect(payload.blocks[0]!.data.name).toBe('h2');
+		expect(payload.blocks[0]!.name).toBe('h2');
 	}, 20_000);
 
 	test('block-insert accepts a spec via --spec inline JSON and persists the page', async () => {
@@ -122,13 +123,11 @@ describe('bin.js end-to-end', () => {
 		const insert = await run(['block-insert', 'index.html', '0', '--spec', spec]);
 		expect(insert.code).toBe(0);
 
-		const list = await run(['block-list', 'index.html']);
+		const list = await run(['page-blocks', 'index.html']);
 		expect(list.code).toBe(0);
-		const payload = JSON.parse(list.stdout) as {
-			blocks: { data: { items: { data: { titleH2?: string } }[][] } }[];
-		};
+		const payload = JSON.parse(list.stdout) as { blocks: { text: string }[] };
 		expect(payload.blocks).toHaveLength(2);
-		expect(payload.blocks[0]!.data.items[0]![0]!.data.titleH2).toBe('挿入された見出し');
+		expect(payload.blocks[0]!.text).toContain('挿入された見出し');
 	}, 30_000);
 
 	test('block-insert accepts a spec via stdin when no --spec flag is given', async () => {
@@ -146,12 +145,10 @@ describe('bin.js end-to-end', () => {
 		const insert = await run(['block-insert', 'stdin.html', '0'], spec);
 		expect(insert.code).toBe(0);
 
-		const list = await run(['block-list', 'stdin.html']);
-		const payload = JSON.parse(list.stdout) as {
-			blocks: { data: { items: { data: { titleH2?: string } }[][] } }[];
-		};
+		const list = await run(['page-blocks', 'stdin.html']);
+		const payload = JSON.parse(list.stdout) as { blocks: { text: string }[] };
 		expect(payload.blocks).toHaveLength(1);
-		expect(payload.blocks[0]!.data.items[0]![0]!.data.titleH2).toBe('stdin 見出し');
+		expect(payload.blocks[0]!.text).toContain('stdin 見出し');
 	}, 30_000);
 
 	test('block-insert accepts --spec-file AFTER positional args (roar camelCase flag contract)', async () => {
@@ -182,12 +179,10 @@ describe('bin.js end-to-end', () => {
 			specFile,
 		]);
 		expect(result.code).toBe(0);
-		const list = await run(['block-list', 'spec-file-target.html']);
-		const payload = JSON.parse(list.stdout) as {
-			blocks: { data: { items: { data: { titleH2?: string } }[][] } }[];
-		};
+		const list = await run(['page-blocks', 'spec-file-target.html']);
+		const payload = JSON.parse(list.stdout) as { blocks: { text: string }[] };
 		expect(payload.blocks).toHaveLength(1);
-		expect(payload.blocks[0]!.data.items[0]![0]!.data.titleH2).toBe('via spec-file');
+		expect(payload.blocks[0]!.text).toContain('via spec-file');
 	}, 30_000);
 
 	test('block-insert --dry-run returns previewContent and does not write the file', async () => {
@@ -262,11 +257,49 @@ describe('bin.js end-to-end', () => {
 		expect(result.stderr.toLowerCase()).toContain('array');
 	}, 20_000);
 
-	test('unknown command exits non-zero and prints an error to stderr', async () => {
+	test('unknown command exits non-zero and prints the command usage to stderr (the parser rejects it before any JSON error path)', async () => {
 		const result = await run(['this-command-does-not-exist']);
 		expect(result.code).not.toBe(0);
-		expect(result.stderr.length).toBeGreaterThan(0);
+		expect(result.stderr).toContain('Usage: @burger-editor/cli <command> [options]');
+		expect(result.stderr).toContain('page-blocks');
 	}, 20_000);
+
+	test('a handler failure is written to stderr as the flat agentErrorSchema payload, not a bare {name, message}', async () => {
+		const result = await run(['block-insert', 'about.html', '0', '--spec', '[1,2,3]']);
+		expect(result.code).not.toBe(0);
+		expect(JSON.parse(result.stderr)).toEqual({
+			error: 'invalid',
+			message: 'spec must be a JSON object describing a block (got array).',
+		});
+	}, 20_000);
+
+	test('writeErrorJson serialises a read-required failure with its recovery fields (readToken, next) intact', () => {
+		// No bin command surfaces `read-required` (page-blocks drives the
+		// two-call protocol itself), so the stderr writer is exercised
+		// directly with the same AgentError requireReadToken() throws.
+		const chunks: string[] = [];
+		const original = process.stderr.write;
+		process.stderr.write = ((chunk: string | Uint8Array) => {
+			chunks.push(String(chunk));
+			return true;
+		}) as typeof process.stderr.write;
+		try {
+			writeErrorJson(
+				new AgentError('read-required', 'Call page_blocks first.', {
+					readToken: 'fresh-token',
+					next: ['Retry with readToken: fresh-token.'],
+				}),
+			);
+		} finally {
+			process.stderr.write = original;
+		}
+		expect(JSON.parse(chunks.join(''))).toEqual({
+			error: 'read-required',
+			message: 'Call page_blocks first.',
+			next: ['Retry with readToken: fresh-token.'],
+			readToken: 'fresh-token',
+		});
+	});
 
 	test('after loadContext returns, stdout writes flow normally — the temporary redirect is restored', async () => {
 		// The bin scopes its stdout redirect to loadContext() via try/finally.

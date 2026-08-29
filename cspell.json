@@ -27,6 +27,18 @@
 		"trix",
 
 		// Project specific
-		"bgeconfig"
+		"bgeconfig",
+
+		// Networking terminology (WebSocket ack/nack protocol)
+		"acked",
+		"acking",
+		"acks",
+		"nack",
+		"nacked",
+		"nacking",
+		"nacks",
+
+		// Vitest API (vi.unstubAllGlobals)
+		"unstub"
 	]
 }

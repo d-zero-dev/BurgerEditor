@@ -1,3 +1,5 @@
+import { toAgentError } from './agent-tools/errors.js';
+
 /**
  * Single-source JSON writer for the CLI. Always emits a single JSON value on
  * stdout (with trailing newline). Errors go to stderr as JSON too.
@@ -14,13 +16,15 @@ export function writeJson(value: unknown, writer?: typeof process.stdout.write):
 }
 
 /**
- *
+ * Errors go out in the same `agentErrorSchema` shape (`error`, `message`,
+ * and — when the failure came from a readToken check — `next`/`readToken`/
+ * `currentBlocks`) that MCP tool calls use. A disk-mode CLI user reading
+ * stderr gets the same self-recovery hints (a fresh `readToken` to retry
+ * with) an MCP-connected agent gets from the same failure, instead of a
+ * bare `{name, message}` that carries none of that.
  * @param error
  */
 export function writeErrorJson(error: unknown): void {
-	const payload =
-		error instanceof Error
-			? { error: { name: error.name, message: error.message } }
-			: { error: { name: 'UnknownError', message: String(error) } };
+	const payload = toAgentError(error).toPayload();
 	process.stderr.write(JSON.stringify(payload) + '\n');
 }

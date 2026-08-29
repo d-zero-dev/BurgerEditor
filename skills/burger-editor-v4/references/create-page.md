@@ -22,7 +22,7 @@ config_resolve
 
 - **空ページ**：`page_create { path }` だけで OK
 - **見出し + 本文 1 ブロック程度**：`page_create { path, frontMatter, blocks }` に初期ブロックを同梱
-- **大量ブロック**：まず `page_create` で空ページを作り、続けて `update_page` の `operations: [{op:'insert', atIndex: 0, spec: …}, …]` で流す
+- **大量ブロック**：まず `page_create` で空ページを作り、続けて `block_insert` を `readToken` を都度更新しながら繰り返す（`page_update` の `ops` は `spec` ではなくレンダリング済み HTML を要求するため、spec ベースの流し込みには不向き）
 
 カタログから使うブロックを選ぶときは `catalog_list` で確認。アイテムデータの形式が不明なら `item_schema { name }`。
 
@@ -55,7 +55,7 @@ page_create {
 
 ### 6. 検証
 
-`block_list { path }` で読み戻し、構造が想定通りか確認してユーザーに報告。
+`page_blocks { path }` で読み戻し、構造が想定通りか確認してユーザーに報告。
 
 ## 注意点
 

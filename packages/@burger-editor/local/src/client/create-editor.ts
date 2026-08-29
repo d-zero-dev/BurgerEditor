@@ -17,8 +17,13 @@ import '@burger-editor/client/style';
 import { hc } from 'hono/client';
 
 import { $upload } from '../helpers/$upload.js';
+import { browserLog } from '../helpers/browser-log.js';
+import { normalizeLogicalPath } from '../helpers/normalize-logical-path.js';
 
+import { createAgentLink, type AgentLink } from './agent-link.js';
+import { createEngineAdapter } from './engine-adapter.js';
 import { saveContentRequest } from './save-content-request.js';
+import { createWsTransport } from './ws-transport.js';
 
 const client = hc<AppType>(location.origin);
 
@@ -77,6 +82,7 @@ export async function createEditor() {
 	) as HTMLInputElement | null;
 
 	let frontMatterEditor: FrontMatterEditorHandle | null = null;
+	let agentLink: AgentLink | null = null;
 
 	/**
 	 * Save content to server
@@ -104,6 +110,7 @@ export async function createEditor() {
 				error: (message) => console.error(message),
 			},
 		);
+		agentLink?.notifyHumanSave();
 	}
 
 	/**
@@ -161,7 +168,7 @@ export async function createEditor() {
 			}
 		: config.catalog;
 
-	await createBurgerEditorClient({
+	const { engine } = await createBurgerEditorClient({
 		root: '.editor',
 		config: {
 			...config,
@@ -192,6 +199,16 @@ export async function createEditor() {
 				}
 			: undefined,
 		async onUpdated(content) {
+			// A browser-applied `BlockOp` already reflects the new content into
+			// `mainInput`/the server (`applyOp` → `engine.save()` → this
+			// `onUpdated` firing synchronously) — re-POSTing it here would be a
+			// redundant, and possibly stale, echo of what `agent/route.ts`
+			// already persisted from the tab's `ack`.
+			if (agentLink?.consumeEcho()) {
+				mainInput.value = content;
+				return;
+			}
+
 			if (mainInput.value === content) {
 				return;
 			}
@@ -250,4 +267,38 @@ export async function createEditor() {
 			},
 		},
 	});
+
+	// Absent when `agent.enabled` is `false` (`view/app.tsx` only renders
+	// `#server-session` in that case) — no WS connection, no AgentLink.
+	const serverSessionInput = document.getElementById(
+		'server-session',
+	) as HTMLInputElement | null;
+	if (serverSessionInput) {
+		// A tab at the site root sends `/` as `location.pathname`, but an agent
+		// tool call addresses the same page by its full file name (e.g.
+		// `/index.html`, read from page_list/page_blocks) — normalize the same
+		// way `/api/content` does so TabHub can match the two as one page
+		// (see agent/route.ts's matching normalization).
+		const page = normalizeLogicalPath(location.pathname, config.indexFileName);
+		const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+		const wsUrl = `${wsProtocol}//${location.host}/ws/editor`;
+		browserLog('[bge-agent-link]', 'wiring up', { wsUrl, page });
+		const transport = createWsTransport({
+			url: wsUrl,
+			onMessage: (raw) => agentLink?.handleMessage(raw),
+			onOpen: () => agentLink?.handleOpen(),
+		});
+		agentLink = createAgentLink({
+			adapter: createEngineAdapter(engine),
+			transport,
+			page,
+			serverSession: serverSessionInput.value,
+		});
+		engine.el.addEventListener('bge:server-online', () => transport.reconnectNow());
+	} else {
+		browserLog(
+			'[bge-agent-link]',
+			'#server-session not found — agent.enabled is false, skipping WS wiring',
+		);
+	}
 }

@@ -17,6 +17,10 @@
 		".": {
 			"import": "./dist/index.js",
 			"types": "./dist/index.d.ts"
+		},
+		"./block-op": {
+			"import": "./dist/agent-tools/block-op.js",
+			"types": "./dist/agent-tools/block-op.d.ts"
 		}
 	},
 	"bin": "./dist/bin.js",
@@ -33,7 +37,8 @@
 		"@burger-editor/core": "4.0.0-alpha.71",
 		"@burger-editor/file-io": "4.0.0-alpha.71",
 		"@burger-editor/frozen-patty": "4.0.0-alpha.71",
-		"@d-zero/roar": "2.2.1"
+		"@d-zero/roar": "2.2.1",
+		"zod": "4.4.3"
 	},
 	"devDependencies": {
 		"@d-zero/shared": "0.23.0",

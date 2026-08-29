@@ -7,6 +7,7 @@ import type { BlockData } from '../types.js';
 import { changeFrameSemantics } from './change-frame-semantics.js';
 import { createPlainStructuredBlockElement } from './create-plain-structured-block-element.js';
 import { exportOptions } from './export-options.js';
+import { type HighlightOptions, highlightElement } from './highlight.js';
 import { importOptions } from './import-options.js';
 import { parseHTMLToBlockData } from './parse-html-to-definition.js';
 import { updateGridItems } from './update-grid-items.js';
@@ -70,6 +71,22 @@ export class BurgerBlock {
 
 	getHTMLStringify() {
 		return this.el.outerHTML;
+	}
+
+	/**
+	 * Scroll this block into view and blink it — how an agent-driven edit
+	 * shows a user which block it's about to touch, before applying the
+	 * change. A no-op visual effect only; it never blocks or alters the
+	 * mutation that follows it.
+	 * @param options
+	 * @example
+	 * ```ts
+	 * await block.highlight();
+	 * // proceed with the actual mutation
+	 * ```
+	 */
+	highlight(options?: HighlightOptions) {
+		return highlightElement(this.el, options);
 	}
 
 	async importJSONString(jsonString: string) {

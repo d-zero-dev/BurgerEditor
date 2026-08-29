@@ -9,6 +9,8 @@ type Props = {
 	// Front Matter support (optional)
 	frontMatter?: Record<string, unknown>;
 	hasFrontMatter?: boolean;
+	/** This server process's Agent Hub session token, or `null` when `agent.enabled` is `false`. Read by `client/create-editor.ts` for the WS `hello` message — see `agent/tab-hub.ts`'s `hello`. */
+	serverSession?: string | null;
 };
 
 /**
@@ -20,6 +22,7 @@ type Props = {
  * @param props.virtualTreeEnabled - Whether the server is running in virtualTree mode
  * @param props.frontMatter - Front Matter data
  * @param props.hasFrontMatter - Whether Front Matter exists
+ * @param props.serverSession - This server process's Agent Hub session token
  */
 export function App({
 	path,
@@ -28,6 +31,7 @@ export function App({
 	virtualTreeEnabled,
 	frontMatter,
 	hasFrontMatter,
+	serverSession,
 }: Props) {
 	return (
 		<Layout lang={lang}>
@@ -45,6 +49,9 @@ export function App({
 						id="virtual-tree-enabled"
 						value={String(virtualTreeEnabled)}
 					/>
+					{serverSession != null && (
+						<input type="hidden" id="server-session" value={serverSession} />
+					)}
 
 					{content instanceof Error ? (
 						<p>{content.message}</p>
