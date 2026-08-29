@@ -13,7 +13,7 @@ BurgerEditor v4 のページは Front Matter + 編集可能領域（`editableAre
 
 ## 中核ループ
 
-1. **読む** — 対象ページを `page_blocks` で読む（下記「ハマりどころ」の1番を参照）
+1. **読む** — 対象ページを `page_blocks` で読む（下記「ハマりどころ」の1番を参照）。ただし、そのページの `page_blocks` 結果が直前の会話に既に出ているなら、読み直さず使い回してよい（書き込みに使う `readToken` だけは直前レスポンスのものを使う）
 2. **絞る** — ユーザーの指示と `text` / `headings` / `itemNames` を照合し、対象ブロックを 1 つに絞る。**絞れないときは推測せずユーザーに聞く**
 3. **書く** — `block_*` / `item_update` / `page_update` などで書き込む。**書く前の承認は不要。取り消しはユーザーの git 操作に任せる**（このプロジェクトの `documentRoot` は git 管理下にある前提。AI は `git checkout` 等の破壊的操作を行わない）
 4. **確かめる** — 書いた後にもう一度 `page_blocks`（または `page_get`）で読み戻し、意図通りかを見てからユーザーに結果を報告する
@@ -30,6 +30,7 @@ BurgerEditor v4 のページは Front Matter + 編集可能領域（`editableAre
 8. **`style_options_list` の戻りが空でも「このプロジェクトにスタイル軸が無い」とは限らない。** `config.stylesheets` に指定された CSS が読めなかっただけの可能性がある。実在する軸・変種名は必ず `style_options_list` を読んで確認し、推測で `--bge-options-<軸>--<変種>` を書かない。
 9. **`page_create` / `page_rename` / `page_copy` は絶対に上書きしない。** 宛先が既に存在すると `exists` エラーになる。上書きしたいなら先に `page_delete` する。
 10. **`.html` ファイルを `Edit` / `Write` で直接書き換えない。** 必ず CLI/MCP のツールを経由する。
+11. **`dryRun: true` はページが実在する場合のみ使える。** 存在しないパスに対して dry-run すると `Cannot dry-run mutation on a non-existent page` のようなエラーになる。まだ無いページの内容をプレビューしたいときは dry-run できない。
 
 ## エラー → 次の一手
 
