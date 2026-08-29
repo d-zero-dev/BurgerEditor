@@ -101,10 +101,12 @@ afterEach(async () => {
 });
 
 /**
- * Boot the real Hono app on a random loopback port. The server always
- * LISTENS on localhost (tests can't bind a TEST-NET address); `host` is
- * only what `hostGuard` / `createAgentAuth` are configured with, and clients
- * send it as their `Host` header.
+ * Boot the real Hono app on a random loopback port. The server always LISTENS
+ * on `127.0.0.1` (tests can't bind a TEST-NET address, and `'localhost'`
+ * resolves to a different address than the client's for the bind vs. the
+ * connect DNS lookup on some CI runners, refusing every connection);
+ * `host` is only what `hostGuard` / `createAgentAuth` are configured with,
+ * and clients send it as their `Host` header.
  * @param options
  * @param options.host
  */
@@ -117,7 +119,7 @@ async function bootServer(options: { readonly host?: LocalServerConfig['host'] }
 	const auth: AgentAuth = await createAgentAuth(host, tmp!.path);
 	const { upgradeWebSocket, injectWebSocket } = createNodeWebSocket({ app });
 	setRoute(app, userConfig, null, { hub, auth, upgradeWebSocket });
-	server = serve({ fetch: app.fetch, hostname: 'localhost', port: 0 });
+	server = serve({ fetch: app.fetch, hostname: '127.0.0.1', port: 0 });
 	injectWebSocket(server);
 	await new Promise((resolve) => server!.once('listening', resolve));
 	const address = server.address();
@@ -131,7 +133,7 @@ async function bootServer(options: { readonly host?: LocalServerConfig['host'] }
  */
 function connect(port: number, headers?: Record<string, string>) {
 	return new Promise<WebSocket>((resolve, reject) => {
-		const ws = new WebSocket(`ws://localhost:${port}/ws/editor`, {
+		const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/editor`, {
 			headers: headers ?? { host: 'localhost' },
 		});
 		ws.once('open', () => resolve(ws));
@@ -167,7 +169,7 @@ async function connectTab(port: number, serverSession: string, page = '/a.html')
  * @param headers
  */
 async function invoke(port: number, body: unknown, headers: Record<string, string> = {}) {
-	return fetch(`http://localhost:${port}/api/agent/invoke`, {
+	return fetch(`http://127.0.0.1:${port}/api/agent/invoke`, {
 		method: 'POST',
 		headers: { 'content-type': 'application/json', ...headers },
 		body: JSON.stringify(body),
@@ -452,7 +454,7 @@ describe('WS /ws/editor — non-loopback bind requires the session cookie or bea
 	test('an upgrade whose Host header is an unlisted address is refused by hostGuard with HTTP 403', async () => {
 		const { port } = await bootServer({ host: LAN_HOST });
 		const error = await new Promise<Error>((resolve) => {
-			const ws = new WebSocket(`ws://localhost:${port}/ws/editor`, {
+			const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/editor`, {
 				headers: { host: '203.0.113.99' },
 			});
 			ws.once('error', resolve);
