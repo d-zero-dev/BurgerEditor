@@ -333,6 +333,26 @@ describe('GET /api/agent/events', () => {
 		const body = (await res.json()) as { error: string };
 		expect(body.error).toBe('invalid');
 	});
+
+	test('trims whitespace around each `types` entry (comma-space is a common separator)', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		hub.events.append('session-connected', { sessionId: 'x' });
+		const res = await req(
+			app,
+			'/api/agent/events?since=0&timeoutMs=1000&types=session-connected,%20ui-idle',
+		);
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { events: { type: string }[] };
+		expect(body.events).toEqual([expect.objectContaining({ type: 'session-connected' })]);
+	});
+
+	test('rejects a negative `since` with 400 instead of a misleading `overflowed: true`', async () => {
+		const { app } = await buildApp(makeConfig(documentRoot));
+		const res = await req(app, '/api/agent/events?since=-1');
+		expect(res.status).toBe(400);
+		const body = (await res.json()) as { error: string };
+		expect(body.error).toBe('invalid');
+	});
 });
 
 describe('POST /api/agent/invoke — no tab open', () => {
@@ -361,7 +381,7 @@ describe('POST /api/agent/invoke — no tab open', () => {
 		expect(body.error).toBe('read-required');
 	});
 
-	test('appends a `content-saved` event', async () => {
+	test('appends a `content-saved` event keyed by the normalized `page`, not the raw `path`', async () => {
 		const { app, hub } = await buildApp(makeConfig(documentRoot));
 		const token = await readToken(app, '/a.html');
 		await postJson(app, '/api/agent/invoke', {
@@ -373,10 +393,21 @@ describe('POST /api/agent/invoke — no tab open', () => {
 			expect.arrayContaining([
 				expect.objectContaining({
 					type: 'content-saved',
-					payload: expect.objectContaining({ appliedTo: 'disk' }),
+					payload: { page: '/a.html', appliedTo: 'disk' },
 				}),
 			]),
 		);
+	});
+
+	test('a `dryRun: true` call does not append a `content-saved` event (nothing was written)', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const token = await readToken(app, '/a.html');
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 0 }, readToken: token, dryRun: true },
+		});
+		expect(res.status).toBe(200);
+		expect(hub.events.since(0).events).toEqual([]);
 	});
 
 	test('a read-only tool (page_blocks) does not append a `content-saved` event', async () => {
@@ -751,7 +782,10 @@ describe('POST /api/agent/invoke — with a tab open', () => {
 		expect(staleBody.message).toContain('outside local');
 		expect(sent).toEqual([
 			{ type: 'welcome', sessionId, revision: 1 },
-			{ type: 'reload', revision: 1, reason: 'external-change' },
+			// The external-change detector bumps the revision itself (to
+			// claim the change) rather than leaving persistedHash stale —
+			// see the route.ts comment at the `isExternallyChanged` branch.
+			{ type: 'reload', revision: 2, reason: 'external-change' },
 		]);
 		expect(hub.events.since(0).events.some((e) => e.type === 'content-changed')).toBe(
 			true,
@@ -767,7 +801,7 @@ describe('POST /api/agent/invoke — with a tab open', () => {
 			.result.readToken;
 		const currentHash = await computeContentHash(filePath);
 		expect(hub.revisions.get('/a.html')).toEqual({
-			revision: 1,
+			revision: 2,
 			persistedHash: currentHash,
 		});
 		// The tab reloaded and now matches disk.
@@ -958,6 +992,20 @@ describe('POST /api/agent/invoke — page_rename', () => {
 					kind: 'renamed',
 					from: '/a.html',
 					to: '/renamed.html',
+				}),
+			]),
+		);
+		// The `page-renamed` event-log entry must carry the same `{from, to}`
+		// shape as the WS broadcast, not the raw `{toolName, result}` — every
+		// page tool's `result` has a different shape (`path`, `to`, `target`,
+		// …), which would force an `editor_wait_for_event` consumer to know
+		// each tool's individual result shape just to read which page moved.
+		const { events } = hub.events.since(0);
+		expect(events).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					type: 'page-renamed',
+					payload: { from: '/a.html', to: '/renamed.html' },
 				}),
 			]),
 		);
