@@ -168,12 +168,25 @@ export function setAgentRoute(
 			return c.text('Unauthorized', 401);
 		}
 		const since = Number.parseInt(c.req.query('since') ?? '', 10);
+		if (Number.isFinite(since) && since < 0) {
+			return c.json(
+				{
+					error: 'invalid',
+					message: 'since must be a non-negative integer.',
+					timestamp: nowIso(),
+				},
+				400,
+			);
+		}
 		const timeoutMsRaw = Number.parseInt(c.req.query('timeoutMs') ?? '', 10);
 		const typesRaw = c.req.query('types');
 		const result = await waitForAgentEvents(hub, c.req.raw.signal, {
 			since: Number.isFinite(since) ? since : undefined,
 			timeoutMs: Number.isFinite(timeoutMsRaw) ? timeoutMsRaw : undefined,
-			types: typesRaw ? typesRaw.split(',') : undefined,
+			// Trim each entry — "types=a, b" (comma-space, a common
+			// convention) must not fail with an "unknown event type" for
+			// " b" just because of the leading space.
+			types: typesRaw ? typesRaw.split(',').map((t) => t.trim()) : undefined,
 		});
 		if (!result.ok) {
 			return c.json(invalidEventTypePayload(result.invalidType), 400);
@@ -435,10 +448,22 @@ async function runOnDisk(
 		}
 		await syncRegistryAfterDiskApply(hub, tool, toolName, pathInput, userConfig, ctx);
 		notifyPageEvent(hub, toolName, result);
-		if (!tool.annotations?.readOnlyHint && !(toolName in PAGE_STRUCTURAL_TOOL_KIND)) {
+		if (
+			!tool.annotations?.readOnlyHint &&
+			!(toolName in PAGE_STRUCTURAL_TOOL_KIND) &&
+			!hasDryRun(args)
+		) {
+			// `page`, normalized, matches every other event's key
+			// (`content-changed`, `session-*`, the browser-relayed
+			// `content-saved`) — `pathInput` is whatever raw string the agent
+			// passed, not necessarily the same key a subscriber comparing
+			// pages across events would expect.
+			const normalizedPage = pathInput
+				? normalizeLogicalPath(pathInput, userConfig.indexFileName)
+				: undefined;
 			hub.events.append(
 				toolName === 'front_matter_set' ? 'front-matter-changed' : 'content-saved',
-				{ path: pathInput, appliedTo: 'disk' },
+				{ page: normalizedPage, appliedTo: 'disk' },
 			);
 		}
 		return c.json({ ok: true, result, appliedTo: 'disk', timestamp: nowIso() });
@@ -583,7 +608,13 @@ function notifyPageEvent(hub: AgentHub, toolName: string, result: unknown): void
 				: kind === 'deleted'
 					? 'page-deleted'
 					: 'page-renamed';
-		hub.events.append(eventType, { toolName, result });
+		// The same `{from?, to?}` shape already broadcast to tabs above —
+		// not the raw `{toolName, result}`, whose shape varies per tool
+		// (`result.path`, `result.to`, `result.target`, …) and would force
+		// an `editor_wait_for_event`/`GET /api/agent/events` consumer to
+		// know each page tool's individual result shape just to read which
+		// page changed.
+		hub.events.append(eventType, target);
 	}
 }
 
@@ -662,7 +693,16 @@ async function runViaBrowserOrDisk(
 				currentHash,
 				entry.persistedHash,
 			);
-			hub.tabHub.reloadOthers(normalizedPage, null, entry.revision, 'external-change');
+			// Bump persistedHash to currentHash here, same as
+			// `fs-watcher.ts`'s `handleChange` does for the same condition —
+			// whichever of the two independent detectors (this invoke-time
+			// check, or fs.watch) observes the drift first must claim it by
+			// advancing persistedHash. Otherwise the other detector later
+			// compares against the same stale persistedHash, also concludes
+			// "changed", and double-reports: two `content-changed` events and
+			// two tab reloads for one external edit.
+			const bumped = hub.revisions.bump(normalizedPage, currentHash);
+			hub.tabHub.reloadOthers(normalizedPage, null, bumped.revision, 'external-change');
 			hub.events.append('content-changed', { page: normalizedPage });
 			throw new AgentError(
 				'stale',

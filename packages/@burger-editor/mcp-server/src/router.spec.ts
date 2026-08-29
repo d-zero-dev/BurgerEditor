@@ -483,6 +483,30 @@ describe('routeToolCall — auto mode', () => {
 			appliedTo: 'disk',
 		});
 	}, 10_000);
+
+	test('the same safety-net timeout leaves `nextSince` unset when `since` was omitted, instead of replaying from 0', async () => {
+		fakeLocal = await startFakeLocal((req, res) => {
+			if (req.url === '/api/agent/status') {
+				res.writeHead(200, { 'content-type': 'application/json' });
+				res.end(JSON.stringify({ protocolVersion: 1 }));
+				return;
+			}
+			// Never call res.end(): see the sibling test above.
+		});
+		const result = await routeToolCall(
+			editorWaitForEventTool,
+			{ timeoutMs: 0 },
+			{ mode: 'local', localUrl: fakeLocal.url },
+		);
+		// A caller who omitted `since` asked for "only events from now on".
+		// Falling back to `nextSince: 0` here would make their next poll
+		// replay the entire ring buffer — the opposite of what they asked
+		// for — so this synthetic response must leave it unset instead.
+		expect(result).toEqual({
+			result: { events: [], nextSince: undefined, timedOut: true, overflowed: false },
+			appliedTo: 'disk',
+		});
+	}, 10_000);
 });
 
 describe('computeWaitForEventTimeoutMs', () => {

@@ -225,7 +225,15 @@ async function invokeRemote(
 			return {
 				result: {
 					events: [],
-					nextSince: hasSince(args) ? args.since : 0,
+					// A caller who omitted `since` means "only events from
+					// now on" — falling back to `0` here would turn their
+					// next poll into a full replay of the ring buffer, the
+					// opposite of what omitting `since` asked for. Leave it
+					// unset instead: this synthetic response has no way to
+					// know `local`'s current tail seq (that's the very call
+					// that just failed to answer), so the honest answer is
+					// "no cursor progress happened", not a fabricated number.
+					nextSince: hasSince(args) ? args.since : undefined,
 					timedOut: true,
 					overflowed: false,
 				},
