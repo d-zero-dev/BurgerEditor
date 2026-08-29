@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { setRoute } from '../route.js';
 
 import { createAgentAuth } from './auth.js';
+import { __handleChangeForTest } from './fs-watcher.js';
 import { createAgentHub, type AgentHub } from './hub.js';
 
 const PAGE_HTML =
@@ -787,9 +788,24 @@ describe('POST /api/agent/invoke — with a tab open', () => {
 			// see the route.ts comment at the `isExternallyChanged` branch.
 			{ type: 'reload', revision: 2, reason: 'external-change' },
 		]);
-		expect(hub.events.since(0).events.some((e) => e.type === 'content-changed')).toBe(
-			true,
-		);
+		const contentChangedCountAfterInvoke = hub.events
+			.since(0)
+			.events.filter((e) => e.type === 'content-changed').length;
+		expect(contentChangedCountAfterInvoke).toBe(1);
+
+		// The same external write also reaches fs.watch independently (async,
+		// possibly after this invoke already detected and claimed it above).
+		// Because the invoke-time detection already bumped persistedHash to
+		// currentHash, this must be a no-op — no second `content-changed`,
+		// no second reload — instead of double-reporting the one edit.
+		await __handleChangeForTest(hub, documentRoot, '/a.html', 'a.html');
+		expect(
+			hub.events.since(0).events.filter((e) => e.type === 'content-changed').length,
+		).toBe(contentChangedCountAfterInvoke);
+		expect(sent).toEqual([
+			{ type: 'welcome', sessionId, revision: 1 },
+			{ type: 'reload', revision: 2, reason: 'external-change' },
+		]);
 
 		// The agent does what the error says: re-reads the page.
 		const reRead = await postJson(app, '/api/agent/invoke', {
@@ -944,6 +960,11 @@ describe('POST /api/agent/invoke — page_create', () => {
 		const { events } = hub.events.since(0);
 		expect(events.some((e) => e.type === 'page-created')).toBe(true);
 		expect(events.some((e) => e.type === 'content-saved')).toBe(false);
+		expect(events).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ type: 'page-created', payload: { to: '/b.html' } }),
+			]),
+		);
 	});
 });
 
@@ -965,6 +986,12 @@ describe('POST /api/agent/invoke — page_delete', () => {
 		expect(sent).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({ type: 'page-event', kind: 'deleted', from: '/a.html' }),
+			]),
+		);
+		const { events } = hub.events.since(0);
+		expect(events).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ type: 'page-deleted', payload: { from: '/a.html' } }),
 			]),
 		);
 	});
@@ -1034,6 +1061,12 @@ describe('POST /api/agent/invoke — page_copy', () => {
 					kind: 'created',
 					to: '/copy.html',
 				}),
+			]),
+		);
+		const { events } = hub.events.since(0);
+		expect(events).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ type: 'page-created', payload: { to: '/copy.html' } }),
 			]),
 		);
 	});
