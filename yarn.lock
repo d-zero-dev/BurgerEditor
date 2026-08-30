@@ -589,7 +589,7 @@ __metadata:
     debug: "npm:4.4.3"
     dotenv: "npm:17.4.2"
     hono: "npm:4.13.3"
-    open: "npm:11.0.0"
+    open: "npm:11.0.1"
     prettier: "npm:3.9.6"
     react: "npm:19.2.8"
     react-dom: "npm:19.2.8"
@@ -13873,17 +13873,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"open@npm:11.0.0":
-  version: 11.0.0
-  resolution: "open@npm:11.0.0"
+"open@npm:11.0.1":
+  version: 11.0.1
+  resolution: "open@npm:11.0.1"
   dependencies:
     default-browser: "npm:^5.4.0"
     define-lazy-prop: "npm:^3.0.0"
     is-in-ssh: "npm:^1.0.0"
     is-inside-container: "npm:^1.0.0"
-    powershell-utils: "npm:^0.1.0"
-    wsl-utils: "npm:^0.3.0"
-  checksum: 10c0/7aeeda4131268ed90f90e7728dda5c46bb0c6205b27a4be3e86ea33593e30dd393423e20e31c00802a8e635ef59becaee33ef9749a8ceb027567cd253e9e7b1e
+    powershell-utils: "npm:^0.2.0"
+    wsl-utils: "npm:^1.0.0"
+  checksum: 10c0/fd650ac10806a06bfe197af0ef143cd2a3127294721524972f04377fb1144da5e32a2d0507497e214385981ec5b6b4b43210e22d7ef22bc45c390771d80658a5
   languageName: node
   linkType: hard
 
@@ -14819,6 +14819,13 @@ __metadata:
   version: 0.1.0
   resolution: "powershell-utils@npm:0.1.0"
   checksum: 10c0/a64713cf3583259c9ed6be211c06b4b19e8608bcb0f7f6287ffac0a95b8c7582b6b662eea0e201fd659492c8e9f9c5fd0bfc4579645c5add9c1a600075621c95
+  languageName: node
+  linkType: hard
+
+"powershell-utils@npm:^0.2.0":
+  version: 0.2.0
+  resolution: "powershell-utils@npm:0.2.0"
+  checksum: 10c0/0fa649e933800f33276262646cfb0d2ffcdfdb6a68ff80f5ab66e33c3197d3edf022e774502d5e458aee683702994e6d201fda85958c3cb7ccc413e0746b4373
   languageName: node
   linkType: hard
 
@@ -18881,13 +18888,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"wsl-utils@npm:^0.3.0":
-  version: 0.3.1
-  resolution: "wsl-utils@npm:0.3.1"
+"wsl-utils@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "wsl-utils@npm:1.0.0"
   dependencies:
     is-wsl: "npm:^3.1.0"
     powershell-utils: "npm:^0.1.0"
-  checksum: 10c0/b3ba99cc6b71f66457eef598d529beeb8cb57a72646877fe25993894b808c60b82f6d47df5463f0b6e54632272f62f5eaea105c12784fd09b06f500f3f53aa2e
+  checksum: 10c0/95f01898b531c240eae84cf7518f9628dd3487f5ebe523f36654347de4d3e35ecc4402acbdf3516632c908c1befca22ae915cfd27ac10f770554ebc89a771133
   languageName: node
   linkType: hard
 
