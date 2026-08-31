@@ -76,6 +76,35 @@ describe('highlightElement', () => {
 		});
 	});
 
+	test("listens for scrollend on the target element's own window, not the ambient one — BurgerBlock.highlight() targets live inside an editable-area iframe with a distinct window", async () => {
+		stubReducedMotion(false);
+		vi.useFakeTimers();
+		const iframe = document.createElement('iframe');
+		document.body.append(iframe);
+		const iframeWindow = iframe.contentWindow!;
+		const iframeEl = iframeWindow.document.createElement('div');
+		iframeWindow.document.body.append(iframeEl);
+		vi.spyOn(iframeEl, 'scrollIntoView').mockImplementation(() => {});
+
+		let resolved = false;
+		const promise = highlightElement(iframeEl, { blink: false }).then(() => {
+			resolved = true;
+		});
+		await Promise.resolve();
+
+		// Dispatching on the ambient window must NOT resolve this — only the
+		// iframe's own window should be observed.
+		window.dispatchEvent(new Event('scrollend'));
+		await vi.advanceTimersByTimeAsync(0);
+		expect(resolved).toBe(false);
+
+		iframeWindow.dispatchEvent(new Event('scrollend'));
+		await vi.advanceTimersByTimeAsync(0);
+		expect(resolved).toBe(true);
+
+		await promise;
+	});
+
 	test('blink: false skips the attribute entirely', async () => {
 		stubReducedMotion(false);
 		await highlightElement(el, { scroll: false, blink: false });

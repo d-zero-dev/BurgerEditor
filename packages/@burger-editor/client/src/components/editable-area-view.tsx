@@ -126,22 +126,45 @@ export function EditableAreaView({
 			appendStylesheetTo(frameDoc, path, id);
 		}
 
-		// ポータルで差し込むブロックメニュー層の位置決め。client本体の
+		// ポータルで差し込むブロックメニュー層の位置決めと、agentによる
+		// ブロック操作前の注視演出（BurgerBlock.highlight()、実体は
+		// highlightElement()がトグルする[data-bge-highlight]）。client本体の
 		// CSSはiframe文書に読み込まれないため、ここで直接注入する。
 		// insetを省略するとposition: absoluteのcontaining blockがDOMフロー上の
 		// static position（コンテンツ本体の直後＝ページ最下部）になり、子の
 		// BlockMenuViewが計算する--x/--yオフセットがそこへ積み増しされて
 		// メニューが大きく下にずれる
-		const blockMenuStyle = frameDoc.createElement('style');
-		blockMenuStyle.textContent = `@layer ${CSS_LAYER.ui} {
+		const injectedUiStyle = frameDoc.createElement('style');
+		injectedUiStyle.textContent = `@layer ${CSS_LAYER.ui} {
 			[data-bge-component='block-menu'] {
 				position: absolute;
 				inset: 0;
 				z-index: 2147483647;
 				pointer-events: none;
 			}
+
+			/* #0c7e9e はui.cssの--bge-ui-primary-colorと同じ値。iframe文書には
+			   その:root変数定義が読み込まれない（このstyleタグがそもそも
+			   その代替）ため、ここではvar()参照できずハードコードしている。
+			   将来テーマカラーを変更する際はこの値も揃えて更新すること */
+			@keyframes bge-highlight-blink {
+				0%, 100% {
+					outline-color: transparent;
+					background-color: transparent;
+				}
+				50% {
+					outline-color: #0c7e9e;
+					background-color: rgb(12 126 158 / 12%);
+				}
+			}
+
+			[data-bge-highlight] {
+				outline: 3px solid transparent;
+				outline-offset: 2px;
+				animation: bge-highlight-blink 0.5s ease-in-out 2;
+			}
 		}`;
-		frameDoc.head.append(blockMenuStyle);
+		frameDoc.head.append(injectedUiStyle);
 
 		frameDoc.body.setAttribute('style', 'margin: 0; border: 0;');
 

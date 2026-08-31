@@ -22,6 +22,7 @@ export type { UIState, OpenDialogState } from './engine/ui-state.js';
 export { beginProcessing } from './engine/processing-scope.js';
 export type { ProcessingHost } from './engine/processing-scope.js';
 export type { EditableContent } from './editable-content.js';
+export { highlightElement } from './block/highlight.js';
 export type { HighlightOptions } from './block/highlight.js';
 export {
 	applyLiveBlockOp,

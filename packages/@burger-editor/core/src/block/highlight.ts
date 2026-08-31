@@ -29,6 +29,10 @@ const BLINK_FALLBACK_MS = 2000;
  * since core has no opinion on how a highlight should look.
  * @param el
  * @param options
+ * @example
+ * ```ts
+ * await highlightElement(el, { scroll: false }); // blink in place
+ * ```
  */
 export async function highlightElement(
 	el: HTMLElement,
@@ -43,7 +47,7 @@ export async function highlightElement(
 	}
 	if (scroll) {
 		el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-		await waitForScrollEnd();
+		await waitForScrollEnd(el);
 	}
 	if (blink) {
 		await blinkOnce(el);
@@ -62,15 +66,23 @@ function prefersReducedMotion(): boolean {
 
 /**
  * `scrollend` fires on whichever element actually scrolled, not necessarily
- * `el` itself — listening on `window` catches it via bubbling in browsers
- * that support the event at all. Browsers that don't (or a scroll that was
- * already at rest, so nothing fires) fall back to `SCROLL_FALLBACK_MS`.
+ * `el` itself — listening on `el`'s own window catches it via bubbling in
+ * browsers that support the event at all. `el` usually lives inside an
+ * editable-area iframe (`BurgerBlock.highlight()`'s target), which has its
+ * own `window` distinct from this module's — listening on the wrong window
+ * would silently never see the event and always fall through to the
+ * `SCROLL_FALLBACK_MS` timer, so this resolves the view from `el` itself
+ * rather than assuming the ambient `window`. Browsers that don't support the
+ * event at all (or a scroll that was already at rest, so nothing fires) fall
+ * back to `SCROLL_FALLBACK_MS` the same way.
+ * @param el
  */
-function waitForScrollEnd(): Promise<void> {
+function waitForScrollEnd(el: HTMLElement): Promise<void> {
 	return new Promise((resolve) => {
 		const timeoutId = setTimeout(resolve, SCROLL_FALLBACK_MS);
-		if (typeof window !== 'undefined' && 'onscrollend' in window) {
-			window.addEventListener(
+		const view = el.ownerDocument.defaultView;
+		if (view && 'onscrollend' in view) {
+			view.addEventListener(
 				'scrollend',
 				() => {
 					clearTimeout(timeoutId);
