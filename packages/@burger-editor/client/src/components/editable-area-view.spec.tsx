@@ -122,6 +122,24 @@ test('iframe文書内にコンテンツコンテナを構築してhostを解決�
 	);
 });
 
+test('iframe文書に注入するblock-menuスタイルがcontaining blockを明示する', () => {
+	const engine = createMockEngine();
+	const { container } = renderView(engine, 'main', '<p>hello</p>');
+
+	const iframe = container.querySelector('iframe');
+	const styleText = [...(iframe?.contentDocument?.head.querySelectorAll('style') ?? [])]
+		.map((el) => el.textContent)
+		.join('\n');
+
+	// position: absoluteのみでinsetを指定しないと、DOMフロー上のstatic
+	// position（コンテンツ本体の直後＝ページ最下部）が基準点になり、
+	// BlockMenuViewの--x/--yオフセットがそこへ積み増しされてメニューが
+	// 大きく下にずれる
+	expect(styleText).toMatch(
+		/\[data-bge-component='block-menu'\]\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0;/,
+	);
+});
+
 test('再レンダリングしてもiframe要素の同一性が保たれる', () => {
 	const engine = createMockEngine();
 	const { container } = renderView(engine);

@@ -127,11 +127,16 @@ export function EditableAreaView({
 		}
 
 		// ポータルで差し込むブロックメニュー層の位置決め。client本体の
-		// CSSはiframe文書に読み込まれないため、ここで直接注入する
+		// CSSはiframe文書に読み込まれないため、ここで直接注入する。
+		// insetを省略するとposition: absoluteのcontaining blockがDOMフロー上の
+		// static position（コンテンツ本体の直後＝ページ最下部）になり、子の
+		// BlockMenuViewが計算する--x/--yオフセットがそこへ積み増しされて
+		// メニューが大きく下にずれる
 		const blockMenuStyle = frameDoc.createElement('style');
 		blockMenuStyle.textContent = `@layer ${CSS_LAYER.ui} {
 			[data-bge-component='block-menu'] {
 				position: absolute;
+				inset: 0;
 				z-index: 2147483647;
 				pointer-events: none;
 			}
