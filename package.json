@@ -7,7 +7,8 @@
 		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
 	},
 	"scripts": {
-		"start": "node ./packages/@burger-editor/local/server/index.js",
+		"start": "cd ./packages/@burger-editor/local && node ./server/index.js",
+		"bge": "yarn start",
 		"build": "lerna run build",
 		"clean": "lerna run clean",
 		"dev": "lerna run dev --parallel",
