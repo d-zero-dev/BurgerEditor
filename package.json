@@ -68,8 +68,8 @@
 		"@d-zero/tsconfig": "2.0.0",
 		"@markuplint/jsx-parser": "4.18.3",
 		"@markuplint/react-spec": "4.18.0",
-		"@vitest/browser": "4.1.10",
-		"@vitest/browser-playwright": "4.1.10",
+		"@vitest/browser": "4.1.11",
+		"@vitest/browser-playwright": "4.1.11",
 		"eslint-plugin-react-hooks": "7.1.1",
 		"husky": "9.1.7",
 		"jsdom": "28.1.0",
@@ -80,7 +80,7 @@
 		"playwright": "1.62.1",
 		"pngjs": "7.0.0",
 		"typescript": "5.9.3",
-		"vitest": "4.1.10"
+		"vitest": "4.1.11"
 	},
 	"packageManager": "yarn@4.18.0",
 	"volta": {
