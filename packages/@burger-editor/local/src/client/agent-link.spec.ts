@@ -336,6 +336,68 @@ describe('createAgentLink — outbound', () => {
 
 		expect(sent).toEqual([]);
 	});
+
+	test('notifyFocus sends a focus message', () => {
+		const { adapter } = fakeAdapter();
+		const { transport, sent } = fakeTransport();
+		const link = createAgentLink({
+			adapter,
+			transport,
+			page: '/a.html',
+			serverSession: 's',
+		});
+
+		link.notifyFocus();
+
+		expect(sent).toEqual([{ type: 'focus' }]);
+	});
+
+	test('notifyFocus is a no-op after dispose', () => {
+		const { adapter } = fakeAdapter();
+		const { transport, sent } = fakeTransport();
+		const link = createAgentLink({
+			adapter,
+			transport,
+			page: '/a.html',
+			serverSession: 's',
+		});
+
+		link.dispose();
+		link.notifyFocus();
+
+		expect(sent).toEqual([]);
+	});
+
+	test('notifyContentSwitch sends a switch-content message with the given area', () => {
+		const { adapter } = fakeAdapter();
+		const { transport, sent } = fakeTransport();
+		const link = createAgentLink({
+			adapter,
+			transport,
+			page: '/a.html',
+			serverSession: 's',
+		});
+
+		link.notifyContentSwitch('draft');
+
+		expect(sent).toEqual([{ type: 'switch-content', area: 'draft' }]);
+	});
+
+	test('notifyContentSwitch is a no-op after dispose', () => {
+		const { adapter } = fakeAdapter();
+		const { transport, sent } = fakeTransport();
+		const link = createAgentLink({
+			adapter,
+			transport,
+			page: '/a.html',
+			serverSession: 's',
+		});
+
+		link.dispose();
+		link.notifyContentSwitch('main');
+
+		expect(sent).toEqual([]);
+	});
 });
 
 /**

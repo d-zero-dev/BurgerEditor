@@ -52,6 +52,10 @@ export interface AgentLink {
 	consumeEcho(): boolean;
 	/** Call when the editor saves for a reason other than an agent-applied op (a human edit). */
 	notifyHumanSave(): void;
+	/** Call when the browser tab regains focus — feeds the server's primary-tab selection with a freshness signal. */
+	notifyFocus(): void;
+	/** Call when the editor switches which content area (main/draft) is visible. */
+	notifyContentSwitch(area: 'main' | 'draft'): void;
 	/** Feed a raw inbound WS frame — wire to `createWsTransport`'s `onMessage`. */
 	handleMessage(raw: string): void;
 	/** Called once the transport connects (including on reconnect) — sends `hello`. Wire to `createWsTransport`'s `onOpen`. */
@@ -239,6 +243,16 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 		notifyHumanSave() {
 			if (!disposed) {
 				send({ type: 'saved', revision });
+			}
+		},
+		notifyFocus() {
+			if (!disposed) {
+				send({ type: 'focus' });
+			}
+		},
+		notifyContentSwitch(area) {
+			if (!disposed) {
+				send({ type: 'switch-content', area });
 			}
 		},
 		handleMessage(raw) {

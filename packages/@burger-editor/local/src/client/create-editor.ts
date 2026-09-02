@@ -304,6 +304,10 @@ export async function createEditor() {
 			},
 		});
 		engine.el.addEventListener('bge:server-online', () => transport.reconnectNow());
+		engine.el.addEventListener('bge:switch-content', (event) =>
+			agentLink?.notifyContentSwitch(event.detail.content),
+		);
+		window.addEventListener('focus', () => agentLink?.notifyFocus());
 	} else {
 		browserLog(
 			'[bge-agent-link]',
