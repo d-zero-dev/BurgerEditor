@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.72](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.71...v4.0.0-alpha.72) (2026-09-02)
+
+### Bug Fixes
+
+- **mcp-server:** clear the startup-capture timer on every exit path ([070e3da](https://github.com/d-zero-dev/BurgerEditor/commit/070e3da2eeeccae326860d2d8ecd947d4d9450d3))
+- **mcp-server:** close the Client/Transport pair in v4.spec.ts's fixture ([3b74c4a](https://github.com/d-zero-dev/BurgerEditor/commit/3b74c4a9d701cef9c72fd6bc9bd6967dfa595a34))
+- **mcp-server:** forward editor_wait_for_event without misreading its own timeout as local dying ([3cad0fc](https://github.com/d-zero-dev/BurgerEditor/commit/3cad0fc5fd5442c74a662fd615c85fe9bd9041aa))
+- **mcp-server:** read local's agent token file and stop caching a failed context load ([b45550e](https://github.com/d-zero-dev/BurgerEditor/commit/b45550e3fc1890091e0b4a35f701e5601b187e42))
+- **mcp-server:** stop replaying event history after a wait-for-event safety-net timeout ([529b52e](https://github.com/d-zero-dev/BurgerEditor/commit/529b52e1949bb6967da6bcc93af3efe75aff4b34))
+- **mcp-server:** treat any HTTP response from local as authoritative, never as a crash ([e58e824](https://github.com/d-zero-dev/BurgerEditor/commit/e58e8249030cddc14d707cd85d2048d7272cc279))
+
+- feat(mcp-server)!: route agent tools through disk/auto/local mode ([9be9064](https://github.com/d-zero-dev/BurgerEditor/commit/9be9064208f30e4fce5955922a5cb1fb534ebd1f))
+
+### BREAKING CHANGES
+
+- the 21 standalone v4 MCP tools + duplicate_block /
+  update_page helpers are replaced by the 28-tool agentTools set from
+  @burger-editor/cli (see the cli commit in this same change for the
+  tool-level breaking changes). No compatibility guaranteed pre-1.0; v3
+  compat tools are unaffected.
+
 # [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
 
 **Note:** Version bump only for package @burger-editor/mcp-server

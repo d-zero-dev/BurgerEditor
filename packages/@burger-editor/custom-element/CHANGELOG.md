@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.72](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.71...v4.0.0-alpha.72) (2026-09-02)
+
+### Bug Fixes
+
+- **custom-element:** surface the parent/child dispose race instead of hiding it ([869c108](https://github.com/d-zero-dev/BurgerEditor/commit/869c108f20c2ace92fbd426a33e05066dddd3d73))
+
+### Features
+
+- **custom-element:** dispose the tiptap Editor on disconnect/destroy ([041bdb6](https://github.com/d-zero-dev/BurgerEditor/commit/041bdb63588f259237f5636e465a033be28544ea))
+
 # [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
 
 ### Bug Fixes

@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.72](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.71...v4.0.0-alpha.72) (2026-09-02)
+
+- fix(file-io)!: reject page paths that resolve outside documentRoot ([ea45605](https://github.com/d-zero-dev/BurgerEditor/commit/ea456054aa182fc33fe212fc4c010bd6c9ad32d9))
+
+### Features
+
+- **file-io:** add agent config to BurgerEditorConfig ([3cddb98](https://github.com/d-zero-dev/BurgerEditor/commit/3cddb98d4f8f90203bb2a78e089c75355ec512d4))
+
+### BREAKING CHANGES
+
+- resolvePathInput now throws PathOutsideDocumentRootError
+  for inputs that would resolve outside documentRoot, where it previously
+  returned the escaped path. A `..` that stays inside documentRoot after
+  normalization (`foo/../bar.html`) is still accepted.
+
+GHSA-4v47-5hm4-93xf
+
 # [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
 
 **Note:** Version bump only for package @burger-editor/file-io

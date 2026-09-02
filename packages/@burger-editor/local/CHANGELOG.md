@@ -3,6 +3,35 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.72](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.71...v4.0.0-alpha.72) (2026-09-02)
+
+### Bug Fixes
+
+- **local:** close the Agent Hub gaps found in review ([fe2e02d](https://github.com/d-zero-dev/BurgerEditor/commit/fe2e02d992e8c2334971b235d982e9b0078dfc25))
+- **local:** close the Agent Hub review findings in the relay, auth and browser link ([2af10f7](https://github.com/d-zero-dev/BurgerEditor/commit/2af10f7c16030967d8918e48ee5deb71f8edfb44))
+- **local:** drive the editor through engine methods, not imported core functions ([dd368dc](https://github.com/d-zero-dev/BurgerEditor/commit/dd368dcee646aa18532c26d8a0bde0217988d5f1))
+- **local:** fix this-binding in FrontMatterEditorHandle's unmount() alias ([a568e3c](https://github.com/d-zero-dev/BurgerEditor/commit/a568e3c1e7c32995c7e1e99db3ad0d9545f3b2f3))
+- **local:** normalize the root-page path so a tab actually matches an agent's target ([a17b361](https://github.com/d-zero-dev/BurgerEditor/commit/a17b361cd4a2b6397131d5e405e09b31941acf75))
+- **local:** pin ws.spec.ts's real server to 127.0.0.1, not the ambiguous 'localhost' ([2e099b4](https://github.com/d-zero-dev/BurgerEditor/commit/2e099b4d09978eb0907eb5d33f4ba4611f3b83f1))
+- **local:** stop Agent Hub event log from misreporting page state ([a7e7410](https://github.com/d-zero-dev/BurgerEditor/commit/a7e74107b630a040757845a8124e8d41f5eb8c9d)), closes [#906](https://github.com/d-zero-dev/BurgerEditor/issues/906) [#907](https://github.com/d-zero-dev/BurgerEditor/issues/907) [#908](https://github.com/d-zero-dev/BurgerEditor/issues/908) [#909](https://github.com/d-zero-dev/BurgerEditor/issues/909)
+- **local:** surface the browser's actual error detail on an ApplyNackError ([b4b136a](https://github.com/d-zero-dev/BurgerEditor/commit/b4b136ab803ae0d8e45520f7a3c783f4232afd3b))
+
+- feat(local)!: add WebSocket-based Agent Hub for browser-side AI agent application ([c7755ae](https://github.com/d-zero-dev/BurgerEditor/commit/c7755ae8d35e0f8b30da268db5744ad94eccc245))
+
+### Features
+
+- **local:** log every Agent Hub WS message for debugging ([c792ed0](https://github.com/d-zero-dev/BurgerEditor/commit/c792ed0037d44fcbe3a5db73c89268660c423a89))
+- **local:** observe agent hub state and detect external page changes ([15d464c](https://github.com/d-zero-dev/BurgerEditor/commit/15d464c75cb60956de60f75c04bd0a96f1febd71))
+- **local:** send focus and switch-content over the Agent Hub socket ([020bded](https://github.com/d-zero-dev/BurgerEditor/commit/020bded22e4f1daaf340874089e3bf67ed584308))
+- **local:** timestamp agent responses and browser-side Agent Hub logs ([fe47ea7](https://github.com/d-zero-dev/BurgerEditor/commit/fe47ea7f984208ae925b3cc8cb641c65134ff1cc))
+
+### BREAKING CHANGES
+
+- local's "./get-user-config" export now returns
+  { config, configDir } instead of the config object directly.
+  `configDir` is where agent/auth.ts persists the per-launch token.
+  Callers must destructure: const { config } = await getUserConfig().
+
 # [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
 
 ### Bug Fixes

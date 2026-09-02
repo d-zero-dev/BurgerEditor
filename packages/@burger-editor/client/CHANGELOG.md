@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.72](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.71...v4.0.0-alpha.72) (2026-09-02)
+
+### Bug Fixes
+
+- **client:** fix item-editor-host.spec.ts CI build failure ([64904fc](https://github.com/d-zero-dev/BurgerEditor/commit/64904fc53353cdd0bafc765fa7b8f804d7fbb798))
+- **client:** fix this-binding in reactMount()'s deprecated cleanUp() alias ([800b97d](https://github.com/d-zero-dev/BurgerEditor/commit/800b97db2a0b2808a1c6854e5d01600e5e872fd3))
+- **client:** guard content-stylesheet injection against disposed wysiwyg ([fa2a835](https://github.com/d-zero-dev/BurgerEditor/commit/fa2a835a898ae46363d7261c79c49fa90316ba04))
+- **client:** pin block-menu layer to iframe viewport top-left ([13d7742](https://github.com/d-zero-dev/BurgerEditor/commit/13d7742ae14a01fcdda003c25636cbfe038bb410))
+- **client:** rebind blocks when leaving source mode ([7d2d84e](https://github.com/d-zero-dev/BurgerEditor/commit/7d2d84e4111df8bd018c5b95dae8771d784e3e2b)), closes [#901](https://github.com/d-zero-dev/BurgerEditor/issues/901)
+- **client:** restore EditableAreaView export dropped during commit split ([42b145b](https://github.com/d-zero-dev/BurgerEditor/commit/42b145b2c1be18c68eaefd2141bbbacc949c0fe7))
+- **client:** use mockImplementation for void promise mocks in tests ([0ab0d8e](https://github.com/d-zero-dev/BurgerEditor/commit/0ab0d8e5c169622c6d15f293e56d73e5653e0e5b))
+
+### Features
+
+- **client:** fix isProcessed leak in move/remove-block and dialogHost leak ([910b581](https://github.com/d-zero-dev/BurgerEditor/commit/910b581595c6105441c3ccc58c204542776f16a2))
+- **client:** inject the [data-bge-highlight] blink animation into editable-area iframes ([673b179](https://github.com/d-zero-dev/BurgerEditor/commit/673b1795b6bd363baaf4b19ca775b53250ed9ed6))
+
 # [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
 
 ### Bug Fixes

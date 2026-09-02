@@ -3,6 +3,93 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.72](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.71...v4.0.0-alpha.72) (2026-09-02)
+
+### Bug Fixes
+
+- **client:** fix item-editor-host.spec.ts CI build failure ([64904fc](https://github.com/d-zero-dev/BurgerEditor/commit/64904fc53353cdd0bafc765fa7b8f804d7fbb798))
+- **client:** fix this-binding in reactMount()'s deprecated cleanUp() alias ([800b97d](https://github.com/d-zero-dev/BurgerEditor/commit/800b97db2a0b2808a1c6854e5d01600e5e872fd3))
+- **client:** guard content-stylesheet injection against disposed wysiwyg ([fa2a835](https://github.com/d-zero-dev/BurgerEditor/commit/fa2a835a898ae46363d7261c79c49fa90316ba04))
+- **client:** pin block-menu layer to iframe viewport top-left ([13d7742](https://github.com/d-zero-dev/BurgerEditor/commit/13d7742ae14a01fcdda003c25636cbfe038bb410))
+- **client:** rebind blocks when leaving source mode ([7d2d84e](https://github.com/d-zero-dev/BurgerEditor/commit/7d2d84e4111df8bd018c5b95dae8771d784e3e2b)), closes [#901](https://github.com/d-zero-dev/BurgerEditor/issues/901)
+- **client:** restore EditableAreaView export dropped during commit split ([42b145b](https://github.com/d-zero-dev/BurgerEditor/commit/42b145b2c1be18c68eaefd2141bbbacc949c0fe7))
+- **client:** use mockImplementation for void promise mocks in tests ([0ab0d8e](https://github.com/d-zero-dev/BurgerEditor/commit/0ab0d8e5c169622c6d15f293e56d73e5653e0e5b))
+- **cli:** reject a NaN or non-integer block index instead of resolving to nothing ([f4a0a36](https://github.com/d-zero-dev/BurgerEditor/commit/f4a0a3667d21e29b9cdef39376eeb6adb107a37e))
+- **cli:** reject traversing page paths at the schema edge and map the resolver error ([55a30d9](https://github.com/d-zero-dev/BurgerEditor/commit/55a30d9b95275956fd15c6c14c5030bb54c7685f))
+- **cli:** report the real final index of a block moved past the end ([a7faa79](https://github.com/d-zero-dev/BurgerEditor/commit/a7faa79ea7da8603f4741a51b7f36c0b1f309048))
+- **cli:** teach agents to recover from user-editing instead of failing ([1cff53d](https://github.com/d-zero-dev/BurgerEditor/commit/1cff53d04782123abbb1dfdb007cd2f0149f86c7))
+- **cli:** tell the agent to read the catalog/item schema before composing a block spec ([0074bbd](https://github.com/d-zero-dev/BurgerEditor/commit/0074bbdd3328509bd235fa2f89c9d0b371ca45b5))
+- **core:** add replaceContents to rebind blocks after HTML replacement ([e42a178](https://github.com/d-zero-dev/BurgerEditor/commit/e42a178a09c232dbc689a7da0136ab744a071c5c))
+- **core:** align live update-item's itemIndex with the disk-side item enumeration ([25a6895](https://github.com/d-zero-dev/BurgerEditor/commit/25a6895df72160fe3879eec5ce350ccd80d817df))
+- **core:** dispose partial engine construction on failure, fix this-binding ([7e5dcb2](https://github.com/d-zero-dev/BurgerEditor/commit/7e5dcb2248978c5a022c7fd4ac899bfdb21b27f8))
+- **core:** make live block ops work with an iframe-hosted editable area ([460b23b](https://github.com/d-zero-dev/BurgerEditor/commit/460b23b554d0636249b64751114004c5d68f3d6d))
+- **core:** scope highlightElement's scrollend listener to the target's window ([da6596e](https://github.com/d-zero-dev/BurgerEditor/commit/da6596e2166129ba3aa0437bd8bdaf53b2fd6c77))
+- **custom-element:** surface the parent/child dispose race instead of hiding it ([869c108](https://github.com/d-zero-dev/BurgerEditor/commit/869c108f20c2ace92fbd426a33e05066dddd3d73))
+- **github:** retry CJK font install on transient apt mirror timeout ([51942ba](https://github.com/d-zero-dev/BurgerEditor/commit/51942ba4a143f30e51f327b3d2b3fd4486fbc3b7)), closes [#885](https://github.com/d-zero-dev/BurgerEditor/issues/885) [#883](https://github.com/d-zero-dev/BurgerEditor/issues/883)
+- **inspector:** close jsdom windows after each HTML file scan ([579a987](https://github.com/d-zero-dev/BurgerEditor/commit/579a987429a99ffa7d7017c2badd90a884d49e19))
+- **local:** close the Agent Hub gaps found in review ([fe2e02d](https://github.com/d-zero-dev/BurgerEditor/commit/fe2e02d992e8c2334971b235d982e9b0078dfc25))
+- **local:** close the Agent Hub review findings in the relay, auth and browser link ([2af10f7](https://github.com/d-zero-dev/BurgerEditor/commit/2af10f7c16030967d8918e48ee5deb71f8edfb44))
+- **local:** drive the editor through engine methods, not imported core functions ([dd368dc](https://github.com/d-zero-dev/BurgerEditor/commit/dd368dcee646aa18532c26d8a0bde0217988d5f1))
+- **local:** fix this-binding in FrontMatterEditorHandle's unmount() alias ([a568e3c](https://github.com/d-zero-dev/BurgerEditor/commit/a568e3c1e7c32995c7e1e99db3ad0d9545f3b2f3))
+- **local:** normalize the root-page path so a tab actually matches an agent's target ([a17b361](https://github.com/d-zero-dev/BurgerEditor/commit/a17b361cd4a2b6397131d5e405e09b31941acf75))
+- **local:** pin ws.spec.ts's real server to 127.0.0.1, not the ambiguous 'localhost' ([2e099b4](https://github.com/d-zero-dev/BurgerEditor/commit/2e099b4d09978eb0907eb5d33f4ba4611f3b83f1))
+- **local:** stop Agent Hub event log from misreporting page state ([a7e7410](https://github.com/d-zero-dev/BurgerEditor/commit/a7e74107b630a040757845a8124e8d41f5eb8c9d)), closes [#906](https://github.com/d-zero-dev/BurgerEditor/issues/906) [#907](https://github.com/d-zero-dev/BurgerEditor/issues/907) [#908](https://github.com/d-zero-dev/BurgerEditor/issues/908) [#909](https://github.com/d-zero-dev/BurgerEditor/issues/909)
+- **local:** surface the browser's actual error detail on an ApplyNackError ([b4b136a](https://github.com/d-zero-dev/BurgerEditor/commit/b4b136ab803ae0d8e45520f7a3c783f4232afd3b))
+- **mcp-server:** clear the startup-capture timer on every exit path ([070e3da](https://github.com/d-zero-dev/BurgerEditor/commit/070e3da2eeeccae326860d2d8ecd947d4d9450d3))
+- **mcp-server:** close the Client/Transport pair in v4.spec.ts's fixture ([3b74c4a](https://github.com/d-zero-dev/BurgerEditor/commit/3b74c4a9d701cef9c72fd6bc9bd6967dfa595a34))
+- **mcp-server:** forward editor_wait_for_event without misreading its own timeout as local dying ([3cad0fc](https://github.com/d-zero-dev/BurgerEditor/commit/3cad0fc5fd5442c74a662fd615c85fe9bd9041aa))
+- **mcp-server:** read local's agent token file and stop caching a failed context load ([b45550e](https://github.com/d-zero-dev/BurgerEditor/commit/b45550e3fc1890091e0b4a35f701e5601b187e42))
+- **mcp-server:** stop replaying event history after a wait-for-event safety-net timeout ([529b52e](https://github.com/d-zero-dev/BurgerEditor/commit/529b52e1949bb6967da6bcc93af3efe75aff4b34))
+- **mcp-server:** treat any HTTP response from local as authoritative, never as a crash ([e58e824](https://github.com/d-zero-dev/BurgerEditor/commit/e58e8249030cddc14d707cd85d2048d7272cc279))
+- **repo:** make grill-me template comply with textlint jtf-style ([446fa0a](https://github.com/d-zero-dev/BurgerEditor/commit/446fa0a041cfaf73ac90a9ea764def3e9f26c4e4))
+- **repo:** render dialog/block-menu context around form-like components ([45fe99e](https://github.com/d-zero-dev/BurgerEditor/commit/45fe99e2c4f53f56b4d51bb36cc44143796c65aa))
+- **repo:** replace dead example.com image URLs with a real placeholder ([302d235](https://github.com/d-zero-dev/BurgerEditor/commit/302d235f56a3be21a156addaa7220d241899921c))
+- **repo:** run start script from local's package dir for cosmiconfig cwd search ([0812055](https://github.com/d-zero-dev/BurgerEditor/commit/0812055ba49123ed57a9241c6f8f5e1c81f128f0))
+
+- fix(file-io)!: reject page paths that resolve outside documentRoot ([ea45605](https://github.com/d-zero-dev/BurgerEditor/commit/ea456054aa182fc33fe212fc4c010bd6c9ad32d9))
+- feat(local)!: add WebSocket-based Agent Hub for browser-side AI agent application ([c7755ae](https://github.com/d-zero-dev/BurgerEditor/commit/c7755ae8d35e0f8b30da268db5744ad94eccc245))
+- feat(mcp-server)!: route agent tools through disk/auto/local mode ([9be9064](https://github.com/d-zero-dev/BurgerEditor/commit/9be9064208f30e4fce5955922a5cb1fb534ebd1f))
+- feat(cli)!: add agent-tools framework for AI-agent page/block mutations ([b75ee87](https://github.com/d-zero-dev/BurgerEditor/commit/b75ee87798248a9683fbaba6a19ef844701dd3cb))
+
+### Features
+
+- **client:** fix isProcessed leak in move/remove-block and dialogHost leak ([910b581](https://github.com/d-zero-dev/BurgerEditor/commit/910b581595c6105441c3ccc58c204542776f16a2))
+- **client:** inject the [data-bge-highlight] blink animation into editable-area iframes ([673b179](https://github.com/d-zero-dev/BurgerEditor/commit/673b1795b6bd363baaf4b19ca775b53250ed9ed6))
+- **core:** add live block-ops for browser-side agent application ([d7394fd](https://github.com/d-zero-dev/BurgerEditor/commit/d7394fda533efe6275d4f6f4c970ecce4fd14d06))
+- **core:** add Symbol.dispose to HealthMonitor/CommandBus/ComponentObserver/engine ([ba45fe0](https://github.com/d-zero-dev/BurgerEditor/commit/ba45fe0ed7c15960e723e53420841a0ccce61eea))
+- **core:** let applyLiveBlockOp callers hook in right before the DOM mutates ([e13debe](https://github.com/d-zero-dev/BurgerEditor/commit/e13debe299d42ee5551c128ef6730063a0cab0cf))
+- **custom-element:** dispose the tiptap Editor on disconnect/destroy ([041bdb6](https://github.com/d-zero-dev/BurgerEditor/commit/041bdb63588f259237f5636e465a033be28544ea))
+- **file-io:** add agent config to BurgerEditorConfig ([3cddb98](https://github.com/d-zero-dev/BurgerEditor/commit/3cddb98d4f8f90203bb2a78e089c75355ec512d4))
+- **local:** log every Agent Hub WS message for debugging ([c792ed0](https://github.com/d-zero-dev/BurgerEditor/commit/c792ed0037d44fcbe3a5db73c89268660c423a89))
+- **local:** observe agent hub state and detect external page changes ([15d464c](https://github.com/d-zero-dev/BurgerEditor/commit/15d464c75cb60956de60f75c04bd0a96f1febd71))
+- **local:** send focus and switch-content over the Agent Hub socket ([020bded](https://github.com/d-zero-dev/BurgerEditor/commit/020bded22e4f1daaf340874089e3bf67ed584308))
+- **local:** timestamp agent responses and browser-side Agent Hub logs ([fe47ea7](https://github.com/d-zero-dev/BurgerEditor/commit/fe47ea7f984208ae925b3cc8cb641c65134ff1cc))
+- **repo:** add Storybook catalog for admin UI components ([571f5d1](https://github.com/d-zero-dev/BurgerEditor/commit/571f5d16024ea2f6eb87919dc08d9336cbdf74d8))
+- **storybook:** add an EditableAreaView story to demo BurgerBlock.highlight() ([4f30bc2](https://github.com/d-zero-dev/BurgerEditor/commit/4f30bc23cedf93d0ad6aac680f20728cc591cf3c))
+
+### BREAKING CHANGES
+
+- resolvePathInput now throws PathOutsideDocumentRootError
+  for inputs that would resolve outside documentRoot, where it previously
+  returned the escaped path. A `..` that stays inside documentRoot after
+  normalization (`foo/../bar.html`) is still accepted.
+
+GHSA-4v47-5hm4-93xf
+
+- local's "./get-user-config" export now returns
+  { config, configDir } instead of the config object directly.
+  `configDir` is where agent/auth.ts persists the per-launch token.
+  Callers must destructure: const { config } = await getUserConfig().
+- the 21 standalone v4 MCP tools + duplicate_block /
+  update_page helpers are replaced by the 28-tool agentTools set from
+  @burger-editor/cli (see the cli commit in this same change for the
+  tool-level breaking changes). No compatibility guaranteed pre-1.0; v3
+  compat tools are unaffected.
+- v4 tool names, argument shapes, and response shapes
+  changed (block_list removed, block_* targets are {index}|{id} instead
+  of a bare index, mutations require readToken). No compatibility
+  guaranteed pre-1.0; v3 compat tools are untouched.
+
 # [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
 
 ### Bug Fixes

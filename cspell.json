@@ -39,6 +39,9 @@
 		"nacks",
 
 		// Vitest API (vi.unstubAllGlobals)
-		"unstub"
+		"unstub",
+
+		// GitHub Security Advisory IDs (e.g. GHSA-4v47-5hm4-93xf)
+		"GHSA"
 	]
 }

@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.72](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.71...v4.0.0-alpha.72) (2026-09-02)
+
+### Bug Fixes
+
+- **core:** add replaceContents to rebind blocks after HTML replacement ([e42a178](https://github.com/d-zero-dev/BurgerEditor/commit/e42a178a09c232dbc689a7da0136ab744a071c5c))
+- **core:** align live update-item's itemIndex with the disk-side item enumeration ([25a6895](https://github.com/d-zero-dev/BurgerEditor/commit/25a6895df72160fe3879eec5ce350ccd80d817df))
+- **core:** dispose partial engine construction on failure, fix this-binding ([7e5dcb2](https://github.com/d-zero-dev/BurgerEditor/commit/7e5dcb2248978c5a022c7fd4ac899bfdb21b27f8))
+- **core:** make live block ops work with an iframe-hosted editable area ([460b23b](https://github.com/d-zero-dev/BurgerEditor/commit/460b23b554d0636249b64751114004c5d68f3d6d))
+- **core:** scope highlightElement's scrollend listener to the target's window ([da6596e](https://github.com/d-zero-dev/BurgerEditor/commit/da6596e2166129ba3aa0437bd8bdaf53b2fd6c77))
+
+### Features
+
+- **core:** add live block-ops for browser-side agent application ([d7394fd](https://github.com/d-zero-dev/BurgerEditor/commit/d7394fda533efe6275d4f6f4c970ecce4fd14d06))
+- **core:** add Symbol.dispose to HealthMonitor/CommandBus/ComponentObserver/engine ([ba45fe0](https://github.com/d-zero-dev/BurgerEditor/commit/ba45fe0ed7c15960e723e53420841a0ccce61eea))
+- **core:** let applyLiveBlockOp callers hook in right before the DOM mutates ([e13debe](https://github.com/d-zero-dev/BurgerEditor/commit/e13debe299d42ee5551c128ef6730063a0cab0cf))
+
 # [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
 
 ### Bug Fixes
