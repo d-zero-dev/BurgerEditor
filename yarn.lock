@@ -497,7 +497,7 @@ __metadata:
   dependencies:
     "@burger-editor/utils": "npm:4.0.0-alpha.72"
     "@tabler/icons": "npm:3.46.0"
-    "@tiptap/core": "npm:3.30.3"
+    "@tiptap/core": "npm:3.30.4"
     "@tiptap/extension-image": "npm:3.30.3"
     "@tiptap/extension-paragraph": "npm:3.30.3"
     "@tiptap/extension-subscript": "npm:3.30.3"
@@ -5378,6 +5378,15 @@ __metadata:
   peerDependencies:
     "@tiptap/pm": 3.30.3
   checksum: 10c0/a5bab93f2db4d1a7b4ef2f8b9d87268f2965b8c1661b70056fd464f713c5393c09510feb946645b271b130ce567d692d4b73418d3c7da794726c50fd32c2c719
+  languageName: node
+  linkType: hard
+
+"@tiptap/core@npm:3.30.4":
+  version: 3.30.4
+  resolution: "@tiptap/core@npm:3.30.4"
+  peerDependencies:
+    "@tiptap/pm": 3.30.4
+  checksum: 10c0/51cc37a296eee4b1ec0b969bf1c5a95a29793533d976a0085db15b033b4ac6d5e2765a94225a19266fb1c4eec403ec712ea4aa84cb67269d51cd41ce431b28b7
   languageName: node
   linkType: hard
 
