@@ -522,7 +522,7 @@ __metadata:
     "@d-zero/shared": "npm:0.23.0"
     "@types/jsdom": "npm:28.0.3"
     "@types/node": "npm:26.2.0"
-    cosmiconfig: "npm:10.0.0"
+    cosmiconfig: "npm:10.0.1"
     jsdom: "npm:28.1.0"
     prettier: "npm:3.9.6"
     vitest: "npm:4.1.11"
@@ -8193,13 +8193,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cosmiconfig@npm:10.0.0":
-  version: 10.0.0
-  resolution: "cosmiconfig@npm:10.0.0"
+"cosmiconfig@npm:10.0.1":
+  version: 10.0.1
+  resolution: "cosmiconfig@npm:10.0.1"
   dependencies:
     env-paths: "npm:^2.2.1"
-    js-yaml: "npm:^4.1.0"
-  checksum: 10c0/93d8a38d8d24678fa162fc4c1678e1fbd725ddf61e447a3626833931b8c468019423219323a8931b89cd581fea101865aa714935b6dff367645da5b9f0d582ad
+    js-yaml: "npm:^5.4.1"
+  checksum: 10c0/8a5fe8574f7b4515f13187b43e7e28082af8406584af7d9149d3b64dbe3e267bf1dbed05c0ebd11b57003f38b9462c121ea8cb8c94b08a1945b9b545280b8f83
   languageName: node
   linkType: hard
 
@@ -11747,6 +11747,17 @@ __metadata:
   bin:
     js-yaml: bin/js-yaml.js
   checksum: 10c0/3261f25912f5dd76605e5993d0a126c2b6c346311885d3c483706cd722efe34f697ea0331f654ce27c00a42b426e524518ec89d65ed02ea47df8ad26dcc8ce69
+  languageName: node
+  linkType: hard
+
+"js-yaml@npm:^5.4.1":
+  version: 5.4.1
+  resolution: "js-yaml@npm:5.4.1"
+  dependencies:
+    argparse: "npm:^2.0.1"
+  bin:
+    js-yaml: bin/js-yaml.mjs
+  checksum: 10c0/efe9dfaf222809694d375ad5ecca825561d2432eb55bc0f628911c0dfa4dbce98a71dcbc3252f630208bbdf5f4e9ac363847e4a7f49845b577ae2548b8fcf147
   languageName: node
   linkType: hard
 
