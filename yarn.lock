@@ -402,7 +402,7 @@ __metadata:
     "@d-zero/shared": "npm:0.23.0"
     "@testing-library/dom": "npm:10.4.1"
     "@testing-library/react": "npm:16.3.3"
-    "@types/google.maps": "npm:3.65.5"
+    "@types/google.maps": "npm:3.66.1"
     "@types/react": "npm:19.2.18"
     react: "npm:19.2.8"
     rollup: "npm:4.62.5"
@@ -5864,10 +5864,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/google.maps@npm:3.65.5":
-  version: 3.65.5
-  resolution: "@types/google.maps@npm:3.65.5"
-  checksum: 10c0/6b65b7466af17c1917711ee0ac360ca2360c0cd39d552032c2d0fddc0292fcb3bccf8af4f8e8c0ffca5f56802e914468e15dc8e346b84ca3cc71e2474c074ab3
+"@types/google.maps@npm:3.66.1":
+  version: 3.66.1
+  resolution: "@types/google.maps@npm:3.66.1"
+  checksum: 10c0/8436325c03855efefc74110bf1a2dc02a2a7af04578d2b24ae2cc911fbc508a55f03095a761367efd979f01388578def2f8f107bc1dba64b370358fd01db2250
   languageName: node
   linkType: hard
 
