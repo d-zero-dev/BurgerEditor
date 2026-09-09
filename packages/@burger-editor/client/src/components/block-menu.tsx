@@ -221,6 +221,7 @@ export function BlockMenu({
 		<BlockMenuView
 			rootRef={rootRef}
 			menuId={menuId}
+			commandBusId={engine.commandBus.receiverId}
 			visible={visible}
 			geometry={geometry}
 			itemRects={itemRects}

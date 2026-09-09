@@ -1,6 +1,6 @@
 import type { BurgerBlock, BurgerEditorEngine } from '@burger-editor/core';
 
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 
 const containerTypeLabel = {
 	grid: 'グリッド',
@@ -35,6 +35,9 @@ export function BlockOptions({
 	readonly block: BurgerBlock;
 }) {
 	const currentBlock = block;
+	// 同一documentに複数のブロックオプションダイアログが存在してもaria-*の
+	// 参照先が混線しないよう、ハードコードIDではなくuseIdで一意化する
+	const uid = useId();
 
 	const [options] = useState(() => currentBlock.exportOptions());
 	// CSSOM全走査は高コストなのでダイアログを開いたときの1回に留める
@@ -112,8 +115,8 @@ export function BlockOptions({
 				{effectiveContainerType === 'inline' &&
 				!(options.containerProps.immutable && itemCount === 1) ? (
 					<>
-						<div role="radiogroup" aria-labelledby="justify-group">
-							<div id="justify-group">横方向配置</div>
+						<div role="radiogroup" aria-labelledby={`${uid}-justify`}>
+							<div id={`${uid}-justify`}>横方向配置</div>
 							{(
 								[
 									['center', '中央寄せ'],
@@ -135,8 +138,8 @@ export function BlockOptions({
 								</label>
 							))}
 						</div>
-						<div role="radiogroup" aria-labelledby="align-group">
-							<div id="align-group">縦向配置</div>
+						<div role="radiogroup" aria-labelledby={`${uid}-align`}>
+							<div id={`${uid}-align`}>縦向配置</div>
 							{(
 								[
 									['align-center', '垂直中央寄せ'],
@@ -222,8 +225,8 @@ export function BlockOptions({
 					)
 				) : null}
 				{effectiveContainerType === 'float' ? (
-					<div role="radiogroup" aria-labelledby="float-group">
-						<div id="float-group">回り込み</div>
+					<div role="radiogroup" aria-labelledby={`${uid}-float`}>
+						<div id={`${uid}-float`}>回り込み</div>
 						{(
 							[
 								['start', '左寄せ'],
@@ -295,10 +298,10 @@ export function BlockOptions({
 					type="text"
 					name="bge-options-classes"
 					defaultValue={options.classList?.join(' ') ?? ''}
-					aria-describedby="block-option-classes-desc"
+					aria-describedby={`${uid}-classes-desc`}
 				/>
 			</label>
-			<small id="block-option-classes-desc">
+			<small id={`${uid}-classes-desc`}>
 				複数指定する場合はスペース（空白文字）で区切ってください。
 			</small>
 
@@ -310,10 +313,10 @@ export function BlockOptions({
 					name="bge-options-id"
 					type="text"
 					defaultValue={options.id ?? ''}
-					aria-describedby="block-option-id-desc"
+					aria-describedby={`${uid}-id-desc`}
 				/>
 			</label>
-			<small id="block-option-id-desc">
+			<small id={`${uid}-id-desc`}>
 				アンカーリンク用のID属性を設定します。実際のIDは<code>bge-</code>
 				が自動的に先頭に付加されます。
 			</small>

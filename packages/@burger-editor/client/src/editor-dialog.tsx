@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 
 import './invoker-commands.js';
 
@@ -51,8 +51,15 @@ export function EditorDialog({
 	readonly children: ReactNode;
 }) {
 	const dialogRef = useRef<HTMLDialogElement>(null);
-	const dialogId = `${name}-dialog`;
-	const formId = `${name}-dialog-form`;
+	// documentに複数のダイアログ（=複数エンジン）が同時に存在しても
+	// commandfor/formのID参照が自分自身だけを指すよう、`name`固定では
+	// なくuseIdで一意化する。`data-bge-component`は種別を示すCSS/テスト
+	// フックなのでnameのまま残す（＝同名ダイアログを持つ複数エンジン間で
+	// 一意ではない。個体を一意に指すDOM参照が要るなら`dialogId`/`formId`
+	// を使うこと）
+	const uid = useId();
+	const dialogId = `${uid}-dialog`;
+	const formId = `${uid}-form`;
 
 	useEffect(() => {
 		const dialog = dialogRef.current;
@@ -84,7 +91,7 @@ export function EditorDialog({
 						e.preventDefault();
 						onComplete?.(new FormData(e.currentTarget));
 					}}>
-					<div data-bge-component={dialogId}>{open ? children : null}</div>
+					<div data-bge-component={`${name}-dialog`}>{open ? children : null}</div>
 				</form>
 			</div>
 			<footer>

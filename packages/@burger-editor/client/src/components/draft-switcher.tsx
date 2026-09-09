@@ -1,6 +1,6 @@
 import type { BurgerEditorEngine } from '@burger-editor/core';
 
-import { BGE_COMMAND, COMMAND_BUS_ID } from '@burger-editor/core';
+import { BGE_COMMAND } from '@burger-editor/core';
 import { useEffect, useState } from 'react';
 
 import { useUIState } from '../use-engine.js';
@@ -68,7 +68,7 @@ export function DraftSwitcher({ engine }: { readonly engine: BurgerEditorEngine 
 					type="button"
 					aria-pressed={isMain}
 					command={BGE_COMMAND.switchContent}
-					commandfor={COMMAND_BUS_ID}
+					commandfor={engine.commandBus.receiverId}
 					value="main"
 					onDoubleClick={onDblClickMain}>
 					本稿モード
@@ -78,7 +78,7 @@ export function DraftSwitcher({ engine }: { readonly engine: BurgerEditorEngine 
 					type="button"
 					aria-pressed={!isMain}
 					command={BGE_COMMAND.switchContent}
-					commandfor={COMMAND_BUS_ID}
+					commandfor={engine.commandBus.receiverId}
 					value="draft"
 					onDoubleClick={onDblClickDraft}>
 					下書きモード
@@ -90,14 +90,14 @@ export function DraftSwitcher({ engine }: { readonly engine: BurgerEditorEngine 
 					<button
 						type="button"
 						command={BGE_COMMAND.copyMainToDraft}
-						commandfor={COMMAND_BUS_ID}>
+						commandfor={engine.commandBus.receiverId}>
 						本稿を下書きにコピー
 					</button>
 				) : (
 					<button
 						type="button"
 						command={BGE_COMMAND.copyDraftToMain}
-						commandfor={COMMAND_BUS_ID}>
+						commandfor={engine.commandBus.receiverId}>
 						下書きを本稿にコピー
 					</button>
 				)}

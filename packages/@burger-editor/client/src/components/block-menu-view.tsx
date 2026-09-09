@@ -1,6 +1,6 @@
 import type { RefObject, CSSProperties } from 'react';
 
-import { BGE_COMMAND, COMMAND_BUS_ID } from '@burger-editor/core';
+import { BGE_COMMAND } from '@burger-editor/core';
 import {
 	IconArrowBigDownLine,
 	IconArrowBigUpLine,
@@ -70,6 +70,7 @@ export interface ItemOverlayRect {
  * @param root0
  * @param root0.rootRef
  * @param root0.menuId
+ * @param root0.commandBusId
  * @param root0.visible
  * @param root0.geometry
  * @param root0.itemRects
@@ -79,6 +80,7 @@ export interface ItemOverlayRect {
  * <BlockMenuView
  * 	rootRef={rootRef}
  * 	menuId="bge-block-menu"
+ * 	commandBusId={engine.commandBus.receiverId}
  * 	visible
  * 	geometry={{ width: 100, height: 40, x: 0, y: 0, marginBlockEnd: 0, marginBlockEndValue: '0px' }}
  * 	itemRects={[]}
@@ -89,6 +91,7 @@ export interface ItemOverlayRect {
 export function BlockMenuView({
 	rootRef,
 	menuId,
+	commandBusId,
 	visible,
 	geometry,
 	itemRects,
@@ -96,6 +99,8 @@ export function BlockMenuView({
 }: {
 	readonly rootRef: RefObject<HTMLDivElement | null>;
 	readonly menuId: string;
+	/** 同一documentに複数エンジンが存在する場合の配送先。`engine.commandBus.receiverId` */
+	readonly commandBusId: string;
 	readonly visible: boolean;
 	readonly geometry: MenuGeometry;
 	readonly itemRects: readonly ItemOverlayRect[];
@@ -137,14 +142,14 @@ export function BlockMenuView({
 					<BlockMenuButton
 						label="ひとつ上へ移動"
 						command={BGE_COMMAND.moveBlock}
-						commandfor={COMMAND_BUS_ID}
+						commandfor={commandBusId}
 						value="up">
 						<IconArrowBigUpLine />
 					</BlockMenuButton>
 					<BlockMenuButton
 						label="ひとつ下へ移動"
 						command={BGE_COMMAND.moveBlock}
-						commandfor={COMMAND_BUS_ID}
+						commandfor={commandBusId}
 						value="down">
 						<IconArrowBigDownLine />
 					</BlockMenuButton>
@@ -153,14 +158,14 @@ export function BlockMenuView({
 					<BlockMenuButton
 						label="上にブロックを追加"
 						command={BGE_COMMAND.insertBlock}
-						commandfor={COMMAND_BUS_ID}
+						commandfor={commandBusId}
 						value="before">
 						<IconRowInsertTop />
 					</BlockMenuButton>
 					<BlockMenuButton
 						label="下にブロックを追加"
 						command={BGE_COMMAND.insertBlock}
-						commandfor={COMMAND_BUS_ID}
+						commandfor={commandBusId}
 						value="after">
 						<IconRowInsertBottom />
 					</BlockMenuButton>
@@ -169,14 +174,14 @@ export function BlockMenuView({
 							<BlockMenuButton
 								label="ブロック内に要素を追加"
 								command={BGE_COMMAND.updateGridItems}
-								commandfor={COMMAND_BUS_ID}
+								commandfor={commandBusId}
 								value="+1">
 								<IconLayoutGridAdd />
 							</BlockMenuButton>
 							<BlockMenuButton
 								label="ブロック内の要素を削除"
 								command={BGE_COMMAND.updateGridItems}
-								commandfor={COMMAND_BUS_ID}
+								commandfor={commandBusId}
 								value="-1">
 								<IconLayoutGridRemove />
 							</BlockMenuButton>
@@ -185,19 +190,19 @@ export function BlockMenuView({
 					<BlockMenuButton
 						label="オプション設定"
 						command={BGE_COMMAND.openBlockOptions}
-						commandfor={COMMAND_BUS_ID}>
+						commandfor={commandBusId}>
 						<IconSettings />
 					</BlockMenuButton>
 					<BlockMenuButton
 						label="ブロックをコピー"
 						command={BGE_COMMAND.copyBlock}
-						commandfor={COMMAND_BUS_ID}>
+						commandfor={commandBusId}>
 						<IconClipboardPlus />
 					</BlockMenuButton>
 					<BlockMenuButton
 						label="ブロックを削除"
 						command={BGE_COMMAND.removeBlock}
-						commandfor={COMMAND_BUS_ID}>
+						commandfor={commandBusId}>
 						<IconTrash />
 					</BlockMenuButton>
 				</div>

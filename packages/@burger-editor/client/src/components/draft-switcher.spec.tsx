@@ -20,6 +20,7 @@ function createMockEngine(type: 'main' | 'draft' = 'main') {
 		el,
 		uiState,
 		content: { type },
+		commandBus: { receiverId: 'bge-command-bus-test' },
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} as any as BurgerEditorEngine;
 }
@@ -66,6 +67,18 @@ test('uiState.sourceModeが自エリアのソース表示中はソース表示�
 	});
 
 	expect(screen.getByText('ソース表示')).toBeTruthy();
+});
+
+test('切替ボタンのcommandforはengine.commandBus.receiverIdを指す（配線漏れの検出）', () => {
+	const engine = createMockEngine('main');
+	(engine as { commandBus: { receiverId: string } }).commandBus = {
+		receiverId: 'bge-command-bus-from-engine',
+	};
+	render(<DraftSwitcher engine={engine} />);
+
+	expect(
+		screen.getByRole('button', { name: /本稿モード/ }).getAttribute('commandfor'),
+	).toBe('bge-command-bus-from-engine');
 });
 
 test('本稿⇄下書きのコピーボタンは現在のモードに応じて切り替わる', () => {

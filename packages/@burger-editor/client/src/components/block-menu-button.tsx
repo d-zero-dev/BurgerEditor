@@ -18,7 +18,7 @@ import styles from './block-menu-button.module.css';
  * <BlockMenuButton
  * 	label="ブロックを削除"
  * 	command={BGE_COMMAND.removeBlock}
- * 	commandfor={COMMAND_BUS_ID}>
+ * 	commandfor={engine.commandBus.receiverId}>
  * 	<IconTrash />
  * </BlockMenuButton>
  * ```

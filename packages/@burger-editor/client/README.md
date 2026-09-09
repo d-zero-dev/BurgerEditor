@@ -46,14 +46,14 @@ const { engine } = await createBurgerEditorClient({
 
 ### 必須プロパティ
 
-| キー              | 型                                           | 説明                                       |
-| ----------------- | -------------------------------------------- | ------------------------------------------ |
-| `root`            | `string`                                     | エディタをマウントするルート要素のセレクタ |
-| `config`          | `Config`                                     | エディタ設定（後述）                       |
-| `items`           | `Record<string, ItemSeed>`                   | 使用するアイテムの定義                     |
-| `catalog`         | `BlockCatalog`                               | ブロックカタログの定義                     |
-| `generalCSS`      | `string`                                     | 一般 CSS 文字列                            |
-| `initialContents` | `string \| { main: string; draft?: string }` | 初期コンテンツの HTML                      |
+| キー              | 型                                           | 説明                                                 |
+| ----------------- | -------------------------------------------- | ---------------------------------------------------- |
+| `root`            | `string \| HTMLElement`                      | エディタをマウントするルート要素、またはそのセレクタ |
+| `config`          | `Config`                                     | エディタ設定（後述）                                 |
+| `items`           | `Record<string, ItemSeed>`                   | 使用するアイテムの定義                               |
+| `catalog`         | `BlockCatalog`                               | ブロックカタログの定義                               |
+| `generalCSS`      | `string`                                     | 一般 CSS 文字列                                      |
+| `initialContents` | `string \| { main: string; draft?: string }` | 初期コンテンツの HTML                                |
 
 ### 任意プロパティ
 
@@ -148,6 +148,19 @@ await createBurgerEditorClient({
 	},
 });
 ```
+
+デフォルトのまま複数のエディタを共存させると、クリップボードは共有される（片方でコピーしたブロックをもう片方に貼り付けられる）。分離したい場合のみ `storageKey.blockClipboard` をエンジンごとに別値にする。
+
+## 複数エディタの共存
+
+同一 document に `createBurgerEditorClient` を複数回呼んでも動作する。各呼び出しの `root` には同じセレクタで両方が同じ要素に解決されないよう、別々の要素（または別々のセレクタ）を渡す。
+
+```ts
+const editorA = await createBurgerEditorClient({ root: document.querySelector('#editor-a')!, ... });
+const editorB = await createBurgerEditorClient({ root: document.querySelector('#editor-b')!, ... });
+```
+
+`attachDraftSwitcher(engine)` はエンジンごとに個別に呼ぶ。コマンドバス（`commandfor` の配送先）はエンジンごとに一意な ID を持つため、片方のツールバー操作がもう片方のエンジンに誤って作用することはない。WYSIWYG（`bge-wysiwyg-editor`）の `classList` / `experimental.itemOptions.wysiwyg.enableTextOnlyMode` は document 単位で共有される（詳細は `@burger-editor/custom-element` の `defineBgeWysiwygEditorElement` の JSDoc を参照）。
 
 ## License
 

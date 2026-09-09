@@ -69,6 +69,8 @@ export async function createBurgerEditorClient(
 	const engine = await BurgerEditorEngine.new({
 		...options,
 		view: createReactView(),
+		// wrapperElement/experimental.textOnlyModeがdocument単位で共有される
+		// 前提のWhy notはdefineBgeWysiwygEditorElementのJSDoc参照
 		defineCustomElement(context) {
 			defineBgeWysiwygEditorElement({
 				wrapperElement: {

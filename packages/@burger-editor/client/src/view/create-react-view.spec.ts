@@ -29,7 +29,7 @@ function createContext(): EditableAreaHostContext {
 		el: document.createElement('div'),
 		viewArea,
 		uiState: new UIStateStore(),
-		commandBus: { createReceiver: vi.fn() },
+		commandBus: { createReceiver: vi.fn(), receiverId: 'bge-command-bus-test' },
 		componentObserver: { notify: vi.fn() },
 		getEditableContent: () => null,
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
