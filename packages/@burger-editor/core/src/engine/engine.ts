@@ -116,6 +116,10 @@ export class BurgerEditorEngine implements Disposable {
 			generalCSS: options.generalCSS,
 		};
 
+		// URLプレフィックスでdocument単位の重複注入を防ぐ。同一documentに
+		// 複数エンジンが共存する場合、scriptタグは先勝ちで最初の
+		// googleMapsApiKeyが全エンジンに適用される（Google Maps JS APIの
+		// 性質上、キーごとに複数ロードすることはできない）
 		if (
 			this.config.googleMapsApiKey &&
 			!document.querySelector('script[src^="https://maps.googleapis.com/maps/api/js"]')

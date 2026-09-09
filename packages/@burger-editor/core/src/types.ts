@@ -6,7 +6,13 @@ import type { ItemData, ItemSeed } from './item/types.js';
 import type { Mergeable } from '@burger-editor/utils';
 
 export interface BurgerEditorEngineOptions {
-	readonly root: string;
+	/**
+	 * The element the engine mounts into, or a CSS selector for it
+	 * (`document.querySelector`, first match wins). To place two engines in
+	 * the same document, pass each its own element rather than a selector —
+	 * a shared selector resolves both to the same node.
+	 */
+	readonly root: string | HTMLElement;
 	readonly config: Config;
 	readonly viewAreaClassList?: readonly string[];
 	readonly initialContents:

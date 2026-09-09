@@ -227,6 +227,8 @@ import { BurgerEditorEngine } from '@burger-editor/core';
 
 UI 抽象（`BurgerEditorEngineOptions.view` / `defineCustomElement`）を差し替え可能にして、プラットフォームごとに別の UI を載せられる設計（ブラウザ用は [`@burger-editor/client`](../client/)）。`view`（`BurgerEditorView`）はエンジンが UI に要求する唯一の注入点で、`createAreaHost()` が編集エリアごとのホスト UI を生成し、コンテンツを載せる `containerElement` だけをエンジンに返す。詳細は [ARCHITECTURE.md](../../ARCHITECTURE.md) の「headless core と宣言的 UI」を参照。
 
+`BurgerEditorEngineOptions.root` は CSS セレクタ（`document.querySelector` の先勝ち）または `HTMLElement` を受け付ける。同一 document に複数のエンジンを共存させる場合は、共有セレクタで両方を同じ要素に解決させないよう、それぞれに別の要素を渡す。
+
 ### `config`
 
 `BurgerEditorEngineOptions.config` で渡す。
