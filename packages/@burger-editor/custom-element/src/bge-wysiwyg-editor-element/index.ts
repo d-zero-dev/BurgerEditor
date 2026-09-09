@@ -70,7 +70,14 @@ export interface BgeWysiwygEditorElementOptions {
 }
 
 /**
- *
+ * `wrapperElement` / `experimental.textOnlyMode` はモジュールの static
+ * プロパティに書き込まれ、`global`（既定は `window`、すなわちdocument単位）
+ * に定義される全ての `<bge-wysiwyg-editor>` / `<bge-wysiwyg>` に適用される。
+ * 同一documentに複数のBurgerEditorエンジンを置く場合でも、この設定は
+ * エンジン間で共有される前提でよい。プレビューiframeへ注入するコンテンツ
+ * CSS自体はエンジンごとに個別注入されるため、共有されて困るのはこの
+ * className/モード分岐だけであり、エンジンごとに値を分けたい要求が
+ * 生じたら要素の属性に切り出す
  * @param options
  * @param global
  */
