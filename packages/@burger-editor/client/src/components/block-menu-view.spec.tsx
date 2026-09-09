@@ -31,6 +31,7 @@ test('visible=falseのときhidden属性が付く', () => {
 		<BlockMenuView
 			rootRef={rootRef}
 			menuId="menu-1"
+			commandBusId="bge-command-bus-test"
 			visible={false}
 			geometry={geometry}
 			itemRects={[]}
@@ -47,6 +48,7 @@ test('visible=trueのときhidden属性が付かない', () => {
 		<BlockMenuView
 			rootRef={rootRef}
 			menuId="menu-2"
+			commandBusId="bge-command-bus-test"
 			visible
 			geometry={geometry}
 			itemRects={[]}
@@ -63,6 +65,7 @@ test('itemRectsの数だけアイテムオーバーレイボタンが描画さ�
 		<BlockMenuView
 			rootRef={rootRef}
 			menuId="menu-3"
+			commandBusId="bge-command-bus-test"
 			visible
 			geometry={geometry}
 			itemRects={[
@@ -82,6 +85,7 @@ test('isMutable=trueのときグリッド追加・削除ボタンが表示され
 		<BlockMenuView
 			rootRef={rootRef}
 			menuId="menu-4"
+			commandBusId="bge-command-bus-test"
 			visible
 			geometry={geometry}
 			itemRects={[]}
@@ -92,12 +96,31 @@ test('isMutable=trueのときグリッド追加・削除ボタンが表示され
 	expect(getByLabelText('ブロック内の要素を削除')).toBeTruthy();
 });
 
+test('メニュー内のボタンのcommandforはcommandBusId propを指す（配線漏れの検出）', () => {
+	const rootRef = createRef<HTMLDivElement>();
+	const { getByLabelText } = render(
+		<BlockMenuView
+			rootRef={rootRef}
+			menuId="menu-6"
+			commandBusId="bge-command-bus-from-prop"
+			visible
+			geometry={geometry}
+			itemRects={[]}
+			isMutable={false}
+		/>,
+	);
+	expect(
+		getByLabelText('ブロックを削除').closest('button')?.getAttribute('commandfor'),
+	).toBe('bge-command-bus-from-prop');
+});
+
 test('isMutable=falseのときグリッド追加・削除ボタンが表示されない', () => {
 	const rootRef = createRef<HTMLDivElement>();
 	const { queryByLabelText } = render(
 		<BlockMenuView
 			rootRef={rootRef}
 			menuId="menu-5"
+			commandBusId="bge-command-bus-test"
 			visible
 			geometry={geometry}
 			itemRects={[]}

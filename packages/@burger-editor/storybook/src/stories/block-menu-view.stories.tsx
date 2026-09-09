@@ -29,6 +29,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
 	args: {
 		menuId: 'bge-block-menu-default',
+		commandBusId: 'bge-command-bus-story',
 		visible: true,
 		geometry: {
 			width: 320,

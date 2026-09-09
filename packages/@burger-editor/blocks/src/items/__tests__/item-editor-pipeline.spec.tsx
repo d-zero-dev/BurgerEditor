@@ -69,10 +69,9 @@ describe('itemエディタのパイプライン統合（開く→編集→保存
 
 		fireEvent.change(input, { target: { value: '新見出し' } });
 
-		const form = narrowElement(
-			document.querySelector('#item-editor-dialog-form') ?? document.body,
-			HTMLFormElement,
-		);
+		// dialogIdはuseIdベースで実行ごとに変わるため、inputが属するformを
+		// HTMLInputElement.formで辿る（IDセレクタに依存しない）
+		const form = narrowElement(input.form ?? document.body, HTMLFormElement);
 		fireEvent.submit(form);
 
 		// 決定でitemのコンテンツDOM（frozen-patty形式）が更新される

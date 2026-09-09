@@ -3,14 +3,14 @@ import type { CommandName } from './command-bus.js';
 /**
  * The engine's command vocabulary — every custom command accepted by the
  * central command bus. Buttons declare these with
- * `commandfor={COMMAND_BUS_ID}`; the dispatch table is registered by the
- * UI layer at engine setup.
+ * `commandfor={engine.commandBus.receiverId}`; the dispatch table is
+ * registered by the UI layer at engine setup.
  *
  * Parameters travel on the invoker button (`value` / `data-*` attributes)
  * and are read from `CommandEvent.source`.
  * @example
  * ```tsx
- * <button command={BGE_COMMAND.moveBlock} commandfor={COMMAND_BUS_ID} value="up">
+ * <button command={BGE_COMMAND.moveBlock} commandfor={engine.commandBus.receiverId} value="up">
  * 	上に移動
  * </button>
  * ```

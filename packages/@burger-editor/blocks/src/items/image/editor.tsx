@@ -12,11 +12,9 @@ import {
 	TextField,
 	useComponentEvent,
 } from '@burger-editor/client/ui';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import { createWidthState } from './width.js';
-
-const TABS_CONTENT_ID = 'bgi-image__tabs-content';
 
 const tabLabel = (index: number) => `画像${index + 1}`;
 
@@ -35,6 +33,9 @@ type LoadedImage = {
  * @param root0.engine
  */
 export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageData>) {
+	// 同一documentに複数のimageアイテムエディタが同時に開いてもhtmlFor/
+	// aria-*の参照先が混線しないよう、ハードコードIDではなくuseIdで一意化する
+	const uid = useId();
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const currentIndexRef = useRef(0);
 	const [fieldsetDisabled, setFieldsetDisabled] = useState(false);
@@ -173,11 +174,14 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 					<Tabs
 						current={currentIndex}
 						onChange={selectTab}
-						contentId={TABS_CONTENT_ID}
+						contentId={`${uid}-tabs-content`}
 						createLabel={tabLabel}
 					/>
 
-					<div id={TABS_CONTENT_ID} role="tabpanel" aria-label={tabLabel(currentIndex)}>
+					<div
+						id={`${uid}-tabs-content`}
+						role="tabpanel"
+						aria-label={tabLabel(currentIndex)}>
 						<Preview engine={engine} path={currentPath} />
 						{loadError ? <p role="alert">{loadError}</p> : null}
 						<div>
@@ -202,7 +206,7 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 				<div>
 					<Fieldset
 						legend="画像のサイズ"
-						id="bge-image-size-fieldset"
+						id={`${uid}-size-fieldset`}
 						disabled={fieldsetDisabled}>
 						<RadioGroup
 							label="基準"
@@ -219,10 +223,10 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 						/>
 						<div>
 							<span>
-								<label htmlFor="bgi-image__range-number">幅</label>
+								<label htmlFor={`${uid}-range-number`}>幅</label>
 								<input
 									type="number"
-									id="bgi-image__range-number"
+									id={`${uid}-range-number`}
 									name="bge-css-width-number"
 									min={1}
 									step={1}
@@ -315,10 +319,10 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 						name="bge-lazy"
 						label="遅延読み込み"
 						checked={state.lazy ?? false}
-						describedBy="bge-lazy-desc"
+						describedBy={`${uid}-lazy-desc`}
 						onChange={(lazy) => setState({ ...state, lazy })}
 					/>
-					<small id="bge-lazy-desc">
+					<small id={`${uid}-lazy-desc`}>
 						画像がブラウザの表示エリアに現れるまでファイルを読み込みません。
 					</small>
 				</div>

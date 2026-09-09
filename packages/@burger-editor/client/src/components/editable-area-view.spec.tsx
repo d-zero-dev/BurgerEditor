@@ -71,7 +71,7 @@ function createMockEngine(contents?: {
 		},
 		clearCurrentBlock: vi.fn(),
 		componentObserver: { notify: vi.fn() },
-		commandBus: { createReceiver: vi.fn() },
+		commandBus: { createReceiver: vi.fn(), receiverId: 'bge-command-bus-test' },
 		getEditableContent: () => content,
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} as any as BurgerEditorEngine;
@@ -268,6 +268,9 @@ test('初期挿入ボタンは空のときだけ表示されbge:savedで追従�
 		'[data-bge-component="initial-insertion"]',
 	) as HTMLElement;
 	expect(button.hidden).toBe(false);
+	expect(button.querySelector('button')?.getAttribute('commandfor')).toBe(
+		engine.commandBus.receiverId,
+	);
 
 	act(() => {
 		engine.el.dispatchEvent(

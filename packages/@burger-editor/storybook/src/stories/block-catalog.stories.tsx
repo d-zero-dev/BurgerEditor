@@ -1,20 +1,20 @@
-import type {
-	BlockCatalog as BlockCatalogData,
-	BurgerEditorEngine,
-} from '@burger-editor/core';
+import type { BlockCatalog as BlockCatalogData } from '@burger-editor/core';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { BlockCatalog } from '@burger-editor/client/ui';
 
 import placeholderImage from '../assets/placeholder-image.svg?url';
+import { createMockEngine } from '../mocks/create-mock-engine.js';
 
-// BlockCatalog は engine.storageKey.blockClipboard の読み取りのみ使用する
-// （sessionStorageのキー名）。他のengineサブシステムには依存しない
-const fakeEngine = {
+// BlockCatalog は engine.storageKey.blockClipboard の読み取りと
+// engine.commandBus.receiverId（commandforの配送先）を使う。commandBusは
+// createMockEngine が本物のCommandBusインスタンスを持つのでreceiverIdが
+// 自動的に一意になる
+const fakeEngine = createMockEngine({
 	storageKey: {
 		blockClipboard: 'bge-copied-block',
 	},
-} as unknown as BurgerEditorEngine;
+});
 
 const catalog: BlockCatalogData = {
 	テキスト: [

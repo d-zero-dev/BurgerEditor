@@ -1,6 +1,6 @@
 import { test, expect, describe, beforeEach, vi } from 'vitest';
 
-import { CommandBus, COMMAND_BUS_ID } from './command-bus.js';
+import { CommandBus } from './command-bus.js';
 
 /**
  * CommandEventはTS DOM libに未定義のため、テストでは同名プロパティを
@@ -20,13 +20,20 @@ describe('CommandBus', () => {
 		document.body.innerHTML = '';
 	});
 
-	test('createReceiver installs a hidden element with the shared id', () => {
+	test('createReceiver installs a hidden element carrying the bus own receiverId', () => {
 		const bus = new CommandBus();
 		const receiver = bus.createReceiver(document.body);
 
-		expect(receiver.id).toBe(COMMAND_BUS_ID);
+		expect(receiver.id).toBe(bus.receiverId);
 		expect(receiver.hidden).toBe(true);
 		expect(receiver.parentElement).toBe(document.body);
+	});
+
+	test('二つのbusは異なるreceiverIdを持つ', () => {
+		const busA = new CommandBus();
+		const busB = new CommandBus();
+
+		expect(busA.receiverId).not.toBe(busB.receiverId);
 	});
 
 	test('dispatches command events to the registered handler', () => {
@@ -138,7 +145,7 @@ describe('ネイティブInvoker Commands経路', () => {
 
 		document.body.insertAdjacentHTML(
 			'beforeend',
-			`<button type="button" command="--native-check" commandfor="${COMMAND_BUS_ID}">go</button>`,
+			`<button type="button" command="--native-check" commandfor="${bus.receiverId}">go</button>`,
 		);
 		const button = document.querySelector('button');
 		button?.click();

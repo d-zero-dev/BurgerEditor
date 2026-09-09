@@ -3,7 +3,7 @@ import type {
 	BurgerEditorEngine,
 } from '@burger-editor/core';
 
-import { BGE_COMMAND, COMMAND_BUS_ID } from '@burger-editor/core';
+import { BGE_COMMAND } from '@burger-editor/core';
 import { IconClipboard } from '@tabler/icons-react';
 import { Fragment } from 'react';
 
@@ -40,7 +40,7 @@ export function BlockCatalog({
 						type="button"
 						className={styles['pasteButton']}
 						command={BGE_COMMAND.pasteBlock}
-						commandfor={COMMAND_BUS_ID}>
+						commandfor={engine.commandBus.receiverId}>
 						<IconClipboard />
 						<span>クリップボードから貼り付け</span>
 					</button>
@@ -57,7 +57,7 @@ export function BlockCatalog({
 									<button
 										type="button"
 										command={BGE_COMMAND.addBlock}
-										commandfor={COMMAND_BUS_ID}
+										commandfor={engine.commandBus.receiverId}
 										data-category={category}
 										data-index={index}>
 										{blockInfo.definition.img || blockInfo.definition.svg ? (

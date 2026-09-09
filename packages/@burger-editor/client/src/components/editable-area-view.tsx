@@ -296,7 +296,7 @@ export function EditableAreaView({
 							<div
 								data-bge-component="initial-insertion"
 								hidden={!(isEmpty && !processing && !dialogOpen)}>
-								<InitialInsertionButton />
+								<InitialInsertionButton commandBusId={engine.commandBus.receiverId} />
 							</div>
 						</>,
 						frameBody,

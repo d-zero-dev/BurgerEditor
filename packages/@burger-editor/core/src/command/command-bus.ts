@@ -3,16 +3,20 @@ import type { BurgerCommandEvent } from './types.js';
 import { asDisposableFn } from '../utils/as-disposable-fn.js';
 
 /**
- * The id assigned to every command bus receiver element.
+ * Prefix for the id assigned to every command bus receiver element.
  *
- * Buttons address the engine with `commandfor="bge-command-bus"`. The id is
- * unique per document, not per page: the engine installs one receiver in the
- * main document and one in each EditableArea iframe, because `commandfor`
- * can only reference an id within its own document and `CommandEvent` does
- * not bubble.
+ * Buttons address the engine with `commandfor={engine.commandBus.receiverId}`.
+ * The receiver is unique per document, not per page: the engine installs one
+ * in the main document and one in each EditableArea iframe, because
+ * `commandfor` can only reference an id within its own document and
+ * `CommandEvent` does not bubble.
+ * @deprecated Use {@link CommandBus.receiverId} on the bus instance instead.
+ * This constant is only the id's prefix — a fixed id would collide when two
+ * engines share the same document, so each `CommandBus` appends its own
+ * sequence number.
  * @example
  * ```tsx
- * <button command="--remove-block" commandfor={COMMAND_BUS_ID}>削除</button>
+ * <button command="--remove-block" commandfor={engine.commandBus.receiverId}>削除</button>
  * ```
  */
 export const COMMAND_BUS_ID = 'bge-command-bus';
@@ -20,6 +24,8 @@ export const COMMAND_BUS_ID = 'bge-command-bus';
 export type CommandName = `--${string}`;
 
 export type CommandHandler = (event: BurgerCommandEvent) => void;
+
+let receiverSequence = 0;
 
 /**
  * Centralized dispatcher for Invoker Commands API custom commands.
@@ -36,10 +42,22 @@ export type CommandHandler = (event: BurgerCommandEvent) => void;
  * 	// ...
  * });
  * bus.createReceiver(document.body);
- * // <button command="--my-action" commandfor="bge-command-bus" value="x">
+ * // <button command="--my-action" commandfor={bus.receiverId} value="x">
  * ```
  */
 export class CommandBus implements Disposable {
+	/**
+	 * Id of this bus's receiver element, unique within the page. Buttons
+	 * address this bus with `commandfor={bus.receiverId}` (or, from UI code,
+	 * `engine.commandBus.receiverId`).
+	 *
+	 * A monotonically increasing counter rather than a random value, so ids
+	 * stay stable and readable across a test run or a debugging session.
+	 * Uniqueness holds only within one loaded copy of this module — the same
+	 * caveat as the `BurgerBlock`/`Item` module-level registries documented
+	 * in ARCHITECTURE.md § 不変条件と否定的知識 applies here too.
+	 */
+	readonly receiverId = `${COMMAND_BUS_ID}-${++receiverSequence}`;
 	readonly #detachers = new Map<HTMLElement, () => void>();
 	readonly #handlers = new Map<CommandName, CommandHandler>();
 
@@ -54,7 +72,7 @@ export class CommandBus implements Disposable {
 	 */
 	createReceiver(parent: HTMLElement): HTMLElement {
 		const receiver = parent.ownerDocument.createElement('div');
-		receiver.id = COMMAND_BUS_ID;
+		receiver.id = this.receiverId;
 		receiver.hidden = true;
 		parent.append(receiver);
 		this.listen(receiver);
@@ -106,7 +124,7 @@ export class CommandBus implements Disposable {
 	#destroy(): void {
 		for (const [receiver, detach] of this.#detachers) {
 			detach();
-			if (receiver.id === COMMAND_BUS_ID) {
+			if (receiver.id === this.receiverId) {
 				receiver.remove();
 			}
 		}

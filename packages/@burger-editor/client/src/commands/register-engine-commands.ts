@@ -9,7 +9,8 @@ import { replaceElement } from '../replace-element.js';
  *
  * This is the single place where engine-mutating UI commands are
  * implemented; buttons anywhere (main document or EditableArea iframes)
- * declare them with `commandfor={COMMAND_BUS_ID}`. Call once per engine.
+ * declare them with `commandfor={engine.commandBus.receiverId}`. Call once
+ * per engine.
  * @param engine - The engine instance
  * @param catalog - The block catalog used by `--add-block`
  * @example

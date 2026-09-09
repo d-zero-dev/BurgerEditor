@@ -60,6 +60,7 @@ function createMockEngine() {
 		},
 		clearCurrentBlock: vi.fn(),
 		componentObserver: { notify: vi.fn() },
+		commandBus: { receiverId: 'bge-command-bus-test' },
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} as any;
 }
@@ -136,6 +137,34 @@ test('uiState.processing中はメニューが隠れ、解除後の再ホバー�
 	// through React's own state rather than only the DOM attribute.
 	await hover(document.body);
 	expect(menuEl.hidden).toBe(false);
+});
+
+test('メニューのボタンのcommandforはengine.commandBus.receiverIdを指す（配線漏れの検出）', async () => {
+	const engine = createMockEngine();
+	engine.commandBus = { receiverId: 'bge-command-bus-from-engine' };
+	const container = document.createElement('div');
+	document.body.append(container);
+	const block = createMockBlock();
+
+	vi.mocked(getBlockAtPosition).mockReturnValue({
+		block,
+		rect: {
+			left: 0,
+			top: 0,
+			right: 100,
+			bottom: 100,
+			width: 100,
+			height: 100,
+		} as DOMRect,
+		marginBlockEnd: 0,
+	});
+
+	const { getByLabelText } = render(<BlockMenu engine={engine} container={container} />);
+	await hover(document.body);
+
+	expect(getByLabelText('ブロックを削除').getAttribute('commandfor')).toBe(
+		'bge-command-bus-from-engine',
+	);
 });
 
 test('processingによる非表示で選択中ブロックがクリアされる', async () => {

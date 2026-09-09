@@ -54,7 +54,7 @@ const imageHtml = `<div data-bge-dialog="2col">
 			</div>
 		</div>
 		<div>
-			<fieldset id="bge-image-size-fieldset">
+			<fieldset>
 				<legend>画像のサイズ</legend>
 				<div role="radiogroup"><div>基準</div>
 					<label><input type="radio" name="bge-scale-type" value="container" />基準</label>
