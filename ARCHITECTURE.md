@@ -341,7 +341,7 @@ core（uiState ストア + view port 定義） ← client（React 実装を注�
 
 **中央コマンドバス（`engine.commandBus`）:**
 
-エンジン・文書・サーバー状態を変えるコマンド（`BGE_COMMAND`: ブロック移動・追加・削除・コピー、下書き切替、アイテムエディタ起動など）は、単一のディスパッチテーブルで処理されます。`commandfor` は同一 document 内の ID 参照であり `CommandEvent` はバブリングしないため、受信エレメント（`#bge-command-bus`）は親 document と各編集エリアの iframe の両方に設置されます。ディスパッチテーブルの実装は client の `registerEngineCommands()` にあり、「エンジンを動かす唯一の経路 = コマンド語彙」として一箇所で監査できます。
+エンジン・文書・サーバー状態を変えるコマンド（`BGE_COMMAND`: ブロック移動・追加・削除・コピー、下書き切替、アイテムエディタ起動など）は、単一のディスパッチテーブルで処理されます。`commandfor` は同一 document 内の ID 参照であり `CommandEvent` はバブリングしないため、受信エレメント（エンジンごとに一意な `engine.commandBus.receiverId`、形式 `bge-command-bus-<n>`）は親 document と各編集エリアの iframe の両方に設置されます。ディスパッチテーブルの実装は client の `registerEngineCommands()` にあり、「エンジンを動かす唯一の経路 = コマンド語彙」として一箇所で監査できます。
 
 **ローカルコマンド:**
 
@@ -359,6 +359,7 @@ core（uiState ストア + view port 定義） ← client（React 実装を注�
 - **`local` のブラウザ側コードは `@burger-editor/cli` を `@burger-editor/cli/block-op` サブパス経由でしか import しない** — main entry は `handlers.ts` を再 export しており `node:fs` / `node:crypto` を引き込むため、`vite build` のブラウザバンドルを壊す。`./block-op` は core と zod にしか依存しない。→ [`local/src/protocol/ws-messages.ts`](packages/@burger-editor/local/src/protocol/ws-messages.ts)
 - **`BlockOp` 型の所有者は core** — [`core/src/block/types.ts`](packages/@burger-editor/core/src/block/types.ts) が定義し、`cli` の zod `blockOpSchema`（[`cli/src/agent-tools/block-op.ts`](packages/@burger-editor/cli/src/agent-tools/block-op.ts)）はそれを検証するだけ。core は cli に依存してはならない（依存方向は Platform → Core の一方向）
 - **`readToken` は署名されておらず、セキュリティ境界ではない** — 「読んでから書く」を**手順**として強制するための内容ハッシュ束縛トークンであり、偽造耐性は意図的に持たない。パスに関するセキュリティ境界は `resolvePathInput` の documentRoot 封じ込め（`PathOutsideDocumentRootError`）にある。→ [`cli/src/agent-tools/read-token.ts`](packages/@burger-editor/cli/src/agent-tools/read-token.ts)、[`file-io/src/path-input.ts`](packages/@burger-editor/file-io/src/path-input.ts)
+- **同一 document に複数の `BurgerEditorEngine` を共存させられる** — document スコープの固定 ID はエンジン局所の識別子に置き換えてある。コマンドバスの受信要素 ID は `engine.commandBus.receiverId`（連番）、ダイアログ・フォームの ID は `EditorDialog` の `useId()`。逆に共有される前提のものは意図的にそのまま: `<bge-wysiwyg-editor>` の `classList` / `experimental.itemOptions.wysiwyg.enableTextOnlyMode`（static プロパティ、document 単位）、Google Maps の script タグ（先勝ち）、ブロッククリップボード（`sessionStorage`、`storageKey` で分離可能）。→ [`core/src/command/command-bus.ts`](packages/@burger-editor/core/src/command/command-bus.ts)、[`client/src/editor-dialog.tsx`](packages/@burger-editor/client/src/editor-dialog.tsx)
 
 ## テストアーキテクチャ
 
