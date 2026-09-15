@@ -178,20 +178,20 @@ export default createItem<{
 });
 ```
 
-`Editor` は React コンポーネント（型付き props: `state` / `setState` / `config` / `engine` / `item`）。フォーム部品は `@burger-editor/client/ui` の `TextField` / `SelectField` / `Checkbox` などを利用できる。ボタンを置く場合は Invoker Commands API（`command`/`commandfor`）で宣言する — click ハンドラは禁止。
+`Editor` は React コンポーネント（型付き props: `state` / `setState` / `item`）。`engine` や `config` は props に含まれない — `@burger-editor/client/ui` の `useEngine()`（config は `useEngine().config`）で読む。フォーム部品は `@burger-editor/client/ui` の `TextField` / `SelectField` / `Checkbox` などを利用できる。ボタンを置く場合は Invoker Commands API（`command`/`commandfor`）で宣言する — click ハンドラは禁止。
 
 ### `createItem` の引数
 
-| プロパティ      | 型 / 役割                                                                          |
-| --------------- | ---------------------------------------------------------------------------------- |
-| `version`       | `string` — アイテムのバージョン                                                    |
-| `name`          | `string` — アイテムの一意な名前                                                    |
-| `template`      | `string` — 表示用 HTML テンプレート（`data-bge` バインディング）                   |
-| `style`         | `string` — アイテム専用 CSS（オプション）                                          |
-| `Editor`        | React コンポーネント — エディタ UI（controlled form）                              |
-| `toEditorState` | `(data, config) => E` — エディタを開く際に保存データをエディタ状態へ変換する純関数 |
-| `toItemData`    | `(state, config) => T` — 保存時にエディタ状態を保存データへ変換する純関数          |
-| `editorOptions` | オブジェクト — 非エディタ系フック（現在は `isDisable(item): string` のみ）         |
+| プロパティ      | 型 / 役割                                                                                                                            |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `version`       | `string` — アイテムのバージョン                                                                                                      |
+| `name`          | `string` — アイテムの一意な名前                                                                                                      |
+| `template`      | `string` — 表示用 HTML テンプレート（`data-bge` バインディング）                                                                     |
+| `style`         | `string` — アイテム専用 CSS（オプション）                                                                                            |
+| `Editor`        | React コンポーネント — エディタ UI（controlled form）。props は `{state, setState, item}` のみ（`engine`/`config` は `useEngine()`） |
+| `toEditorState` | `(data, config) => E` — エディタを開く際に保存データをエディタ状態へ変換する純関数                                                   |
+| `toItemData`    | `(state, config) => T` — 保存時にエディタ状態を保存データへ変換する純関数                                                            |
+| `editorOptions` | オブジェクト — 非エディタ系フック（現在は `isDisable(item): string` のみ）                                                           |
 
 ### アイテムのライフサイクル
 

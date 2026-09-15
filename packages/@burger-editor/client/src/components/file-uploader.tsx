@@ -1,7 +1,8 @@
-import type { BurgerEditorEngine, FileType } from '@burger-editor/core';
+import type { FileType } from '@burger-editor/core';
 
 import { useId, useRef } from 'react';
 
+import { useEngine } from '../engine-context.js';
 import { useCommand } from '../use-command.js';
 
 import styles from './file-uploader.module.css';
@@ -11,20 +12,14 @@ import styles from './file-uploader.module.css';
  * the handler opens the picker via `showPicker()` — no click handlers,
  * no programmatic `click()`.
  * @param root0
- * @param root0.engine
  * @param root0.fileType
  * @example
  * ```tsx
- * <FileUploader engine={engine} fileType="image" />
+ * <FileUploader fileType="image" />
  * ```
  */
-export function FileUploader({
-	engine,
-	fileType,
-}: {
-	readonly engine: BurgerEditorEngine;
-	readonly fileType: FileType;
-}) {
+export function FileUploader({ fileType }: { readonly fileType: FileType }) {
+	const engine = useEngine();
 	const rootId = useId();
 	const inputRef = useRef<HTMLInputElement>(null);
 

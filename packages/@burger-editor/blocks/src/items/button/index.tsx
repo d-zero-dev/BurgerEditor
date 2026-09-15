@@ -1,6 +1,6 @@
 import type { SelectableValue } from '@burger-editor/core';
 
-import { Fieldset, SelectField, TextField } from '@burger-editor/client/ui';
+import { Fieldset, SelectField, TextField, useEngine } from '@burger-editor/client/ui';
 import { createItem } from '@burger-editor/core';
 import { mergeItems } from '@burger-editor/utils';
 
@@ -20,7 +20,8 @@ export default createItem<{
 	name: 'button',
 	template,
 	style,
-	Editor({ state, setState, config }) {
+	Editor({ state, setState }) {
+		const { config } = useEngine();
 		const kindOptions = mergeOptions(
 			[
 				{ value: 'primary', label: 'プライマリボタン' },

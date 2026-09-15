@@ -1,10 +1,12 @@
 import type { BurgerEditorEngine, FileListItem } from '@burger-editor/core';
 
 import { ComponentObserver } from '@burger-editor/core';
-import { render, screen, act, cleanup } from '@testing-library/react';
+import { screen, act, cleanup } from '@testing-library/react';
 import { test, expect, afterEach, beforeEach, vi } from 'vitest';
 
 import { FileList } from '../components/file-list.js';
+
+import { renderWithEngine } from './render-with-engine.js';
 
 // vitestはglobals無効のためtesting-libraryの自動cleanupが効かない。
 // レンダー結果がテスト間でリークしないよう明示的に登録する
@@ -77,7 +79,7 @@ test('選択中のファイルボタンがマウントされたらscrollIntoView
 		createFile('/img/a.png'),
 		createFile('/img/b.png'),
 	]);
-	render(<FileList engine={engine} fileType="image" />);
+	renderWithEngine(engine, <FileList fileType="image" />);
 
 	await notifyFileSelect(engine, '/img/b.png', false);
 
@@ -89,7 +91,7 @@ test('選択中のファイルボタンがマウントされたらscrollIntoView
 test('引用符を含むURLでも例外なく選択・スクロールできる', async () => {
 	const url = '/img/we"ird.png';
 	const { engine } = createMockEngine([createFile(url)]);
-	render(<FileList engine={engine} fileType="image" />);
+	renderWithEngine(engine, <FileList fileType="image" />);
 
 	await notifyFileSelect(engine, url, false);
 
@@ -101,7 +103,7 @@ test('引用符を含むURLでも例外なく選択・スクロールできる',
 test('アップロード進捗の再レンダーでscrollIntoViewが再発火しない', async () => {
 	const blobUrl = 'blob:https://example.com/upload';
 	const { engine } = createMockEngine([createFile('/img/a.png')]);
-	render(<FileList engine={engine} fileType="image" />);
+	renderWithEngine(engine, <FileList fileType="image" />);
 
 	await notifyFileSelect(engine, blobUrl, false);
 	expect(scrollIntoView).toHaveBeenCalledTimes(1);

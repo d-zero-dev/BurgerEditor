@@ -1,57 +1,151 @@
-import type { BurgerEditorView } from '@burger-editor/core';
+import type {
+	BurgerEditorEngine,
+	BurgerEditorView,
+	EditableAreaHost,
+	EditableAreaHostContext,
+	EditableAreaType,
+} from '@burger-editor/core';
+import type { ReactNode } from 'react';
 import type { Root } from 'react-dom/client';
 
+import { createPortal } from 'react-dom';
 import { createRoot } from 'react-dom/client';
 
 import { EditableAreaView } from '../components/editable-area-view.js';
+import { EngineProvider } from '../engine-context.js';
+import { RootErrorBoundary } from '../root-error-boundary.js';
 
 /**
- * The React implementation of the engine's view port. Each editable
- * area is rendered as an {@link EditableAreaView} React root appended
- * to the engine's view area; `createAreaHost` resolves once the area's
- * content container exists.
+ * A `ReactView` extends the core {@link BurgerEditorView} contract with a
+ * client-only escape hatch: `mountChrome` lets `createBurgerEditorClient`
+ * render the dialog chrome into the *same* React root the editable areas
+ * use, once the engine has finished constructing. `core` never sees this
+ * method — it only calls `createAreaHost` through the narrower
+ * `BurgerEditorView` type.
+ */
+export interface ReactView extends BurgerEditorView {
+	/**
+	 * Render additional UI (currently: `BurgerEditorRoot`, the dialog
+	 * chrome) into the single root this view owns. Replaces whatever was
+	 * mounted by a previous call.
+	 * @param node - The chrome to render
+	 */
+	mountChrome(node: ReactNode): void;
+}
+
+interface AreaEntry {
+	readonly mountEl: HTMLElement;
+	readonly props: {
+		readonly type: EditableAreaType;
+		readonly initialContent: string;
+		readonly stylesheets: readonly { readonly path: string; readonly id: string }[];
+		readonly classList: readonly string[];
+	};
+	readonly onReady: (host: EditableAreaHost) => void;
+}
+
+/**
+ * The React implementation of the engine's view port.
+ *
+ * Unlike the pre-single-root design (one `createRoot` per editable area
+ * plus a separate dialog-host root), this view owns exactly **one** React
+ * root per engine. Editable areas are portaled into their own `<div>`
+ * (still a direct child of `engine.viewArea`, preserving the DOM contract
+ * `viewAreaClassList` consumers rely on) so each area keeps its own
+ * subtree identity; the dialog chrome renders inline. Sharing one root
+ * means `EngineProvider` only needs to wrap the tree once, and every
+ * component below it — areas, block menu, dialogs — reads the engine via
+ * `useEngine()` instead of taking it as a prop.
  * @returns The view to pass to `BurgerEditorEngine.new`
  * @example
  * ```ts
- * const engine = await BurgerEditorEngine.new({
- * 	...options,
- * 	view: createReactView(),
- * });
+ * const view = createReactView();
+ * const engine = await BurgerEditorEngine.new({ ...options, view });
+ * view.mountChrome(<EngineProvider engine={engine}><BurgerEditorRoot /></EngineProvider>);
  * ```
  */
-export function createReactView(): BurgerEditorView {
-	const mounts = new Map<Root, HTMLElement>();
+export function createReactView(): ReactView {
+	let root: Root | null = null;
+	let rootHost: HTMLElement | null = null;
+	let engine: BurgerEditorEngine | null = null;
+	let chrome: ReactNode = null;
+	const areas = new Map<EditableAreaType, AreaEntry>();
+
+	/**
+	 *
+	 */
+	function paint(): void {
+		if (!root || !engine) {
+			return;
+		}
+		root.render(
+			<EngineProvider engine={engine}>
+				<RootErrorBoundary>
+					{chrome}
+					{[...areas.values()].map((entry) =>
+						createPortal(
+							<EditableAreaView
+								key={entry.props.type}
+								type={entry.props.type}
+								initialContent={entry.props.initialContent}
+								stylesheets={entry.props.stylesheets}
+								classList={entry.props.classList}
+								onReady={entry.onReady}
+							/>,
+							entry.mountEl,
+						),
+					)}
+				</RootErrorBoundary>
+			</EngineProvider>,
+		);
+	}
 
 	/**
 	 *
 	 */
 	function teardown(): void {
-		for (const [root, mountEl] of mounts) {
-			root.unmount();
-			mountEl.remove();
+		root?.unmount();
+		rootHost?.remove();
+		for (const entry of areas.values()) {
+			entry.mountEl.remove();
 		}
-		mounts.clear();
+		root = null;
+		rootHost = null;
+		areas.clear();
 	}
 
 	return {
-		createAreaHost(context) {
+		createAreaHost(context: EditableAreaHostContext): Promise<EditableAreaHost> {
 			return new Promise((resolve) => {
+				if (!root) {
+					engine = context.engine;
+					rootHost = context.engine.el.ownerDocument.createElement('div');
+					context.engine.el.append(rootHost);
+					root = createRoot(rootHost, {
+						identifierPrefix: `bge${context.engine.commandBus.receiverId}-`,
+					});
+				}
+
 				const doc = context.engine.viewArea.ownerDocument;
 				const mountEl = doc.createElement('div');
 				context.engine.viewArea.append(mountEl);
-				const root = createRoot(mountEl);
-				mounts.set(root, mountEl);
-				root.render(
-					<EditableAreaView
-						engine={context.engine}
-						type={context.type}
-						initialContent={context.initialContent}
-						stylesheets={context.stylesheets}
-						classList={context.classList}
-						onReady={resolve}
-					/>,
-				);
+
+				areas.set(context.type, {
+					mountEl,
+					props: {
+						type: context.type,
+						initialContent: context.initialContent,
+						stylesheets: context.stylesheets,
+						classList: context.classList,
+					},
+					onReady: resolve,
+				});
+				paint();
 			});
+		},
+		mountChrome(node: ReactNode): void {
+			chrome = node;
+			paint();
 		},
 		// destroyと[Symbol.dispose]は同じ関数を指す — thisに依存する実装だと
 		// 分割代入経由の呼び出しでthisが外れてTypeErrorになるため、

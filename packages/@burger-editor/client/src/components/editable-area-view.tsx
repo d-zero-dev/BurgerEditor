@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { animateInsertion } from '../animate-insertion.js';
+import { useEngine } from '../engine-context.js';
 import { useUIState } from '../use-engine.js';
 
 import { BlockMenu } from './block-menu.js';
@@ -53,8 +54,9 @@ function commitEditableAreaSource(
  * The iframe is rendered unconditionally at a fixed position in the
  * tree (visibility is `hidden` only) because unmounting an iframe
  * destroys its document, and the engine owns the content inside it.
+ * Reads the engine via {@link useEngine}, wired up by the view that
+ * portals this component in (`createReactView`).
  * @param root0
- * @param root0.engine
  * @param root0.type
  * @param root0.initialContent
  * @param root0.stylesheets
@@ -62,36 +64,32 @@ function commitEditableAreaSource(
  * @param root0.onReady
  * @example
  * ```tsx
- * root.render(
- * 	<EditableAreaView
- * 		engine={engine}
- * 		type="main"
- * 		initialContent={html}
- * 		stylesheets={stylesheets}
- * 		classList={classList}
- * 		onReady={(host) => resolve(host)}
- * 	/>,
- * );
+ * <EditableAreaView
+ * 	type="main"
+ * 	initialContent={html}
+ * 	stylesheets={stylesheets}
+ * 	classList={classList}
+ * 	onReady={(host) => resolve(host)}
+ * />
  * ```
  */
 export function EditableAreaView({
-	engine,
 	type,
 	initialContent,
 	stylesheets,
 	classList,
 	onReady,
 }: {
-	readonly engine: BurgerEditorEngine;
 	readonly type: EditableAreaType;
 	readonly initialContent: string;
 	readonly stylesheets: readonly { readonly path: string; readonly id: string }[];
 	readonly classList: readonly string[];
 	readonly onReady: (host: EditableAreaHost) => void;
 }) {
-	const sourceMode = useUIState(engine, (s) => s.sourceMode[type]);
-	const processing = useUIState(engine, (s) => s.processing);
-	const dialogOpen = useUIState(engine, (s) => s.openDialog !== null);
+	const engine = useEngine();
+	const sourceMode = useUIState((s) => s.sourceMode[type]);
+	const processing = useUIState((s) => s.processing);
+	const dialogOpen = useUIState((s) => s.openDialog !== null);
 
 	const [active, setActive] = useState(type === 'main');
 	const [sourceText, setSourceText] = useState(initialContent);
@@ -291,7 +289,7 @@ export function EditableAreaView({
 				? createPortal(
 						<>
 							<div data-bge-component="block-menu">
-								<BlockMenu engine={engine} container={frameBody} />
+								<BlockMenu container={frameBody} />
 							</div>
 							<div
 								data-bge-component="initial-insertion"

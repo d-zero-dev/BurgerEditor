@@ -1,9 +1,11 @@
 import type { BurgerBlock, BurgerEditorEngine } from '@burger-editor/core';
 
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { screen, fireEvent, cleanup } from '@testing-library/react';
 import { test, expect, afterEach, vi } from 'vitest';
 
 import { BlockOptions } from '../components/block-options.js';
+
+import { renderWithEngine } from './render-with-engine.js';
 
 // vitestはglobals無効のためtesting-libraryの自動cleanupが効かない。
 // レンダー結果がテスト間でリークしないよう明示的に登録する
@@ -49,11 +51,9 @@ function createMockBlock(changeFrameSemantics: ReturnType<typeof vi.fn>) {
 
 test('セマンティック要素の変更はselectのstateだけを更新しコンテンツDOMには即時適用しない', () => {
 	const changeFrameSemantics = vi.fn();
-	render(
-		<BlockOptions
-			engine={createMockEngine()}
-			block={createMockBlock(changeFrameSemantics)}
-		/>,
+	renderWithEngine(
+		createMockEngine(),
+		<BlockOptions block={createMockBlock(changeFrameSemantics)} />,
 	);
 
 	const select = screen.getByLabelText('セマンティック要素');

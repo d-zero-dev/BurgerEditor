@@ -1,10 +1,32 @@
-import type { FileListItem } from '@burger-editor/core';
+import type { BurgerEditorEngine, FileListItem, FileType } from '@burger-editor/core';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { FileList } from '@burger-editor/client/ui';
+import { FileList, EngineProvider } from '@burger-editor/client/ui';
 
 import placeholderImage from '../assets/placeholder-image.svg?url';
 import { createMockEngine } from '../mocks/create-mock-engine.js';
+
+/**
+ * `FileList` reads the engine via `useEngine()`; this story-only wrapper
+ * keeps the `{engine, fileType}` args shape the stories below use (and
+ * that `play` reads `args.engine` from).
+ * @param root0
+ * @param root0.engine
+ * @param root0.fileType
+ */
+function FileListStory({
+	engine,
+	fileType,
+}: {
+	readonly engine: BurgerEditorEngine;
+	readonly fileType: FileType;
+}) {
+	return (
+		<EngineProvider engine={engine}>
+			<FileList fileType={fileType} />
+		</EngineProvider>
+	);
+}
 
 const dummyFiles: FileListItem[] = [
 	{
@@ -35,8 +57,8 @@ const dummyFiles: FileListItem[] = [
 
 const meta = {
 	title: 'Client/Components/FileList',
-	component: FileList,
-} satisfies Meta<typeof FileList>;
+	component: FileListStory,
+} satisfies Meta<typeof FileListStory>;
 
 export default meta;
 

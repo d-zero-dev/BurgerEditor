@@ -39,6 +39,8 @@ export * from './utils/find-value-pattern-from-array.js';
 export { exportStyleOptions } from './block/export-style-options.js';
 export { getBlockAtPosition } from './get-block-at-position.js';
 export { parseHTMLToBlockData } from './block/parse-html-to-definition.js';
+export { createBgeEvent } from './event/create-bge-event.js';
+export type { BurgerEditorEvent } from './event/create-bge-event.js';
 
 // Document helpers (Front Matter / editable area extraction)
 export { NoEditableAreaError } from './document/no-editable-area-error.js';

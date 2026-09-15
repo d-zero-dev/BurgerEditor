@@ -1,7 +1,7 @@
 import type { BlockCatalog as BlockCatalogData } from '@burger-editor/core';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { BlockCatalog } from '@burger-editor/client/ui';
+import { BlockCatalog, EngineProvider } from '@burger-editor/client/ui';
 
 import placeholderImage from '../assets/placeholder-image.svg?url';
 import { createMockEngine } from '../mocks/create-mock-engine.js';
@@ -72,6 +72,13 @@ const catalog: BlockCatalogData = {
 const meta = {
 	title: 'Client/Components/BlockCatalog',
 	component: BlockCatalog,
+	decorators: [
+		(Story) => (
+			<EngineProvider engine={fakeEngine}>
+				<Story />
+			</EngineProvider>
+		),
+	],
 } satisfies Meta<typeof BlockCatalog>;
 
 export default meta;
@@ -80,7 +87,6 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
 	args: {
-		engine: fakeEngine,
 		catalog,
 	},
 };

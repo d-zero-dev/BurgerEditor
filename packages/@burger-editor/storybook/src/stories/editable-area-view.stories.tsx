@@ -5,12 +5,31 @@ import type {
 } from '@burger-editor/core';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { EditableAreaView, useCommand } from '@burger-editor/client/ui';
+import { EditableAreaView, EngineProvider, useCommand } from '@burger-editor/client/ui';
 import { highlightElement } from '@burger-editor/core';
 import { useId, useState } from 'react';
 import { fn } from 'storybook/test';
 
 import { createMockEngine } from '../mocks/create-mock-engine.js';
+
+/**
+ * `EditableAreaView` reads the engine via `useEngine()`; this story-only
+ * wrapper keeps the original `{engine, ...}` args shape the stories below
+ * use.
+ * @param root0
+ * @param root0.engine
+ * @param root0.rest
+ */
+function EditableAreaViewStory({
+	engine,
+	...rest
+}: { readonly engine: BurgerEditorEngine } & Parameters<typeof EditableAreaView>[0]) {
+	return (
+		<EngineProvider engine={engine}>
+			<EditableAreaView {...rest} />
+		</EngineProvider>
+	);
+}
 
 /**
  * iframe内にコンテンツを表示するシェル。`BlockMenu`（ホバーメニュー）
@@ -21,10 +40,10 @@ import { createMockEngine } from '../mocks/create-mock-engine.js';
  */
 const meta = {
 	title: 'Client/Components/EditableAreaView',
-	component: EditableAreaView,
+	component: EditableAreaViewStory,
 	// 編集エリア本体（iframeシェル）のため、dialog/block-menuではラップしない
 	parameters: { wrapper: 'none' },
-} satisfies Meta<typeof EditableAreaView>;
+} satisfies Meta<typeof EditableAreaViewStory>;
 
 export default meta;
 
@@ -86,31 +105,32 @@ function AgentHighlightDemo({
 	});
 
 	return (
-		<div ref={rootRef} id={rootId}>
-			<div style={{ display: 'flex', gap: '0.5em', marginBlockEnd: '1em' }}>
-				{targets.map((el, i) => (
-					<button
-						key={`${i}-${el.textContent}`}
-						type="button"
-						command="--highlight-block"
-						commandfor={rootId}
-						value={i}>
-						ブロック{i + 1}をhighlight()
-					</button>
-				))}
+		<EngineProvider engine={engine}>
+			<div ref={rootRef} id={rootId}>
+				<div style={{ display: 'flex', gap: '0.5em', marginBlockEnd: '1em' }}>
+					{targets.map((el, i) => (
+						<button
+							key={`${i}-${el.textContent}`}
+							type="button"
+							command="--highlight-block"
+							commandfor={rootId}
+							value={i}>
+							ブロック{i + 1}をhighlight()
+						</button>
+					))}
+				</div>
+				<EditableAreaView
+					type={type}
+					initialContent={initialContent}
+					stylesheets={stylesheets}
+					classList={classList}
+					onReady={(readyHost) => {
+						readyHost.containerElement.innerHTML = initialContent;
+						setHost(readyHost);
+					}}
+				/>
 			</div>
-			<EditableAreaView
-				engine={engine}
-				type={type}
-				initialContent={initialContent}
-				stylesheets={stylesheets}
-				classList={classList}
-				onReady={(readyHost) => {
-					readyHost.containerElement.innerHTML = initialContent;
-					setHost(readyHost);
-				}}
-			/>
-		</div>
+		</EngineProvider>
 	);
 }
 

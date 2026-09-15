@@ -1,8 +1,7 @@
-import type { BurgerEditorEngine } from '@burger-editor/core';
-
 import { BGE_COMMAND } from '@burger-editor/core';
 import { useEffect, useState } from 'react';
 
+import { useEngine } from '../engine-context.js';
 import { useUIState } from '../use-engine.js';
 
 import styles from './draft-switcher.module.css';
@@ -11,22 +10,28 @@ import styles from './draft-switcher.module.css';
  * Main/draft content switcher. Switching and copying are declared as
  * engine commands; the pressed state follows the engine's
  * `bge:switch-content` event and the source-view indicator follows
- * `engine.uiState.sourceMode` — no state is duplicated locally.
+ * `engine.uiState.sourceMode` — no state is duplicated locally. Reads
+ * the engine via {@link useEngine} — the caller wraps this in an
+ * `EngineProvider`.
  *
  * The alt+double-click source-view toggle is kept as a DOM event —
  * double-click has no Invoker Commands equivalent (the no-click rule
  * targets single-click activation).
- * @param root0
- * @param root0.engine
  * @example
  * ```tsx
  * const container = document.createElement('div');
  * engine.viewArea.insertAdjacentElement('beforebegin', container);
- * reactMount(<DraftSwitcher engine={engine} />, container);
+ * reactMount(
+ * 	<EngineProvider engine={engine}>
+ * 		<DraftSwitcher />
+ * 	</EngineProvider>,
+ * 	container,
+ * );
  * ```
  */
-export function DraftSwitcher({ engine }: { readonly engine: BurgerEditorEngine }) {
-	const sourceMode = useUIState(engine, (s) => s.sourceMode);
+export function DraftSwitcher() {
+	const engine = useEngine();
+	const sourceMode = useUIState((s) => s.sourceMode);
 	const [isMain, setIsMain] = useState(engine.content.type === 'main');
 
 	useEffect(() => {

@@ -1,4 +1,3 @@
-import type { BurgerEditorEngine } from '../engine/engine.js';
 import type { Config } from '../types.js';
 import type { Item } from './item.js';
 
@@ -20,6 +19,13 @@ export interface ItemMataData {
  * `E` is the editor state shape — by default the item data itself, or the
  * result of `toEditorState` when the form works on a transformed view of
  * the data.
+ *
+ * The engine and its `config` are not passed as props — the UI layer
+ * renders `Editor` under an `EngineProvider`, so an `Editor` reaches them
+ * with `@burger-editor/client/ui`'s `useEngine()` (`useEngine().config`
+ * for the config). This keeps this package free of a React dependency
+ * (`ItemEditorComponent`'s return type is `unknown`) while still letting
+ * `Editor` read the engine like every other client UI component.
  * @example
  * ```tsx
  * function Editor({ state, setState }: ItemEditorProps<{ title: string }>) {
@@ -47,17 +53,6 @@ export interface ItemEditorProps<
 	 * Replace the editor state, either directly or via a functional update.
 	 */
 	readonly setState: (update: E | ((prev: E) => E)) => void;
-
-	/**
-	 * Engine configuration (sample paths, experimental item options, etc.).
-	 */
-	readonly config: Config;
-
-	/**
-	 * The engine instance, for access to server APIs and the component
-	 * observer.
-	 */
-	readonly engine: BurgerEditorEngine;
 
 	/**
 	 * The content item being edited.

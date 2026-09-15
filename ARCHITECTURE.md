@@ -332,13 +332,17 @@ core パッケージは UI フレームワークに依存しない headless エ�
 core が UI に要求する接点は `BurgerEditorView` ひとつです。`createAreaHost()` が編集エリア（main / draft）ごとのホスト UI を生成し、core には編集対象コンテンツの `containerElement`（と任意の挿入アニメーションフック）だけを返します。core は iframe・textarea・メニューなど UI 所有の DOM への参照を一切持たないため、「エンジンが React の描画対象属性を直接書き換えて状態が食い違う」類のバグは型レベルで表現できません。
 
 - core 側: `EditableContent` がコンテンツ操作（ブロック復元・シリアライズ・サニタイズ）を担う。`view` 未指定時は素の div を返す headless フォールバックを使う
-- client 側: `createReactView()` が port を実装し、`EditableAreaView`（iframe/ソース textarea のシェル、ResizeObserver による高さ追従）を React root としてマウント。ブロックメニューと初期挿入ボタンは createPortal で iframe 文書内に描画する
+- client 側: `createReactView()` が port を実装する。**engine 1 つにつき React root は 1 つ**（`engine.el` 直下）— `createAreaHost()` は自前の root を作らず、編集エリアごとの `<div>` を `engine.viewArea` 配下に用意してその単一 root から `createPortal` で `EditableAreaView`（iframe/ソース textarea のシェル、ResizeObserver による高さ追従）を描画する。ブロックメニューと初期挿入ボタンはさらに iframe 文書内へ二重に createPortal される。ダイアログ群（`BurgerEditorRoot`）は `view.mountChrome()` 経由で同じ root に相乗りする（`ReactView` は client 内部の型で、core の `BurgerEditorView` 契約はそのまま）
 - 表示状態（main/draft の切替・visual/source モード・processing 中のメニュー非表示）は `engine.uiState` とエンジンイベント（`bge:switch-content` / `bge:saved`）を UI 層が購読して宣言的に描画する。core から UI への命令的呼び出しは存在しない
+
+**EngineContext（依存注入）:**
+
+単一 root は `<EngineContext value={engine}>` で自身を包む。配下の全コンポーネント（`client/ui` のエクスポート、item `Editor`）は `engine` を props で受け取らず `useEngine()` で読む — `engine` の props ドリルはコードベースに存在しない。item `Editor` も例外ではなく、`ItemEditorProps` に `engine`/`config` は**含まれない**（`{state, setState, item}` のみ）。
 
 **依存関係の流れ:**
 
 ```
-core（uiState ストア + view port 定義） ← client（React 実装を注入）
+core（uiState ストア + view port 定義） ← client（React 実装 + EngineContext を注入）
 ```
 
 ### 5. Invoker Commands API とコマンドバス
@@ -355,7 +359,7 @@ core（uiState ストア + view port 定義） ← client（React 実装を注�
 
 **アイテムエディタ契約:**
 
-各アイテムは `createItem()` に `Editor`（型付き React コンポーネント）と純関数 `toEditorState` / `toItemData` を渡します。旧来の `editor.html` 文字列テンプレートと命令的ライフサイクルフック（`beforeOpen`/`open`/`beforeChange`/`onSubmit`）は廃止されました。コンテンツ出力側（`template.html` + frozen-patty の `data-bge` バインディング）は従来どおりで、React には依存しません。
+各アイテムは `createItem()` に `Editor`（型付き React コンポーネント）と純関数 `toEditorState` / `toItemData` を渡します。旧来の `editor.html` 文字列テンプレートと命令的ライフサイクルフック（`beforeOpen`/`open`/`beforeChange`/`onSubmit`）は廃止されました。コンテンツ出力側（`template.html` + frozen-patty の `data-bge` バインディング）は従来どおりで、React には依存しません。`Editor` の props は `{state, setState, item}` のみ — engine / config は含まれず、`@burger-editor/client/ui` の `useEngine()`（`useEngine().config`）で読みます。`core` パッケージ自体は React に依存しません（`ItemEditorComponent` の戻り値は `unknown`）。
 
 ### 6. 不変条件と否定的知識
 

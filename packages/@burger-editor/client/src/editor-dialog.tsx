@@ -28,7 +28,7 @@ import './invoker-commands.js';
  * 	onClose={() => engine.uiState.closeDialog()}
  * 	onComplete={(formData) => applyBlockOptions(block, formData)}
  * 	buttons={{ close: 'キャンセル', complete: '決定' }}>
- * 	{block ? <BlockOptions engine={engine} block={block} /> : null}
+ * 	{block ? <BlockOptions block={block} /> : null}
  * </EditorDialog>
  * ```
  */

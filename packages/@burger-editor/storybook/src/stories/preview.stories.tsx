@@ -1,14 +1,15 @@
 import type { BurgerEditorEngine } from '@burger-editor/core';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Preview } from '@burger-editor/client/ui';
+import { EngineProvider, Preview } from '@burger-editor/client/ui';
 import { ComponentObserver } from '@burger-editor/core';
 
 import placeholderImage from '../assets/placeholder-image.svg?url';
 
 // Preview は engine.componentObserver の file-upload-progress 購読のみ
-// 使用する。ComponentObserver は本物のクラスをそのままインスタンス化
-// できる（window.dispatchEvent の薄いラッパーで副作用が安全なため）
+// 使用する（useEngine()経由）。ComponentObserver は本物のクラスをそのまま
+// インスタンス化できる（window.dispatchEventの薄いラッパーで副作用が安全
+// なため）
 const fakeEngine = {
 	componentObserver: new ComponentObserver(),
 } as unknown as BurgerEditorEngine;
@@ -16,9 +17,13 @@ const fakeEngine = {
 const meta = {
 	title: 'Client/Components/Preview',
 	component: Preview,
-	args: {
-		engine: fakeEngine,
-	},
+	decorators: [
+		(Story) => (
+			<EngineProvider engine={fakeEngine}>
+				<Story />
+			</EngineProvider>
+		),
+	],
 } satisfies Meta<typeof Preview>;
 
 export default meta;

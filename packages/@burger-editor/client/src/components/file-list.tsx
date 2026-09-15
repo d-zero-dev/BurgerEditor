@@ -1,9 +1,10 @@
-import type { BurgerEditorEngine, FileListItem, FileType } from '@burger-editor/core';
+import type { FileListItem, FileType } from '@burger-editor/core';
 import type { ReactNode } from 'react';
 
 import { formatByteSize, formatDate } from '@burger-editor/utils';
 import { Fragment, useId, useRef, useState } from 'react';
 
+import { useEngine } from '../engine-context.js';
 import { useCommand } from '../use-command.js';
 import { useComponentEvent } from '../use-engine.js';
 
@@ -15,21 +16,15 @@ import { Thumbnail } from './thumbnail.js';
  * engine-level component observer (`file-select`); buttons declare local
  * commands instead of click handlers.
  * @param root0
- * @param root0.engine
  * @param root0.fileType
  * @example
  * ```tsx
- * <FileUploader engine={engine} fileType="image" />
- * <FileList engine={engine} fileType="image" />
+ * <FileUploader fileType="image" />
+ * <FileList fileType="image" />
  * ```
  */
-export function FileList({
-	engine,
-	fileType,
-}: {
-	readonly engine: BurgerEditorEngine;
-	readonly fileType: FileType;
-}) {
+export function FileList({ fileType }: { readonly fileType: FileType }) {
+	const engine = useEngine();
 	const rootId = useId();
 
 	const getFileList = engine.serverAPI.getFileList;
@@ -44,7 +39,7 @@ export function FileList({
 
 	const requestDebounce = useRef(-1);
 
-	useComponentEvent(engine, 'file-select', async ({ path, isMounted }) => {
+	useComponentEvent('file-select', async ({ path, isMounted }) => {
 		setSelectedPath(path);
 
 		if (
@@ -76,13 +71,13 @@ export function FileList({
 		}
 	});
 
-	useComponentEvent(engine, 'file-upload-progress', (p) => {
+	useComponentEvent('file-upload-progress', (p) => {
 		if (p.blob === selectedPath) {
 			setProgress({ uploaded: p.uploaded, total: p.total });
 		}
 	});
 
-	useComponentEvent(engine, 'file-listup', ({ data }) => {
+	useComponentEvent('file-listup', ({ data }) => {
 		setFileList(data);
 	});
 

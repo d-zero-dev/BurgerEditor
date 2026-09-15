@@ -9,6 +9,8 @@ import { cleanup, fireEvent, render } from '@testing-library/react';
 import { act } from 'react';
 import { test, expect, afterEach, beforeEach, vi } from 'vitest';
 
+import { EngineProvider } from '../engine-context.js';
+
 import { EditableAreaView } from './editable-area-view.js';
 
 // jsdom doesn't implement the CSSOM `CSS` global (no CSS.escape), which
@@ -90,16 +92,17 @@ function renderView(
 ) {
 	let host: EditableAreaHost | null = null;
 	const utils = render(
-		<EditableAreaView
-			engine={engine}
-			type={type}
-			initialContent={initialContent}
-			stylesheets={[]}
-			classList={['bge-contents']}
-			onReady={(h) => {
-				host = h;
-			}}
-		/>,
+		<EngineProvider engine={engine}>
+			<EditableAreaView
+				type={type}
+				initialContent={initialContent}
+				stylesheets={[]}
+				classList={['bge-contents']}
+				onReady={(h) => {
+					host = h;
+				}}
+			/>
+		</EngineProvider>,
 	);
 	// onReadyはiframeのrefコールバック（commit時）に同期で呼ばれる
 	expect(host).not.toBeNull();

@@ -1,9 +1,11 @@
 import type { BurgerEditorEngine, ItemEditorProps, ItemSeed } from '@burger-editor/core';
 
 import { Item, UIStateStore } from '@burger-editor/core';
-import { render, cleanup } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
 import { createElement } from 'react';
 import { test, expect, describe, beforeAll, afterEach, vi } from 'vitest';
+
+import { renderWithEngine } from '../__tests__/render-with-engine.js';
 
 import { ItemEditorHost } from './item-editor-host.js';
 
@@ -86,7 +88,7 @@ describe('ItemEditorHost — wysiwygコンテンツスタイルシート注入',
 	test('getContentStylesheetの解決前にunmountされてもsetStyleは呼ばれない（未処理rejection防止）', async () => {
 		const { engine, item, getResolver } = createHarness();
 
-		const { unmount } = render(<ItemEditorHost engine={engine} item={item as never} />);
+		const { unmount } = renderWithEngine(engine, <ItemEditorHost item={item as never} />);
 		const stub = document.querySelector('bge-wysiwyg-editor') as StubWysiwygEditorElement;
 		expect(stub).not.toBeNull();
 
@@ -101,7 +103,7 @@ describe('ItemEditorHost — wysiwygコンテンツスタイルシート注入',
 	test('getContentStylesheetが解決してもunmountされていなければsetStyleが呼ばれる', async () => {
 		const { engine, item, getResolver } = createHarness();
 
-		render(<ItemEditorHost engine={engine} item={item as never} />);
+		renderWithEngine(engine, <ItemEditorHost item={item as never} />);
 		const stub = document.querySelector('bge-wysiwyg-editor') as StubWysiwygEditorElement;
 
 		getResolver()('body{color:red}');

@@ -5,6 +5,7 @@ import {
 	Preview,
 	TextField,
 	useComponentEvent,
+	useEngine,
 } from '@burger-editor/client/ui';
 import { createItem } from '@burger-editor/core';
 import { formatByteSize } from '@burger-editor/utils';
@@ -37,9 +38,10 @@ export default createItem<{
 			download: state.downloadCheck ? (state.name ?? state.path) : '',
 		};
 	},
-	Editor({ state, setState, engine }) {
+	Editor({ state, setState }) {
+		const engine = useEngine();
 		// ファイル一覧・アップローダーからの選択をエディタ状態に反映する
-		useComponentEvent(engine, 'file-select', ({ path, fileSize, isEmpty }) => {
+		useComponentEvent('file-select', ({ path, fileSize, isEmpty }) => {
 			if (isEmpty) {
 				return;
 			}
@@ -66,7 +68,7 @@ export default createItem<{
 			<div data-bge-dialog="2col">
 				<div data-bge-dialog-ui="sticky">
 					<div>
-						<Preview engine={engine} path={state.path ?? ''} />
+						<Preview path={state.path ?? ''} />
 					</div>
 
 					<div>
@@ -85,8 +87,8 @@ export default createItem<{
 					</div>
 				</div>
 				<div>
-					<FileUploader engine={engine} fileType="other" />
-					<FileList engine={engine} fileType="other" />
+					<FileUploader fileType="other" />
+					<FileList fileType="other" />
 				</div>
 			</div>
 		);

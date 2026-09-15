@@ -3,8 +3,10 @@ import type {
 	BurgerEditorEngine,
 } from '@burger-editor/core';
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
+
+import { renderWithEngine } from '../__tests__/render-with-engine.js';
 
 import { BlockCatalog } from './block-catalog.js';
 
@@ -36,7 +38,7 @@ const catalog: BlockCatalogData = {
 
 test('カタログのボタンのcommandforはengine.commandBus.receiverIdを指す（配線漏れの検出）', () => {
 	const engine = createMockEngine('bge-command-bus-from-engine');
-	render(<BlockCatalog engine={engine} catalog={catalog} />);
+	renderWithEngine(engine, <BlockCatalog catalog={catalog} />);
 
 	expect(screen.getByText('見出し').closest('button')?.getAttribute('commandfor')).toBe(
 		'bge-command-bus-from-engine',
@@ -47,7 +49,7 @@ test('クリップボードにブロックがあるときだけ貼り付けボ�
 	const engine = createMockEngine('bge-command-bus-from-engine');
 	sessionStorage.setItem('bge-copied-block', '{}');
 
-	render(<BlockCatalog engine={engine} catalog={catalog} />);
+	renderWithEngine(engine, <BlockCatalog catalog={catalog} />);
 
 	expect(
 		screen
@@ -59,7 +61,7 @@ test('クリップボードにブロックがあるときだけ貼り付けボ�
 
 test('クリップボードが空のときは貼り付けボタンが表示されない', () => {
 	const engine = createMockEngine('bge-command-bus-from-engine');
-	render(<BlockCatalog engine={engine} catalog={catalog} />);
+	renderWithEngine(engine, <BlockCatalog catalog={catalog} />);
 
 	expect(screen.queryByText('クリップボードから貼り付け')).toBeNull();
 });

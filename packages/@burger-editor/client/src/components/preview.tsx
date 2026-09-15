@@ -1,5 +1,3 @@
-import type { BurgerEditorEngine } from '@burger-editor/core';
-
 import { useEffect, useState } from 'react';
 
 import { getExt } from '../get-ext.js';
@@ -12,20 +10,13 @@ import styles from './preview.module.css';
  * from the old `file-select` observer event); upload progress stays on
  * the engine-level component observer.
  * @param root0
- * @param root0.engine
  * @param root0.path
  * @example
  * ```tsx
- * <Preview engine={engine} path={state.path ?? ''} />
+ * <Preview path={state.path ?? ''} />
  * ```
  */
-export function Preview({
-	engine,
-	path,
-}: {
-	readonly engine: BurgerEditorEngine;
-	readonly path: string;
-}) {
+export function Preview({ path }: { readonly path: string }) {
 	const [dimension, setDimension] = useState<{
 		readonly width: number;
 		readonly height: number;
@@ -43,7 +34,7 @@ export function Preview({
 	const file = path ? getExt(path) : null;
 	const isUploadingMode = path.startsWith('blob:');
 
-	useComponentEvent(engine, 'file-upload-progress', (p) => {
+	useComponentEvent('file-upload-progress', (p) => {
 		if (p.blob === path) {
 			setProgress({ uploaded: p.uploaded, total: p.total });
 		}

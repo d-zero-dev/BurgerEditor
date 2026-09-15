@@ -1,15 +1,11 @@
-import type {
-	BurgerEditorEngine,
-	Item,
-	ItemData,
-	ItemEditorProps,
-} from '@burger-editor/core';
+import type { Item, ItemData, ItemEditorProps } from '@burger-editor/core';
 import type { BgeWysiwygEditorElement } from '@burger-editor/custom-element';
 import type { ComponentType, RefObject } from 'react';
 
 import { useEffect, useRef, useState } from 'react';
 
 import { EditorDialog } from '../editor-dialog.js';
+import { useEngine } from '../engine-context.js';
 
 type AnyItem = Item<ItemData, {}>;
 type SubmitRef = RefObject<(() => Promise<void>) | null>;
@@ -17,25 +13,17 @@ type SubmitRef = RefObject<(() => Promise<void>) | null>;
 /**
  * Declarative item editor dialog. Renders the item's `Editor` component
  * with editor state derived via `toEditorState`; on submit the state is
- * converted back with `toItemData` and imported into the item.
+ * converted back with `toItemData` and imported into the item. Reads the
+ * engine via {@link useEngine}.
  * @param root0
- * @param root0.engine
  * @param root0.item
  * @example
  * ```tsx
- * <ItemEditorHost
- * 	engine={engine}
- * 	item={open?.type === 'item-editor' ? open.item : null}
- * />
+ * <ItemEditorHost item={open?.type === 'item-editor' ? open.item : null} />
  * ```
  */
-export function ItemEditorHost({
-	engine,
-	item,
-}: {
-	readonly engine: BurgerEditorEngine;
-	readonly item: AnyItem | null;
-}) {
+export function ItemEditorHost({ item }: { readonly item: AnyItem | null }) {
+	const engine = useEngine();
 	const submitRef: SubmitRef = useRef(null);
 
 	return (
@@ -53,7 +41,7 @@ export function ItemEditorHost({
 					engine.uiState.closeDialog();
 				})();
 			}}>
-			{item ? <ItemEditorBody engine={engine} item={item} submitRef={submitRef} /> : null}
+			{item ? <ItemEditorBody item={item} submitRef={submitRef} /> : null}
 		</EditorDialog>
 	);
 }
@@ -62,19 +50,17 @@ export function ItemEditorHost({
  * The editor form body. Owns the editor state for the currently edited
  * item.
  * @param root0
- * @param root0.engine
  * @param root0.item
  * @param root0.submitRef
  */
 function ItemEditorBody({
-	engine,
 	item,
 	submitRef,
 }: {
-	readonly engine: BurgerEditorEngine;
 	readonly item: AnyItem;
 	readonly submitRef: SubmitRef;
 }) {
+	const engine = useEngine();
 	const seed = item.seed;
 
 	const [state, setState] = useState<ItemData>(() => {
@@ -134,13 +120,7 @@ function ItemEditorBody({
 
 	return (
 		<div ref={wrapperRef} data-bge-container={containerType}>
-			<Editor
-				state={state}
-				setState={setState}
-				config={engine.config}
-				engine={engine}
-				item={item}
-			/>
+			<Editor state={state} setState={setState} item={item} />
 		</div>
 	);
 }

@@ -1,9 +1,11 @@
 import type { BurgerBlock } from '@burger-editor/core';
 
 import { getBlockAtPosition, UIStateStore } from '@burger-editor/core';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
 import { act } from 'react';
 import { test, expect, afterEach, vi } from 'vitest';
+
+import { renderWithEngine } from '../__tests__/render-with-engine.js';
 
 import { BlockMenu } from './block-menu.js';
 
@@ -109,8 +111,9 @@ test('uiState.processing中はメニューが隠れ、解除後の再ホバー�
 		marginBlockEnd: 0,
 	});
 
-	const { container: renderedRoot } = render(
-		<BlockMenu engine={engine} container={container} />,
+	const { container: renderedRoot } = renderWithEngine(
+		engine,
+		<BlockMenu container={container} />,
 	);
 	const menuEl = renderedRoot.firstElementChild as HTMLElement;
 
@@ -159,7 +162,10 @@ test('メニューのボタンのcommandforはengine.commandBus.receiverIdを指
 		marginBlockEnd: 0,
 	});
 
-	const { getByLabelText } = render(<BlockMenu engine={engine} container={container} />);
+	const { getByLabelText } = renderWithEngine(
+		engine,
+		<BlockMenu container={container} />,
+	);
 	await hover(document.body);
 
 	expect(getByLabelText('ブロックを削除').getAttribute('commandfor')).toBe(
@@ -186,7 +192,7 @@ test('processingによる非表示で選択中ブロックがクリアされる'
 		marginBlockEnd: 0,
 	});
 
-	render(<BlockMenu engine={engine} container={container} />);
+	renderWithEngine(engine, <BlockMenu container={container} />);
 
 	await hover(document.body);
 

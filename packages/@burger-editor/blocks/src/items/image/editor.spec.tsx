@@ -1,6 +1,7 @@
 import type { ImageData } from './index.js';
 import type { BurgerEditorEngine, ItemData, Item } from '@burger-editor/core';
 
+import { EngineProvider } from '@burger-editor/client/ui';
 import { ComponentObserver } from '@burger-editor/core';
 import { narrowElement } from '@burger-editor/utils';
 import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
@@ -100,13 +101,9 @@ function Harness({
 }) {
 	const [state, setState] = useState<ImageData>(() => createInitialState(initialPath));
 	return (
-		<ImageEditor
-			state={state}
-			setState={setState}
-			config={testConfig}
-			engine={engine}
-			item={{} as never}
-		/>
+		<EngineProvider engine={engine}>
+			<ImageEditor state={state} setState={setState} item={{} as never} />
+		</EngineProvider>
 	);
 }
 

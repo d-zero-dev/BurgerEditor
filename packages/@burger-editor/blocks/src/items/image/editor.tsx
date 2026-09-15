@@ -11,6 +11,7 @@ import {
 	Tabs,
 	TextField,
 	useComponentEvent,
+	useEngine,
 } from '@burger-editor/client/ui';
 import { useEffect, useId, useRef, useState } from 'react';
 
@@ -30,9 +31,9 @@ type LoadedImage = {
  * @param root0
  * @param root0.state
  * @param root0.setState
- * @param root0.engine
  */
-export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageData>) {
+export function ImageEditor({ state, setState }: ItemEditorProps<ImageData>) {
+	const engine = useEngine();
 	// 同一documentに複数のimageアイテムエディタが同時に開いてもhtmlFor/
 	// aria-*の参照先が混線しないよう、ハードコードIDではなくuseIdで一意化する
 	const uid = useId();
@@ -146,7 +147,7 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 		setState((prev) => ({ ...prev, mediaInput: media, altEditable }));
 	};
 
-	useComponentEvent(engine, 'file-select', ({ path, isEmpty }) => {
+	useComponentEvent('file-select', ({ path, isEmpty }) => {
 		if (isEmpty) {
 			return;
 		}
@@ -182,7 +183,7 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 						id={`${uid}-tabs-content`}
 						role="tabpanel"
 						aria-label={tabLabel(currentIndex)}>
-						<Preview engine={engine} path={currentPath} />
+						<Preview path={currentPath} />
 						{loadError ? <p role="alert">{loadError}</p> : null}
 						<div>
 							<TextField
@@ -328,8 +329,8 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 				</div>
 			</div>
 			<div>
-				<FileUploader engine={engine} fileType="image" />
-				<FileList engine={engine} fileType="image" />
+				<FileUploader fileType="image" />
+				<FileList fileType="image" />
 			</div>
 		</div>
 	);

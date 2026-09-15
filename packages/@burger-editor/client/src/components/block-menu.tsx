@@ -1,10 +1,11 @@
 import type { MenuGeometry, ItemOverlayRect } from './block-menu-view.js';
-import type { BurgerBlock, BurgerEditorEngine, ItemData } from '@burger-editor/core';
+import type { BurgerBlock, ItemData } from '@burger-editor/core';
 import type { RefObject } from 'react';
 
 import { Item, getBlockAtPosition } from '@burger-editor/core';
 import { useId, useEffect, useRef, useState, useCallback } from 'react';
 
+import { useEngine } from '../engine-context.js';
 import { useCommand } from '../use-command.js';
 
 import { BlockMenuView } from './block-menu-view.js';
@@ -24,20 +25,14 @@ import { BlockMenuView } from './block-menu-view.js';
  * `BurgerBlock` の実インスタンスなしに見た目だけ確認できるため、
  * Storybook 等では `BlockMenuView` を直接使う。
  * @param root0
- * @param root0.engine
  * @param root0.container
  * @example
  * ```tsx
- * <BlockMenu engine={engine} container={frameBody} />
+ * <BlockMenu container={frameBody} />
  * ```
  */
-export function BlockMenu({
-	engine,
-	container,
-}: {
-	readonly engine: BurgerEditorEngine;
-	readonly container: HTMLElement;
-}) {
+export function BlockMenu({ container }: { readonly container: HTMLElement }) {
+	const engine = useEngine();
 	const menuId = useId();
 	const [currentBlock, setCurrentBlock] = useState<BurgerBlock | null>(null);
 	const [visible, setVisible] = useState(false);

@@ -1,6 +1,6 @@
 import type { BurgerEditorEngine, ItemData, ItemSeed } from '@burger-editor/core';
 
-import { ItemEditorHost } from '@burger-editor/client/ui';
+import { EngineProvider, ItemEditorHost } from '@burger-editor/client/ui';
 import { Item, UIStateStore } from '@burger-editor/core';
 import { narrowElement } from '@burger-editor/utils';
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
@@ -58,7 +58,11 @@ describe('itemエディタのパイプライン統合（開く→編集→保存
 	test('itemのデータがEditorに表示され、決定でtoItemData経由でitemに書き戻される', async () => {
 		const { engine, item, uiState } = createHarness();
 
-		render(<ItemEditorHost engine={engine} item={item as never} />);
+		render(
+			<EngineProvider engine={engine}>
+				<ItemEditorHost item={item as never} />
+			</EngineProvider>,
+		);
 
 		// item.export() の内容がエディタの初期値になる
 		const input = narrowElement(
@@ -86,7 +90,11 @@ describe('itemエディタのパイプライン統合（開く→編集→保存
 	test('キャンセル（dialogのclose）ではitemが変更されずsaveだけ走る', () => {
 		const { engine, item } = createHarness();
 
-		render(<ItemEditorHost engine={engine} item={item as never} />);
+		render(
+			<EngineProvider engine={engine}>
+				<ItemEditorHost item={item as never} />
+			</EngineProvider>,
+		);
 
 		const input = narrowElement(
 			screen.getByPlaceholderText('見出しを入力してください'),
