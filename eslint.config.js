@@ -25,7 +25,7 @@ export default [
 	...dz.configs.frontend,
 	{
 		files: ['**/*.{jsx,tsx}', '**/use-*.{ts,tsx}'],
-		...reactHooks.configs.flat.recommended,
+		...reactHooks.configs.flat['recommended-latest'],
 	},
 	{
 		rules: {

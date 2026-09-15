@@ -40,7 +40,9 @@
 		"@burger-editor/custom-element": "4.0.0-alpha.72",
 		"@burger-editor/migrator": "4.0.0-alpha.72",
 		"@burger-editor/utils": "4.0.0-alpha.72",
-		"@tabler/icons-react": "3.46.0"
+		"@tabler/icons-react": "3.46.0",
+		"react-error-boundary": "6.1.5",
+		"use-sync-external-store": "1.6.0"
 	},
 	"devDependencies": {
 		"@testing-library/dom": "10.4.1",
