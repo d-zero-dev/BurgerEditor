@@ -38,7 +38,7 @@
 		"@burger-editor/file-io": "4.0.0-alpha.72",
 		"@burger-editor/frozen-patty": "4.0.0-alpha.72",
 		"@d-zero/roar": "2.2.1",
-		"zod": "4.4.3"
+		"zod": "4.5.4"
 	},
 	"devDependencies": {
 		"@d-zero/shared": "0.23.0",

@@ -39,7 +39,7 @@
 		"@burger-editor/migrator": "4.0.0-alpha.72",
 		"@burger-editor/utils": "4.0.0-alpha.72",
 		"@modelcontextprotocol/sdk": "1.30.0",
-		"zod": "4.4.3"
+		"zod": "4.5.4"
 	},
 	"devDependencies": {
 		"@d-zero/shared": "0.23.0",
