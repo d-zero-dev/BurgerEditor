@@ -22,7 +22,7 @@
  * 2. Must be unique across the resolver state.
  * 3. Path-traversal sequences (`..`) are NOT rejected here. Logical paths are
  *    used purely as map keys and tree-building data; they never reach `fs`.
- *    See `route.tsx` for the disk-path defense in depth.
+ *    See `local`'s `routes/content-api.ts` for the disk-path defense in depth.
  *
  * ## State immutability
  *
