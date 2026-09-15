@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * Mirrors `local`'s `isSafeLogicalPath` (route.tsx) so a traversing path is a
+ * Mirrors `local`'s `isSafeLogicalPath` (`routes/content-api.ts`) so a traversing path is a
  * 400 schema error at the edge, before it ever reaches a handler. This is
  * defense in depth: `resolvePathInput` (`@burger-editor/file-io`) is the
  * actual containment check and rejects the RESOLVED path, which also catches
