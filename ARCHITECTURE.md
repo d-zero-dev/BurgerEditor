@@ -189,8 +189,8 @@ graph TD
 
 **`@burger-editor/local`**
 
-- ローカルファイルシステム向けCMS実装（Hono ベース HTTP + Hono JSX による SSR + ビルド済み client UI の埋め込み）
-- 依存関係: core, file-io, blocks, inspector, cli, Hono, Node.js関連パッケージ
+- ローカルファイルシステム向けCMS実装（Hono ベース HTTP + Hono JSX による SSR + ビルド済み client UI の埋め込み）。アプリ本体は `src/app.ts::createApp()` が `app.route()` でサブアプリ（`routes/*`）を合成して組み立て、ソケットは開かない。Node への bind は `src/create-local-server.ts::createLocalServer()` が分離して担い、`app.request()` / `hono/testing` の `testClient` による in-process テストが可能
+- 依存関係: core, file-io, blocks, inspector, cli, Hono（`@hono/node-server` 内蔵の `upgradeWebSocket` + `ws`。非推奨の `@hono/node-ws` は不使用）, Node.js関連パッケージ
 - 責任: ローカルサーバー、ブラウザ UI、CLI機能（`bge dev` / `bge search`）、プログラマティックAPI、AI エージェント向け agent API（`cli` の agent-tools をタブが開いていればブラウザへ、無ければディスクへ適用）
 - **重要**: ファイル I/O / 設定解決 / virtual-path-resolver / Front Matter の本体は `@burger-editor/file-io` に移っており、local はそれを再エクスポートする薄いシムに痩身化されている。`local/src/helpers/{front-matter,html-detection,no-editable-area-error,edit-content}.ts` と `local/src/model/{file-tree,virtual-path-resolver,get-user-config}.ts` は互換性のためのシム re-export であり、本体は `@burger-editor/core` / `@burger-editor/file-io` 側を参照すること
 - **環境固有**: ローカルファイルシステム専用
@@ -205,6 +205,12 @@ graph TD
     - `@burger-editor/local/get-candidate-name` - ファイル名候補生成
     - `@burger-editor/local/upload` - ファイルアップロード
 - **内部構造**:
+  - `app.ts::createApp()` - `Hono` アプリ本体の組み立て。`AppType`（`hc`/`testClient` 用の型）はここが唯一の定義元
+  - `app-context.ts` - `AppContext`（`config` / `store` / `agent`）型。ルートのサブアプリ factory 群への受け渡しに使う
+  - `resolver-state-store.ts::createResolverStateStore()` - `ResolverState` と `withStateLock` の唯一の所有者
+  - `create-local-server.ts::createLocalServer()` - `@hono/node-server` の `serve()` + `ws` の `WebSocketServer({ noServer: true })` を束ね、`AsyncDisposable` なハンドルを返す
+  - `routes/{pages.tsx,content-api.ts,file-api.ts,static.ts,token-login.ts,ws.ts}` - ページ SSR・コンテンツ API・ファイル API・静的配信・`?token=` ログイン・WebSocket の各サブアプリ
+  - `agent/env.ts` - `/api/agent/*` と `/ws/*` サブアプリ共通の `agentEnabled()`（agent 無効時 404）/ `requireAgentAuth()`（401）middleware
   - `helpers/scan-directory.ts` - ファイルスキャン共通ロジック（EXCLUDE_FILE_NAMES定義）
   - `helpers/get-max-file-id.ts` - 最大ファイルID取得
   - `helpers/get-candidate-name.ts` - 候補ファイル名生成（EncodedFileName型エクスポート）
@@ -215,13 +221,13 @@ graph TD
   - **既定挙動**: `virtualTree.enabled = false`。完全に従来の「ディスク階層 = エディタツリー」モード
   - **設計判断**:
     1. **disk と論理を完全分離** — disk は触らない。Front Matter の値だけが論理ツリーの真実。これにより「いつでもオプトアウトできる」可逆性を担保
-    2. **state の単一所有権** — モード分岐と `ResolverState` の保持は `route.tsx` 1 ファイルに閉じる。view / client は `virtualTreeEnabled` boolean しか知らない（疎結合）
-    3. **`withStateLock` でシリアライズ** — `let resolverState = ...` の read-modify-write を mutex で囲む。シングルユーザー編集前提だが、tab 二枚での並行更新で state 損失が起きないようにする保険
+    2. **state の単一所有権** — `ResolverState` の保持と `withStateLock` は `resolver-state-store.ts::createResolverStateStore()` が唯一の所有者。`routes/*` は `AppContext`（`config` / `store` / `agent`）経由で store を受け取るだけで、自前で `let` を持たない。view / client は `virtualTreeEnabled` boolean しか知らない（疎結合）
+    3. **`withStateLock` でシリアライズ** — store 内部の read-modify-write を mutex で囲む。シングルユーザー編集前提だが、tab 二枚での並行更新で state 損失が起きないようにする保険
     4. **2-phase commit** — `saveContent` 成功後にだけ state を進める。書き込み失敗時に state がディスクと乖離しない
   - **構成ファイル**:
     - `model/virtual-path-resolver.ts` - `ResolverState` 型と純関数群（`createEmptyState` / `loadResolverState` / `toDiskPath` / `toLogicalPath` / `listLogicalPaths` / `listEntries` / `registerEntry` / `setLogicalPath` / `deleteEntry`）。論理パスは内部で先頭スラッシュが除去されて正規化される。エラー語彙は `PathConflictError`（論理パス衝突）/ `IdAlreadyExistsError`（id 既使用）/ `EmptyLogicalPathError`（正規化後に空）の 3 種で、route 層がそれぞれ 409 / 409 / 400 にマップする
     - `model/file-tree.ts::buildFileTreeFromLogicalPaths` - 論理パス配列からツリー構造を組む純関数
-    - `route.tsx` - mode フラグの評価点。`GET /api/tree` / `POST /api/content/create` / `POST /api/content` の 3 エンドポイントが state を read-modify-write。論理パス入力は `isSafeLogicalPath` で `..` / `.` セグメントと NUL 文字を 400 で拒否し、ブラウザ正規化により孤児ファイル化する事故を API 境界で防ぐ
+    - `routes/content-api.ts` - mode フラグの評価点。`GET /api/tree` / `POST /api/content/create` / `POST /api/content` の 3 エンドポイントが `AppContext.store` 経由で state を read-modify-write。論理パス入力は `isSafeLogicalPath` で `..` / `.` セグメントと NUL 文字を 400 で拒否し、ブラウザ正規化により孤児ファイル化する事故を API 境界で防ぐ。サイトのページ表示側（`renderPage`）は `routes/pages.tsx` に分離
     - `commands/load-resolver-state-or-exit.ts` - boot 時の `loadResolverState` 失敗を整形済み stderr + `process.exit(1)` に変換するラッパ。`PathConflictError` のメッセージがスタックトレースに埋もれないようにし、PM2 / systemd 等のプロセスマネージャが exit code を確実に観測できるようにする
     - `view/app.tsx` / `view/nav.tsx` - SSR 時に `virtualTreeEnabled` prop を hidden input + Nav の入力欄出し分けで埋め込む
     - `client/nav-tree.ts` - `/api/tree` を fetch して `#nav-tree-mount` をハイドレート。仮想モードで `FileInfo.id` が乗っている葉は `<論理ファイル名> (<id>)` 形式（末尾 `.html` は除去）でラベル化し、id 部分は `.file-id` クラスの `<span>` として独立させてテーマ側でスタイル可能にする
