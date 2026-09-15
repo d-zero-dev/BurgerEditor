@@ -2,7 +2,7 @@ import type { Item, ItemData, ItemEditorProps } from '@burger-editor/core';
 import type { BgeWysiwygEditorElement } from '@burger-editor/custom-element';
 import type { ComponentType, RefObject } from 'react';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 
 import { EditorDialog } from '../editor-dialog.js';
 import { useEngine } from '../engine-context.js';
@@ -68,22 +68,22 @@ function ItemEditorBody({
 		return seed.toEditorState ? seed.toEditorState(data, engine.config) : data;
 	});
 
-	const stateRef = useRef(state);
-	useEffect(() => {
-		stateRef.current = state;
+	// 最新のstateでtoItemDataを呼ぶ。useEffectEventなのでeffect自体は
+	// item/seed/engineが変わったとき（＝アイテム切替時）だけ作り直され、
+	// キー入力のたびのstate更新では作り直されない
+	const resolveSubmitData = useEffectEvent(async () => {
+		return seed.toItemData ? await seed.toItemData(state, engine.config) : state;
 	});
 
 	useEffect(() => {
 		submitRef.current = async () => {
-			const data = seed.toItemData
-				? await seed.toItemData(stateRef.current, engine.config)
-				: stateRef.current;
+			const data = await resolveSubmitData();
 			await item.import(data);
 		};
 		return () => {
 			submitRef.current = null;
 		};
-	}, [engine, item, seed, submitRef]);
+	}, [item, submitRef]);
 
 	// wysiwygエディタへコンテンツ用スタイルシートを注入する
 	const wrapperRef = useRef<HTMLDivElement>(null);

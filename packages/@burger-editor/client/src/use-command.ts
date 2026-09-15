@@ -1,7 +1,7 @@
 import type { BurgerCommandEvent } from '@burger-editor/core';
-import type { RefObject } from 'react';
+import type { RefCallback } from 'react';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 
 export type CommandHandlers = {
 	readonly [command: `--${string}`]: (event: BurgerCommandEvent) => void;
@@ -9,11 +9,20 @@ export type CommandHandlers = {
 
 /**
  * Receive Invoker Commands API `command` events on the element the returned
- * ref is attached to. Buttons address the element with
+ * ref callback is attached to. Buttons address the element with
  * `commandfor={idOfElement}`; `CommandEvent` does not bubble, so the ref
  * must be on the exact `commandfor` target.
+ *
+ * Returns a ref **callback** (not a `RefObject`) so the listener attaches
+ * as soon as the element mounts, including when the element appears later
+ * from a conditional render — a `useRef` + `useEffect(..., [])` pair only
+ * reads `ref.current` once, at the first commit, and would miss an
+ * element that shows up afterward. `handlers` is read through
+ * `useEffectEvent` so the listener always calls the latest render's
+ * closure without needing `handlers` in the attach effect's deps (and
+ * without re-attaching the DOM listener on every render).
  * @param handlers - Map of custom command names to handlers
- * @returns A ref to attach to the receiving element
+ * @returns A ref callback to attach to the receiving element
  * @example
  * ```tsx
  * const rootId = useId();
@@ -31,28 +40,24 @@ export type CommandHandlers = {
  */
 export function useCommand<T extends HTMLElement>(
 	handlers: CommandHandlers,
-): RefObject<T | null> {
-	const ref = useRef<T>(null);
-	const handlersRef = useRef(handlers);
+): RefCallback<T> {
+	const [el, setEl] = useState<T | null>(null);
 
-	useEffect(() => {
-		handlersRef.current = handlers;
+	const onCommand = useEffectEvent((event: BurgerCommandEvent) => {
+		const handler = handlers[event.command as `--${string}`];
+		handler?.(event);
 	});
 
 	useEffect(() => {
-		const el = ref.current;
 		if (!el) {
 			return;
 		}
-		const onCommand = (event: BurgerCommandEvent) => {
-			const handler = handlersRef.current[event.command as `--${string}`];
-			handler?.(event);
-		};
-		el.addEventListener('command', onCommand);
+		const listener = (event: Event) => onCommand(event as BurgerCommandEvent);
+		el.addEventListener('command', listener);
 		return () => {
-			el.removeEventListener('command', onCommand);
+			el.removeEventListener('command', listener);
 		};
-	}, []);
+	}, [el]);
 
-	return ref;
+	return setEl;
 }

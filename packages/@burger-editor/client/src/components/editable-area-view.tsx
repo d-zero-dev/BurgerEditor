@@ -2,7 +2,7 @@ import type { EditableAreaHost, EditableAreaType } from '@burger-editor/core';
 
 import { CSS_LAYER } from '@burger-editor/core';
 import { appendStylesheetTo } from '@burger-editor/utils';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { animateInsertion } from '../animate-insertion.js';
@@ -187,10 +187,10 @@ export function EditableAreaView({
 		};
 	}, [engine, type]);
 
-	const sourceTextRef = useRef(sourceText);
-	useEffect(() => {
-		sourceTextRef.current = sourceText;
-	});
+	// exit-transition effect（下）から最新のtextarea内容を読むためのフック。
+	// exit effect自体は`sourceMode`の変化だけで再実行したい（キー入力のたび
+	// ではない）ので、`sourceText`を直接deps配列に入れる代わりにこちらを使う
+	const getPendingSourceText = useEffectEvent(() => sourceText);
 
 	const commitSource = (value: string) => {
 		void engine.commitSourceEdit(type, value).then(() => {
@@ -228,7 +228,7 @@ export function EditableAreaView({
 			return;
 		}
 		let cancelled = false;
-		void engine.commitSourceEdit(type, sourceTextRef.current).then(() => {
+		void engine.commitSourceEdit(type, getPendingSourceText()).then(() => {
 			if (cancelled) {
 				return;
 			}

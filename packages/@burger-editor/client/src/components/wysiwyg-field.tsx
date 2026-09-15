@@ -1,6 +1,6 @@
 import type { BgeWysiwygEditorElement } from '@burger-editor/custom-element';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 
 declare module 'react' {
 	namespace JSX {
@@ -53,10 +53,8 @@ export function WysiwygField({
 }) {
 	const ref = useRef<BgeWysiwygEditorElement | null>(null);
 	const initialValue = useRef(value);
-	const onChangeRef = useRef(onChange);
-
-	useEffect(() => {
-		onChangeRef.current = onChange;
+	const onTransaction = useEffectEvent((el: BgeWysiwygEditorElement) => {
+		onChange(el.value);
 	});
 
 	useEffect(() => {
@@ -69,12 +67,10 @@ export function WysiwygField({
 
 		// transactionはバブリングしないため内側の要素で購読する
 		const inner = el.querySelector('bge-wysiwyg');
-		const onTransaction = () => {
-			onChangeRef.current(el.value);
-		};
-		inner?.addEventListener('transaction', onTransaction);
+		const listener = () => onTransaction(el);
+		inner?.addEventListener('transaction', listener);
 		return () => {
-			inner?.removeEventListener('transaction', onTransaction);
+			inner?.removeEventListener('transaction', listener);
 		};
 	}, []);
 

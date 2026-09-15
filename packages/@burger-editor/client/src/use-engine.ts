@@ -1,6 +1,6 @@
 import type { Actions, UIState } from '@burger-editor/core';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector';
 
 import { useEngine } from './engine-context.js';
@@ -54,8 +54,10 @@ export function useUIState<T = UIState>(selector?: (state: UIState) => T): T {
 
 /**
  * Subscribe to a component observer action for the lifetime of the
- * component. The handler always sees the latest render's closure. The
- * engine is read from the nearest `EngineProvider`.
+ * component. `handler` is read through `useEffectEvent` so the
+ * subscription always sees the latest render's closure without needing
+ * `handler` in the effect's deps (and without resubscribing on every
+ * render). The engine is read from the nearest `EngineProvider`.
  * @param action - The action name to listen for
  * @param handler - Callback receiving the typed payload
  * @example
@@ -72,15 +74,9 @@ export function useComponentEvent<A extends keyof Actions>(
 	handler: (payload: Actions[A]) => void,
 ) {
 	const engine = useEngine();
-	const handlerRef = useRef(handler);
+	const onAction = useEffectEvent((payload: Actions[A]) => handler(payload));
 
 	useEffect(() => {
-		handlerRef.current = handler;
-	});
-
-	useEffect(() => {
-		return engine.componentObserver.on(action, (payload) => {
-			handlerRef.current(payload);
-		});
+		return engine.componentObserver.on(action, onAction);
 	}, [engine, action]);
 }

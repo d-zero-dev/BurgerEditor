@@ -1,4 +1,4 @@
-import type { RefObject, CSSProperties } from 'react';
+import type { Ref, CSSProperties } from 'react';
 
 import { BGE_COMMAND } from '@burger-editor/core';
 import {
@@ -97,7 +97,7 @@ export function BlockMenuView({
 	itemRects,
 	isMutable,
 }: {
-	readonly rootRef: RefObject<HTMLDivElement | null>;
+	readonly rootRef: Ref<HTMLDivElement>;
 	readonly menuId: string;
 	/** 同一documentに複数エンジンが存在する場合の配送先。`engine.commandBus.receiverId` */
 	readonly commandBusId: string;
