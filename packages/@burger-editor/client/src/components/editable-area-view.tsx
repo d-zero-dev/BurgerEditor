@@ -1,8 +1,4 @@
-import type {
-	BurgerEditorEngine,
-	EditableAreaHost,
-	EditableAreaType,
-} from '@burger-editor/core';
+import type { EditableAreaHost, EditableAreaType } from '@burger-editor/core';
 
 import { CSS_LAYER } from '@burger-editor/core';
 import { appendStylesheetTo } from '@burger-editor/utils';
@@ -18,31 +14,6 @@ import { InitialInsertionButton } from './initial-insertion-button.js';
 
 const CONTAINER_PADDING = 10;
 const CONTENT_ID = 'bge-editable-area';
-
-/**
- *
- * @param engine
- * @param type
- * @param value
- * @param syncFromContent
- */
-function commitEditableAreaSource(
-	engine: BurgerEditorEngine,
-	type: EditableAreaType,
-	value: string,
-	syncFromContent: (
-		content: NonNullable<ReturnType<typeof engine.getEditableContent>>,
-	) => void,
-) {
-	const content = engine.getEditableContent(type);
-	if (!content) {
-		return;
-	}
-	void content.replaceContents(value).then(() => {
-		engine.save();
-		syncFromContent(content);
-	});
-}
 
 /**
  * The React shell of one editable area: the iframe hosting the edited
@@ -221,40 +192,55 @@ export function EditableAreaView({
 		sourceTextRef.current = sourceText;
 	});
 
-	// textareaの表示値だけでなくisEmptyもコンテンツの実際の状態に揃える。
-	// ここを揃えないと、ソース編集で空にした直後にビジュアルモードへ戻って
-	// も初期挿入ボタンが復活しない（次のbge:savedまで固着する）
-	const syncFromContent = (
-		content: NonNullable<ReturnType<typeof engine.getEditableContent>>,
-	) => {
-		const value = content.getContentsAsString();
-		setSourceText(value);
-		setIsEmpty(value.trim() === '');
+	const commitSource = (value: string) => {
+		void engine.commitSourceEdit(type, value).then(() => {
+			const content = engine.getEditableContent(type);
+			const committed = content?.getContentsAsString() ?? '';
+			setSourceText(committed);
+			setIsEmpty(committed.trim() === '');
+		});
 	};
 
-	// ソースモードに入るときはコンテンツから最新のHTMLを引き直し、
-	// 抜けるときはtextareaの内容をコンテンツへコミットする。uiState
-	// ストアの購読コールバックで遷移を検知してReact stateを更新する
+	// ソースモードに入るときはコンテンツから最新のHTMLを同期的に引き直す。
+	// 「propに相当する値（sourceMode）が変わったらstateを調整する」という
+	// レンダー中の調整パターン（Preview.prevPathと同型）— effect内の
+	// 同期setStateはカスケードレンダーを起こすため使わない
+	const [prevSourceMode, setPrevSourceMode] = useState(sourceMode);
+	if (sourceMode !== prevSourceMode) {
+		setPrevSourceMode(sourceMode);
+		if (sourceMode) {
+			const content = engine.getEditableContent(type);
+			const value = content?.getContentsAsString() ?? '';
+			setSourceText(value);
+			setIsEmpty(value.trim() === '');
+		}
+	}
+
+	// 抜けるときはtextareaの内容をコンテンツへコミットする。非同期
+	// （replaceContents→save）なのでeffect側で扱う。true→falseの遷移だけ
+	// を検出する必要があるため、直前の値をrefで追跡する（マウント時や
+	// false→falseの再レンダーでは何もしない）
+	const wasSourceModeRef = useRef(sourceMode);
 	useEffect(() => {
-		let prevSourceMode = engine.uiState.getSnapshot().sourceMode[type];
-		return engine.uiState.subscribe(() => {
-			const nextSourceMode = engine.uiState.getSnapshot().sourceMode[type];
-			if (nextSourceMode === prevSourceMode) {
+		const wasSourceMode = wasSourceModeRef.current;
+		wasSourceModeRef.current = sourceMode;
+		if (!wasSourceMode || sourceMode) {
+			return;
+		}
+		let cancelled = false;
+		void engine.commitSourceEdit(type, sourceTextRef.current).then(() => {
+			if (cancelled) {
 				return;
 			}
-			prevSourceMode = nextSourceMode;
 			const content = engine.getEditableContent(type);
-			if (nextSourceMode) {
-				setSourceText(content?.getContentsAsString() ?? '');
-			} else if (content) {
-				commitEditableAreaSource(engine, type, sourceTextRef.current, syncFromContent);
-			}
+			const value = content?.getContentsAsString() ?? '';
+			setSourceText(value);
+			setIsEmpty(value.trim() === '');
 		});
-	}, [engine, type]);
-
-	const commitSource = (value: string) => {
-		commitEditableAreaSource(engine, type, value, syncFromContent);
-	};
+		return () => {
+			cancelled = true;
+		};
+	}, [engine, type, sourceMode]);
 
 	return (
 		<div

@@ -64,10 +64,11 @@ function createMockEngine(contents?: {
 		replaceContents:
 			contents?.replaceContents ?? vi.fn().mockImplementation(() => Promise.resolve()),
 	};
+	const save = vi.fn();
 	return {
 		el,
 		uiState,
-		save: vi.fn(),
+		save,
 		get isProcessed() {
 			return uiState.getSnapshot().processing;
 		},
@@ -75,6 +76,12 @@ function createMockEngine(contents?: {
 		componentObserver: { notify: vi.fn() },
 		commandBus: { createReceiver: vi.fn(), receiverId: 'bge-command-bus-test' },
 		getEditableContent: () => content,
+		// 実物のengine.commitSourceEditと同じ挙動（replaceContents→save）を
+		// 最小限で再現する
+		commitSourceEdit: async (_type: unknown, html: string) => {
+			await content.replaceContents(html);
+			save();
+		},
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} as any as BurgerEditorEngine;
 }

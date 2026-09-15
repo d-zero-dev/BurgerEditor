@@ -201,6 +201,26 @@ export class BurgerEditorEngine implements Disposable {
 		this.uiState.setCurrentBlock(null);
 	}
 	/**
+	 * Replace an editable area's content with hand-edited HTML source and
+	 * save. Used when leaving HTML-source editing mode, or whenever the UI
+	 * layer wants to commit an in-progress edit (e.g. the source textarea
+	 * losing focus). A no-op when the area doesn't exist (e.g. no draft).
+	 * @param type - The editable area to commit into
+	 * @param html - The HTML source to replace the area's content with
+	 * @example
+	 * ```ts
+	 * await engine.commitSourceEdit('main', textarea.value);
+	 * ```
+	 */
+	async commitSourceEdit(type: EditableAreaType, html: string): Promise<void> {
+		const content = this.getEditableContent(type);
+		if (!content) {
+			return;
+		}
+		await content.replaceContents(html);
+		this.save();
+	}
+	/**
 	 * ブロックマーカーを持たない生HTMLを、1つのwysiwygアイテムとして
 	 * ラップしたフォールバックブロックに変換する
 	 * @param html 生HTML
@@ -274,6 +294,7 @@ export class BurgerEditorEngine implements Disposable {
 	getEditableContent(type: EditableAreaType): EditableContent<EditableAreaType> | null {
 		return type === 'main' ? this.#main : this.#draft;
 	}
+
 	/**
 	 * Index of `block` within {@link getLiveBlocks}, or `-1` when it's not
 	 * in the current editable area.
