@@ -8,7 +8,7 @@
  * an open root-page tab against an agent's `/index.html`, and every mutation
  * silently falls back to the disk path instead of relaying to the browser.
  *
- * No Node.js APIs — safe to import from both the server (`route.tsx`,
+ * No Node.js APIs — safe to import from both the server (`routes/content-api.ts`,
  * `agent/route.ts`) and the browser bundle (`client/create-editor.ts`).
  * @param logicalPath
  * @param indexFileName

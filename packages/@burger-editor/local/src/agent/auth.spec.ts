@@ -57,6 +57,7 @@ describe('loginUrl', () => {
 				token: null,
 				tokenFilePath: null,
 				verify: () => true,
+				[Symbol.asyncDispose]: async () => {},
 			}),
 		).toBeNull();
 	});
@@ -67,6 +68,7 @@ describe('loginUrl', () => {
 			token: 'abc123',
 			tokenFilePath: '/x',
 			verify: () => true,
+			[Symbol.asyncDispose]: async () => {},
 		});
 		expect(url).toBe('http://192.0.2.50:5255/?token=abc123');
 	});

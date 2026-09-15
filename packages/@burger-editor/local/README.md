@@ -181,6 +181,7 @@ AI エージェント（`@burger-editor/mcp-server` 経由）が、開いてい�
 - **無効化**: `agent: { enabled: false }` で上記すべてがマウントされなくなる
 - **状態観測・外部変更検知の詳細**: [`docs/agent-hub.md`](./docs/agent-hub.md) を参照（`GET /api/agent/events` / `editor_wait_for_event` の契約、`fs.watch` による外部変更の能動検知、ナビツリー再ハイドレート・通知バナー）
 - **非ループバック bind 時のトークン**: `host` を LAN IP や `0.0.0.0` にすると、起動ごとのトークンが必要になる。起動バナーに `http://<host>:<port>/?token=…` が表示されるので **一度だけそれを開く**と `bge_session` cookie が発行され、以後そのブラウザは認可される。同じトークンは `<configDir>/.burgereditor/agent-token`（mode 0600、終了時に削除）にも書かれる。**`.burgereditor/` を `.gitignore` に追加すること**。同じマシンで動く `mcp-server` はこのファイルを自動で読むので設定は不要。別マシンや任意の値を使いたいときは環境変数 `BGE_AGENT_TOKEN` で上書きできる。`localhost` / `127.0.0.1` / `::1` に bind している間はトークン不要
+- **認証されていない upgrade の扱い**: 非ループバック bind で cookie / bearer の無い `/ws/editor` の upgrade は HTTP 401、`Host` / `Origin` が許可リストに無い場合は 403 で、いずれもハンドシェイク時点で拒否される（`/api/agent/*` と同じ `hostGuard` / cookie-or-bearer 判定を upgrade 前に通す）。ハンドシェイクを受理してから close するのではなく、`app.request()` で in-process に検証できる
 - **利用側**: `@burger-editor/mcp-server --mode local`（既定の `auto` でも、`local` に到達できれば自動的にここへ転送される）
 - **デバッグ**: サーバー側は `DEBUG=@bge:local`、ブラウザ側は console の `[bge-agent-ws]` / `[bge-agent-link]` 行。ブラウザ側でフレーム全文のログを有効にするには `localStorage.setItem('bge:debug', '1')`（この設定は並行して実装中）。`/api/agent/*` の応答に付く ISO `timestamp` で両者を突き合わせられる
 

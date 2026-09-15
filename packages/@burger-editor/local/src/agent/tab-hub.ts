@@ -12,7 +12,7 @@ import { normalizeLogicalPath } from '../helpers/normalize-logical-path.js';
 
 /**
  * The transport `TabHub` needs from a WebSocket connection — narrowed so
- * tests can inject a fake without touching `ws`/`@hono/node-ws`.
+ * tests can inject a fake without touching `ws`/`@hono/node-server`.
  */
 export interface Socket {
 	send(data: string): void;

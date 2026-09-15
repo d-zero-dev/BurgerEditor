@@ -1,4 +1,4 @@
-import type { AppType } from '../route.js';
+import type { AppType } from '../app.js';
 import type { hc } from 'hono/client';
 
 /**

@@ -1,14 +1,16 @@
-import type { LocalServerConfig } from './types.js';
+import type { AppType } from './app.js';
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { mkdtempDisposable } from '@d-zero/shared/mkdtemp-disposable';
-import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { loadResolverState } from './model/virtual-path-resolver.js';
-import { setRoute } from './route.js';
+import {
+	createTestApp,
+	makeLocalServerConfig,
+	makeTmpRoots,
+	type TmpRoots,
+} from './__tests__/fixtures.js';
 
 /**
  * Spin up a fresh tmp documentRoot + assetsRoot pair. Each test gets its own
@@ -19,14 +21,10 @@ import { setRoute } from './route.js';
 async function makeTmpDocumentRoot(): Promise<{
 	documentRoot: string;
 	assetsRoot: string;
-	tmp: { path: string } & AsyncDisposable;
+	tmp: TmpRoots;
 }> {
-	const tmp = await mkdtempDisposable('bge-route-');
-	const documentRoot = path.join(tmp.path, 'docs');
-	const assetsRoot = path.join(tmp.path, 'assets');
-	await fs.mkdir(documentRoot);
-	await fs.mkdir(assetsRoot);
-	return { documentRoot, assetsRoot, tmp };
+	const tmp = await makeTmpRoots('bge-route-');
+	return { documentRoot: tmp.documentRoot, assetsRoot: tmp.assetsRoot, tmp };
 }
 
 type ConfigOverrides = {
@@ -36,51 +34,11 @@ type ConfigOverrides = {
 };
 
 /**
- *
- * @param documentRoot
- * @param assetsRoot
- * @param overrides
- */
-function makeConfig(
-	documentRoot: string,
-	assetsRoot: string,
-	overrides: ConfigOverrides,
-): LocalServerConfig {
-	const { virtualTreeEnabled, pathKey = 'path', editableArea = null } = overrides;
-	return {
-		version: '0.0.0-test',
-		port: 0,
-		host: 'localhost',
-		documentRoot,
-		assetsRoot,
-		lang: 'en',
-		stylesheets: [],
-		classList: [],
-		editableArea,
-		indexFileName: 'index.html',
-		filesDir: {
-			image: { serverPath: assetsRoot, clientPath: '/files' },
-			pdf: { serverPath: assetsRoot, clientPath: '/files' },
-			video: { serverPath: assetsRoot, clientPath: '/files' },
-			audio: { serverPath: assetsRoot, clientPath: '/files' },
-			other: { serverPath: assetsRoot, clientPath: '/files' },
-		},
-		sampleImagePath: '/files/sample.png',
-		sampleFilePath: '/files/sample.pdf',
-		googleMapsApiKey: null,
-		open: false,
-		newFileContent: '<!doctype html><html><body></body></html>',
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		catalog: {} as any,
-		enableImportBlock: false,
-		healthCheck: { enabled: false, interval: 10_000, retryCount: 3 },
-		virtualTree: { enabled: virtualTreeEnabled, pathKey },
-		agent: { enabled: true },
-	};
-}
-
-/**
- *
+ * Mirrors production boot (`loadResolverStateOrExit` → strict mode): the
+ * local server boots in strict mode, so tests must too — otherwise a
+ * regression that breaks the strict-throw path slips through under
+ * `createTestApp`'s lenient-by-default counterpart. A documentRoot with
+ * malformed Front Matter makes this REJECT (see the regression test below).
  * @param documentRoot
  * @param assetsRoot
  * @param overrides
@@ -89,23 +47,18 @@ async function buildApp(
 	documentRoot: string,
 	assetsRoot: string,
 	overrides: ConfigOverrides,
-): Promise<Hono> {
-	const app = new Hono();
-	const userConfig = makeConfig(documentRoot, assetsRoot, overrides);
-	let resolverState = null;
-	if (userConfig.virtualTree.enabled) {
-		// Mirror production (loadResolverStateOrExit): the local server boots
-		// in strict mode, so tests must too — otherwise a regression that
-		// breaks the strict-throw path slips through under the lenient default.
-		const loaded = await loadResolverState(
-			userConfig.documentRoot,
-			userConfig.virtualTree.pathKey,
-			{ strict: true },
-		);
-		resolverState = loaded.state;
-	}
-	setRoute(app, userConfig, resolverState);
-	return app;
+): Promise<AppType> {
+	const { virtualTreeEnabled, pathKey = 'path', editableArea = null } = overrides;
+	const t = await createTestApp({
+		config: makeLocalServerConfig({
+			documentRoot,
+			assetsRoot,
+			editableArea,
+			virtualTree: { enabled: virtualTreeEnabled, pathKey },
+			agent: { enabled: false },
+		}),
+	});
+	return t.app;
 }
 
 describe('GET /api/tree', () => {
