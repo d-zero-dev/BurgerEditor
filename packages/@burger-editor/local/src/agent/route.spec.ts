@@ -1,24 +1,22 @@
+import type { AppType } from '../app.js';
 import type { LocalServerConfig } from '../types.js';
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { computeContentHash, encodeReadToken } from '@burger-editor/cli';
-import { mkdtempDisposable } from '@d-zero/shared/mkdtemp-disposable';
-import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { setRoute } from '../route.js';
+import {
+	createTestApp,
+	makeLocalServerConfig,
+	makeTmpRoots,
+	type TestApp,
+	type TmpRoots,
+} from '../__tests__/fixtures.js';
+import { PAGE_HTML, PAGE_INNER } from '../__tests__/protocol-fixtures.js';
 
-import { createAgentAuth } from './auth.js';
 import { __handleChangeForTest } from './fs-watcher.js';
-import { createAgentHub, type AgentHub } from './hub.js';
-
-const PAGE_HTML =
-	'<html><body><div class="content"><div data-bge-name="text" data-bge-container="grid:1" id="bge-1">' +
-	'<div data-bge-container-frame=""><div data-bge-group=""><div data-bge-item="">' +
-	'<div data-bgi="wysiwyg" data-bgi-ver="1.0.0"><div data-bge="wysiwyg"><p>hello</p></div></div>' +
-	'</div></div></div></div></div></body></html>';
 
 /**
  * Every request needs a `Host` header that passes `hostGuard` — `Hono#request`
@@ -27,7 +25,7 @@ const PAGE_HTML =
  * @param urlPath
  * @param init
  */
-function req(app: Hono, urlPath: string, init: RequestInit = {}) {
+function req(app: AppType, urlPath: string, init: RequestInit = {}) {
 	return app.request(urlPath, {
 		...init,
 		headers: { ...init.headers, host: 'localhost' },
@@ -39,7 +37,7 @@ function req(app: Hono, urlPath: string, init: RequestInit = {}) {
  * @param urlPath
  * @param body
  */
-function postJson(app: Hono, urlPath: string, body: unknown) {
+function postJson(app: AppType, urlPath: string, body: unknown) {
 	return req(app, urlPath, {
 		method: 'POST',
 		headers: { 'content-type': 'application/json' },
@@ -48,50 +46,10 @@ function postJson(app: Hono, urlPath: string, body: unknown) {
 }
 
 /**
- *
- */
-async function makeTmpDocumentRoot() {
-	const tmp = await mkdtempDisposable('bge-agent-route-');
-	const documentRoot = path.join(tmp.path, 'docs');
-	await fs.mkdir(documentRoot);
-	await fs.writeFile(path.join(documentRoot, 'a.html'), PAGE_HTML, 'utf8');
-	return { documentRoot, tmp };
-}
-
-/**
  * @param documentRoot
  */
 function makeConfig(documentRoot: string): LocalServerConfig {
-	return {
-		version: '0.0.0-test',
-		port: 0,
-		host: 'localhost',
-		documentRoot,
-		assetsRoot: documentRoot,
-		lang: 'en',
-		stylesheets: [],
-		classList: [],
-		editableArea: '.content',
-		indexFileName: 'index.html',
-		filesDir: {
-			image: { serverPath: documentRoot, clientPath: '/files' },
-			pdf: { serverPath: documentRoot, clientPath: '/files' },
-			video: { serverPath: documentRoot, clientPath: '/files' },
-			audio: { serverPath: documentRoot, clientPath: '/files' },
-			other: { serverPath: documentRoot, clientPath: '/files' },
-		},
-		sampleImagePath: '/files/sample.png',
-		sampleFilePath: '/files/sample.pdf',
-		googleMapsApiKey: null,
-		open: false,
-		newFileContent: '<!doctype html><html><body></body></html>',
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		catalog: {} as any,
-		enableImportBlock: false,
-		healthCheck: { enabled: false, interval: 10_000, retryCount: 3 },
-		virtualTree: { enabled: false, pathKey: 'path' },
-		agent: { enabled: true },
-	};
+	return makeLocalServerConfig({ documentRoot });
 }
 
 /**
@@ -103,24 +61,20 @@ async function buildApp(
 	userConfig: LocalServerConfig,
 	hubOptions: { readonly now?: () => number } = {},
 ) {
-	const app = new Hono();
-	const hub = createAgentHub({ indexFileName: userConfig.indexFileName, ...hubOptions });
-	hubs.push(hub);
-	const auth = await createAgentAuth('localhost', '/tmp/unused');
-	// These tests exercise HTTP only — `upgradeWebSocket` just needs to be
-	// callable at route-registration time; it's never actually invoked as a
-	// WS upgrade in this file (see `ws.spec.ts` for that).
-	const noopUpgrade = (() => async (_c: unknown, next: () => Promise<void>) =>
-		next()) as unknown as never;
-	setRoute(app, userConfig, null, { hub, auth, upgradeWebSocket: noopUpgrade });
-	return { app, hub };
+	const t = await createTestApp({
+		config: userConfig,
+		configDir: tmp!.path,
+		hub: hubOptions,
+	});
+	apps.push(t);
+	return { app: t.app, hub: t.hub! };
 }
 
 /**
  * @param app
  * @param pathInput
  */
-async function readToken(app: Hono, pathInput: string): Promise<string> {
+async function readToken(app: AppType, pathInput: string): Promise<string> {
 	const res = await postJson(app, '/api/agent/invoke', {
 		tool: 'page_blocks',
 		args: { path: pathInput },
@@ -129,18 +83,19 @@ async function readToken(app: Hono, pathInput: string): Promise<string> {
 	return body.result.readToken;
 }
 
-let tmp: ({ path: string } & AsyncDisposable) | undefined;
+let tmp: TmpRoots | undefined;
 let documentRoot: string;
-/** Every hub `buildApp` created in the current test — disposed in `afterEach` so no ping interval outlives its test. */
-const hubs: AgentHub[] = [];
+/** Every `TestApp` `buildApp` created in the current test — disposed in `afterEach` so no ping interval outlives its test. */
+const apps: TestApp[] = [];
 
 beforeEach(async () => {
-	({ documentRoot, tmp } = await makeTmpDocumentRoot());
+	tmp = await makeTmpRoots('bge-agent-route-', { pages: { 'a.html': PAGE_HTML } });
+	documentRoot = tmp.documentRoot;
 });
 
 afterEach(async () => {
-	for (const hub of hubs.splice(0)) {
-		hub.dispose();
+	for (const app of apps.splice(0)) {
+		await app[Symbol.asyncDispose]();
 	}
 	await tmp?.[Symbol.asyncDispose]();
 });
@@ -501,18 +456,6 @@ async function waitForApply(
 	}
 	throw new Error('apply message never arrived');
 }
-
-/**
- * What a real tab acks with: the editable area's INNER content (what
- * `engine.content.getContentsAsString()` returns), never a full document.
- * `saveContent` writes it back inside `editableArea`, so acking with a whole
- * `<html>` document would nest a document inside `.content` and break every
- * later block lookup on that page.
- */
-const PAGE_INNER = PAGE_HTML.replace('<html><body><div class="content">', '').replace(
-	'</div></body></html>',
-	'',
-);
 
 describe('POST /api/agent/invoke — with a tab open', () => {
 	/**

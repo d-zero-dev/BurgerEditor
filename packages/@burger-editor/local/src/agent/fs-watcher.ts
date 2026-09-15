@@ -10,7 +10,8 @@ import { normalizeLogicalPath } from '../helpers/normalize-logical-path.js';
 
 import { isExternallyChanged } from './hash-check.js';
 
-export interface FsWatcher {
+export interface FsWatcher extends Disposable {
+	/** @deprecated Use a `using` declaration, or call `this[Symbol.dispose]()` directly. */
 	dispose(): void;
 }
 
@@ -31,11 +32,12 @@ export interface FsWatcherOptions {
  * **Scope**: only meaningful when `virtualTree` is disabled, i.e. a page's
  * disk-relative path IS its logical path. Under `virtualTree`, a disk
  * filename (`<id>.html`) only maps back to a logical path through the live
- * `ResolverState` `route.tsx` keeps closured inside `setRoute` — reaching
- * that from here would mean threading it back out through `commands/server.ts`
- * for a proactive nice-to-have, when the existing per-`invoke` passive check
- * already covers virtualTree-enabled sites correctly. `commands/server.ts`
- * only calls {@link createFsWatcher} when `virtualTree.enabled` is `false`.
+ * `ResolverState` the `ResolverStateStore` (`resolver-state-store.ts`) owns —
+ * this watcher does not consume that store, since the existing per-`invoke`
+ * passive check already covers virtualTree-enabled sites correctly, and
+ * wiring the store through for a proactive nice-to-have isn't worth the
+ * extra coupling. `commands/server.ts`'s `bootLocalServer` only calls
+ * {@link createFsWatcher} when `virtualTree.enabled` is `false`.
  * @param documentRoot
  * @param options
  */
@@ -59,11 +61,12 @@ export function createFsWatcher(
 		);
 	});
 
-	return {
-		dispose(): void {
-			watcher.close();
-		},
-	};
+	/** Real teardown; `[Symbol.dispose]` and the deprecated `dispose()` both forward here — neither depends on `this`. */
+	function dispose(): void {
+		watcher.close();
+	}
+
+	return { [Symbol.dispose]: dispose, dispose };
 }
 
 /**

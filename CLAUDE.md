@@ -107,16 +107,17 @@ yarn commit                   # Commitizen（cz）でコミット
 
 ## スキル
 
-| スキル          | パス                                      | 用途                                                            |
-| --------------- | ----------------------------------------- | --------------------------------------------------------------- |
-| Grill me        | `.claude/skills/grill-me/SKILL.md`        | 計画・設計の前提を掘り下げて合意形成する                        |
-| Impl            | `.claude/skills/impl/SKILL.md`            | 合意済み計画の実装・検証・PR 作成のオーケストレーション         |
-| Git             | `.claude/skills/git/SKILL.md`             | コミット規約・コミット前コンテンツチェック                      |
-| PR              | `.claude/skills/pr/SKILL.md`              | PR 作成フロー（base 追従・push はユーザー実行・CI 監視）        |
-| npm publish     | `.claude/skills/npm-publish/SKILL.md`     | リリース（dev→main マージ・バージョニング・publish 監視・検証） |
-| Refactor        | `.claude/skills/refactor/SKILL.md`        | テストファーストのリファクタリング手順                          |
-| Product Manager | `.claude/skills/product-manager/SKILL.md` | リポジトリ分析、ドキュメント整合チェック、PR レビュー           |
-| QA Engineer     | `.claude/skills/qa-engineer/SKILL.md`     | コードレビュー、テスト品質チェック                              |
+| スキル          | パス                                                                 | 用途                                                                                                                                                                         |
+| --------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Grill me        | `.claude/skills/grill-me/SKILL.md`                                   | 計画・設計の前提を掘り下げて合意形成する                                                                                                                                     |
+| Impl            | `.claude/skills/impl/SKILL.md`                                       | 合意済み計画の実装・検証・PR 作成のオーケストレーション                                                                                                                      |
+| Git             | `.claude/skills/git/SKILL.md`                                        | コミット規約・コミット前コンテンツチェック                                                                                                                                   |
+| PR              | `.claude/skills/pr/SKILL.md`                                         | PR 作成フロー（base 追従・push はユーザー実行・CI 監視）                                                                                                                     |
+| npm publish     | `.claude/skills/npm-publish/SKILL.md`                                | リリース（dev→main マージ・バージョニング・publish 監視・検証）                                                                                                              |
+| Refactor        | `.claude/skills/refactor/SKILL.md`                                   | テストファーストのリファクタリング手順                                                                                                                                       |
+| Product Manager | `.claude/skills/product-manager/SKILL.md`                            | リポジトリ分析、ドキュメント整合チェック、PR レビュー                                                                                                                        |
+| QA Engineer     | `.claude/skills/qa-engineer/SKILL.md`                                | コードレビュー、テスト品質チェック                                                                                                                                           |
+| Hono            | `.claude/skills/hono/SKILL.md`（`.agents/skills/hono` への symlink） | Hono 公式 Agent Skill。ルーティング・middleware・JSX・testing・WebSocket 等の inline API リファレンス。`npx skills add https://github.com/honojs/skills --skill hono` で更新 |
 
 > `skills/burger-editor-v4/` （リポジトリルート）は**利用者に配布する** BurgerEditor 操作スキルであり、`.claude/skills/` の開発用スキルとは別物。混同しないこと。
 

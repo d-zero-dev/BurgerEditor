@@ -1,11 +1,11 @@
-import type { AgentAuth } from './auth.js';
 import type { AgentEvent, AgentEventType } from './event-log.js';
 import type { AgentHub } from './hub.js';
+import type { ResolverStateStore } from '../resolver-state-store.js';
 import type { LocalServerConfig } from '../types.js';
 import type { AgentTool, CliContext } from '@burger-editor/cli';
 import type { BlockOp } from '@burger-editor/cli/block-op';
 import type { BurgerEditorConfig, ResolverState } from '@burger-editor/file-io';
-import type { Context, Hono } from 'hono';
+import type { Context } from 'hono';
 
 import {
 	agentInstructions,
@@ -24,6 +24,7 @@ import {
 	saveContent,
 	resolvePathInput,
 } from '@burger-editor/file-io';
+import { Hono } from 'hono';
 import { z } from 'zod';
 
 import { log } from '../helpers/debug.js';
@@ -31,6 +32,7 @@ import { normalizeLogicalPath } from '../helpers/normalize-logical-path.js';
 
 import { isAgentAuthed } from './auth.js';
 import { BROWSER_APPLICABLE_TOOLS, buildBrowserOps } from './block-op-builder.js';
+import { agentEnabled, requireAgentAuth, type AgentDeps, type AgentEnv } from './env.js';
 import { AGENT_EVENT_TYPES } from './event-log.js';
 import { isExternallyChanged } from './hash-check.js';
 import { hostGuard } from './host-guard.js';
@@ -89,165 +91,55 @@ function statusForCode(code: string): 400 | 404 | 409 | 504 {
 const invokeBodySchema = z.object({ tool: z.string(), args: z.unknown() });
 
 /**
- * Wire `GET /api/agent/tools`, `GET /api/agent/status`, and
- * `POST /api/agent/invoke` onto `app`. Mounted from `route.tsx`'s `setRoute`
- * so this can share its `resolverState` (via `getResolverState`/
- * `setResolverState`) and `withStateLock` — every page-mutating agent tool
- * writes through the exact same serialization `/api/content` and
+ * Build `GET /tools`, `GET /status`, `GET /events`, and `POST /invoke` —
+ * mounted at `/api/agent` by `app.ts`. Every page-mutating agent tool writes
+ * through the exact same `store.withStateLock` that `/api/content` and
  * `/api/content/create` use, so an agent invoke and a human save can never
  * race each other onto the same file.
- * @param app
- * @param userConfig
- * @param hub
- * @param auth
+ *
+ * `deps === null` (`config.agent.enabled: false`) makes every route answer
+ * 404 via {@link agentEnabled} — the sub-app is always mounted so `AppType`
+ * stays one static shape regardless of runtime config.
+ * @param config
+ * @param store
  * @param deps
- * @param deps.withStateLock
- * @param deps.getResolverState
- * @param deps.setResolverState
+ * @example
+ * app.route('/api/agent', createAgentRoutes(config, store, agentDeps));
  */
-export function setAgentRoute(
-	app: Hono,
-	userConfig: LocalServerConfig,
-	hub: AgentHub,
-	auth: AgentAuth,
-	deps: {
-		readonly withStateLock: <T>(work: () => Promise<T>) => Promise<T>;
-		getResolverState(): ResolverState | null;
-		setResolverState(state: ResolverState | null): void;
-	},
-): void {
+export function createAgentRoutes(
+	config: LocalServerConfig,
+	store: ResolverStateStore,
+	deps: AgentDeps | null,
+) {
 	const startedAt = Date.now();
 
-	app.use('/api/agent/*', hostGuard(userConfig.host));
-
-	app.get('/api/agent/tools', (c) => {
-		if (!isAgentAuthed(auth, c.req)) {
-			return c.text('Unauthorized', 401);
-		}
-		return c.json({
-			protocolVersion: AGENT_PROTOCOL_VERSION,
-			instructions: agentInstructions,
-			tools: agentTools.map((tool) => ({
-				name: tool.name,
-				description: tool.description,
-				inputSchema: z.toJSONSchema(tool.input),
-				outputSchema: tool.output ? z.toJSONSchema(tool.output) : undefined,
-				annotations: tool.annotations,
-			})),
-		});
-	});
-
-	app.get('/api/agent/status', (c) => {
-		if (!isAgentAuthed(auth, c.req)) {
+	return new Hono<AgentEnv>()
+		.use(agentEnabled(deps))
+		.use(hostGuard(config.host))
+		.get('/tools', requireAgentAuth(), (c) => {
 			return c.json({
 				protocolVersion: AGENT_PROTOCOL_VERSION,
-				version: userConfig.version,
+				instructions: agentInstructions,
+				tools: agentTools.map((tool) => ({
+					name: tool.name,
+					description: tool.description,
+					inputSchema: z.toJSONSchema(tool.input),
+					outputSchema: tool.output ? z.toJSONSchema(tool.output) : undefined,
+					annotations: tool.annotations,
+				})),
 			});
-		}
-		const sessions = [...hub.tabHub.snapshotAll()]
-			.filter((session) => session.page !== null)
-			.map((session) => ({
-				page: session.page,
-				revision: session.revision,
-				uiState: session.uiState,
-				connectedAt: session.lastActiveAt,
-			}));
-		return c.json({
-			protocolVersion: AGENT_PROTOCOL_VERSION,
-			version: userConfig.version,
-			pid: process.pid,
-			startedAt,
-			documentRoot: userConfig.documentRoot,
-			virtualTree: userConfig.virtualTree,
-			sessions,
-		});
-	});
-
-	app.get('/api/agent/events', async (c) => {
-		if (!isAgentAuthed(auth, c.req)) {
-			return c.text('Unauthorized', 401);
-		}
-		const since = Number.parseInt(c.req.query('since') ?? '', 10);
-		if (Number.isFinite(since) && since < 0) {
-			return c.json(
-				{
-					error: 'invalid',
-					message: 'since must be a non-negative integer.',
-					timestamp: nowIso(),
-				},
-				400,
-			);
-		}
-		const timeoutMsRaw = Number.parseInt(c.req.query('timeoutMs') ?? '', 10);
-		const typesRaw = c.req.query('types');
-		const result = await waitForAgentEvents(hub, c.req.raw.signal, {
-			since: Number.isFinite(since) ? since : undefined,
-			timeoutMs: Number.isFinite(timeoutMsRaw) ? timeoutMsRaw : undefined,
-			// Trim each entry — "types=a, b" (comma-space, a common
-			// convention) must not fail with an "unknown event type" for
-			// " b" just because of the leading space.
-			types: typesRaw ? typesRaw.split(',').map((t) => t.trim()) : undefined,
-		});
-		if (!result.ok) {
-			return c.json(invalidEventTypePayload(result.invalidType), 400);
-		}
-		return c.json({
-			events: result.events,
-			nextSince: result.nextSince,
-			timedOut: result.timedOut,
-			overflowed: result.overflowed,
-			timestamp: nowIso(),
-		});
-	});
-
-	app.post('/api/agent/invoke', async (c) => {
-		if (!isAgentAuthed(auth, c.req)) {
-			return c.text('Unauthorized', 401);
-		}
-		const json: unknown = await c.req.json().catch(() => null);
-		const parsedBody = invokeBodySchema.safeParse(json);
-		if (!parsedBody.success) {
-			return c.json(
-				{
-					error: 'invalid',
-					message: 'Body must be { tool: string, args: unknown }.',
-					timestamp: nowIso(),
-				},
-				400,
-			);
-		}
-		const { tool: toolName, args: rawArgs } = parsedBody.data;
-		const tool = agentTools.find((t) => t.name === toolName);
-		if (!tool) {
-			return c.json(
-				{ error: 'not-found', message: `Unknown tool: ${toolName}`, timestamp: nowIso() },
-				404,
-			);
-		}
-		// Validate against the tool's own input schema here, the way the MCP
-		// SDK does before `registerTool`'s handler runs. Without it a direct
-		// HTTP client's malformed args reach `buildBrowserOps`, get serialized
-		// into an `apply` the tab's zod parse silently drops, and the caller
-		// only learns about it as a 5 s ApplyTimeout → 504 "tab stopped
-		// responding" — for what is a 400.
-		const parsedArgs = tool.input.safeParse(rawArgs);
-		if (!parsedArgs.success) {
-			return c.json(
-				{
-					error: 'invalid',
-					message:
-						`Invalid arguments for ${toolName}: ` +
-						parsedArgs.error.issues
-							.map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`)
-							.join('; '),
-					timestamp: nowIso(),
-				},
-				400,
-			);
-		}
-		const args = parsedArgs.data;
-
-		if (toolName === 'editor_state_get') {
+		})
+		.get('/status', (c) => {
+			// Deliberately NOT behind `requireAgentAuth()`: an unauthenticated
+			// caller (mcp-server's reachability probe) still gets a degraded
+			// body, never a 401.
+			const { hub, auth } = c.get('agent');
+			if (!isAgentAuthed(auth, c.req)) {
+				return c.json({
+					protocolVersion: AGENT_PROTOCOL_VERSION,
+					version: config.version,
+				});
+			}
 			const sessions = [...hub.tabHub.snapshotAll()]
 				.filter((session) => session.page !== null)
 				.map((session) => ({
@@ -257,49 +149,151 @@ export function setAgentRoute(
 					connectedAt: session.lastActiveAt,
 				}));
 			return c.json({
-				ok: true,
-				result: { mode: 'local', sessions },
-				appliedTo: 'disk',
-				timestamp: nowIso(),
+				protocolVersion: AGENT_PROTOCOL_VERSION,
+				version: config.version,
+				pid: process.pid,
+				startedAt,
+				documentRoot: config.documentRoot,
+				virtualTree: config.virtualTree,
+				sessions,
 			});
-		}
-
-		if (toolName === 'editor_wait_for_event') {
-			// `tool.run()` (the disk implementation) always throws
-			// `local-required` — running inside local itself, serve the real
-			// long-poll instead of routing through it.
-			const waitArgs = args as { since?: number; types?: string[]; timeoutMs?: number };
-			const result = await waitForAgentEvents(hub, c.req.raw.signal, waitArgs);
+		})
+		.get('/events', requireAgentAuth(), async (c) => {
+			const { hub } = c.get('agent');
+			const since = Number.parseInt(c.req.query('since') ?? '', 10);
+			if (Number.isFinite(since) && since < 0) {
+				return c.json(
+					{
+						error: 'invalid',
+						message: 'since must be a non-negative integer.',
+						timestamp: nowIso(),
+					},
+					400,
+				);
+			}
+			const timeoutMsRaw = Number.parseInt(c.req.query('timeoutMs') ?? '', 10);
+			const typesRaw = c.req.query('types');
+			const result = await waitForAgentEvents(hub, c.req.raw.signal, {
+				since: Number.isFinite(since) ? since : undefined,
+				timeoutMs: Number.isFinite(timeoutMsRaw) ? timeoutMsRaw : undefined,
+				// Trim each entry — "types=a, b" (comma-space, a common
+				// convention) must not fail with an "unknown event type" for
+				// " b" just because of the leading space.
+				types: typesRaw ? typesRaw.split(',').map((t) => t.trim()) : undefined,
+			});
 			if (!result.ok) {
 				return c.json(invalidEventTypePayload(result.invalidType), 400);
 			}
 			return c.json({
-				ok: true,
-				result: {
-					events: result.events,
-					nextSince: result.nextSince,
-					timedOut: result.timedOut,
-					overflowed: result.overflowed,
-				},
-				appliedTo: 'disk',
+				events: result.events,
+				nextSince: result.nextSince,
+				timedOut: result.timedOut,
+				overflowed: result.overflowed,
 				timestamp: nowIso(),
 			});
-		}
+		})
+		.post('/invoke', requireAgentAuth(), async (c) => {
+			const { hub } = c.get('agent');
+			const json: unknown = await c.req.json().catch(() => null);
+			const parsedBody = invokeBodySchema.safeParse(json);
+			if (!parsedBody.success) {
+				return c.json(
+					{
+						error: 'invalid',
+						message: 'Body must be { tool: string, args: unknown }.',
+						timestamp: nowIso(),
+					},
+					400,
+				);
+			}
+			const { tool: toolName, args: rawArgs } = parsedBody.data;
+			const tool = agentTools.find((t) => t.name === toolName);
+			if (!tool) {
+				return c.json(
+					{
+						error: 'not-found',
+						message: `Unknown tool: ${toolName}`,
+						timestamp: nowIso(),
+					},
+					404,
+				);
+			}
+			// Validate against the tool's own input schema here, the way the MCP
+			// SDK does before `registerTool`'s handler runs. Without it a direct
+			// HTTP client's malformed args reach `buildBrowserOps`, get serialized
+			// into an `apply` the tab's zod parse silently drops, and the caller
+			// only learns about it as a 5 s ApplyTimeout → 504 "tab stopped
+			// responding" — for what is a 400.
+			const parsedArgs = tool.input.safeParse(rawArgs);
+			if (!parsedArgs.success) {
+				return c.json(
+					{
+						error: 'invalid',
+						message:
+							`Invalid arguments for ${toolName}: ` +
+							parsedArgs.error.issues
+								.map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`)
+								.join('; '),
+						timestamp: nowIso(),
+					},
+					400,
+				);
+			}
+			const args = parsedArgs.data;
 
-		const pathInput = hasStringPath(args) ? args.path : undefined;
-		const isDryRun = hasDryRun(args);
-		const isBlockOpTool = !!pathInput && BROWSER_APPLICABLE_TOOLS.has(toolName);
+			if (toolName === 'editor_state_get') {
+				const sessions = [...hub.tabHub.snapshotAll()]
+					.filter((session) => session.page !== null)
+					.map((session) => ({
+						page: session.page,
+						revision: session.revision,
+						uiState: session.uiState,
+						connectedAt: session.lastActiveAt,
+					}));
+				return c.json({
+					ok: true,
+					result: { mode: 'local', sessions },
+					appliedTo: 'disk',
+					timestamp: nowIso(),
+				});
+			}
 
-		if (!isBlockOpTool || isDryRun) {
-			return deps.withStateLock(() =>
-				runOnDisk(c, tool, toolName, args, userConfig, deps, hub, pathInput),
+			if (toolName === 'editor_wait_for_event') {
+				// `tool.run()` (the disk implementation) always throws
+				// `local-required` — running inside local itself, serve the real
+				// long-poll instead of routing through it.
+				const waitArgs = args as { since?: number; types?: string[]; timeoutMs?: number };
+				const result = await waitForAgentEvents(hub, c.req.raw.signal, waitArgs);
+				if (!result.ok) {
+					return c.json(invalidEventTypePayload(result.invalidType), 400);
+				}
+				return c.json({
+					ok: true,
+					result: {
+						events: result.events,
+						nextSince: result.nextSince,
+						timedOut: result.timedOut,
+						overflowed: result.overflowed,
+					},
+					appliedTo: 'disk',
+					timestamp: nowIso(),
+				});
+			}
+
+			const pathInput = hasStringPath(args) ? args.path : undefined;
+			const isDryRun = hasDryRun(args);
+			const isBlockOpTool = !!pathInput && BROWSER_APPLICABLE_TOOLS.has(toolName);
+
+			if (!isBlockOpTool || isDryRun) {
+				return store.withStateLock(() =>
+					runOnDisk(c, tool, toolName, args, config, store, hub, pathInput),
+				);
+			}
+
+			return store.withStateLock(() =>
+				runViaBrowserOrDisk(c, tool, toolName, args, pathInput, config, store, hub),
 			);
-		}
-
-		return deps.withStateLock(() =>
-			runViaBrowserOrDisk(c, tool, toolName, args, pathInput, userConfig, deps, hub),
-		);
-	});
+		});
 }
 
 const DEFAULT_WAIT_TIMEOUT_MS = 10_000;

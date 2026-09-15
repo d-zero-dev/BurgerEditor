@@ -1,6 +1,12 @@
 {
 	"import": ["@d-zero/cspell-config"],
-	"ignorePaths": [".vscode", ".claude", "**/CODEOWNERS", "**/storybook-static/**"],
+	"ignorePaths": [
+		".vscode",
+		".claude",
+		".agents",
+		"**/CODEOWNERS",
+		"**/storybook-static/**"
+	],
 	"words": [
 		// CSS terminology
 		"CSSWG",
@@ -20,6 +26,7 @@
 
 		// Dependencies
 		"hono",
+		"honojs",
 		"pixelmatch",
 		"pngjs",
 		"jaco",

@@ -6,12 +6,12 @@ export const AGENT_SESSION_COOKIE = 'bge_session';
 
 const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
 
-export interface AgentAuth {
+export interface AgentAuth extends AsyncDisposable {
 	/** `false` when bound to a loopback address — every route is open, no token exists. */
 	readonly required: boolean;
 	/** The per-launch token, for building the banner's `?token=` URL. `null` when `required` is `false`. */
 	readonly token: string | null;
-	/** Absolute path the token was written to, so the caller can delete it on shutdown. `null` when `required` is `false`. */
+	/** Absolute path the token was written to. `null` when `required` is `false`. Disposing this handle deletes it. */
 	readonly tokenFilePath: string | null;
 	/**
 	 * @param cookieValue value of the `bge_session` cookie, if any
@@ -30,8 +30,9 @@ export interface AgentAuth {
  * middleware can call against the `bge_session` cookie (browser) or
  * `Authorization: Bearer` header (MCP).
  *
- * The caller is responsible for deleting `tokenFilePath` on shutdown and
- * reminding the user to `.gitignore` `.burgereditor/`.
+ * Disposing the returned handle (`await using` / explicit
+ * `[Symbol.asyncDispose]()`) deletes `tokenFilePath` — the caller should
+ * also remind the user to `.gitignore` `.burgereditor/`.
  * @param host the configured bind/serve host
  * @param configDir directory to persist the token file under (`getUserConfig()`'s `configDir`)
  */
@@ -40,7 +41,15 @@ export async function createAgentAuth(
 	configDir: string,
 ): Promise<AgentAuth> {
 	if (LOOPBACK_HOSTS.has(host)) {
-		return { required: false, token: null, tokenFilePath: null, verify: () => true };
+		return {
+			required: false,
+			token: null,
+			tokenFilePath: null,
+			verify: () => true,
+			async [Symbol.asyncDispose]() {
+				// No token file was written; nothing to clean up.
+			},
+		};
 	}
 
 	const token = randomBytes(24).toString('hex');
@@ -55,6 +64,9 @@ export async function createAgentAuth(
 		tokenFilePath,
 		verify(cookieValue, bearerValue) {
 			return safeEquals(cookieValue, token) || safeEquals(bearerValue, token);
+		},
+		async [Symbol.asyncDispose]() {
+			await fs.unlink(tokenFilePath).catch(() => {});
 		},
 	};
 }
@@ -90,10 +102,12 @@ export function loginUrl(location: string, auth: AgentAuth): string | null {
 }
 
 /**
- * Shared by the `/api/agent/*` routes and the `/ws/editor` upgrade — both
- * need the same cookie-or-bearer check against a plain header reader, so it
- * doesn't matter whether the caller is a Hono `Context` or an upgrade
- * handler's raw request.
+ * Shared by the `/api/agent/*` routes' inline checks (`agent/route.ts`) and
+ * `agent/env.ts`'s `requireAgentAuth()` middleware (used by both
+ * `/api/agent/*` and the `/ws/editor` handshake, ahead of `upgradeWebSocket`)
+ * — all need the same cookie-or-bearer check. `headers` is deliberately
+ * structural rather than Hono's `HonoRequest` so a caller never needs a real
+ * `Context` just to check credentials.
  * @param auth
  * @param headers
  * @param headers.header

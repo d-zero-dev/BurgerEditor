@@ -1,5 +1,5 @@
+import type { AppType } from '../app.js';
 import type { Tree } from '../model/file-tree.js';
-import type { AppType } from '../route.js';
 
 import { hc } from 'hono/client';
 

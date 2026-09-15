@@ -9,7 +9,7 @@ Agent Hub 全体の概要（エンドポイント一覧、非ループバック 
 | イベント種別                                     | 発火元                                                                                                           | 主なペイロード                                                         |
 | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `session-connected`                              | `hello` が受理された（`serverSession` が一致した）とき                                                           | `{ sessionId, page }`                                                  |
-| `session-disconnected`                           | `/ws/editor` の切断（`route.tsx` の `onClose` → `AgentHub.closeSession`）                                        | `{ sessionId, page }`                                                  |
+| `session-disconnected`                           | `/ws/editor` の切断（`routes/ws.ts` の `onClose` → `AgentHub.closeSession`）                                     | `{ sessionId, page }`                                                  |
 | `ui-state`                                       | `ui-state` フレーム受信のたび                                                                                    | `{ sessionId, uiState }`                                               |
 | `ui-idle`                                        | `ui-state` が busy → idle に遷移したとき（`ui-state` に加えて追加で発火）                                        | `{ sessionId }`                                                        |
 | `content-saved`                                  | ブラウザ適用・ディスク適用いずれかの書き込み成功（`front_matter_set` とページ構造系ツールを除く）                | `{ page, appliedTo }`                                                  |
@@ -31,7 +31,7 @@ Agent Hub 全体の概要（エンドポイント一覧、非ループバック 
 
 `invoke` のたびに行っているディスクハッシュ比較（`agent/route.ts` の `runViaBrowserOrDisk`）は受動的 — エージェントが何か呼ぶまで気づかない。`fs-watcher.ts` は `fs.watch(documentRoot, { recursive: true })` で IDE の直接編集や別プロセスの disk モード書き込みを能動的に検知し、該当ページを開いているタブへ即座に `reload { reason: 'external-change' }` を送って `content-changed` イベントを積む。
 
-**スコープ**: `virtualTree.enabled: false` のときのみ起動する（`commands/server.ts`）。`virtualTree` 有効時はディスクのファイル名（`<id>.html`）から論理パスへの逆引きに `route.tsx` が閉じ込めている `ResolverState` が必要で、それをこの機能のためだけに外へ引き回すコストが、既存の受動検知（invoke 時のハッシュ比較。virtualTree 有効時も正しく動く）に対する追加の利益に見合わない。将来 `ResolverState` を共有しやすい形に切り出す機会があれば拡張余地はある。
+**スコープ**: `virtualTree.enabled: false` のときのみ起動する（`commands/server.ts` の `bootLocalServer`）。`virtualTree` 有効時はディスクのファイル名（`<id>.html`）から論理パスへの逆引きに `ResolverState` が必要で、`resolver-state-store.ts::createResolverStateStore()` を通じて `AppContext` 経由なら共有自体は容易になったが、この watcher にはあえて渡していない。既存の受動検知（invoke 時のハッシュ比較。virtualTree 有効時も正しく動く）で足りており、渡す追加の利益に見合わないためである。渡す拡張自体は `createFsWatcher` に `store` を追加で受け取らせるだけで可能。
 
 `hub.revisions`（`RevisionRegistry`）にエントリが無い、または `persistedHash` が `null`（＝一度もエージェントが読み書きしていない）ページへの変更は無視する — 無関係なファイルへの変更でタブを再読み込みさせないため。自分自身の保存（`route.ts` が書き込み直後に `persistedHash` を更新する）は、`fs.watch` のコールバックが（非同期・デバウンスされて）発火する頃には比較対象のハッシュが既に一致しているため、二重通知にはならない。
 

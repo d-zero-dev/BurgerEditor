@@ -1,153 +1,132 @@
-import type { ChildProcess } from 'node:child_process';
+import type { MockInstance } from 'vitest';
 
-import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
-import { createRequire } from 'node:module';
 import path from 'node:path';
 
-import { mkdtempDisposable } from '@d-zero/shared/mkdtemp-disposable';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
-// cspell:ignore burgereditorrc
+import { disposableSpy } from '../__tests__/disposables.js';
+import {
+	makeLocalServerConfig,
+	makeTmpRoots,
+	type TmpRoots,
+} from '../__tests__/fixtures.js';
 
-const require = createRequire(import.meta.url);
-const tsxPkgJson = require.resolve('tsx/package.json');
-const tsxCli = path.join(path.dirname(tsxPkgJson), 'dist/cli.mjs');
-const cliEntry = path.resolve(import.meta.dirname, '..', 'index.ts');
+import { bootLocalServer } from './server.js';
 
-type CliResult = {
-	code: number | null;
-	signal: NodeJS.Signals | null;
-	stdout: string;
-	stderr: string;
-};
-
-/**
- * Spawn the local CLI in `cwd` and resolve once it exits. Used to drive
- * `runServerCommand` end-to-end as the user would experience it: a `node`
- * subprocess reading the on-disk config and producing real stderr/exit-code
- * signals. {@link tsxCli} lets us run the source `.ts` entry without first
- * building, so the test stays self-contained.
- * @param cwd
- * @param timeoutMs Defaults to 20_000ms — generous enough to absorb tsx's
- *   cold-start compile cost under Docker/QEMU CPU contention with the other
- *   projects' concurrently-running Playwright browser instances (#841).
- */
-function runCli(cwd: string, timeoutMs = 20_000): Promise<CliResult> {
-	return new Promise<CliResult>((resolve, reject) => {
-		const startedAt = Date.now();
-		const child: ChildProcess = spawn(process.execPath, [tsxCli, cliEntry], {
-			cwd,
-			env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' },
-			stdio: ['ignore', 'pipe', 'pipe'],
-		});
-		let stdout = '';
-		let stderr = '';
-		child.stdout?.on('data', (chunk: Buffer) => (stdout += chunk.toString('utf8')));
-		child.stderr?.on('data', (chunk: Buffer) => (stderr += chunk.toString('utf8')));
-		const timer = setTimeout(() => {
-			child.kill('SIGKILL');
-			reject(
-				new Error(
-					`CLI did not exit within ${timeoutMs}ms\nstderr=${stderr}\nstdout=${stdout}`,
-				),
-			);
-		}, timeoutMs);
-		child.on('exit', (code, signal) => {
-			clearTimeout(timer);
-			// Logged unconditionally (not just on near-timeout runs) so CI
-			// history builds a real latency distribution for this spawn+tsx
-			// path. Without it, a future timeout (#841) only tells us "> N
-			// ms", never how much margin was actually needed.
-			// eslint-disable-next-line no-console
-			console.info(
-				`[server.spec] runCli(${cwd}) exited in ${Date.now() - startedAt}ms (code=${code}, signal=${signal})`,
-			);
-			resolve({ code, signal, stdout, stderr });
-		});
-		child.on('error', (error) => {
-			clearTimeout(timer);
-			reject(error);
-		});
-	});
-}
-
-describe('runServerCommand boot (virtualTree)', () => {
-	let tmp: ({ path: string } & AsyncDisposable) | undefined;
-	let documentRoot: string;
+describe('bootLocalServer (virtualTree) — boot aborts before the HTTP server binds', () => {
+	let roots: TmpRoots;
+	let errorCalls: string[];
+	let errorSpy: MockInstance & Disposable;
+	let exitSpy: MockInstance & Disposable;
 
 	beforeEach(async () => {
-		tmp = await mkdtempDisposable('bge-boot-');
-		documentRoot = tmp.path;
+		roots = await makeTmpRoots('bge-boot-');
+		errorCalls = [];
+		errorSpy = disposableSpy(console, 'error');
+		errorSpy.mockImplementation((...args: unknown[]) => {
+			errorCalls.push(args.map(String).join(' '));
+		});
+		// Translate process.exit into a thrown sentinel so the test runner
+		// survives and we can observe the call from within the awaited
+		// promise rejection.
+		exitSpy = disposableSpy(process, 'exit');
+		exitSpy.mockImplementation(((code?: number) => {
+			throw new Error(`__test_exit__:${code ?? 0}`);
+		}) as never);
 	});
 
 	afterEach(async () => {
-		await tmp?.[Symbol.asyncDispose]();
+		exitSpy[Symbol.dispose]();
+		errorSpy[Symbol.dispose]();
+		await roots[Symbol.asyncDispose]();
 	});
 
+	const boot = () =>
+		bootLocalServer(
+			makeLocalServerConfig({
+				documentRoot: roots.documentRoot,
+				virtualTree: { enabled: true, pathKey: 'path' },
+				agent: { enabled: false },
+			}),
+			roots.path,
+		);
+
 	test('exits 1 with formatted stderr listing conflicting files (regression: #754)', async () => {
-		// Two files claim the same logical path → loadResolverState rejects with
-		// PathConflictError. Without the loadResolverStateOrExit wrapper the
-		// process would still exit non-zero, but Node's default uncaught
-		// handler prints `Error:` + stack trace, hiding the file names. We
-		// assert that the human-readable form reaches stderr instead.
 		await fs.writeFile(
-			path.join(documentRoot, '1.html'),
+			path.join(roots.documentRoot, '1.html'),
 			'---\npath: about.html\n---\n<h1>One</h1>\n',
 			'utf8',
 		);
 		await fs.writeFile(
-			path.join(documentRoot, '2.html'),
+			path.join(roots.documentRoot, '2.html'),
 			'---\npath: about.html\n---\n<h1>Two</h1>\n',
 			'utf8',
 		);
-		await fs.writeFile(
-			path.join(documentRoot, '.burgereditorrc.json'),
-			JSON.stringify({
-				virtualTree: { enabled: true, pathKey: 'path' },
-				port: 0,
-				host: 'localhost',
-				open: false,
-			}),
-			'utf8',
-		);
 
-		const result = await runCli(documentRoot);
+		await expect(boot()).rejects.toThrow('__test_exit__:1');
 
-		expect(result.code).toBe(1);
-		expect(result.stderr).toContain('Conflicting logical paths');
-		expect(result.stderr).toContain('about.html');
-		expect(result.stderr).toContain('1.html');
-		expect(result.stderr).toContain('2.html');
-		expect(result.stderr).toContain('Fix the conflicting front matter "path" values');
+		const stderr = errorCalls.join('\n');
+		expect(stderr).toContain('Conflicting logical paths');
+		expect(stderr).toContain('about.html');
+		expect(stderr).toContain('1.html');
+		expect(stderr).toContain('2.html');
+		expect(stderr).toContain('Fix the conflicting front matter "path" values');
 		// The formatted message is what the operator should see — Node's
 		// default uncaught handler (which emits `PathConflictError:` and
 		// stack frames) must not be the source of the output.
-		expect(result.stderr).not.toContain('PathConflictError:');
-		expect(result.stderr).not.toMatch(/^\s+at\s/m);
-	}, 25_000);
+		expect(stderr).not.toContain('PathConflictError:');
+		expect(stderr).not.toMatch(/^\s+at\s/m);
+		expect(exitSpy).toHaveBeenCalledWith(1);
+	});
 
-	test('exits 1 with file name when a frontmatter pathKey is missing (regression: #754)', async () => {
+	test('exits 1 with the file name when a frontmatter pathKey is missing (regression: #754)', async () => {
 		await fs.writeFile(
-			path.join(documentRoot, '7.html'),
+			path.join(roots.documentRoot, '7.html'),
 			'<h1>no front matter</h1>\n',
 			'utf8',
 		);
-		await fs.writeFile(
-			path.join(documentRoot, '.burgereditorrc.json'),
-			JSON.stringify({
-				virtualTree: { enabled: true, pathKey: 'path' },
-				port: 0,
-				host: 'localhost',
-				open: false,
+
+		await expect(boot()).rejects.toThrow('__test_exit__:1');
+
+		const stderr = errorCalls.join('\n');
+		expect(stderr).toContain('Failed to load virtualTree resolver state');
+		expect(stderr).toContain('7.html');
+		expect(exitSpy).toHaveBeenCalledWith(1);
+	});
+});
+
+describe('bootLocalServer — successful boot', () => {
+	let roots: TmpRoots;
+
+	beforeEach(async () => {
+		roots = await makeTmpRoots('bge-boot-ok-');
+	});
+
+	afterEach(async () => {
+		await roots[Symbol.asyncDispose]();
+	});
+
+	test('binds a real port and returns a disposable handle', async () => {
+		// Bind AND connect via the literal `127.0.0.1` rather than the hostname
+		// `localhost` — some CI runners resolve `localhost` to a different
+		// address for the bind side (Node's server) than for the connect side
+		// (fetch's own DNS lookup), which would refuse every connection here
+		// even though the server is genuinely listening (see agent/ws.spec.ts's
+		// `bootServer` doc comment for the same issue).
+		await using handle = await bootLocalServer(
+			makeLocalServerConfig({
+				documentRoot: roots.documentRoot,
+				host: '127.0.0.1',
+				agent: { enabled: false },
 			}),
-			'utf8',
+			roots.path,
 		);
-
-		const result = await runCli(documentRoot);
-
-		expect(result.code).toBe(1);
-		expect(result.stderr).toContain('Failed to load virtualTree resolver state');
-		expect(result.stderr).toContain('7.html');
-	}, 25_000);
+		expect(handle.port).toBeGreaterThan(0);
+		expect(handle.url).toBe(`http://127.0.0.1:${handle.port}`);
+		const res = await fetch(`${handle.url}/api/health`, {
+			headers: { connection: 'close' },
+		});
+		expect(res.status).toBe(200);
+	});
 });

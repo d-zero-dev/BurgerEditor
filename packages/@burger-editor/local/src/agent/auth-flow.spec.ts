@@ -1,85 +1,32 @@
 import type { LocalServerConfig } from '../types.js';
 
-import fs from 'node:fs/promises';
-import path from 'node:path';
-
-import { mkdtempDisposable } from '@d-zero/shared/mkdtemp-disposable';
-import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
-import { setRoute } from '../route.js';
+import {
+	createTestApp,
+	makeLocalServerConfig,
+	makeTmpRoots,
+	type TestApp,
+	type TmpRoots,
+} from '../__tests__/fixtures.js';
+import { LAN_HOST, PAGE_HTML } from '../__tests__/protocol-fixtures.js';
 
-import { createAgentAuth, type AgentAuth } from './auth.js';
-import { createAgentHub, type AgentHub } from './hub.js';
-
-/** A TEST-NET-3 address (RFC 5737) — non-loopback, so `createAgentAuth` requires a token. */
-const LAN_HOST = '203.0.113.10';
-
-const PAGE_HTML =
-	'<html><body><div class="content"><div data-bge-name="text" data-bge-container="grid:1" id="bge-1">' +
-	'<div data-bge-container-frame=""><div data-bge-group=""><div data-bge-item="">' +
-	'<div data-bgi="wysiwyg" data-bgi-ver="1.0.0"><div data-bge="wysiwyg"><p>hello</p></div></div>' +
-	'</div></div></div></div></div></body></html>';
-
-/**
- * @param documentRoot
- */
-function makeConfig(documentRoot: string): LocalServerConfig {
-	return {
-		version: '0.0.0-test',
-		port: 0,
-		host: LAN_HOST,
-		documentRoot,
-		assetsRoot: documentRoot,
-		lang: 'en',
-		stylesheets: [],
-		classList: [],
-		editableArea: '.content',
-		indexFileName: 'index.html',
-		filesDir: {
-			image: { serverPath: documentRoot, clientPath: '/files' },
-			pdf: { serverPath: documentRoot, clientPath: '/files' },
-			video: { serverPath: documentRoot, clientPath: '/files' },
-			audio: { serverPath: documentRoot, clientPath: '/files' },
-			other: { serverPath: documentRoot, clientPath: '/files' },
-		},
-		sampleImagePath: '/files/sample.png',
-		sampleFilePath: '/files/sample.pdf',
-		googleMapsApiKey: null,
-		open: false,
-		newFileContent: '<!doctype html><html><body></body></html>',
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		catalog: {} as any,
-		enableImportBlock: false,
-		healthCheck: { enabled: false, interval: 10_000, retryCount: 3 },
-		virtualTree: { enabled: false, pathKey: 'path' },
-		agent: { enabled: true },
-	};
-}
-
-let tmp: ({ path: string } & AsyncDisposable) | undefined;
+let tmp: TmpRoots | undefined;
 let documentRoot: string;
-let hub: AgentHub | undefined;
-let auth: AgentAuth;
-let app: Hono;
+let t: TestApp;
 
 beforeEach(async () => {
-	tmp = await mkdtempDisposable('bge-agent-auth-flow-');
-	documentRoot = path.join(tmp.path, 'docs');
-	await fs.mkdir(documentRoot);
-	await fs.writeFile(path.join(documentRoot, 'a.html'), PAGE_HTML, 'utf8');
-	const userConfig = makeConfig(documentRoot);
-	app = new Hono();
-	hub = createAgentHub({ indexFileName: userConfig.indexFileName });
-	auth = await createAgentAuth(LAN_HOST, tmp.path);
-	const noopUpgrade = (() => async (_c: unknown, next: () => Promise<void>) =>
-		next()) as unknown as never;
-	setRoute(app, userConfig, null, { hub, auth, upgradeWebSocket: noopUpgrade });
+	tmp = await makeTmpRoots('bge-agent-auth-flow-', { pages: { 'a.html': PAGE_HTML } });
+	documentRoot = tmp.documentRoot;
+	const config: LocalServerConfig = makeLocalServerConfig({
+		documentRoot,
+		host: LAN_HOST,
+	});
+	t = await createTestApp({ config, configDir: tmp.path });
 });
 
 afterEach(async () => {
-	hub?.dispose();
-	hub = undefined;
+	await t[Symbol.asyncDispose]();
 	await tmp?.[Symbol.asyncDispose]();
 });
 
@@ -93,7 +40,7 @@ function req(
 	init: RequestInit = {},
 	extraHeaders: Record<string, string> = {},
 ) {
-	return app.request(urlPath, {
+	return t.app.request(urlPath, {
 		...init,
 		headers: {
 			...(init.headers as Record<string, string>),
@@ -123,8 +70,8 @@ const PAGE_BLOCKS = { tool: 'page_blocks', args: { path: '/a.html' } };
 
 describe('non-loopback bind — the auth fixture itself', () => {
 	test('createAgentAuth for 203.0.113.10 requires a 48-hex-char token', () => {
-		expect(auth.required).toBe(true);
-		expect(auth.token).toMatch(/^[0-9a-f]{48}$/);
+		expect(t.auth!.required).toBe(true);
+		expect(t.auth!.token).toMatch(/^[0-9a-f]{48}$/);
 	});
 });
 
@@ -136,7 +83,7 @@ describe('non-loopback bind — POST /api/agent/invoke', () => {
 	});
 
 	test('with the correct Authorization: Bearer token is 200', async () => {
-		const res = await invoke(PAGE_BLOCKS, { authorization: `Bearer ${auth.token}` });
+		const res = await invoke(PAGE_BLOCKS, { authorization: `Bearer ${t.auth!.token}` });
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as { ok: boolean; appliedTo: string };
 		expect(body.ok).toBe(true);
@@ -156,18 +103,18 @@ describe('non-loopback bind — POST /api/agent/invoke', () => {
 	});
 
 	test('with the token in an Authorization header that is not a Bearer scheme is 401', async () => {
-		const res = await invoke(PAGE_BLOCKS, { authorization: `Basic ${auth.token}` });
+		const res = await invoke(PAGE_BLOCKS, { authorization: `Basic ${t.auth!.token}` });
 		expect(res.status).toBe(401);
 	});
 
 	test('with the correct bge_session cookie is 200', async () => {
-		const res = await invoke(PAGE_BLOCKS, { cookie: `bge_session=${auth.token}` });
+		const res = await invoke(PAGE_BLOCKS, { cookie: `bge_session=${t.auth!.token}` });
 		expect(res.status).toBe(200);
 	});
 
 	test('with the correct bge_session cookie among other cookies is 200', async () => {
 		const res = await invoke(PAGE_BLOCKS, {
-			cookie: `theme=dark; bge_session=${auth.token}; lang=en`,
+			cookie: `theme=dark; bge_session=${t.auth!.token}; lang=en`,
 		});
 		expect(res.status).toBe(200);
 	});
@@ -188,7 +135,7 @@ describe('non-loopback bind — POST /api/agent/invoke', () => {
 		const res = await req(
 			'/api/agent/tools',
 			{},
-			{ authorization: `Bearer ${auth.token}` },
+			{ authorization: `Bearer ${t.auth!.token}` },
 		);
 		expect(res.status).toBe(200);
 	});
@@ -196,18 +143,18 @@ describe('non-loopback bind — POST /api/agent/invoke', () => {
 
 describe('non-loopback bind — GET /?token= login', () => {
 	test('a valid token sets an HttpOnly, SameSite=Strict bge_session cookie and redirects to the URL without the token', async () => {
-		const res = await req(`/?token=${auth.token}`);
+		const res = await req(`/?token=${t.auth!.token}`);
 		expect(res.status).toBe(302);
 		expect(res.headers.get('location')).toBe('/');
 		const setCookie = res.headers.get('set-cookie') ?? '';
-		expect(setCookie).toContain(`bge_session=${auth.token}`);
+		expect(setCookie).toContain(`bge_session=${t.auth!.token}`);
 		expect(setCookie).toContain('HttpOnly');
 		expect(setCookie).toContain('SameSite=Strict');
 		expect(setCookie).toContain('Path=/');
 	});
 
 	test('the redirect keeps every other query parameter but drops token', async () => {
-		const res = await req(`/a.html?token=${auth.token}&draft=1`);
+		const res = await req(`/a.html?token=${t.auth!.token}&draft=1`);
 		expect(res.status).toBe(302);
 		expect(res.headers.get('location')).toBe('/a.html?draft=1');
 	});
@@ -220,7 +167,7 @@ describe('non-loopback bind — GET /?token= login', () => {
 	});
 
 	test('the cookie the login handed out then authorizes /api/agent/invoke', async () => {
-		const login = await req(`/?token=${auth.token}`);
+		const login = await req(`/?token=${t.auth!.token}`);
 		const cookiePair = (login.headers.get('set-cookie') ?? '').split(';')[0]!;
 		const res = await invoke(PAGE_BLOCKS, { cookie: cookiePair });
 		expect(res.status).toBe(200);
@@ -239,7 +186,7 @@ describe('non-loopback bind — GET /api/agent/status', () => {
 		const res = await req(
 			'/api/agent/status',
 			{},
-			{ authorization: `Bearer ${auth.token}` },
+			{ authorization: `Bearer ${t.auth!.token}` },
 		);
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as Record<string, unknown>;
@@ -259,16 +206,16 @@ describe('non-loopback bind — GET /api/agent/status', () => {
 
 describe('non-loopback bind — Host guard on /api/agent/*', () => {
 	test('a Host header naming a different address is 403 even with a valid bearer token', async () => {
-		const res = await app.request('/api/agent/status', {
-			headers: { host: '203.0.113.99', authorization: `Bearer ${auth.token}` },
+		const res = await t.app.request('/api/agent/status', {
+			headers: { host: '203.0.113.99', authorization: `Bearer ${t.auth!.token}` },
 		});
 		expect(res.status).toBe(403);
 		expect(await res.text()).toBe('Forbidden: untrusted Host header');
 	});
 
 	test('a loopback Host header is still allowed alongside the configured LAN host', async () => {
-		const res = await app.request('/api/agent/status', {
-			headers: { host: 'localhost', authorization: `Bearer ${auth.token}` },
+		const res = await t.app.request('/api/agent/status', {
+			headers: { host: 'localhost', authorization: `Bearer ${t.auth!.token}` },
 		});
 		expect(res.status).toBe(200);
 	});

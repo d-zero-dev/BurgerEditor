@@ -1,111 +1,122 @@
-import type { AgentAuth } from '../agent/auth.js';
-import type { FsWatcher } from '../agent/fs-watcher.js';
-import type { AgentHub } from '../agent/hub.js';
-import type { AgentRouteDeps } from '../route.js';
-import type { ServerType } from '@hono/node-server';
+import type { AgentDeps } from '../agent/env.js';
+import type { LocalServerConfig } from '../types.js';
 
-import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { serve } from '@hono/node-server';
-import { createNodeWebSocket } from '@hono/node-ws';
 import c from 'ansi-colors';
-import { Hono } from 'hono';
 import open from 'open';
 
 import { createAgentAuth, loginUrl } from '../agent/auth.js';
 import { createFsWatcher } from '../agent/fs-watcher.js';
 import { createAgentHub } from '../agent/hub.js';
+import { createApp } from '../app.js';
+import { createLocalServer } from '../create-local-server.js';
 import { log } from '../helpers/debug.js';
 import { getUserConfig } from '../model/get-user-config.js';
-import { setRoute } from '../route.js';
 
 import { loadResolverStateOrExit } from './load-resolver-state-or-exit.js';
 
+export interface LocalServerHandle extends AsyncDisposable {
+	readonly port: number;
+	readonly url: string;
+	/** `null` when `config.agent.enabled` is `false`. */
+	readonly agent: AgentDeps | null;
+}
+
 /**
- * Boot the local BurgerEditor server. Reads the user config via cosmiconfig,
- * pre-loads the virtualTree resolver state if enabled, mounts the Hono routes
- * (including the Agent Hub's `/api/agent/*` + `/ws/editor` when
- * `agent.enabled`), and prints a banner.
+ * Boot the local BurgerEditor server: pre-loads the virtualTree resolver
+ * state if enabled (exiting the process first if the documentRoot violates
+ * the virtualTree contract — see {@link loadResolverStateOrExit}), wires the
+ * Agent Hub, builds the Hono app, and binds it.
  *
- * If `virtualTree.enabled` is true and the documentRoot contains files that
- * violate the virtualTree contract (missing `pathKey`, non-string value, or
- * conflicting logical paths), {@link loadResolverStateOrExit} prints a
- * formatted message to stderr and exits the process with status 1 before the
- * HTTP server binds, so startup fails loudly instead of serving a broken
- * state.
- * @returns A promise that resolves once the banner has been printed. The HTTP
- *          server keeps running afterwards and is not awaited here.
+ * Deliberately prints nothing and never opens a browser — `runServerCommand`
+ * owns those side effects — so this is the seam a test drives directly to
+ * exercise the boot sequence (including the exit-before-bind failure path)
+ * without spawning a subprocess.
+ * @param config
+ * @param configDir Directory the agent token file is persisted under (`getUserConfig()`'s `configDir`).
+ * @example
+ * const { config, configDir } = await getUserConfig();
+ * await using handle = await bootLocalServer(config, configDir);
+ * console.log(handle.url);
  */
-export async function runServerCommand(): Promise<void> {
-	const app = new Hono();
-	const { config: userConfig, configDir } = await getUserConfig();
-
-	const isWatchMode = process.env.DEV_MODE === 'true';
-
-	const resolverState = userConfig.virtualTree.enabled
-		? await loadResolverStateOrExit(
-				userConfig.documentRoot,
-				userConfig.virtualTree.pathKey,
-			)
+export async function bootLocalServer(
+	config: LocalServerConfig,
+	configDir: string,
+): Promise<LocalServerHandle> {
+	const resolverState = config.virtualTree.enabled
+		? await loadResolverStateOrExit(config.documentRoot, config.virtualTree.pathKey)
 		: null;
 
-	let agentDeps: AgentRouteDeps | undefined;
-	let hub: AgentHub | undefined;
-	let auth: AgentAuth | undefined;
-	let injectWebSocket: ((server: ServerType) => void) | undefined;
-	let fsWatcher: FsWatcher | undefined;
-	if (userConfig.agent.enabled) {
-		hub = createAgentHub({ indexFileName: userConfig.indexFileName });
-		auth = await createAgentAuth(userConfig.host, configDir);
-		const ws = createNodeWebSocket({ app });
-		agentDeps = { hub, auth, upgradeWebSocket: ws.upgradeWebSocket };
-		injectWebSocket = ws.injectWebSocket;
+	const resources = new AsyncDisposableStack();
+	let agent: AgentDeps | null = null;
+	if (config.agent.enabled) {
+		const hub = resources.use(createAgentHub({ indexFileName: config.indexFileName }));
+		const auth = resources.use(await createAgentAuth(config.host, configDir));
+		agent = { hub, auth };
 		// Only meaningful when a page's disk path IS its logical path — see
 		// `fs-watcher.ts`'s doc comment for why virtualTree-enabled sites stay
 		// on the existing per-invoke passive detection instead.
-		if (!userConfig.virtualTree.enabled) {
-			fsWatcher = createFsWatcher(userConfig.documentRoot, {
-				hub,
-				indexFileName: userConfig.indexFileName,
-			});
+		if (!config.virtualTree.enabled) {
+			resources.use(
+				createFsWatcher(config.documentRoot, {
+					hub,
+					indexFileName: config.indexFileName,
+				}),
+			);
 		}
 	}
 
-	setRoute(app, userConfig, resolverState, agentDeps);
+	const app = createApp({ config, resolverState, agent });
+	const local = resources.use(
+		await createLocalServer({ app, hostname: config.host, port: config.port }),
+	);
 
-	const server = serve({
-		fetch: app.fetch,
-		hostname: userConfig.host,
-		port: userConfig.port,
-	});
-	injectWebSocket?.(server);
-
-	const shutdown = async () => {
-		fsWatcher?.dispose();
-		hub?.dispose();
-		if (auth?.tokenFilePath) {
-			await fs.unlink(auth.tokenFilePath).catch(() => {});
-		}
-		process.exit(0);
+	// LIFO on dispose: the HTTP/WS server stops accepting traffic first, then
+	// the fs watcher, then the token file is deleted, then the hub's ping
+	// timer/tabHub — the reverse of the `resources.use()` calls above.
+	const shutdown = () => {
+		void resources.disposeAsync().finally(() => process.exit(0));
 	};
-	process.on('SIGINT', shutdown);
-	process.on('SIGTERM', shutdown);
+	process.once('SIGINT', shutdown);
+	process.once('SIGTERM', shutdown);
 
-	const location = `http://${userConfig.host}:${userConfig.port}`;
+	return {
+		port: local.port,
+		url: local.url,
+		agent,
+		async [Symbol.asyncDispose]() {
+			process.off('SIGINT', shutdown);
+			process.off('SIGTERM', shutdown);
+			await resources.disposeAsync();
+		},
+	};
+}
+
+/**
+ * CLI entry point for `bge` (no subcommand). Resolves the user's config,
+ * boots the server, optionally opens a browser, and prints the startup
+ * banner.
+ */
+export async function runServerCommand(): Promise<void> {
+	const { config, configDir } = await getUserConfig();
+	const isWatchMode = process.env.DEV_MODE === 'true';
+
+	const handle = await bootLocalServer(config, configDir);
+
 	const relDocumentRoot =
-		'.' + path.sep + path.relative(process.cwd(), userConfig.documentRoot);
+		'.' + path.sep + path.relative(process.cwd(), config.documentRoot);
 
-	if (userConfig.open && !isWatchMode) {
-		await open(location);
+	if (config.open && !isWatchMode) {
+		await open(handle.url);
 	}
 
-	const agentLoginUrl = auth ? loginUrl(location, auth) : null;
+	const agentLoginUrl = handle.agent ? loginUrl(handle.url, handle.agent.auth) : null;
 
 	process.stdout.write(`
 🍔 ${c.bold.greenBright('BurgerEditor Local App')} 🍔
 
-   ${c.blue('Location')}: ${c.bold(location)}
+   ${c.blue('Location')}: ${c.bold(handle.url)}
    ${c.blue('DocumentRoot')}: ${c.bold.gray(relDocumentRoot)}
 ${
 	agentLoginUrl
@@ -119,5 +130,5 @@ ${
    ${c.yellow('Enjoy Developing! 🎉')}
 `);
 
-	log('Config: %O', userConfig);
+	log('Config: %O', config);
 }

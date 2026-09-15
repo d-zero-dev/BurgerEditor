@@ -18,13 +18,13 @@ export interface AgentHubOptions {
 }
 
 /**
- * Bundles the pieces `agent/route.ts` needs to serve `/ws/editor` and
- * `/api/agent/*`: the `TabHub` (live browser connections), the
- * `RevisionRegistry` (per-page disk state), and a per-launch
- * `serverSession` token a reconnecting/stale tab's `hello` is checked
- * against (see `TabHub.hello`).
+ * Bundles the pieces `routes/ws.ts` and `agent/route.ts` need to serve
+ * `/ws/editor` and `/api/agent/*` respectively: the `TabHub` (live browser
+ * connections), the `RevisionRegistry` (per-page disk state), and a
+ * per-launch `serverSession` token a reconnecting/stale tab's `hello` is
+ * checked against (see `TabHub.hello`).
  */
-export interface AgentHub {
+export interface AgentHub extends Disposable {
 	readonly tabHub: TabHub;
 	readonly revisions: RevisionRegistry;
 	readonly events: EventLog;
@@ -40,12 +40,13 @@ export interface AgentHub {
 	handleSocketMessage(sessionId: string, raw: string): void;
 	/**
 	 * A tab's `/ws/editor` socket closed — disconnects it from `tabHub` and
-	 * appends `session-disconnected` to `events`. `route.tsx`'s `onClose`
+	 * appends `session-disconnected` to `events`. `routes/ws.ts`'s `onClose`
 	 * calls this instead of `tabHub.disconnect` directly so the two never
 	 * drift apart.
 	 * @param sessionId
 	 */
 	closeSession(sessionId: string): void;
+	/** @deprecated Use a `using`/`await using` declaration, or call `this[Symbol.dispose]()` directly. */
 	dispose(): void;
 }
 
@@ -70,6 +71,12 @@ export function createAgentHub(options: AgentHubOptions = {}): AgentHub {
 			});
 		}
 	}, pingIntervalMs);
+
+	/** Real teardown; `[Symbol.dispose]` and the deprecated `dispose()` both forward here — neither depends on `this`. */
+	function dispose(): void {
+		clearInterval(timer);
+		tabHub.dispose();
+	}
 
 	return {
 		tabHub,
@@ -160,9 +167,7 @@ export function createAgentHub(options: AgentHubOptions = {}): AgentHub {
 				events.append('session-disconnected', { sessionId, page: snapshot.page });
 			}
 		},
-		dispose() {
-			clearInterval(timer);
-			tabHub.dispose();
-		},
+		[Symbol.dispose]: dispose,
+		dispose,
 	};
 }
