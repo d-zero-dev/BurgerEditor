@@ -113,4 +113,57 @@ describe('UIStateStore', () => {
 		store.toggleSourceMode('main');
 		expect(store.getSnapshot().sourceMode.main).toBe(false);
 	});
+
+	test('initial state shows main with no selected block', () => {
+		const store = new UIStateStore();
+		expect(store.getSnapshot().activeArea).toBe('main');
+		expect(store.getSnapshot().currentBlock).toBeNull();
+	});
+
+	test('setActiveArea replaces the snapshot and is a no-op on the same value', () => {
+		const store = new UIStateStore();
+		const listener = vi.fn();
+		store.subscribe(listener);
+
+		store.setActiveArea('draft');
+		expect(store.getSnapshot().activeArea).toBe('draft');
+		expect(listener).toHaveBeenCalledTimes(1);
+
+		store.setActiveArea('draft');
+		expect(listener).toHaveBeenCalledTimes(1);
+	});
+
+	test('setCurrentBlock replaces the snapshot and is a no-op for the same block', () => {
+		const store = new UIStateStore();
+		const listener = vi.fn();
+		store.subscribe(listener);
+
+		const blockA = { is: (other: unknown) => other === blockA } as unknown as BurgerBlock;
+		const blockB = { is: (other: unknown) => other === blockB } as unknown as BurgerBlock;
+
+		store.setCurrentBlock(blockA);
+		expect(store.getSnapshot().currentBlock).toBe(blockA);
+		expect(listener).toHaveBeenCalledTimes(1);
+
+		// same block instance again → no-op
+		store.setCurrentBlock(blockA);
+		expect(listener).toHaveBeenCalledTimes(1);
+
+		store.setCurrentBlock(blockB);
+		expect(store.getSnapshot().currentBlock).toBe(blockB);
+		expect(listener).toHaveBeenCalledTimes(2);
+
+		store.setCurrentBlock(null);
+		expect(store.getSnapshot().currentBlock).toBeNull();
+		expect(listener).toHaveBeenCalledTimes(3);
+
+		store.setCurrentBlock(null);
+		expect(listener).toHaveBeenCalledTimes(3);
+	});
+
+	test('subscribe and getSnapshot are stable across calls (safe to pass directly to useSyncExternalStore)', () => {
+		const store = new UIStateStore();
+		expect(store.subscribe).toBe(store.subscribe);
+		expect(store.getSnapshot).toBe(store.getSnapshot);
+	});
 });

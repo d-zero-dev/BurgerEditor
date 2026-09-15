@@ -90,8 +90,8 @@ export function EditableAreaView({
 	const sourceMode = useUIState((s) => s.sourceMode[type]);
 	const processing = useUIState((s) => s.processing);
 	const dialogOpen = useUIState((s) => s.openDialog !== null);
+	const active = useUIState((s) => s.activeArea === type);
 
-	const [active, setActive] = useState(type === 'main');
 	const [sourceText, setSourceText] = useState(initialContent);
 	const [isEmpty, setIsEmpty] = useState(initialContent.trim() === '');
 	const [height, setHeight] = useState(0);
@@ -203,9 +203,6 @@ export function EditableAreaView({
 	}, []);
 
 	useEffect(() => {
-		const onSwitch = (e: CustomEvent<{ readonly content: EditableAreaType }>) => {
-			setActive(e.detail.content === type);
-		};
 		const onSaved = (
 			e: CustomEvent<{ readonly main: string; readonly draft?: string }>,
 		) => {
@@ -213,10 +210,8 @@ export function EditableAreaView({
 			setSourceText(value);
 			setIsEmpty(value.trim() === '');
 		};
-		engine.el.addEventListener('bge:switch-content', onSwitch);
 		engine.el.addEventListener('bge:saved', onSaved);
 		return () => {
-			engine.el.removeEventListener('bge:switch-content', onSwitch);
 			engine.el.removeEventListener('bge:saved', onSaved);
 		};
 	}, [engine, type]);

@@ -6,7 +6,6 @@ import { act } from 'react';
 import { test, expect, afterEach } from 'vitest';
 
 import { renderWithEngine } from '../__tests__/render-with-engine.js';
-import { EngineProvider } from '../engine-context.js';
 
 import { DraftSwitcher } from './draft-switcher.js';
 
@@ -19,6 +18,7 @@ afterEach(cleanup);
 function createMockEngine(type: 'main' | 'draft' = 'main') {
 	const el = document.createElement('div');
 	const uiState = new UIStateStore();
+	uiState.setActiveArea(type);
 	return {
 		el,
 		uiState,
@@ -40,15 +40,12 @@ test('本稿モードでは本稿ボタンがpressed状態になる', () => {
 	).toBe('false');
 });
 
-test('bge:switch-contentでdraftへ切り替わるとボタンのpressed状態が反転する', () => {
+test('uiState.activeAreaがdraftへ切り替わるとボタンのpressed状態が反転する', () => {
 	const engine = createMockEngine('main');
 	renderWithEngine(engine, <DraftSwitcher />);
 
 	act(() => {
-		(engine.content as { type: string }).type = 'draft';
-		engine.el.dispatchEvent(
-			new CustomEvent('bge:switch-content', { detail: { content: 'draft' } }),
-		);
+		engine.uiState.setActiveArea('draft');
 	});
 
 	expect(
@@ -86,20 +83,12 @@ test('切替ボタンのcommandforはengine.commandBus.receiverIdを指す（配
 
 test('本稿⇄下書きのコピーボタンは現在のモードに応じて切り替わる', () => {
 	const engine = createMockEngine('main');
-	const { rerender } = renderWithEngine(engine, <DraftSwitcher />);
+	renderWithEngine(engine, <DraftSwitcher />);
 	expect(screen.getByRole('button', { name: '本稿を下書きにコピー' })).toBeTruthy();
 
 	act(() => {
-		(engine.content as { type: string }).type = 'draft';
-		engine.el.dispatchEvent(
-			new CustomEvent('bge:switch-content', { detail: { content: 'draft' } }),
-		);
+		engine.uiState.setActiveArea('draft');
 	});
-	rerender(
-		<EngineProvider engine={engine}>
-			<DraftSwitcher />
-		</EngineProvider>,
-	);
 
 	expect(screen.getByRole('button', { name: '下書きを本稿にコピー' })).toBeTruthy();
 });

@@ -1,16 +1,21 @@
 import type { Actions, UIState } from '@burger-editor/core';
 
-import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useRef } from 'react';
+import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector';
 
 import { useEngine } from './engine-context.js';
+
+const identity = (state: UIState): UIState => state;
 
 /**
  * Subscribe to the engine's UI state store.
  *
- * `useSyncExternalStore` の配線（subscribe/getSnapshot）を毎回書かずに
- * 済ませるための薄いラッパー。スナップショットは変更ごとに差し替わる
- * 不変オブジェクトなので、参照比較だけで再レンダーが決まる。エンジンは
- * 呼び出し元コンポーネントを包む `EngineProvider` から取得する。
+ * Wraps `useSyncExternalStoreWithSelector` so call sites don't repeat the
+ * subscribe/getSnapshot/selector wiring. `engine.uiState.subscribe` and
+ * `.getSnapshot` are stable per-instance methods (see `UIStateStore`), so
+ * passing them directly — instead of a new inline closure each render —
+ * means React doesn't unsubscribe and resubscribe on every render. The
+ * engine is read from the nearest `EngineProvider`.
  * @returns The current UI state snapshot
  * @example
  * ```tsx
@@ -24,11 +29,10 @@ export function useUIState(): UIState;
  *
  * 選択的な状態（`processing` や `sourceMode[type]` など）だけを読む
  * コンポーネントは、`selector` でそのフィールドだけを取り出すと無関係な
- * 状態変化（例: ダイアログの開閉）での再レンダーを避けられる。selector
- * が返す値はプリミティブか、`UIStateStore` 内部で不変のうちは同一参照を
- * 保つネスト構造（`sourceMode` など）に限る — selector 内でオブジェクト
- * を新規生成すると `useSyncExternalStore` が毎回「変化した」と判定して
- * 無限レンダーを引き起こす。
+ * 状態変化（例: ダイアログの開閉）での再レンダーを避けられる —
+ * `useSyncExternalStoreWithSelector` が選択後の値を `Object.is` で比較し、
+ * 変化がなければ再レンダーをスキップする（selector 自体は毎レンダー
+ * 新しい関数でよい。比較されるのは戻り値であって関数の同一性ではない）。
  * @param selector - Projection of the snapshot
  * @returns The selected value
  * @example
@@ -40,12 +44,11 @@ export function useUIState(): UIState;
 export function useUIState<T>(selector: (state: UIState) => T): T;
 export function useUIState<T = UIState>(selector?: (state: UIState) => T): T {
 	const engine = useEngine();
-	return useSyncExternalStore(
-		(onStoreChange) => engine.uiState.subscribe(onStoreChange),
-		() => {
-			const snapshot = engine.uiState.getSnapshot();
-			return selector ? selector(snapshot) : (snapshot as unknown as T);
-		},
+	return useSyncExternalStoreWithSelector(
+		engine.uiState.subscribe,
+		engine.uiState.getSnapshot,
+		engine.uiState.getSnapshot,
+		(selector ?? identity) as (state: UIState) => T,
 	);
 }
 

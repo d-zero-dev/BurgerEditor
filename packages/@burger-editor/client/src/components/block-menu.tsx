@@ -1,5 +1,5 @@
 import type { MenuGeometry, ItemOverlayRect } from './block-menu-view.js';
-import type { BurgerBlock, ItemData } from '@burger-editor/core';
+import type { ItemData } from '@burger-editor/core';
 import type { RefObject } from 'react';
 
 import { Item, getBlockAtPosition } from '@burger-editor/core';
@@ -7,6 +7,7 @@ import { useId, useEffect, useRef, useState, useCallback } from 'react';
 
 import { useEngine } from '../engine-context.js';
 import { useCommand } from '../use-command.js';
+import { useUIState } from '../use-engine.js';
 
 import { BlockMenuView } from './block-menu-view.js';
 
@@ -34,7 +35,7 @@ import { BlockMenuView } from './block-menu-view.js';
 export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 	const engine = useEngine();
 	const menuId = useId();
-	const [currentBlock, setCurrentBlock] = useState<BurgerBlock | null>(null);
+	const currentBlock = useUIState((s) => s.currentBlock);
 	const [visible, setVisible] = useState(false);
 	const [itemRects, setItemRects] = useState<readonly ItemOverlayRect[]>([]);
 	const itemsRef: RefObject<readonly Item<ItemData, {}>[]> = useRef([]);
@@ -65,7 +66,9 @@ export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 
 	const hide = useCallback(() => {
 		setVisible(false);
-		setCurrentBlock(null);
+		// engine.uiState.currentBlock もここでnullになる — clearCurrentBlock()
+		// が内部でuiState.setCurrentBlock(null)を呼ぶため、ローカルstateの
+		// 二重管理は不要（store一本が真実の源）
 		engine.clearCurrentBlock();
 	}, [engine]);
 
@@ -79,16 +82,6 @@ export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 			}
 		});
 	}, [engine, hide]);
-
-	useEffect(() => {
-		const onBlockChange = (e: CustomEvent<{ readonly block: BurgerBlock }>) => {
-			setCurrentBlock(e.detail.block);
-		};
-		engine.el.addEventListener('bge:block-change', onBlockChange);
-		return () => {
-			engine.el.removeEventListener('bge:block-change', onBlockChange);
-		};
-	}, [engine]);
 
 	useEffect(() => {
 		const doc = container.ownerDocument;
@@ -110,7 +103,9 @@ export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 			setVisible(true);
 
 			const { block, rect, marginBlockEnd } = selected;
-			setCurrentBlock(block);
+			// currentBlockはここでは書かない。下の notify('select-block') が
+			// engine.setCurrentBlock() を同期的に発火させ、uiState（唯一の
+			// 真実の源）経由でこのコンポーネントへ戻ってくる
 			setGeometry({
 				width: rect.width,
 				height: rect.height,

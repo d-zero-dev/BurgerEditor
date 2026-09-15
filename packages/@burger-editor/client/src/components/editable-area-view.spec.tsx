@@ -239,7 +239,7 @@ test('textareaのblurで編集内容がコンテンツにコミットされる',
 	expect(textarea.value).toBe('<p>saved</p>');
 });
 
-test('bge:switch-contentで自エリアの表示・非表示が切り替わる', () => {
+test('uiState.activeAreaで自エリアの表示・非表示が切り替わる', () => {
 	const engine = createMockEngine();
 	const { container } = renderView(engine, 'draft');
 
@@ -248,16 +248,12 @@ test('bge:switch-contentで自エリアの表示・非表示が切り替わる',
 	expect(wrapper.hidden).toBe(true);
 
 	act(() => {
-		engine.el.dispatchEvent(
-			new CustomEvent('bge:switch-content', { detail: { content: 'draft' } }),
-		);
+		engine.uiState.setActiveArea('draft');
 	});
 	expect(wrapper.hidden).toBe(false);
 
 	act(() => {
-		engine.el.dispatchEvent(
-			new CustomEvent('bge:switch-content', { detail: { content: 'main' } }),
-		);
+		engine.uiState.setActiveArea('main');
 	});
 	expect(wrapper.hidden).toBe(true);
 });

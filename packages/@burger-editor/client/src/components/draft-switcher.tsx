@@ -1,5 +1,4 @@
 import { BGE_COMMAND } from '@burger-editor/core';
-import { useEffect, useState } from 'react';
 
 import { useEngine } from '../engine-context.js';
 import { useUIState } from '../use-engine.js';
@@ -8,11 +7,10 @@ import styles from './draft-switcher.module.css';
 
 /**
  * Main/draft content switcher. Switching and copying are declared as
- * engine commands; the pressed state follows the engine's
- * `bge:switch-content` event and the source-view indicator follows
- * `engine.uiState.sourceMode` — no state is duplicated locally. Reads
- * the engine via {@link useEngine} — the caller wraps this in an
- * `EngineProvider`.
+ * engine commands; the pressed state follows `engine.uiState.activeArea`
+ * and the source-view indicator follows `engine.uiState.sourceMode` — no
+ * state is duplicated locally. Reads the engine via {@link useEngine} —
+ * the caller wraps this in an `EngineProvider`.
  *
  * The alt+double-click source-view toggle is kept as a DOM event —
  * double-click has no Invoker Commands equivalent (the no-click rule
@@ -32,17 +30,7 @@ import styles from './draft-switcher.module.css';
 export function DraftSwitcher() {
 	const engine = useEngine();
 	const sourceMode = useUIState((s) => s.sourceMode);
-	const [isMain, setIsMain] = useState(engine.content.type === 'main');
-
-	useEffect(() => {
-		const update = () => {
-			setIsMain(engine.content.type === 'main');
-		};
-		engine.el.addEventListener('bge:switch-content', update);
-		return () => {
-			engine.el.removeEventListener('bge:switch-content', update);
-		};
-	}, [engine]);
+	const isMain = useUIState((s) => s.activeArea === 'main');
 
 	const isVisualMode = !sourceMode[isMain ? 'main' : 'draft'];
 

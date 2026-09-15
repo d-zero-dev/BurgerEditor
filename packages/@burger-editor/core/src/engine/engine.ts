@@ -198,6 +198,7 @@ export class BurgerEditorEngine implements Disposable {
 
 	clearCurrentBlock() {
 		this.#currentBlock = null;
+		this.uiState.setCurrentBlock(null);
 	}
 	/**
 	 * ブロックマーカーを持たない生HTMLを、1つのwysiwygアイテムとして
@@ -396,6 +397,7 @@ export class BurgerEditorEngine implements Disposable {
 			isChanged = !this.#currentBlock.is(block);
 		}
 		this.#currentBlock = block;
+		this.uiState.setCurrentBlock(block);
 		if (isChanged) {
 			this.el.dispatchEvent(
 				createBgeEvent('bge:block-change', {
@@ -467,6 +469,7 @@ export class BurgerEditorEngine implements Disposable {
 		}
 		this.#current = to;
 		this.migrationCheck(to.containerElement);
+		this.uiState.setActiveArea(this.#current.type);
 		// 各エリアの表示・非表示はUI層がこのイベントを購読して宣言的に
 		// 描画する。エンジンはUI要素の属性を書き換えない
 		this.el.dispatchEvent(
