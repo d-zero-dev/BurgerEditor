@@ -108,15 +108,22 @@ describe('bootLocalServer — successful boot', () => {
 	});
 
 	test('binds a real port and returns a disposable handle', async () => {
+		// Bind AND connect via the literal `127.0.0.1` rather than the hostname
+		// `localhost` — some CI runners resolve `localhost` to a different
+		// address for the bind side (Node's server) than for the connect side
+		// (fetch's own DNS lookup), which would refuse every connection here
+		// even though the server is genuinely listening (see agent/ws.spec.ts's
+		// `bootServer` doc comment for the same issue).
 		await using handle = await bootLocalServer(
 			makeLocalServerConfig({
 				documentRoot: roots.documentRoot,
+				host: '127.0.0.1',
 				agent: { enabled: false },
 			}),
 			roots.path,
 		);
 		expect(handle.port).toBeGreaterThan(0);
-		expect(handle.url).toBe(`http://localhost:${handle.port}`);
+		expect(handle.url).toBe(`http://127.0.0.1:${handle.port}`);
 		const res = await fetch(`${handle.url}/api/health`, {
 			headers: { connection: 'close' },
 		});
