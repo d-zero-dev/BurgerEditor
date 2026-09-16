@@ -12,16 +12,13 @@ describe('ComponentObserver', () => {
 			const observer = new ComponentObserver();
 			const handler = vi.fn();
 
-			observer.on('select-block', handler);
+			observer.on('file-select', handler);
 			const payload = {
-				block: {} as unknown,
-				width: 100,
-				height: 50,
-				x: 10,
-				y: 20,
-				marginBlockEnd: 0,
+				path: '/test/image.png',
+				fileSize: 1024,
+				isEmpty: false,
 			};
-			observer.notify('select-block', payload);
+			observer.notify('file-select', payload);
 
 			expect(handler).toHaveBeenCalledWith(payload);
 		});
@@ -62,18 +59,15 @@ describe('ComponentObserver', () => {
 			const handler1 = vi.fn();
 			const handler2 = vi.fn();
 
-			observer.on('select-block', handler1);
-			observer.on('select-block', handler2);
+			observer.on('file-select', handler1);
+			observer.on('file-select', handler2);
 
 			const payload = {
-				block: {} as unknown,
-				width: 100,
-				height: 50,
-				x: 0,
-				y: 0,
-				marginBlockEnd: 0,
+				path: '/test/image.png',
+				fileSize: 100,
+				isEmpty: false,
 			};
-			observer.notify('select-block', payload);
+			observer.notify('file-select', payload);
 
 			expect(handler1).toHaveBeenCalledWith(payload);
 			expect(handler2).toHaveBeenCalledWith(payload);
@@ -85,7 +79,7 @@ describe('ComponentObserver', () => {
 			const observer = new ComponentObserver();
 			const handler = vi.fn();
 
-			observer.on('select-block', handler);
+			observer.on('file-select', handler);
 
 			const spy = vi.spyOn(window, 'removeEventListener');
 			observer.off();
@@ -98,18 +92,15 @@ describe('ComponentObserver', () => {
 			const observer = new ComponentObserver();
 			const handler = vi.fn();
 
-			observer.on('select-block', handler);
+			observer.on('file-select', handler);
 			observer.off();
 
 			const payload = {
-				block: {} as unknown,
-				width: 100,
-				height: 50,
-				x: 0,
-				y: 0,
-				marginBlockEnd: 0,
+				path: '/test/image.png',
+				fileSize: 100,
+				isEmpty: false,
 			};
-			observer.notify('select-block', payload);
+			observer.notify('file-select', payload);
 
 			expect(handler).not.toHaveBeenCalled();
 		});
@@ -118,19 +109,16 @@ describe('ComponentObserver', () => {
 			const observer = new ComponentObserver();
 			const handler = vi.fn();
 			const payload = {
-				block: {} as unknown,
-				width: 100,
-				height: 50,
-				x: 0,
-				y: 0,
-				marginBlockEnd: 0,
+				path: '/test/image.png',
+				fileSize: 100,
+				isEmpty: false,
 			};
 
 			{
-				using _remove = observer.on('select-block', handler);
-				observer.notify('select-block', payload);
+				using _remove = observer.on('file-select', handler);
+				observer.notify('file-select', payload);
 			}
-			observer.notify('select-block', payload);
+			observer.notify('file-select', payload);
 
 			expect(handler).toHaveBeenCalledTimes(1);
 		});
@@ -141,18 +129,15 @@ describe('ComponentObserver', () => {
 			const observer = new ComponentObserver();
 			const handler = vi.fn();
 
-			observer.on('select-block', handler);
-			observer.on('select-block', handler);
+			observer.on('file-select', handler);
+			observer.on('file-select', handler);
 
 			const payload = {
-				block: {} as unknown,
-				width: 100,
-				height: 50,
-				x: 0,
-				y: 0,
-				marginBlockEnd: 0,
+				path: '/test/image.png',
+				fileSize: 100,
+				isEmpty: false,
 			};
-			observer.notify('select-block', payload);
+			observer.notify('file-select', payload);
 
 			expect(handler).toHaveBeenCalledTimes(2);
 		});
@@ -161,19 +146,16 @@ describe('ComponentObserver', () => {
 			const observer = new ComponentObserver();
 			const handler = vi.fn();
 
-			observer.on('select-block', handler);
-			observer.on('select-block', handler);
+			observer.on('file-select', handler);
+			observer.on('file-select', handler);
 			observer.off();
 
 			const payload = {
-				block: {} as unknown,
-				width: 100,
-				height: 50,
-				x: 0,
-				y: 0,
-				marginBlockEnd: 0,
+				path: '/test/image.png',
+				fileSize: 100,
+				isEmpty: false,
 			};
-			observer.notify('select-block', payload);
+			observer.notify('file-select', payload);
 
 			expect(handler).not.toHaveBeenCalled();
 		});
@@ -186,19 +168,16 @@ describe('ComponentObserver', () => {
 			const handler1 = vi.fn();
 			const handler2 = vi.fn();
 
-			observer1.on('select-block', handler1);
-			observer2.on('select-block', handler2);
+			observer1.on('file-select', handler1);
+			observer2.on('file-select', handler2);
 
 			const payload = {
-				block: {} as unknown,
-				width: 100,
-				height: 50,
-				x: 0,
-				y: 0,
-				marginBlockEnd: 0,
+				path: '/test/image.png',
+				fileSize: 100,
+				isEmpty: false,
 			};
 
-			observer1.notify('select-block', payload);
+			observer1.notify('file-select', payload);
 
 			expect(handler1).toHaveBeenCalledWith(payload);
 			expect(handler2).not.toHaveBeenCalled();

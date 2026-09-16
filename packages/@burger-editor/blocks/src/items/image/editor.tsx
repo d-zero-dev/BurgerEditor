@@ -69,10 +69,6 @@ export function ImageEditor({ state, setState }: ItemEditorProps<ImageData>) {
 			scale: widthState.getScale(),
 			cssWidth: widthState.getCSSWidth(),
 		}));
-
-		engine.componentObserver.notify('update-css-width', {
-			cssWidth: widthState.getCSSWidth(),
-		});
 	};
 
 	const updateImage = ($src: LoadedImage) => {
@@ -158,9 +154,6 @@ export function ImageEditor({ state, setState }: ItemEditorProps<ImageData>) {
 	// 初期化: タブ0のプレビュー連携と画像読み込み（マウント時のみ）。
 	// state側の初期値はtoEditorStateで正規化済みのためここでは更新しない
 	useEffect(() => {
-		engine.componentObserver.notify('update-css-width', {
-			cssWidth: widthState.getCSSWidth(),
-		});
 		fileSelect(0);
 		void _updateImage(stateRef.current.path?.[0] ?? '');
 		// eslint-disable-next-line react-hooks/exhaustive-deps

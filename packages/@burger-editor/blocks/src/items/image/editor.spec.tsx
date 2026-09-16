@@ -87,19 +87,25 @@ function createMockEngine() {
 }
 
 /**
- * state/setStateを実際のReact stateとして供給するテストハーネス
+ * state/setStateを実際のReact stateとして供給するテストハーネス。
+ * `onState` を渡すと最新の state をレンダーのたびにテスト側へ渡せる
+ * （componentObserver等の間接的な通知を経由せず、state遷移を直接assertする）
  * @param root0
  * @param root0.engine
  * @param root0.initialPath
+ * @param root0.onState
  */
 function Harness({
 	engine,
 	initialPath,
+	onState,
 }: {
 	readonly engine: BurgerEditorEngine;
 	readonly initialPath?: string[];
+	readonly onState?: (state: ImageData) => void;
 }) {
 	const [state, setState] = useState<ImageData>(() => createInitialState(initialPath));
+	onState?.(state);
 	return (
 		<EngineProvider engine={engine}>
 			<ImageEditor state={state} setState={setState} item={{} as never} />
@@ -175,21 +181,19 @@ describe('ImageEditor', () => {
 		expect(output.textContent).toBe('px');
 	});
 
-	test('幅の数値変更でcssWidthが更新されupdate-css-widthが通知される', () => {
-		const engine = createMockEngine();
-		const cssWidths: string[] = [];
-		engine.componentObserver.on('update-css-width', ({ cssWidth }) => {
-			cssWidths.push(cssWidth);
-		});
+	test('幅の数値変更でcssWidthが更新される', () => {
+		let latestState: ImageData | undefined;
 
-		render(<Harness engine={engine} />);
+		render(
+			<Harness engine={createMockEngine()} onState={(state) => (latestState = state)} />,
+		);
 
 		const numberInput = screen.getByLabelText('幅', {
 			selector: 'input[type="number"]',
 		});
 		fireEvent.change(numberInput, { target: { value: '250' } });
 
-		expect(cssWidths.at(-1)).toBe('250px');
+		expect(latestState?.cssWidth).toBe('250px');
 	});
 
 	test('ポップアップを有効にするとリンク先URLと別タブが無効化される', () => {

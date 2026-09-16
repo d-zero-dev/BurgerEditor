@@ -169,18 +169,6 @@ export interface Actions {
 		readonly uploaded: FileListItem;
 		readonly data: readonly FileListItem[];
 	};
-	'select-block': {
-		readonly block: BurgerBlock;
-		readonly width: number;
-		readonly height: number;
-		readonly x: number;
-		readonly y: number;
-		readonly marginBlockEnd: number;
-	};
-	// Use on test
-	'update-css-width': {
-		readonly cssWidth: string;
-	};
 }
 
 export interface FileAPI {

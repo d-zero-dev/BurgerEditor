@@ -103,9 +103,8 @@ export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 			setVisible(true);
 
 			const { block, rect, marginBlockEnd } = selected;
-			// currentBlockはここでは書かない。下の notify('select-block') が
-			// engine.setCurrentBlock() を同期的に発火させ、uiState（唯一の
-			// 真実の源）経由でこのコンポーネントへ戻ってくる
+			// currentBlockはここでは書かない。下のengine.setCurrentBlock()が
+			// uiState（唯一の真実の源）経由でこのコンポーネントへ戻ってくる
 			setGeometry({
 				width: rect.width,
 				height: rect.height,
@@ -138,14 +137,7 @@ export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 				}),
 			);
 
-			engine.componentObserver.notify('select-block', {
-				block,
-				width: rect.width,
-				height: rect.height,
-				x: rect.left,
-				y: rect.top,
-				marginBlockEnd,
-			});
+			engine.setCurrentBlock(block);
 		};
 
 		const scheduleUpdate = () => {

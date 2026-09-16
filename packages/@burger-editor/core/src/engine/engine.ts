@@ -147,10 +147,6 @@ export class BurgerEditorEngine implements Disposable {
 			const { main, draft } = e.detail;
 			void options.onUpdated?.(main, draft);
 		});
-
-		this.componentObserver.on('select-block', ({ block }) => {
-			this.setCurrentBlock(block);
-		});
 	}
 
 	[Symbol.dispose](): void {
