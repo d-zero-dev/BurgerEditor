@@ -1,6 +1,8 @@
 import type { BgeWysiwygEditorElement } from '@burger-editor/custom-element';
 
-import { useEffect, useEffectEvent, useRef } from 'react';
+import { use, useEffect, useEffectEvent, useRef, useState } from 'react';
+
+import { useEngine } from '../engine-context.js';
 
 declare module 'react' {
 	namespace JSX {
@@ -23,6 +25,11 @@ declare module 'react' {
  * (TipTap). The element manages its own DOM; this wrapper feeds the
  * initial value and lifts edits into the editor state via the
  * `transaction` event.
+ *
+ * Content CSS (so the WYSIWYG surface matches the published page's
+ * styling) is fetched once per engine via `use()` — only an item whose
+ * `Editor` actually renders `WysiwygField` pays for this fetch/suspend,
+ * unlike hoisting it to the item-editor host for every item.
  * @param root0
  * @param root0.value
  * @param root0.onChange
@@ -51,6 +58,13 @@ export function WysiwygField({
 	readonly commands?: string;
 	readonly label?: string;
 }) {
+	const engine = useEngine();
+	// レンダーごとに新しいPromiseを作るとuse()が「キャッシュされていない
+	// Promise」として毎回サスペンドし直すため、このコンポーネント寿命の
+	// 間だけ安定させる（遅延初期化のuseState）
+	const [contentCssPromise] = useState(() => engine.getContentStylesheet());
+	const contentCss = use(contentCssPromise);
+
 	const ref = useRef<BgeWysiwygEditorElement | null>(null);
 	const initialValue = useRef(value);
 	const onTransaction = useEffectEvent((el: BgeWysiwygEditorElement) => {
@@ -64,6 +78,7 @@ export function WysiwygField({
 		}
 		// custom element側のinnerHTMLセッターがwysiwygのvalueに転送する
 		el.innerHTML = initialValue.current;
+		el.setStyle(contentCss);
 
 		// transactionはバブリングしないため内側の要素で購読する
 		const inner = el.querySelector('bge-wysiwyg');
@@ -72,7 +87,10 @@ export function WysiwygField({
 		return () => {
 			inner?.removeEventListener('transaction', listener);
 		};
-	}, []);
+		// contentCssはuse()でサスペンド解決済みの値 — このコンポーネント
+		// インスタンスの生存期間中に変わることはなく、実質マウント時1回だけ
+		// 走る（exhaustive-depsを満たすため依存配列には含める）
+	}, [contentCss]);
 
 	return (
 		<bge-wysiwyg-editor

@@ -1,8 +1,34 @@
 import type { ReactNode } from 'react';
+import type { FallbackProps } from 'react-error-boundary';
 
-import { useEffect, useId, useRef } from 'react';
+import { Suspense, useEffect, useId, useRef } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 
 import './invoker-commands.js';
+
+/**
+ * Minimal fallback for a dialog body that suspended and then threw.
+ * Display-only — the dialog's own close button (outside this boundary,
+ * in the footer) is always available as a way out.
+ * @param root0
+ * @param root0.error
+ */
+function DialogErrorFallback({ error }: FallbackProps) {
+	return (
+		<p role="alert">
+			エラーが発生しました: {error instanceof Error ? error.message : String(error)}
+		</p>
+	);
+}
+
+/**
+ * Suspense fallback shown while a dialog body's `use()` calls are
+ * pending (e.g. content stylesheet fetch). Kept intentionally small —
+ * the dialog chrome (title, footer buttons) renders immediately.
+ */
+function DialogSkeleton() {
+	return <p aria-busy="true">読み込み中…</p>;
+}
 
 /**
  * Declarative `<dialog>` shell.
@@ -91,7 +117,13 @@ export function EditorDialog({
 						e.preventDefault();
 						onComplete?.(new FormData(e.currentTarget));
 					}}>
-					<div data-bge-component={`${name}-dialog`}>{open ? children : null}</div>
+					<div data-bge-component={`${name}-dialog`}>
+						{open ? (
+							<ErrorBoundary FallbackComponent={DialogErrorFallback}>
+								<Suspense fallback={<DialogSkeleton />}>{children}</Suspense>
+							</ErrorBoundary>
+						) : null}
+					</div>
 				</form>
 			</div>
 			<footer>

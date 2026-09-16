@@ -1,5 +1,4 @@
 import type { Item, ItemData, ItemEditorProps } from '@burger-editor/core';
-import type { BgeWysiwygEditorElement } from '@burger-editor/custom-element';
 import type { ComponentType, RefObject } from 'react';
 
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
@@ -85,28 +84,6 @@ function ItemEditorBody({
 		};
 	}, [item, submitRef]);
 
-	// wysiwygエディタへコンテンツ用スタイルシートを注入する
-	const wrapperRef = useRef<HTMLDivElement>(null);
-	useEffect(() => {
-		const wysiwyg =
-			wrapperRef.current?.querySelector<BgeWysiwygEditorElement>('bge-wysiwyg-editor');
-		if (!wysiwyg) {
-			return;
-		}
-		// ダイアログが即座に閉じられ要素が破棄された場合、setStyle呼び出しが
-		// ReferenceErrorをthrowし未処理rejectionになるのを防ぐ
-		let cancelled = false;
-		void engine.getContentStylesheet().then((css) => {
-			if (cancelled) {
-				return;
-			}
-			wysiwyg.setStyle(css);
-		});
-		return () => {
-			cancelled = true;
-		};
-	}, [engine, item]);
-
 	const containerType =
 		item.el.closest<HTMLDivElement>('[data-bge-container]')?.dataset['bgeContainer'];
 
@@ -119,7 +96,7 @@ function ItemEditorBody({
 	}
 
 	return (
-		<div ref={wrapperRef} data-bge-container={containerType}>
+		<div data-bge-container={containerType}>
 			<Editor state={state} setState={setState} item={item} />
 		</div>
 	);
