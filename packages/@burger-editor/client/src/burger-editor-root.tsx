@@ -17,6 +17,7 @@ export function BurgerEditorRoot() {
 	const ui = useUIState();
 	const open = ui.openDialog;
 	const optionsBlock = open?.type === 'block-options' ? open.block : null;
+	const itemEditor = open?.type === 'item-editor' ? open : null;
 
 	const closeAndSave = () => {
 		engine.uiState.closeDialog();
@@ -47,7 +48,10 @@ export function BurgerEditorRoot() {
 				buttons={{ close: 'キャンセル', complete: '決定' }}>
 				{optionsBlock ? <BlockOptions block={optionsBlock} /> : null}
 			</EditorDialog>
-			<ItemEditorHost item={open?.type === 'item-editor' ? open.item : null} />
+			<ItemEditorHost
+				item={itemEditor?.item ?? null}
+				containerType={itemEditor?.containerType}
+			/>
 		</>
 	);
 }

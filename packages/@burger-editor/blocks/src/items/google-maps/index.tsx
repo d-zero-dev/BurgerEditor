@@ -50,8 +50,6 @@ export default createItem<{
 		const mapRef = useRef<google.maps.Map | null>(null);
 		const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
 		const geocoderRef = useRef<google.maps.Geocoder | null>(null);
-		const searchWordRef = useRef(state.search ?? '');
-		searchWordRef.current = state.search ?? '';
 
 		useEffect(() => {
 			const mapNode = mapNodeRef.current;
@@ -132,7 +130,7 @@ export default createItem<{
 				}
 				void geocoder.geocode(
 					{
-						address: searchWordRef.current,
+						address: state.search ?? '',
 					},
 					(results, status): void => {
 						const result = results?.[0];

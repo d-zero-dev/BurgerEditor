@@ -27,13 +27,36 @@ describe('UIStateStore', () => {
 		expect(store.getSnapshot().openDialog).toEqual({ type: 'block-options', block });
 	});
 
-	test('openItemEditor carries the item', () => {
+	test('openItemEditor carries the item and snapshots its container type from the DOM', () => {
 		const store = new UIStateStore();
-		const item = { name: 'dummy' } as unknown as Item<ItemData, {}>;
+		const container = document.createElement('div');
+		container.dataset['bgeContainer'] = 'grid';
+		const el = document.createElement('div');
+		container.append(el);
+		const item = { name: 'dummy', el } as unknown as Item<ItemData, {}>;
 
 		store.openItemEditor(item);
 
-		expect(store.getSnapshot().openDialog).toEqual({ type: 'item-editor', item });
+		expect(store.getSnapshot().openDialog).toEqual({
+			type: 'item-editor',
+			item,
+			containerType: 'grid',
+		});
+	});
+
+	test('openItemEditor leaves containerType undefined when the item has no container ancestor', () => {
+		const store = new UIStateStore();
+		const item = { name: 'dummy', el: document.createElement('div') } as unknown as Item<
+			ItemData,
+			{}
+		>;
+
+		store.openItemEditor(item);
+
+		const openDialog = store.getSnapshot().openDialog;
+		expect(
+			openDialog?.type === 'item-editor' && openDialog.containerType,
+		).toBeUndefined();
 	});
 
 	test('closeDialog is a no-op when nothing is open', () => {

@@ -16,12 +16,22 @@ type SubmitRef = RefObject<(() => Promise<void>) | null>;
  * engine via {@link useEngine}.
  * @param root0
  * @param root0.item
+ * @param root0.containerType
  * @example
  * ```tsx
- * <ItemEditorHost item={open?.type === 'item-editor' ? open.item : null} />
+ * <ItemEditorHost
+ * 	item={open?.type === 'item-editor' ? open.item : null}
+ * 	containerType={open?.type === 'item-editor' ? open.containerType : undefined}
+ * />
  * ```
  */
-export function ItemEditorHost({ item }: { readonly item: AnyItem | null }) {
+export function ItemEditorHost({
+	item,
+	containerType,
+}: {
+	readonly item: AnyItem | null;
+	readonly containerType?: string;
+}) {
 	const engine = useEngine();
 	const submitRef: SubmitRef = useRef(null);
 
@@ -43,7 +53,9 @@ export function ItemEditorHost({ item }: { readonly item: AnyItem | null }) {
 				await submitRef.current?.();
 				closeAndSave();
 			}}>
-			{item ? <ItemEditorBody item={item} submitRef={submitRef} /> : null}
+			{item ? (
+				<ItemEditorBody item={item} containerType={containerType} submitRef={submitRef} />
+			) : null}
 		</EditorDialog>
 	);
 }
@@ -53,13 +65,16 @@ export function ItemEditorHost({ item }: { readonly item: AnyItem | null }) {
  * item.
  * @param root0
  * @param root0.item
+ * @param root0.containerType
  * @param root0.submitRef
  */
 function ItemEditorBody({
 	item,
+	containerType,
 	submitRef,
 }: {
 	readonly item: AnyItem;
+	readonly containerType: string | undefined;
 	readonly submitRef: SubmitRef;
 }) {
 	const engine = useEngine();
@@ -86,9 +101,6 @@ function ItemEditorBody({
 			submitRef.current = null;
 		};
 	}, [item, submitRef]);
-
-	const containerType =
-		item.el.closest<HTMLDivElement>('[data-bge-container]')?.dataset['bgeContainer'];
 
 	const Editor = seed.Editor as ComponentType<ItemEditorProps> | undefined;
 

@@ -21,6 +21,14 @@ export type OpenDialogState =
 	| {
 			readonly type: 'item-editor';
 			readonly item: Item<ItemData, {}>;
+			/**
+			 * The item's container type at the moment the dialog opened,
+			 * snapshotted here instead of read from the DOM during React
+			 * render (`item.el.closest(...)` is a render-purity violation
+			 * — the item can also get rebound to a different container
+			 * while the dialog is open).
+			 */
+			readonly containerType: string | undefined;
 	  }
 	| null;
 
@@ -141,7 +149,9 @@ export class UIStateStore {
 	 * @param item - The content item being edited
 	 */
 	openItemEditor(item: Item<ItemData, {}>) {
-		this.#set({ openDialog: { type: 'item-editor', item } });
+		const containerType =
+			item.el.closest<HTMLDivElement>('[data-bge-container]')?.dataset['bgeContainer'];
+		this.#set({ openDialog: { type: 'item-editor', item, containerType } });
 	}
 
 	/**
