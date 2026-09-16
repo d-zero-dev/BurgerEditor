@@ -15,6 +15,10 @@ declare module 'react' {
 				commands?: string;
 				label?: string;
 				name?: string;
+				// プロパティとして渡す（属性ではない） — React 19はカスタム
+				// 要素の既知プロパティにマッチする名前をelement[name] = value
+				// で設定する
+				contentCss?: string;
 			};
 		}
 	}
@@ -24,12 +28,16 @@ declare module 'react' {
  * Rich text field backed by the `<bge-wysiwyg-editor>` custom element
  * (TipTap). The element manages its own DOM; this wrapper feeds the
  * initial value and lifts edits into the editor state via the
- * `transaction` event.
+ * `transaction` event — subscribed directly on the host element (the
+ * event is dispatched with `bubbles: true` on the inner `<bge-wysiwyg>`,
+ * so it reaches here without needing to query into it).
  *
  * Content CSS (so the WYSIWYG surface matches the published page's
  * styling) is fetched once per engine via `use()` — only an item whose
  * `Editor` actually renders `WysiwygField` pays for this fetch/suspend,
- * unlike hoisting it to the item-editor host for every item.
+ * unlike hoisting it to the item-editor host for every item — and
+ * passed as the `contentCss` property (React 19 sets it directly on the
+ * element, replacing an imperative `el.setStyle()` call).
  * @param root0
  * @param root0.value
  * @param root0.onChange
@@ -71,6 +79,10 @@ export function WysiwygField({
 		onChange(el.value);
 	});
 
+	// 初期値の書き込みだけは今も命令的 — contentEditableベースのリッチ
+	// テキストエディタをvalueで都度制御すると、入力中にカーソル位置が
+	// 飛ぶ（Reactが明示的に警告するアンチパターン）。以降の値はTipTap
+	// 自身が保持し、`transaction`イベント経由でこの外へ伝わる
 	useEffect(() => {
 		const el = ref.current;
 		if (!el) {
@@ -78,25 +90,20 @@ export function WysiwygField({
 		}
 		// custom element側のinnerHTMLセッターがwysiwygのvalueに転送する
 		el.innerHTML = initialValue.current;
-		el.setStyle(contentCss);
 
-		// transactionはバブリングしないため内側の要素で購読する
-		const inner = el.querySelector('bge-wysiwyg');
 		const listener = () => onTransaction(el);
-		inner?.addEventListener('transaction', listener);
+		el.addEventListener('transaction', listener);
 		return () => {
-			inner?.removeEventListener('transaction', listener);
+			el.removeEventListener('transaction', listener);
 		};
-		// contentCssはuse()でサスペンド解決済みの値 — このコンポーネント
-		// インスタンスの生存期間中に変わることはなく、実質マウント時1回だけ
-		// 走る（exhaustive-depsを満たすため依存配列には含める）
-	}, [contentCss]);
+	}, []);
 
 	return (
 		<bge-wysiwyg-editor
 			ref={(el: HTMLElement | null) => {
 				ref.current = el as BgeWysiwygEditorElement | null;
 			}}
+			contentCss={contentCss}
 			item-name={itemName}
 			commands={commands}
 			label={label}

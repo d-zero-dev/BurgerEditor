@@ -11,12 +11,21 @@ import { WysiwygField } from './wysiwyg-field.js';
 afterEach(cleanup);
 
 /**
- * 実際のtiptapベースのbge-wysiwyg-editorを使わず、setStyle呼び出しだけを
- * 観測できる最小限のカスタム要素スタブ
+ * 実際のtiptapベースのbge-wysiwyg-editorを使わず、`contentCss`プロパティの
+ * 受け取りだけを観測できる最小限のカスタム要素スタブ。実物の
+ * `BgeWysiwygEditorElement`と同じく、`contentCss`はプロパティ（React 19が
+ * カスタム要素へ直接設定する）として渡ってくる契約
  */
 class StubWysiwygEditorElement extends HTMLElement {
 	setStyle = vi.fn();
 	value = '';
+
+	get contentCss(): string | null {
+		return this.setStyle.mock.lastCall?.[0] ?? null;
+	}
+	set contentCss(css: string) {
+		this.setStyle(css);
+	}
 }
 
 beforeAll(() => {
@@ -110,5 +119,46 @@ describe('WysiwygField — コンテンツスタイルシート注入（use() + 
 		expect(document.querySelector('bge-wysiwyg-editor')).toBeNull();
 		unmount();
 		expect(document.querySelector('bge-wysiwyg-editor')).toBeNull();
+	});
+});
+
+describe('WysiwygField — transactionイベントからonChangeへの伝達', () => {
+	test('初期値がinnerHTML経由でカスタム要素へ書き込まれる', () => {
+		const { engine } = createResolvedHarness('');
+		const initialValue = ['<', 'p', '>', '初期値', '<', '/p', '>'].join('');
+
+		render(
+			<EngineProvider engine={engine}>
+				<Suspense fallback={<p>loading</p>}>
+					<WysiwygField value={initialValue} onChange={() => {}} />
+				</Suspense>
+			</EngineProvider>,
+		);
+
+		const stub = document.querySelector('bge-wysiwyg-editor');
+		expect(stub?.innerHTML).toBe(initialValue);
+	});
+
+	test('ホスト要素で受け取ったtransactionイベントがonChange(el.value)を呼ぶ', () => {
+		// 退行防止: onTransactionをJSXの `on*` プロパティとして渡す実装は
+		// カスタム要素へイベントリスナーとして登録されず(React 19はここでは
+		// プロパティ/属性としてしか扱わない)、無音で伝達が壊れていた。
+		// addEventListener('transaction', ...) による購読で検証する
+		const { engine } = createResolvedHarness('');
+		const onChange = vi.fn();
+
+		render(
+			<EngineProvider engine={engine}>
+				<Suspense fallback={<p>loading</p>}>
+					<WysiwygField value="" onChange={onChange} />
+				</Suspense>
+			</EngineProvider>,
+		);
+
+		const stub = document.querySelector<StubWysiwygEditorElement>('bge-wysiwyg-editor')!;
+		stub.value = '<p>編集後</p>';
+		stub.dispatchEvent(new CustomEvent('transaction', { bubbles: true }));
+
+		expect(onChange).toHaveBeenCalledWith('<p>編集後</p>');
 	});
 });
