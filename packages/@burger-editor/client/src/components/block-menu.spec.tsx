@@ -61,7 +61,7 @@ function createMockEngine() {
 			return uiState.getSnapshot().processing;
 		},
 		clearCurrentBlock: vi.fn(),
-		componentObserver: { notify: vi.fn() },
+		setCurrentBlock: vi.fn(),
 		commandBus: { receiverId: 'bge-command-bus-test' },
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} as any;

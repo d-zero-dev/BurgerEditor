@@ -1,8 +1,12 @@
 import type { ImageData } from './index.js';
-import type { BurgerEditorEngine, ItemData, Item } from '@burger-editor/core';
+import type {
+	BurgerEditorEngine,
+	FileListResult,
+	ItemData,
+	Item,
+} from '@burger-editor/core';
 
 import { EngineProvider } from '@burger-editor/client/ui';
-import { ComponentObserver } from '@burger-editor/core';
 import { narrowElement } from '@burger-editor/utils';
 import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { useState } from 'react';
@@ -77,19 +81,38 @@ function invokeCommand(button: HTMLElement) {
 }
 
 /**
+ * jsdomはSuspenseの再開（pending→fulfilled）を安定して拾えないため、
+ * FileListが読む`getFileList`は最初から解決済みのthenable（use()の
+ * キャッシュ契約 — status/valueを事前に持つと同期的に値を返す）を返す
+ */
+function resolvedFileList(): Promise<FileListResult> {
+	const result: FileListResult = {
+		error: false,
+		data: [],
+		pagination: { current: 0, total: 1 },
+	};
+	const resolved = Promise.resolve(result) as Promise<FileListResult> & {
+		status?: 'fulfilled';
+		value?: FileListResult;
+	};
+	resolved.status = 'fulfilled';
+	resolved.value = result;
+	return resolved;
+}
+
+/**
  *
  */
 function createMockEngine() {
 	return {
-		componentObserver: new ComponentObserver(),
-		serverAPI: {},
+		serverAPI: { getFileList: () => resolvedFileList() },
 	} as unknown as BurgerEditorEngine;
 }
 
 /**
  * state/setStateを実際のReact stateとして供給するテストハーネス。
  * `onState` を渡すと最新の state をレンダーのたびにテスト側へ渡せる
- * （componentObserver等の間接的な通知を経由せず、state遷移を直接assertする）
+ * （間接的な通知を経由せず、state遷移を直接assertする）
  * @param root0
  * @param root0.engine
  * @param root0.initialPath

@@ -18,7 +18,6 @@ import type {
 
 import { BurgerBlock } from '../block/block.js';
 import { CommandBus } from '../command/command-bus.js';
-import { ComponentObserver } from '../component-observer.js';
 import { CSS_LAYER } from '../const.js';
 import { createComponentStylesheet } from '../dom-helpers/create-component-stylesheet.js';
 import { createStylesheetFromUrl } from '../dom-helpers/create-stylesheet-from-url.js';
@@ -42,7 +41,6 @@ import { UIStateStore } from './ui-state.js';
 export class BurgerEditorEngine implements Disposable {
 	readonly catalog: BlockCatalog;
 	readonly commandBus = new CommandBus();
-	readonly componentObserver = new ComponentObserver();
 	readonly config: Config;
 	readonly css: {
 		readonly stylesheets: readonly {
@@ -108,7 +106,6 @@ export class BurgerEditorEngine implements Disposable {
 		});
 		this.#disposables.use(this.#healthMonitor);
 		this.#disposables.use(this.commandBus);
-		this.#disposables.use(this.componentObserver);
 
 		this.css = {
 			stylesheets: options.config.stylesheets ?? [],

@@ -9,5 +9,12 @@ export * from './components/index.js';
 export { RootErrorBoundary, reportRenderError } from './root-error-boundary.js';
 export { useCommand } from './use-command.js';
 export type { CommandHandlers } from './use-command.js';
-export { useComponentEvent, useUIState } from './use-engine.js';
+export { useUIState } from './use-engine.js';
+export { useFileBrowser } from './file-browser/use-file-browser.js';
+export type {
+	FileBrowserStore,
+	FileBrowserQuery,
+	SelectedFile,
+	UploadProgress,
+} from './file-browser/store.js';
 export * from './form/index.js';

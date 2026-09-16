@@ -149,28 +149,6 @@ export interface Config {
 	};
 }
 
-export interface Actions {
-	'file-listup': {
-		readonly fileType: FileType;
-		readonly data: readonly FileListItem[];
-	};
-	'file-select': {
-		readonly path: string;
-		readonly fileSize: number;
-		readonly isEmpty: boolean;
-		readonly isMounted?: boolean;
-	};
-	'file-upload-progress': {
-		readonly blob: string;
-		readonly uploaded: number;
-		readonly total: number;
-	};
-	'file-upload-complete': {
-		readonly uploaded: FileListItem;
-		readonly data: readonly FileListItem[];
-	};
-}
-
 export interface FileAPI {
 	readonly getFileList?: (
 		fileType: FileType,

@@ -10,10 +10,9 @@ import {
 	RadioGroup,
 	Tabs,
 	TextField,
-	useComponentEvent,
-	useEngine,
+	useFileBrowser,
 } from '@burger-editor/client/ui';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 
 import { createWidthState } from './width.js';
 
@@ -33,7 +32,7 @@ type LoadedImage = {
  * @param root0.setState
  */
 export function ImageEditor({ state, setState }: ItemEditorProps<ImageData>) {
-	const engine = useEngine();
+	const fileBrowser = useFileBrowser();
 	// 同一documentに複数のimageアイテムエディタが同時に開いてもhtmlFor/
 	// aria-*の参照先が混線しないよう、ハードコードIDではなくuseIdで一意化する
 	const uid = useId();
@@ -124,12 +123,7 @@ export function ImageEditor({ state, setState }: ItemEditorProps<ImageData>) {
 			throw new Error('currentPath is not found');
 		}
 
-		engine.componentObserver.notify('file-select', {
-			path: currentPath,
-			fileSize: Number.parseFloat(current.fileSize ?? '0'),
-			isEmpty: currentPath === '',
-			isMounted: false,
-		});
+		fileBrowser.select('image', currentPath, Number.parseFloat(current.fileSize ?? '0'));
 	};
 
 	const selectTab = (index: number) => {
@@ -143,13 +137,22 @@ export function ImageEditor({ state, setState }: ItemEditorProps<ImageData>) {
 		setState((prev) => ({ ...prev, mediaInput: media, altEditable }));
 	};
 
-	useComponentEvent('file-select', ({ path, isEmpty }) => {
-		if (isEmpty) {
+	// FileList側で選ばれたファイル（fileBrowser.select経由の外部変更）を
+	// 反映する。selectTab/マウント時の初期化はすでに_updateImageを直接
+	// 呼んでいるため、そこから来た「自分自身の変更」は現在のタブのpathと
+	// 一致し、ここでは再度読み込まない
+	const selected = useSyncExternalStore(
+		fileBrowser.subscribe,
+		() => fileBrowser.getSnapshot().selected.image,
+	);
+	useEffect(() => {
+		const current = stateRef.current.path?.[currentIndexRef.current] ?? '';
+		if (!selected?.path || selected.path === current) {
 			return;
 		}
-
-		void _updateImage(path);
-	});
+		void _updateImage(selected.path);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [selected]);
 
 	// 初期化: タブ0のプレビュー連携と画像読み込み（マウント時のみ）。
 	// state側の初期値はtoEditorStateで正規化済みのためここでは更新しない

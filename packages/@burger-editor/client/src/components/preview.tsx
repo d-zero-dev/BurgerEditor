@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
+import { useFileBrowser } from '../file-browser/use-file-browser.js';
 import { getExt } from '../get-ext.js';
-import { useComponentEvent } from '../use-engine.js';
 
 import styles from './preview.module.css';
 
 /**
  * File preview pane. The previewed path comes from the parent (lifted
- * from the old `file-select` observer event); upload progress stays on
- * the engine-level component observer.
+ * from the item's own state); upload progress is read from the engine's
+ * `FileBrowserStore`, shared with `FileList`/`FileUploader`.
  * @param root0
  * @param root0.path
  * @example
@@ -17,11 +17,11 @@ import styles from './preview.module.css';
  * ```
  */
 export function Preview({ path }: { readonly path: string }) {
+	const store = useFileBrowser();
 	const [dimension, setDimension] = useState<{
 		readonly width: number;
 		readonly height: number;
 	} | null>(null);
-	const [progress, setProgress] = useState({ uploaded: 0, total: 100 });
 
 	// path変更時のリセットはeffectではなくrender中に行う
 	// （effect内の同期setStateはカスケードレンダーを起こすため）
@@ -34,11 +34,11 @@ export function Preview({ path }: { readonly path: string }) {
 	const file = path ? getExt(path) : null;
 	const isUploadingMode = path.startsWith('blob:');
 
-	useComponentEvent('file-upload-progress', (p) => {
-		if (p.blob === path) {
-			setProgress({ uploaded: p.uploaded, total: p.total });
-		}
-	});
+	const uploads = useSyncExternalStore(
+		store.subscribe,
+		() => store.getSnapshot().uploads,
+	);
+	const progress = uploads.find((u) => u.blob === path) ?? { uploaded: 0, total: 100 };
 
 	useEffect(() => {
 		const file = path ? getExt(path) : null;

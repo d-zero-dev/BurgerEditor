@@ -1,6 +1,5 @@
-import type { Actions, UIState } from '@burger-editor/core';
+import type { UIState } from '@burger-editor/core';
 
-import { useEffect, useEffectEvent } from 'react';
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector';
 
 import { useEngine } from './engine-context.js';
@@ -50,33 +49,4 @@ export function useUIState<T = UIState>(selector?: (state: UIState) => T): T {
 		engine.uiState.getSnapshot,
 		(selector ?? identity) as (state: UIState) => T,
 	);
-}
-
-/**
- * Subscribe to a component observer action for the lifetime of the
- * component. `handler` is read through `useEffectEvent` so the
- * subscription always sees the latest render's closure without needing
- * `handler` in the effect's deps (and without resubscribing on every
- * render). The engine is read from the nearest `EngineProvider`.
- * @param action - The action name to listen for
- * @param handler - Callback receiving the typed payload
- * @example
- * ```tsx
- * useComponentEvent('file-select', ({ path, isEmpty }) => {
- * 	if (!isEmpty) {
- * 		setState((prev) => ({ ...prev, path }));
- * 	}
- * });
- * ```
- */
-export function useComponentEvent<A extends keyof Actions>(
-	action: A,
-	handler: (payload: Actions[A]) => void,
-) {
-	const engine = useEngine();
-	const onAction = useEffectEvent((payload: Actions[A]) => handler(payload));
-
-	useEffect(() => {
-		return engine.componentObserver.on(action, onAction);
-	}, [engine, action]);
 }

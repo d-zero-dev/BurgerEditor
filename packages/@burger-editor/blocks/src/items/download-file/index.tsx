@@ -4,12 +4,11 @@ import {
 	FileUploader,
 	Preview,
 	TextField,
-	useComponentEvent,
-	useEngine,
+	useFileBrowser,
 } from '@burger-editor/client/ui';
 import { createItem } from '@burger-editor/core';
 import { formatByteSize } from '@burger-editor/utils';
-import { useEffect } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 
 import style from './style.css';
 import template from './template.html';
@@ -39,28 +38,32 @@ export default createItem<{
 		};
 	},
 	Editor({ state, setState }) {
-		const engine = useEngine();
+		const fileBrowser = useFileBrowser();
+
 		// ファイル一覧・アップローダーからの選択をエディタ状態に反映する
-		useComponentEvent('file-select', ({ path, fileSize, isEmpty }) => {
-			if (isEmpty) {
+		// （マウント時に自分自身がselectした値と一致する場合は反映済みなので
+		// 何もしない — 下のマウントeffectとの二重更新を避ける）
+		const selected = useSyncExternalStore(
+			fileBrowser.subscribe,
+			() => fileBrowser.getSnapshot().selected.other,
+		);
+		useEffect(() => {
+			if (!selected?.path || selected.path === (state.path ?? '')) {
 				return;
 			}
 			setState((prev) => ({
 				...prev,
-				path,
-				formatedSize: formatByteSize(fileSize),
-				size: fileSize.toString(),
+				path: selected.path,
+				formatedSize: formatByteSize(selected.fileSize),
+				size: selected.fileSize.toString(),
 			}));
-		});
+			// eslint-disable-next-line react-hooks/exhaustive-deps
+		}, [selected]);
 
-		// 初回マウント時に現在のファイルを通知してファイル一覧をロードさせる
+		// 初回マウント時に現在のファイルをfileBrowserへ登録し、FileListの
+		// ハイライト・アップロード完了時の反映先を揃える
 		useEffect(() => {
-			engine.componentObserver.notify('file-select', {
-				path: state.path ?? '',
-				fileSize: Number.parseFloat(state.size ?? '0'),
-				isEmpty: (state.path ?? '') === '',
-				isMounted: false,
-			});
+			fileBrowser.select('other', state.path ?? '', Number.parseFloat(state.size ?? '0'));
 			// eslint-disable-next-line react-hooks/exhaustive-deps
 		}, []);
 

@@ -65,20 +65,22 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * `FileList` はマウント後、`file-select` イベント経由の初回 fetch で
- * リストを取得する設計のため、初期表示状態を再現するには `play` で
- * `file-listup` イベントを明示的に発火させる
+ * `FileList` はマウント時に `use()` で `getFileList` を読むだけなので、
+ * 初期表示状態はその応答を直接差し込むだけで再現できる
  */
 export const Default: Story = {
 	args: {
-		engine: createMockEngine(),
+		engine: createMockEngine({
+			serverAPI: {
+				getFileList: () =>
+					Promise.resolve({
+						error: false,
+						data: dummyFiles,
+						pagination: { current: 0, total: 1 },
+					}),
+			},
+		}),
 		fileType: 'image',
-	},
-	play: ({ args }) => {
-		args.engine.componentObserver.notify('file-listup', {
-			fileType: args.fileType,
-			data: dummyFiles,
-		});
 	},
 };
 
@@ -95,14 +97,6 @@ export const MultiplePages: Story = {
 			},
 		}),
 		fileType: 'image',
-	},
-	play: ({ args }) => {
-		args.engine.componentObserver.notify('file-select', {
-			path: '',
-			fileSize: 0,
-			isEmpty: true,
-			isMounted: false,
-		});
 	},
 };
 

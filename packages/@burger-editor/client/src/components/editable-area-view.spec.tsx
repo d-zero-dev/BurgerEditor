@@ -73,7 +73,6 @@ function createMockEngine(contents?: {
 			return uiState.getSnapshot().processing;
 		},
 		clearCurrentBlock: vi.fn(),
-		componentObserver: { notify: vi.fn() },
 		commandBus: { createReceiver: vi.fn(), receiverId: 'bge-command-bus-test' },
 		getEditableContent: () => content,
 		// 実物のengine.commitSourceEditと同じ挙動（replaceContents→save）を
