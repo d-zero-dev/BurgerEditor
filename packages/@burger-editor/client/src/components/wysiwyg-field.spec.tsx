@@ -91,7 +91,7 @@ describe('WysiwygField — コンテンツスタイルシート注入（use() + 
 			</EngineProvider>,
 		);
 
-		const stub = document.querySelector('bge-wysiwyg-editor');
+		const stub = document.querySelector<StubWysiwygEditorElement>('bge-wysiwyg-editor');
 		expect(stub?.setStyle).toHaveBeenCalledWith('body{color:red}');
 		expect(screen.queryByText('loading')).toBeNull();
 	});
