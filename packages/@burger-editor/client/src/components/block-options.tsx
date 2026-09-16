@@ -22,7 +22,7 @@ const containerTypeLabel = {
  * 	name="options"
  * 	open={block !== null}
  * 	onClose={close}
- * 	onComplete={(formData) => applyBlockOptions(block, formData)}
+ * 	action={(formData) => applyBlockOptions(block, formData)}
  * 	buttons={{ close: 'キャンセル', complete: '決定' }}>
  * 	{block ? <BlockOptions block={block} /> : null}
  * </EditorDialog>

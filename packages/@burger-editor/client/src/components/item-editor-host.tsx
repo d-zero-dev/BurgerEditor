@@ -25,20 +25,23 @@ export function ItemEditorHost({ item }: { readonly item: AnyItem | null }) {
 	const engine = useEngine();
 	const submitRef: SubmitRef = useRef(null);
 
+	const closeAndSave = () => {
+		engine.uiState.closeDialog();
+		engine.save();
+	};
+
 	return (
 		<EditorDialog
 			name="item-editor"
 			open={!!item}
 			buttons={{ close: 'キャンセル', complete: '決定' }}
-			onClose={() => {
-				engine.uiState.closeDialog();
-				engine.save();
-			}}
-			onComplete={() => {
-				void (async () => {
-					await submitRef.current?.();
-					engine.uiState.closeDialog();
-				})();
+			onClose={closeAndSave}
+			action={async () => {
+				// submitRef.current()がthrowした場合はEditorDialogの
+				// useActionStateがcatchしrole="alert"で表示する。ここでは
+				// 早期returnせず、以降のclose/saveを実行させない
+				await submitRef.current?.();
+				closeAndSave();
 			}}>
 			{item ? <ItemEditorBody item={item} submitRef={submitRef} /> : null}
 		</EditorDialog>

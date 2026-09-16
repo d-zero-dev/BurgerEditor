@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { FallbackProps } from 'react-error-boundary';
 
-import { Suspense, useEffect, useId, useRef } from 'react';
+import { Suspense, useActionState, useEffect, useId, useRef } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
 import './invoker-commands.js';
@@ -36,12 +36,17 @@ function DialogSkeleton() {
  * The markup follows the `dialog.bge-dialog > div > form > div` + `footer`
  * structure that `ui.css` styles. Opening/closing is driven by the `open`
  * prop; the close button uses the built-in `close` command — no click
- * handlers.
+ * handlers. Submission goes through `<form action>` (`useActionState`):
+ * on success the dialog stays under the caller's control (the action is
+ * responsible for closing it — typically `engine.uiState.closeDialog()`
+ * + `engine.save()`); on a thrown error the dialog stays open and shows
+ * the message via `role="alert"`, and the submit button is disabled
+ * while pending.
  * @param root0
  * @param root0.name
  * @param root0.open
  * @param root0.onClose
- * @param root0.onComplete
+ * @param root0.action
  * @param root0.buttons
  * @param root0.buttons.close
  * @param root0.buttons.complete
@@ -51,8 +56,12 @@ function DialogSkeleton() {
  * <EditorDialog
  * 	name="options"
  * 	open={block !== null}
- * 	onClose={() => engine.uiState.closeDialog()}
- * 	onComplete={(formData) => applyBlockOptions(block, formData)}
+ * 	onClose={() => { engine.uiState.closeDialog(); engine.save(); }}
+ * 	action={(formData) => {
+ * 		applyBlockOptions(block, formData);
+ * 		engine.uiState.closeDialog();
+ * 		engine.save();
+ * 	}}
  * 	buttons={{ close: 'キャンセル', complete: '決定' }}>
  * 	{block ? <BlockOptions block={block} /> : null}
  * </EditorDialog>
@@ -62,14 +71,14 @@ export function EditorDialog({
 	name,
 	open,
 	onClose,
-	onComplete,
+	action,
 	buttons,
 	children,
 }: {
 	readonly name: string;
 	readonly open: boolean;
 	readonly onClose: () => void;
-	readonly onComplete?: (formData: FormData) => void;
+	readonly action?: (formData: FormData) => void | Promise<void>;
 	readonly buttons?: {
 		readonly close?: string;
 		readonly complete?: string;
@@ -86,6 +95,18 @@ export function EditorDialog({
 	const uid = useId();
 	const dialogId = `${uid}-dialog`;
 	const formId = `${uid}-form`;
+
+	const [error, submitAction, isPending] = useActionState<string | null, FormData>(
+		async (_prevError, formData) => {
+			try {
+				await action?.(formData);
+				return null;
+			} catch (error_) {
+				return error_ instanceof Error ? error_.message : String(error_);
+			}
+		},
+		null,
+	);
 
 	useEffect(() => {
 		const dialog = dialogRef.current;
@@ -105,18 +126,21 @@ export function EditorDialog({
 			id={dialogId}
 			className="bge-dialog"
 			closedby="any"
-			onClose={onClose}>
+			onClose={(e) => {
+				// Reactのcloseイベントはツリーをバブルすることがある既知の
+				// 問題があるため、このdialog自身が発火元のときだけ処理する
+				if (e.target !== e.currentTarget) {
+					return;
+				}
+				onClose();
+			}}>
 			<div>
 				<form
 					id={formId}
-					method="dialog"
+					action={submitAction}
 					noValidate
 					autoComplete="off"
-					autoCapitalize="off"
-					onSubmit={(e) => {
-						e.preventDefault();
-						onComplete?.(new FormData(e.currentTarget));
-					}}>
+					autoCapitalize="off">
 					<div data-bge-component={`${name}-dialog`}>
 						{open ? (
 							<ErrorBoundary FallbackComponent={DialogErrorFallback}>
@@ -124,6 +148,7 @@ export function EditorDialog({
 							</ErrorBoundary>
 						) : null}
 					</div>
+					{error ? <p role="alert">{error}</p> : null}
 				</form>
 			</div>
 			<footer>
@@ -133,7 +158,7 @@ export function EditorDialog({
 					</button>
 				) : null}
 				{buttons?.complete ? (
-					<button type="submit" form={formId}>
+					<button type="submit" form={formId} disabled={isPending} aria-busy={isPending}>
 						{buttons.complete}
 					</button>
 				) : null}

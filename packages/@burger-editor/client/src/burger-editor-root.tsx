@@ -36,13 +36,13 @@ export function BurgerEditorRoot() {
 				name="options"
 				open={optionsBlock !== null}
 				onClose={closeAndSave}
-				onComplete={(formData) => {
+				action={(formData) => {
 					// ダイアログ表示中にホバー選択が外れても適用できるよう、
 					// openDialog状態にスナップショットされたblockを使う
 					if (optionsBlock) {
 						applyBlockOptions(optionsBlock, formData);
 					}
-					engine.uiState.closeDialog();
+					closeAndSave();
 				}}
 				buttons={{ close: 'キャンセル', complete: '決定' }}>
 				{optionsBlock ? <BlockOptions block={optionsBlock} /> : null}
