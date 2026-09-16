@@ -8,10 +8,15 @@ export { DraftSwitcher } from './draft-switcher.js';
 export { EditableAreaView } from './editable-area-view.js';
 export { FileList } from './file-list.js';
 export { FileUploader } from './file-uploader.js';
-export { createFrontMatterEditor, FrontMatterEditorView } from './front-matter-editor.js';
+export {
+	createFrontMatterEditor,
+	FrontMatterEditorView,
+	FrontMatterStore,
+} from './front-matter-editor.js';
 export type {
 	FrontMatterEditorOptions,
 	FrontMatterEditorHandle,
+	FieldDefinition as FrontMatterFieldDefinition,
 } from './front-matter-editor.js';
 export { InitialInsertionButton } from './initial-insertion-button.js';
 export { ItemEditorHost } from './item-editor-host.js';

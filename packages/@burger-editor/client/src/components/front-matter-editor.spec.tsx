@@ -5,7 +5,7 @@ import { fireEvent, screen } from '@testing-library/react';
 import { act } from 'react';
 import { test, expect, beforeEach, afterEach, vi, describe } from 'vitest';
 
-import { createFrontMatterEditor } from './front-matter-editor.js';
+import { createFrontMatterEditor, FrontMatterStore } from './front-matter-editor.js';
 
 // React 18+のact環境フラグ（Testing LibraryのrenderではなくcreateRootを
 // 直接使うため自前で立てる）
@@ -248,6 +248,39 @@ describe('フィールドの追加と削除', () => {
 		// 古い（無効な）ドラフト文字列ではなく、新フィールドの既定値が出る
 		expect(newTextarea.value).toBe('[]');
 		expect(newTextarea.classList.contains('fm-editor-error')).toBe(false);
+	});
+});
+
+describe('FrontMatterStore', () => {
+	test('getDataは初期データをフィールド一覧から再構成した値を返す', () => {
+		const store = new FrontMatterStore({ title: 'A', count: 1 });
+		expect(store.getData()).toEqual({ title: 'A', count: 1 });
+	});
+
+	test('setFieldsで購読者へ通知し、getData/getSnapshotが更新後の値を返す', () => {
+		const store = new FrontMatterStore({ title: 'A' });
+		const listener = vi.fn();
+		store.subscribe(listener);
+
+		store.setFields([{ key: 'title', type: 'text', value: 'B' }]);
+
+		expect(listener).toHaveBeenCalledTimes(1);
+		expect(store.getData()).toEqual({ title: 'B' });
+		expect(store.getSnapshot()).toEqual([{ key: 'title', type: 'text', value: 'B' }]);
+	});
+
+	test('subscribeの戻り値を呼ぶとその購読者だけ解除される', () => {
+		const store = new FrontMatterStore({});
+		const listenerA = vi.fn();
+		const listenerB = vi.fn();
+		const unsubscribeA = store.subscribe(listenerA);
+		store.subscribe(listenerB);
+
+		unsubscribeA();
+		store.setFields([]);
+
+		expect(listenerA).not.toHaveBeenCalled();
+		expect(listenerB).toHaveBeenCalledTimes(1);
 	});
 });
 

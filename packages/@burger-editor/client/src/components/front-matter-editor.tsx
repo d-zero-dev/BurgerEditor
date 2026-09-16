@@ -1,7 +1,7 @@
 /* @jsxImportSource react */
 import type { ReactNode } from 'react';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { useCommand } from '../use-command.js';
@@ -14,10 +14,46 @@ type FieldType = 'text' | 'number' | 'boolean' | 'date' | 'json';
 /**
  * Field definition for Front Matter
  */
-interface FieldDefinition {
+export interface FieldDefinition {
 	readonly key: string;
 	readonly type: FieldType;
 	readonly value: unknown;
+}
+
+/**
+ * Owns the Front Matter field list — the actual data, as opposed to the
+ * view's own UI-only state (collapsed, add-dialog-open, in-progress JSON
+ * drafts). `createFrontMatterEditor`'s handle reads `getData()`/
+ * `getSnapshot()` directly and subscribes to be notified of changes,
+ * instead of a mutable closure variable updated from inside a React
+ * callback — the handle has no other way to read React state from
+ * outside React.
+ */
+export class FrontMatterStore {
+	readonly getSnapshot = (): readonly FieldDefinition[] => this.#fields;
+	readonly subscribe = (listener: () => void): (() => void) => {
+		this.#listeners.add(listener);
+		return () => {
+			this.#listeners.delete(listener);
+		};
+	};
+	#fields: readonly FieldDefinition[];
+	readonly #listeners = new Set<() => void>();
+
+	constructor(initialData: Record<string, unknown>) {
+		this.#fields = parseInitialData(initialData);
+	}
+
+	getData(): Record<string, unknown> {
+		return toData(this.#fields);
+	}
+
+	setFields(next: readonly FieldDefinition[]): void {
+		this.#fields = next;
+		for (const listener of this.#listeners) {
+			listener();
+		}
+	}
 }
 
 /**
@@ -76,30 +112,28 @@ export interface FrontMatterEditorHandle extends Disposable {
 export function createFrontMatterEditor(
 	options: FrontMatterEditorOptions,
 ): FrontMatterEditorHandle {
-	let latest: Record<string, unknown> = { ...options.initialData };
+	const store = new FrontMatterStore(options.initialData);
 	const originalFrontMatter = options.hasFrontMatter
 		? JSON.stringify(options.initialData)
 		: undefined;
 
+	// onUpdatedはstoreの変化そのものに反応する — Reactのレンダーサイクルを
+	// 経由するコールバックpropではなく、subscribe/getSnapshotの外部ストア
+	// 契約だけで完結する
+	const unsubscribe = store.subscribe(() => {
+		options.onUpdated?.(store.getData());
+	});
+
 	const root = createRoot(options.container);
-	root.render(
-		<FrontMatterEditorView
-			initialData={options.initialData}
-			onDataChange={(data) => {
-				// onUpdatedのdebounce保存はgetData()を読み直すため、スナップ
-				// ショットの更新を通知より先に済ませる
-				latest = data;
-				options.onUpdated?.(data);
-			}}
-		/>,
-	);
+	root.render(<FrontMatterEditorView store={store} />);
 
 	const teardown = () => {
+		unsubscribe();
 		root.unmount();
 	};
 
 	return {
-		getData: () => latest,
+		getData: () => store.getData(),
 		getOriginalFrontMatter: () => originalFrontMatter,
 		// unmountと[Symbol.dispose]は同じ関数を指す — thisに依存する実装だと
 		// 分割代入経由の呼び出しでthisが外れてTypeErrorになるため、
@@ -110,32 +144,21 @@ export function createFrontMatterEditor(
 }
 
 /**
- * Front Matterの動的フォーム本体。フィールド一覧・折りたたみ・追加
- * ダイアログをReact stateとして持ち、操作は Invoker Commands
+ * Front Matterの動的フォーム本体。フィールド一覧は`store`（唯一の
+ * データソース）から読み、折りたたみ・追加ダイアログ・JSON下書きは
+ * この見た目だけのUI状態としてローカルに持つ。操作は Invoker Commands
  * （`--fm-toggle` / `--fm-add-field` / `--fm-delete-field`）で受ける
  * @param root0
- * @param root0.initialData
- * @param root0.onDataChange
+ * @param root0.store
  * @example
  * ```tsx
- * <FrontMatterEditorView
- * 	initialData={{ title: 'ページ' }}
- * 	onDataChange={(data) => console.log(data)}
- * />
+ * <FrontMatterEditorView store={new FrontMatterStore({ title: 'ページ' })} />
  * ```
  */
-export function FrontMatterEditorView({
-	initialData,
-	onDataChange,
-}: {
-	readonly initialData: Record<string, unknown>;
-	readonly onDataChange: (data: Record<string, unknown>) => void;
-}) {
+export function FrontMatterEditorView({ store }: { readonly store: FrontMatterStore }) {
 	const rootId = useId();
 	const dialogId = useId();
-	const [fields, setFields] = useState<readonly FieldDefinition[]>(() =>
-		parseInitialData(initialData),
-	);
+	const fields = useSyncExternalStore(store.subscribe, store.getSnapshot);
 	const [isCollapsed, setIsCollapsed] = useState(false);
 	const [addDialogOpen, setAddDialogOpen] = useState(false);
 	// JSONフィールドの未確定テキスト。パースに失敗している間は確定値を
@@ -143,8 +166,7 @@ export function FrontMatterEditorView({
 	const [jsonDrafts, setJsonDrafts] = useState<Record<string, string>>({});
 
 	const applyFields = (next: readonly FieldDefinition[]) => {
-		setFields(next);
-		onDataChange(toData(next));
+		store.setFields(next);
 	};
 
 	const updateFieldValue = (key: string, value: unknown) => {
