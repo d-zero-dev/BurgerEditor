@@ -11,7 +11,10 @@ import { babel } from '@rollup/plugin-babel';
  * @param {import('@rollup/plugin-babel').RollupBabelInputPluginOptions} [overrides] -
  * Extra `@rollup/plugin-babel` options merged over the shared defaults
  * (e.g. a broader `exclude` to also skip `*.spec.tsx` in the test-only
- * caller, where compiling test-harness components buys nothing)
+ * caller, where compiling test-harness components buys nothing). This is
+ * a shallow `Object.assign`-style spread — an array-valued option (like
+ * `exclude` or `plugins`) in `overrides` replaces the default array
+ * entirely, it does not concatenate with it.
  * @returns {import('rollup').Plugin}
  */
 export function createReactCompilerBabelPlugin(overrides = {}) {

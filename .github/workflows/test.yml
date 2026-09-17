@@ -29,6 +29,12 @@ jobs:
             apt-get install -y --no-install-recommends fonts-noto-cjk
             rm -rf /var/lib/apt/lists/*
 
+      - name: Verify React Compiler coverage
+        # React Compilerはコンパイル対象外の判断を診断ログなしで下すことが
+        # あるため、item Editorごとの期待コンパイル状態をコードで固定して
+        # 検証する（scripts/check-react-compiler-coverage.mjs）
+        run: yarn verify:react-compiler
+
       - name: Build
         run: yarn build
 

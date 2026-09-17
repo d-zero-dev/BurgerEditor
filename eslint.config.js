@@ -70,9 +70,21 @@ export default [
 		// リポジトリルートのビルドツール向けスクリプト（scripts/）は、
 		// vitest.config.ts等の*.config.tsと同様にワークスペース横断解決を
 		// 前提にしており、ルートpackage.jsonへの個別宣言は求めない
-		files: ['*.mjs', '**/*.spec.{js,mjs,ts,tsx}', '**/*.config.ts', 'scripts/**/*.js'],
+		files: [
+			'*.mjs',
+			'**/*.spec.{js,mjs,ts,tsx}',
+			'**/*.config.ts',
+			'scripts/**/*.{js,mjs}',
+		],
 		rules: {
 			'import-x/no-extraneous-dependencies': 0,
+		},
+	},
+	{
+		// scripts/配下はCLIツールであり、標準出力への出力そのものが目的
+		files: ['scripts/**/*.{js,mjs}'],
+		rules: {
+			'no-console': 0,
 		},
 	},
 	{

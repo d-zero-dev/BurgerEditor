@@ -28,6 +28,10 @@ fi
 
 quoted_args=$(printf '%q ' "$@")
 
+# -e BGE_NO_COMPILERはReact Compilerを無効化してこのスクリプト経由の
+# Docker実行（yarn test:vr:docker等）を手元で試す場合のための転送。CI自体は
+# この関数より前、12行目でCI環境変数を検知して素のyarnにexecするため、
+# GitHub Actions上のtest-no-compilerジョブはここを経由しない
 docker run --rm \
 	-v "$REPO_ROOT":/work \
 	-v bge-vr-node-modules:/work/node_modules \

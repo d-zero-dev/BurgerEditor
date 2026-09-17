@@ -34,6 +34,7 @@ yarn test:unit                # 同じテストをホストで実行（Docker �
 yarn test:vr                  # VR のみ（ホスト）
 yarn test:vr:docker           # VR のみ（Docker）
 yarn test:vr:docker:update    # VR ベースラインを更新
+yarn test:no-compiler         # React Compiler無効化状態でclient/blocks/blocks-editorのみ実行
 yarn lint                     # eslint / stylelint / markuplint / prettier / textlint / cspell
 yarn commit                   # Commitizen（cz）でコミット
 ```
@@ -56,6 +57,7 @@ yarn commit                   # Commitizen（cz）でコミット
 - `/.dockerenv` / `CI` / `SKIP_DOCKER` のいずれかがあると Docker ラッパーを飛ばして直接実行する。CI は自前の Playwright コンテナ内で動くため、入れ子の Docker にならない
 - 開発中に VR 以外を素早く回したいときは `yarn test:unit`（ホスト実行）を使う
 - **UI を意図的に変更したら `yarn test:vr:docker:update` でベースラインを再生成する**
+- **`BGE_NO_COMPILER=1` で React Compiler を無効化できる**（`client/vite.config.ts` / `blocks/rollup.config.js` / `vitest.config.ts` が共通で見る環境変数、`scripts/react-compiler-babel.js` で一元管理）。CI は `test`（有効）と `test-no-compiler`（無効）の両方を回す。コンパイルの有無で挙動が変わる不具合を疑うときは `BGE_NO_COMPILER=1 yarn test:unit` で切り分ける
 
 ## 依存関係の追加
 

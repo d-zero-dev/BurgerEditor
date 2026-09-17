@@ -23,6 +23,7 @@
 
 		// English vocabulary missing from the base dictionary
 		"unrepresentable",
+		"uncompiled",
 
 		// Dependencies
 		"hono",
