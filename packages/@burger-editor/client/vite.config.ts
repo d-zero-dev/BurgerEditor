@@ -1,10 +1,15 @@
 import fs from 'node:fs';
 
-import react from '@vitejs/plugin-react';
+import babel from '@rolldown/plugin-babel';
+import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
 
 const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+
+// React Compilerの有効/無効を両方CIで検証するための脱出ハッチ（react.devの
+// 「両方のモードで実行する」推奨に従う）。通常は常に有効
+const noCompiler = process.env.BGE_NO_COMPILER === '1';
 
 export default defineConfig(({ mode }) => ({
 	build: {
@@ -44,6 +49,15 @@ export default defineConfig(({ mode }) => ({
 	},
 	plugins: [
 		react(),
+		// react-compilerは元のJSX/hook構造を見て解析する必要があるため
+		// preset内で最初に実行されなければならない（babelのpresetは記述と
+		// 逆順に実行されるため、後ろに書く）。@babel/preset-typescriptは
+		// このファイル自体はesbuild/oxcが処理するが、babel pluginが受け取る
+		// .tsx側の型構文をパースするだけで剥がしはしないため、剥がす側の
+		// presetとして別途必要
+		...(noCompiler
+			? []
+			: [babel({ presets: ['@babel/preset-typescript', reactCompilerPreset()] })]),
 		dts({
 			outDir: 'dist',
 			entryRoot: 'src',

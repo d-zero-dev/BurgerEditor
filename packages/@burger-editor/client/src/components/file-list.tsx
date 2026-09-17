@@ -33,6 +33,16 @@ import { Thumbnail } from './thumbnail.js';
  * ```
  */
 export function FileList({ fileType }: { readonly fileType: FileType }) {
+	// store.read()はReactの外（FileBrowserStoreの内部Mapキャッシュ）が
+	// invalidate()で更新される、意図的に不純な関数（react.devのRules of
+	// Reactに違反する — 同じ引数でも呼び出しごとに結果が変わりうる）。
+	// React Compilerは「同じ引数なら前回の結果を再利用してよい」と誤って
+	// 判断し、アップロード/削除後のinvalidate()に対する再取得
+	// （getFileListの再呼び出し）を静かにスキップしてしまう
+	// （file-list.spec.tsxの回帰テストで実測確認済み）。この関数だけ
+	// コンパイラの最適化対象から明示的に外す
+	'use no memo';
+
 	const store = useFileBrowser();
 	const rootId = useId();
 
