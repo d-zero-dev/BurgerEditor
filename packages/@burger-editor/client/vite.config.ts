@@ -5,11 +5,10 @@ import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
 
-const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+// @ts-ignore - plain JS module, no ambient types published for it
+import { reactCompilerDisabled } from '../../../scripts/react-compiler-babel.js';
 
-// React Compilerの有効/無効を両方CIで検証するための脱出ハッチ（react.devの
-// 「両方のモードで実行する」推奨に従う）。通常は常に有効
-const noCompiler = process.env.BGE_NO_COMPILER === '1';
+const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 
 export default defineConfig(({ mode }) => ({
 	build: {
@@ -55,7 +54,7 @@ export default defineConfig(({ mode }) => ({
 		// このファイル自体はesbuild/oxcが処理するが、babel pluginが受け取る
 		// .tsx側の型構文をパースするだけで剥がしはしないため、剥がす側の
 		// presetとして別途必要
-		...(noCompiler
+		...(reactCompilerDisabled
 			? []
 			: [babel({ presets: ['@babel/preset-typescript', reactCompilerPreset()] })]),
 		dts({
