@@ -84,14 +84,20 @@ export function createReactView(): ReactView {
 					{chrome}
 					{[...areas.values()].map((entry) =>
 						createPortal(
-							<EditableAreaView
-								key={entry.props.type}
-								type={entry.props.type}
-								initialContent={entry.props.initialContent}
-								stylesheets={entry.props.stylesheets}
-								classList={entry.props.classList}
-								onReady={entry.onReady}
-							/>,
+							// 単一root化で複数エリア＋ダイアログchromeが1つの木に
+							// 同居するようになったため、外側のRootErrorBoundary
+							// （最後の砦・木全体を覆う）とは別に、エリアごとにも
+							// 境界を持たせる。あるエリアの描画エラーが他のエリアや
+							// ダイアログchromeまで巻き込んで消さないようにするため
+							<RootErrorBoundary key={entry.props.type}>
+								<EditableAreaView
+									type={entry.props.type}
+									initialContent={entry.props.initialContent}
+									stylesheets={entry.props.stylesheets}
+									classList={entry.props.classList}
+									onReady={entry.onReady}
+								/>
+							</RootErrorBoundary>,
 							entry.mountEl,
 						),
 					)}

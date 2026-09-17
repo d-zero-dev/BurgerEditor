@@ -25,9 +25,15 @@ export function reportRenderError(
 }
 
 /**
- * Minimal fallback for the root error boundary: reports the error and
- * renders nothing (the surrounding chrome — dialogs, editable areas —
- * keeps working; only the failed subtree is replaced).
+ * Fallback for {@link RootErrorBoundary}: reports the error and renders
+ * nothing. Only *this boundary's own subtree* is replaced — how big that
+ * subtree is depends entirely on where the boundary is placed. Placed
+ * once around the whole single-root tree (as `createReactView` does for
+ * the top level), it is a last resort: the whole editor blanks. Nested
+ * one level per editable area (as `createReactView` also does) or per
+ * dialog (`EditorDialog`'s own boundary around each dialog's body), it
+ * instead isolates a failure to that one area/dialog and leaves sibling
+ * areas, other dialogs, and the chrome running.
  * @param root0
  * @param root0.error
  */
@@ -40,9 +46,13 @@ function RootErrorFallback({ error }: FallbackProps): ReactNode {
 }
 
 /**
- * Root-level error boundary for the client UI tree. Wraps the entire
- * single-root tree (editable areas + dialog chrome) so a bug in one
- * dialog or block menu does not take down the whole editor.
+ * Reusable error boundary for the client UI tree: reports the caught
+ * error as `bge:error` and blanks only its own subtree. Deliberately not
+ * scoped to any one tree position — `createReactView` places one around
+ * the whole single-root tree as a last resort, and one more per editable
+ * area so a failure in one area (or the `BlockMenu` inside it) does not
+ * blank sibling areas or the dialog chrome. `EditorDialog` places its own
+ * around each dialog's body for the same reason at that granularity.
  * @param root0
  * @param root0.children
  * @example

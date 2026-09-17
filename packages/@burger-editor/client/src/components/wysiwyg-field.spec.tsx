@@ -5,8 +5,23 @@ import { Suspense } from 'react';
 import { test, expect, describe, beforeAll, afterEach, vi } from 'vitest';
 
 import { EngineProvider } from '../engine-context.js';
+import { suppressConsoleErrors } from '../testing/suppress-console-error.js';
 
 import { WysiwygField } from './wysiwyg-field.js';
+
+// 既にfulfilled/rejectedとしてタグ付け済みのthenable（use()のキャッシュ
+// 契約 — react.devの`wrapPromise`パターン）をrender中に読むと、値は同期的
+// に返っているにもかかわらずReactが「本当にSuspenseが再開されたとき用」の
+// 警告を誤検知することがある。また、「CSS取得が失敗してもuse()へ投げるのは
+// Suspense中と同じ「保留」」のテストは実際にrejectするPromiseをuse()へ渡す
+// ため、そのPromiseはテスト終了後（act()の外）で解決し、Reactが
+// 「サスペンドしたリソースがactの外で解決した」警告を出す — Suspenseの
+// リトライ自体はこのテストハーネスでは検証対象外（このファイル冒頭の説明を
+// 参照）なので、テスト出力のノイズとしてのみ抑制する
+suppressConsoleErrors([
+	'the `act` call was not awaited',
+	'A suspended resource finished loading inside a test',
+]);
 
 afterEach(cleanup);
 
@@ -121,6 +136,68 @@ describe('WysiwygField — コンテンツスタイルシート注入（use() + 
 		expect(document.querySelector('bge-wysiwyg-editor')).toBeNull();
 		unmount();
 		expect(document.querySelector('bge-wysiwyg-editor')).toBeNull();
+	});
+
+	test('CSS取得が失敗してもuse()へ投げるのはSuspense中と同じ「保留」であり、同期的なthrow/エラー表示にはならない（regression）', () => {
+		// 旧・命令的fire-and-forget実装ではCSS取得の失敗はダイアログを
+		// 巻き込まなかった。WysiwygField側で`.catch(() => '')`を挟まず
+		// use()に生のPromiseをそのまま渡すと、失敗時にuse()がrejectを
+		// そのままthrowし、ダイアログのErrorBoundaryごとフォーム全体が
+		// 「エラーが発生しました」表示に置き換わってしまう。マウント直後は
+		// まだ何も解決していないため、`.catch()`の有無にかかわらず
+		// Suspenseのfallbackが表示されるはず — ここではその同期パスで
+		// エラー表示に落ちないことだけを確認する（rejectからのSuspense
+		// 再開そのものは、実Chromiumでもこのテストハーネスでは安定して
+		// 拾えないことを確認済みのため個別に検証しない。フォールバック
+		// への変換自体は次のテスト — タグ済みrejected thenableを使い
+		// Suspenseのリトライに頼らず同期的に検証する — で直接確認する）
+		const getContentStylesheet = vi
+			.fn<() => Promise<string>>()
+			.mockReturnValue(Promise.reject(new Error('network error')));
+		const engine = { getContentStylesheet } as unknown as BurgerEditorEngine;
+
+		render(
+			<EngineProvider engine={engine}>
+				<Suspense fallback={<p>loading</p>}>
+					<WysiwygField value="" onChange={() => {}} />
+				</Suspense>
+			</EngineProvider>,
+		);
+
+		expect(screen.getByText('loading')).toBeTruthy();
+		expect(screen.queryByRole('alert')).toBeNull();
+	});
+
+	test('タグ済みでrejectedなthenableを返しても、フォールバック値で同期的にマウントされる', () => {
+		// リトライに頼らない、より強い回帰テスト: rejectedとして事前タグ
+		// 付けされたthenable（use()のキャッシュ契約 — react.devの
+		// `wrapPromise`パターン）を返すと、WysiwygField内部の変換
+		// （withFallback）が同期的にfallback（空文字列）へ変換したPromiseへ
+		// 差し替えるため、Suspenseにも実際のPromise解決タイミングにも
+		// 依存せず「失敗時はfallbackでそのままマウントされる」ことを確認できる
+		const rejected = Promise.reject(new Error('network error')) as Promise<string> & {
+			status?: 'rejected';
+			reason?: unknown;
+		};
+		rejected.status = 'rejected';
+		rejected.reason = new Error('network error');
+		// 未処理rejection警告を避けるため、テスト側でも一度読んでおく
+		rejected.catch(() => {});
+
+		const getContentStylesheet = vi.fn<() => Promise<string>>().mockReturnValue(rejected);
+		const engine = { getContentStylesheet } as unknown as BurgerEditorEngine;
+
+		render(
+			<EngineProvider engine={engine}>
+				<Suspense fallback={<p>loading</p>}>
+					<WysiwygField value="" onChange={() => {}} />
+				</Suspense>
+			</EngineProvider>,
+		);
+
+		expect(screen.queryByText('loading')).toBeNull();
+		const stub = document.querySelector<StubWysiwygEditorElement>('bge-wysiwyg-editor');
+		expect(stub?.setStyle).toHaveBeenCalledWith('');
 	});
 });
 

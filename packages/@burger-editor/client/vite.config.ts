@@ -30,14 +30,15 @@ export default defineConfig(({ mode }) => ({
 			// 「requireが存在しない環境」エラーで落ちる（`node dist/bin.js
 			// catalog-list`のようにclient/uiをNode側から読むcli/blocks経由で
 			// 顕在化する）。dependenciesの実パッケージとして解決させる。
-			// @testing-library/react・@testing-library/domはtesting.jsからのみ
-			// 参照され、テストコンテキスト以外では読み込まれない（peer依存・
-			// optional）ため同様に同梱しない
+			// @testing-library/react・@testing-library/dom・vitestはtesting.js
+			// からのみ参照され、テストコンテキスト以外では読み込まれない
+			// （peer依存・optional）ため同様に同梱しない
 			external: [
 				/^react($|\/)/,
 				/^react-dom($|\/)/,
 				/^use-sync-external-store($|\/)/,
 				/^@testing-library\//,
+				/^vitest($|\/)/,
 			],
 		},
 	},

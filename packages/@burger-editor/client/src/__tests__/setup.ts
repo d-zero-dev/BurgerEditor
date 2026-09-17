@@ -21,33 +21,11 @@ window.addEventListener('error', (event) => {
 	}
 });
 
-// create-react-view.spec.tsのcreateAreaHost()は、iframeへのdocument.write
-// →load完了という「Reactの外で起きる本物のブラウザ非同期」を経て
-// Promiseを解決する。この解決を`act()`で包むと（iframeのload完了を
-// Reactのスケジューラが握っている間ブロックしてしまい）テストがハング
-// する — act()は「Reactが起こす更新」を対象にした仕組みで、iframeの
-// load自体はその対象外であるため、ここは意図的にact()で包まない。
-// その結果として出る"not wrapped in act(...)"警告は既知のfalse
-// positiveなので、テスト出力のノイズとしてのみ抑制する（実際の更新の
-// 反映漏れではないことは、この直後のexpectがDOMの実際の状態を検証して
-// いることで担保されている）
-// 同様に、既にfulfilled/rejectedとしてタグ付け済みのthenable
-// （use()のキャッシュ契約 — react.devの`wrapPromise`パターン）をrender中に
-// 読むテストで、Reactが「本当にSuspenseが再開されたとき用」の警告を
-// 誤検知することがある（値は同期的に返っており、実際の再開待ちは発生
-// していない）
-const SUPPRESSED_REACT_TEST_WARNINGS = [
-	'was not wrapped in act(...)',
-	'the `act` call was not awaited',
-];
-const originalConsoleError = console.error;
-console.error = (...args: unknown[]) => {
-	const [first] = args;
-	if (
-		typeof first === 'string' &&
-		SUPPRESSED_REACT_TEST_WARNINGS.some((pattern) => first.includes(pattern))
-	) {
-		return;
-	}
-	originalConsoleError(...args);
-};
+// "not wrapped in act(...)" の既知false positive（iframeのload完了待ち、
+// 既にfulfilled/rejectedのthenableをrender中に読むケース）は、ここで
+// 全specに対して一括抑制しない。act警告は「非同期state更新をテストが
+// 正しく待てていない」という実バグを検出する唯一のシグナルであり、
+// グローバルに握りつぶすと今回書き換えたuseEffectEvent/use()/
+// useActionState/startTransition経由の待ち漏れが将来紛れ込んでも
+// 誰も気づけなくなる。該当することが分かっている特定のテストファイル
+// （create-react-view.spec.ts等）側でローカルにspyOnして抑制すること。

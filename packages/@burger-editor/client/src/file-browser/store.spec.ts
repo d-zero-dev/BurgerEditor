@@ -93,6 +93,87 @@ describe('FileBrowserStore.read', () => {
 		expect(getFileList).toHaveBeenCalledTimes(2);
 	});
 
+	test('fileTypeごとの最初のreadだけ選択中ファイルのpathをselectedとして渡す（サーバー側の自動ページ送り向け）', () => {
+		const getFileList = vi.fn().mockResolvedValue({
+			error: false,
+			data: [],
+			pagination: { current: 0, total: 1 },
+		} satisfies FileListResult);
+		const store = new FileBrowserStore(createMockEngine({ getFileList }));
+		store.select('image', '/img/selected.png');
+
+		void store.read({ fileType: 'image', page: 0, filter: '' });
+		expect(getFileList).toHaveBeenNthCalledWith(1, 'image', {
+			page: 0,
+			filter: '',
+			selected: '/img/selected.png',
+		});
+
+		// 2回目以降（明示的なページ送り・検索）では毎回selectedへ引き戻される
+		// と困るため渡さない
+		void store.read({ fileType: 'image', page: 1, filter: '' });
+		expect(getFileList).toHaveBeenNthCalledWith(2, 'image', {
+			page: 1,
+			filter: '',
+			selected: undefined,
+		});
+	});
+
+	test('invalidate後の再取得ではselectedを渡さない（アップロード/削除後にページが引き戻されない）', () => {
+		const getFileList = vi.fn().mockResolvedValue({
+			error: false,
+			data: [],
+			pagination: { current: 0, total: 1 },
+		} satisfies FileListResult);
+		const store = new FileBrowserStore(createMockEngine({ getFileList }));
+		store.select('image', '/img/selected.png');
+
+		void store.read({ fileType: 'image', page: 0, filter: '' });
+		store.invalidate('image');
+		void store.read({ fileType: 'image', page: 0, filter: '' });
+
+		expect(getFileList).toHaveBeenNthCalledWith(2, 'image', {
+			page: 0,
+			filter: '',
+			selected: undefined,
+		});
+	});
+
+	test('別itemが同じfileType・同じページを開いても、前のitemの自動ページ送り済みキャッシュを受け取らない（regression）', async () => {
+		// サーバーは selected を受け取るとその値を含む実際のページへジャンプ
+		// することがあり、返ってくる pagination.current はリクエストした
+		// page（常に0）と食い違いうる。この「食い違った」レスポンスが
+		// {fileType, page, filter} だけでキャッシュされると、後から開いた
+		// 別itemの「同じfileType・page 0・filter未指定」の素朴な最初の
+		// readが、前itemのために自動ジャンプ済みのページ内容を誤って
+		// 受け取ってしまう
+		const getFileList = vi.fn(
+			(_fileType: string, options: { selected?: string }): Promise<FileListResult> =>
+				Promise.resolve({
+					error: false,
+					data: [],
+					// selected付きのリクエストだけ「自動ページ送り」されたことを
+					// pagination.currentの食い違いで模す
+					pagination: { current: options.selected ? 3 : 0, total: 5 },
+				}),
+		);
+		const store = new FileBrowserStore(createMockEngine({ getFileList }));
+
+		// item A: マウント時にselectしてからpage 0を読む（自動ジャンプされる）
+		store.select('image', '/img/a.png');
+		const resultA = await store.read({ fileType: 'image', page: 0, filter: '' });
+		expect(resultA.pagination.current).toBe(3);
+
+		// item B: 別のファイルへselectし直してから、同じ{fileType, page: 0,
+		// filter: ''}を読む（isInitialReadは既に消費済みのためselectedは
+		// 送られないが、Aの自動ジャンプ済みレスポンスを再利用してはいけない）
+		store.select('image', '/img/b.png');
+		const resultB = await store.read({ fileType: 'image', page: 0, filter: '' });
+
+		expect(resultB.pagination.current).toBe(0);
+		expect(getFileList).toHaveBeenCalledTimes(2);
+	});
+
 	test('invalidateはその fileType のキャッシュだけ落とす', () => {
 		const getFileList = vi.fn().mockResolvedValue({
 			error: false,

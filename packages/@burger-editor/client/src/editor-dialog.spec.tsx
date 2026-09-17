@@ -114,6 +114,56 @@ describe('action ベースの送信', () => {
 		expect(alert.textContent).toBe('保存に失敗しました');
 	});
 
+	test('キャンセル後に別の対象で開き直すと前回の失敗メッセージは残らない（regression）', async () => {
+		const failingAction = vi.fn().mockRejectedValue(new Error('Aの保存に失敗しました'));
+		const { rerender } = render(
+			<EditorDialog
+				name="options"
+				open
+				onClose={() => {}}
+				action={failingAction}
+				buttons={{ close: 'キャンセル', complete: '決定' }}>
+				A
+			</EditorDialog>,
+		);
+		const form = document.querySelector('form')!;
+
+		await act(async () => {
+			fireEvent.submit(form);
+			await Promise.resolve();
+		});
+		await screen.findByRole('alert');
+
+		// キャンセル（EditorDialog自体はアンマウントされず、openがfalseに
+		// なるだけ）
+		rerender(
+			<EditorDialog
+				name="options"
+				open={false}
+				onClose={() => {}}
+				action={failingAction}
+				buttons={{ close: 'キャンセル', complete: '決定' }}>
+				A
+			</EditorDialog>,
+		);
+
+		// 別の対象（Bブロック）で再度開く。同じEditorDialogインスタンスが
+		// openをtrueへ戻すだけなので、useActionStateのerrorが残っていると
+		// Bの何も送信していないフォームにAの失敗メッセージが即座に出る
+		rerender(
+			<EditorDialog
+				name="options"
+				open
+				onClose={() => {}}
+				action={vi.fn(async () => {})}
+				buttons={{ close: 'キャンセル', complete: '決定' }}>
+				B
+			</EditorDialog>,
+		);
+
+		expect(screen.queryByRole('alert')).toBeNull();
+	});
+
 	test('送信中は決定ボタンがdisabled/aria-busyになり、完了後に戻る', async () => {
 		let resolveAction!: () => void;
 		const action = vi.fn(

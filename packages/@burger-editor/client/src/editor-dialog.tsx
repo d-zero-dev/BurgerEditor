@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { FallbackProps } from 'react-error-boundary';
 
-import { Suspense, useActionState, useEffect, useId, useRef } from 'react';
+import { Suspense, useActionState, useEffect, useId, useRef, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
 import './invoker-commands.js';
@@ -96,17 +96,23 @@ export function EditorDialog({
 	const dialogId = `${uid}-dialog`;
 	const formId = `${uid}-form`;
 
-	const [error, submitAction, isPending] = useActionState<string | null, FormData>(
-		async (_prevError, formData) => {
-			try {
-				await action?.(formData);
-				return null;
-			} catch (error_) {
-				return error_ instanceof Error ? error_.message : String(error_);
-			}
-		},
-		null,
-	);
+	// EditorDialog自体は同一ダイアログ枠（catalog/options/item-editor）を
+	// 使い回すため、closeせずopenが再度trueになっただけ（例: キャンセル後
+	// 別のブロック/itemを開いた）では通常アンマウントされない。
+	// useActionStateのerrorをそこに放置すると、前回の送信失敗メッセージが
+	// 無関係な次回の編集対象に対して即座に表示されてしまう。
+	// open が false→true になるたびにgenerationを進め、useActionStateを
+	// 持つ内側だけをkeyで作り直してリセットする（`<dialog>`自体の
+	// showModal/closeライフサイクルに関わるdialogRef/dialogIdは
+	// 安定させたいので、EditorDialog自体はremountしない）
+	const [prevOpen, setPrevOpen] = useState(open);
+	const [generation, setGeneration] = useState(0);
+	if (open !== prevOpen) {
+		setPrevOpen(open);
+		if (open) {
+			setGeneration((g) => g + 1);
+		}
+	}
 
 	useEffect(() => {
 		const dialog = dialogRef.current;
@@ -134,6 +140,70 @@ export function EditorDialog({
 				}
 				onClose();
 			}}>
+			<EditorDialogBody
+				key={generation}
+				name={name}
+				formId={formId}
+				dialogId={dialogId}
+				open={open}
+				action={action}
+				buttons={buttons}>
+				{children}
+			</EditorDialogBody>
+		</dialog>
+	);
+}
+
+/**
+ * The form + footer, split out from {@link EditorDialog} solely so it can
+ * be remounted (via a `key` the caller bumps on each open) without also
+ * remounting the `<dialog>` element itself — see the comment at the
+ * `key={generation}` call site for why.
+ * @param root0
+ * @param root0.name
+ * @param root0.formId
+ * @param root0.dialogId
+ * @param root0.open
+ * @param root0.action
+ * @param root0.buttons
+ * @param root0.buttons.close
+ * @param root0.buttons.complete
+ * @param root0.children
+ */
+function EditorDialogBody({
+	name,
+	formId,
+	dialogId,
+	open,
+	action,
+	buttons,
+	children,
+}: {
+	readonly name: string;
+	readonly formId: string;
+	readonly dialogId: string;
+	readonly open: boolean;
+	readonly action?: (formData: FormData) => void | Promise<void>;
+	readonly buttons?: {
+		readonly close?: string;
+		readonly complete?: string;
+	};
+	readonly children: ReactNode;
+}) {
+	const [error, submitAction, isPending] = useActionState<string | null, FormData>(
+		async (_prevError, formData) => {
+			try {
+				await action?.(formData);
+				return null;
+			} catch (error_) {
+				return error_ instanceof Error ? error_.message : String(error_);
+			}
+		},
+		null,
+	);
+
+	return (
+		<>
 			<div>
 				<form
 					id={formId}
@@ -163,6 +233,6 @@ export function EditorDialog({
 					</button>
 				) : null}
 			</footer>
-		</dialog>
+		</>
 	);
 }

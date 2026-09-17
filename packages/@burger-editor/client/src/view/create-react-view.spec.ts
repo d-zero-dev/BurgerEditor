@@ -4,7 +4,20 @@ import { UIStateStore } from '@burger-editor/core';
 import { act } from 'react';
 import { test, expect, afterEach, vi } from 'vitest';
 
+import { suppressConsoleErrors } from '../testing/suppress-console-error.js';
+
 import { createReactView } from './create-react-view.js';
+
+// createAreaHost()は、iframeへのdocument.write→load完了という「Reactの外で
+// 起きる本物のブラウザ非同期」を経てPromiseを解決する。この解決を`act()`で
+// 包むと（iframeのload完了をReactのスケジューラが握っている間ブロックして
+// しまい）テストがハングする — act()は「Reactが起こす更新」を対象にした
+// 仕組みで、iframeのload自体はその対象外であるため、ここは意図的にact()で
+// 包まない。その結果として出る"not wrapped in act(...)"警告は既知のfalse
+// positiveなので、このファイルに限定してテスト出力のノイズとしてのみ抑制
+// する（実際の更新の反映漏れではないことは、この直後のexpectがDOMの実際の
+// 状態を検証していることで担保されている）
+suppressConsoleErrors(['was not wrapped in act(...)']);
 
 afterEach(() => {
 	document.body.innerHTML = '';

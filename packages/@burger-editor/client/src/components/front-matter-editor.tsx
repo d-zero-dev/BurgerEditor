@@ -28,6 +28,12 @@ export interface FieldDefinition {
  * instead of a mutable closure variable updated from inside a React
  * callback — the handle has no other way to read React state from
  * outside React.
+ * @example
+ * ```ts
+ * const store = new FrontMatterStore({ title: 'A' });
+ * store.subscribe(() => console.log(store.getData()));
+ * store.setFields([{ key: 'title', type: 'text', value: 'B' }]);
+ * ```
  */
 export class FrontMatterStore {
 	readonly getSnapshot = (): readonly FieldDefinition[] => this.#fields;

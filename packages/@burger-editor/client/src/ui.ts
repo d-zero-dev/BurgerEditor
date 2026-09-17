@@ -11,6 +11,7 @@ export { useCommand } from './use-command.js';
 export type { CommandHandlers } from './use-command.js';
 export { useUIState } from './use-engine.js';
 export { useFileBrowser } from './file-browser/use-file-browser.js';
+export { useExternalFileSelection } from './file-browser/use-external-file-selection.js';
 export type {
 	FileBrowserStore,
 	FileBrowserQuery,

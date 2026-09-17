@@ -24,6 +24,40 @@ declare module 'react' {
 	}
 }
 
+type Thenable<T> = Promise<T> & {
+	status?: 'fulfilled' | 'rejected';
+	value?: T;
+	reason?: unknown;
+};
+
+/**
+ * Wrap `promise` so a rejection resolves to `fallback` instead, without
+ * breaking the `use()` cache contract (react.dev's `wrapPromise` pattern:
+ * a thenable tagged with `.status`/`.value`/`.reason` lets `use()` read it
+ * synchronously on the first render). `Promise.prototype.catch()` always
+ * returns a fresh, untagged promise, so chaining it directly onto an
+ * already-tagged thenable would silently drop that fast path. A tagged
+ * `'fulfilled'` promise is returned as-is (nothing to fall back from); a
+ * tagged `'rejected'` promise is converted synchronously; only a genuinely
+ * untagged promise falls back to the real async `.catch()`.
+ * @param promise - Source promise, optionally pre-tagged per the `use()`
+ * cache contract
+ * @param fallback - Value to resolve to when `promise` rejects
+ */
+function withFallback<T>(promise: Promise<T>, fallback: T): Promise<T> {
+	const tagged = promise as Thenable<T>;
+	if (tagged.status === 'fulfilled') {
+		return promise;
+	}
+	if (tagged.status === 'rejected') {
+		const resolved = Promise.resolve(fallback) as Thenable<T>;
+		resolved.status = 'fulfilled';
+		resolved.value = fallback;
+		return resolved;
+	}
+	return promise.catch(() => fallback);
+}
+
 /**
  * Rich text field backed by the `<bge-wysiwyg-editor>` custom element
  * (TipTap). The element manages its own DOM; this wrapper feeds the
@@ -69,8 +103,19 @@ export function WysiwygField({
 	const engine = useEngine();
 	// レンダーごとに新しいPromiseを作るとuse()が「キャッシュされていない
 	// Promise」として毎回サスペンドし直すため、このコンポーネント寿命の
-	// 間だけ安定させる（遅延初期化のuseState）
-	const [contentCssPromise] = useState(() => engine.getContentStylesheet());
+	// 間だけ安定させる（遅延初期化のuseState）。CSS取得の失敗（ネットワーク
+	// 不調・パス誤り等）は「見た目が多少崩れる」程度で済むべき失敗であり、
+	// use()にrejectをそのまま投げさせるとダイアログ全体のErrorBoundaryまで
+	// 伝播しフォーム全体が使用不能になってしまう（旧・命令的fire-and-forget
+	// 実装からの挙動後退）ため、ここで吸収して空文字列にフォールバックする。
+	// `.catch()`は常に新しい（タグなしの）Promiseを返すため、素朴に繋ぐと
+	// use()キャッシュ契約（react.devのwrapPromiseパターン、.status/.value）
+	// で既にfulfilledタグ済みのPromiseを渡された場合の同期返却パスまで
+	// 壊してしまう — withCssFallbackはタグを見て、タグ済みならそのまま
+	// 通し、未タグ（実運用のPromise）のときだけ実際に.catch()する
+	const [contentCssPromise] = useState(() =>
+		withFallback(engine.getContentStylesheet(), ''),
+	);
 	const contentCss = use(contentCssPromise);
 
 	const ref = useRef<BgeWysiwygEditorElement | null>(null);

@@ -41,7 +41,11 @@ function dispatchMouseMove(target: EventTarget, pageX: number, pageY: number) {
 
 /**
  * 実際のUIStateStoreを持つengineモック。isProcessedは本物のengineと
- * 同じくストアのprocessingへ委譲する
+ * 同じくストアのprocessingへ委譲する。setCurrentBlockも本物のengine
+ * （engine.ts）と同じくuiState.setCurrentBlock()へ委譲する — そうしないと
+ * block-menu.tsxが`useUIState((s) => s.currentBlock)`で読むcurrentBlockが
+ * 常にnullのままになり、isMutableに応じた分岐がどのテストからも
+ * 到達できなくなる
  */
 function createMockEngine() {
 	const uiState = new UIStateStore();
@@ -51,19 +55,21 @@ function createMockEngine() {
 			return uiState.getSnapshot().processing;
 		},
 		clearCurrentBlock: vi.fn(),
-		setCurrentBlock: vi.fn(),
+		setCurrentBlock: vi.fn((block: BurgerBlock) => {
+			uiState.setCurrentBlock(block);
+		}),
 		commandBus: { receiverId: 'bge-command-bus-test' },
 	});
 }
 
 /**
- *
+ * @param isMutable - `currentBlock?.isMutable()`が返す値
  */
-function createMockBlock(): BurgerBlock {
+function createMockBlock(isMutable = false): BurgerBlock {
 	const el = document.createElement('div');
 	const block = {
 		el,
-		isMutable: () => false,
+		isMutable: () => isMutable,
 		is: (other: unknown) => other === block,
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} as any;
@@ -162,6 +168,53 @@ test('メニューのボタンのcommandforはengine.commandBus.receiverIdを指
 	expect(getByLabelText('ブロックを削除').getAttribute('commandfor')).toBe(
 		'bge-command-bus-from-engine',
 	);
+});
+
+test('currentBlock.isMutable()がtrueのときだけグリッド追加・削除ボタンが表示される（配線漏れの検出）', async () => {
+	const engine = createMockEngine();
+	const container = document.createElement('div');
+	document.body.append(container);
+	const mutableBlock = createMockBlock(true);
+
+	vi.mocked(getBlockAtPosition).mockReturnValue({
+		block: mutableBlock,
+		rect: {
+			left: 0,
+			top: 0,
+			right: 100,
+			bottom: 100,
+			width: 100,
+			height: 100,
+		} as DOMRect,
+		marginBlockEnd: 0,
+	});
+
+	const { getByLabelText, queryByLabelText } = renderWithEngine(
+		engine,
+		<BlockMenu container={container} />,
+	);
+	await hover(document.body);
+
+	expect(getByLabelText('ブロック内に要素を追加')).toBeTruthy();
+	expect(getByLabelText('ブロック内の要素を削除')).toBeTruthy();
+
+	const immutableBlock = createMockBlock(false);
+	vi.mocked(getBlockAtPosition).mockReturnValue({
+		block: immutableBlock,
+		rect: {
+			left: 100,
+			top: 100,
+			right: 200,
+			bottom: 200,
+			width: 100,
+			height: 100,
+		} as DOMRect,
+		marginBlockEnd: 0,
+	});
+	await hover(document.body);
+
+	expect(queryByLabelText('ブロック内に要素を追加')).toBeNull();
+	expect(queryByLabelText('ブロック内の要素を削除')).toBeNull();
 });
 
 test('processingによる非表示で選択中ブロックがクリアされる', async () => {

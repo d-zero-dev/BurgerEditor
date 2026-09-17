@@ -50,6 +50,11 @@ export function createMockEngine(
 		getCustomProperties: () => new Map(),
 		getRepeatMinInlineSizeVariants: () => null,
 		getEditableContent: () => null,
+		// EditableAreaViewはソースモードを抜けるたびにこれを呼ぶため、
+		// スタブし忘れると`commitSourceEdit is not a function`でstory/testが
+		// 落ちる。実際にreplaceContents→saveの経路を検証したいテストは
+		// このデフォルトごと`commitSourceEdit`をoverrideすること
+		commitSourceEdit: async () => {},
 	};
 
 	return Object.defineProperties(
