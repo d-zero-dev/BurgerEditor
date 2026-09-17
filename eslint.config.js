@@ -57,13 +57,34 @@ export default [
 					message:
 						'プログラムによるclick()呼び出しは禁止です。ファイル選択はshowPicker()を使ってください。',
 				},
+				{
+					selector:
+						"CallExpression[callee.name='createItem'] Property[key.name='Editor'][method=true]",
+					message:
+						'createItem()のEditorはオブジェクトメソッド省略記法（Editor(props){...}）にせず、名前付きトップレベル関数として切り出しEditor: XxxEditorで参照してください。React Compilerはオブジェクトメソッド省略記法をコンポーネントとして認識せず、診断ログにも出ずに静かに最適化対象から外れます。',
+				},
 			],
 		},
 	},
 	{
-		files: ['*.mjs', '**/*.spec.{js,mjs,ts,tsx}', '**/*.config.ts'],
+		// リポジトリルートのビルドツール向けスクリプト（scripts/）は、
+		// vitest.config.ts等の*.config.tsと同様にワークスペース横断解決を
+		// 前提にしており、ルートpackage.jsonへの個別宣言は求めない
+		files: [
+			'*.mjs',
+			'**/*.spec.{js,mjs,ts,tsx}',
+			'**/*.config.ts',
+			'scripts/**/*.{js,mjs}',
+		],
 		rules: {
 			'import-x/no-extraneous-dependencies': 0,
+		},
+	},
+	{
+		// scripts/配下はCLIツールであり、標準出力への出力そのものが目的
+		files: ['scripts/**/*.{js,mjs}'],
+		rules: {
+			'no-console': 0,
 		},
 	},
 	{

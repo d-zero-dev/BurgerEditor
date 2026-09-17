@@ -12,6 +12,7 @@ import {
 	TextField,
 	useExternalFileSelection,
 	useFileBrowser,
+	useMountEffect,
 } from '@burger-editor/client/ui';
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 
@@ -96,6 +97,12 @@ export function ImageEditor({ state, setState }: ItemEditorProps<ImageData>) {
 		updateCSSWidth();
 	};
 
+	// このtry/catch/finally自体が、このファイルがReact Compilerの最適化
+	// 対象から漏れている唯一の原因（babel-plugin-react-compiler 1.0.0の
+	// 既知の未対応: "(BuildHIR::lowerStatement) Handle TryStatement with
+	// a finalizer"）。finallyは失敗時でもサイズ入力欄を必ず復帰させる
+	// 正当な後始末処理のため削除しない — アップストリームでfinally対応が
+	// 入ったら自動的にコンパイル対象になる
 	const _updateImage = async (path: string) => {
 		if (!path) {
 			return;
@@ -160,11 +167,10 @@ export function ImageEditor({ state, setState }: ItemEditorProps<ImageData>) {
 
 	// 初期化: タブ0のプレビュー連携と画像読み込み（マウント時のみ）。
 	// state側の初期値はtoEditorStateで正規化済みのためここでは更新しない
-	useEffect(() => {
+	useMountEffect(() => {
 		fileSelect(0);
 		void _updateImage(stateRef.current.path?.[0] ?? '');
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	});
 
 	const currentPath = state.path?.[currentIndex] ?? '';
 

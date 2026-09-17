@@ -60,9 +60,22 @@
 			"matchPackageNames": ["react", "react-dom", "@types/react", "@types/react-dom"]
 		},
 		{
-			"description": "vite-plugin-dts and @vitejs/plugin-react follow vite's peer dependency range, keep aligned with vite bumps",
+			"description": "vite-plugin-dts follows vite's peer dependency range, keep aligned with vite bumps",
 			"groupName": "vite",
-			"matchPackageNames": ["vite", "vite-plugin-dts", "@vitejs/plugin-react"]
+			"matchPackageNames": ["vite", "vite-plugin-dts"]
+		},
+		{
+			"description": "React Compiler's babel plugin, its two bundler integrations (@rolldown/plugin-babel for client, @rollup/plugin-babel for blocks), @vitejs/plugin-react (source of reactCompilerPreset), and their shared babel/typescript-parsing peers must build and type-check together",
+			"groupName": "react-compiler",
+			"matchPackageNames": [
+				"babel-plugin-react-compiler",
+				"@rolldown/plugin-babel",
+				"@rollup/plugin-babel",
+				"@vitejs/plugin-react",
+				"@babel/core",
+				"@babel/preset-typescript",
+				"@types/babel__core"
+			]
 		},
 		{
 			"groupName": "typescript",

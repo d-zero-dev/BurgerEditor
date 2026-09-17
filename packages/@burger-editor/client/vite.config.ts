@@ -1,8 +1,12 @@
 import fs from 'node:fs';
 
-import react from '@vitejs/plugin-react';
+import babel from '@rolldown/plugin-babel';
+import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
+
+// @ts-ignore - plain JS module, no ambient types published for it
+import { reactCompilerDisabled } from '../../../scripts/react-compiler-babel.js';
 
 const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 
@@ -44,6 +48,15 @@ export default defineConfig(({ mode }) => ({
 	},
 	plugins: [
 		react(),
+		// react-compilerは元のJSX/hook構造を見て解析する必要があるため
+		// preset内で最初に実行されなければならない（babelのpresetは記述と
+		// 逆順に実行されるため、後ろに書く）。@babel/preset-typescriptは
+		// このファイル自体はesbuild/oxcが処理するが、babel pluginが受け取る
+		// .tsx側の型構文をパースするだけで剥がしはしないため、剥がす側の
+		// presetとして別途必要
+		...(reactCompilerDisabled
+			? []
+			: [babel({ presets: ['@babel/preset-typescript', reactCompilerPreset()] })]),
 		dts({
 			outDir: 'dist',
 			entryRoot: 'src',

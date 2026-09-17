@@ -1,6 +1,6 @@
 import type { SelectedFile } from './store.js';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 
 /**
  * React to a file becoming selected from outside the item's own `Editor`
@@ -44,7 +44,10 @@ export function useExternalFileSelection(
 	onExternalChange: (selected: SelectedFile) => void,
 ): void {
 	const skipNextRun = useRef(true);
-	useEffect(() => {
+	// getCurrentPath/onExternalChangeをuseEffectEventで読むことで、依存配列を
+	// [selected]だけの正直な形に保てる（exhaustive-depsの抑制が不要になる —
+	// 抑制コメントの存在自体がReact Compilerの別のバイルアウト条件でもある）
+	const handleSelectedChange = useEffectEvent(() => {
 		if (skipNextRun.current) {
 			skipNextRun.current = false;
 			return;
@@ -53,6 +56,9 @@ export function useExternalFileSelection(
 			return;
 		}
 		onExternalChange(selected);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+	});
+
+	useEffect(() => {
+		handleSelectedChange();
 	}, [selected]);
 }

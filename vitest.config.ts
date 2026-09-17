@@ -9,10 +9,23 @@ import { string } from 'rollup-plugin-string';
 import { defineConfig } from 'vitest/config';
 
 import { vrCommands } from './packages/@burger-editor/client/src/__tests__/vr/vr-commands.ts';
+// @ts-ignore - plain JS module, no ambient types published for it
+import {
+	createReactCompilerBabelPlugin,
+	reactCompilerDisabled,
+} from './scripts/react-compiler-babel.js';
 
 const blocksPkg = JSON.parse(
 	fs.readFileSync('./packages/@burger-editor/blocks/package.json', 'utf8'),
 );
+
+// blocks/rollup.config.jsの本番ビルドと同じReact Compiler設定を共有する
+// （scripts/react-compiler-babel.js）。テスト側だけコンパイル対象から
+// 外れる（コンパイル済み/非コンパイルの混在）と、本番とテストで挙動が
+// 食い違いうる。spec.tsx自体はテスト用のハーネスコンポーネントしか
+// 含まずコンパイルの恩恵がないため対象から除く
+const reactCompilerBabel = () =>
+	createReactCompilerBabelPlugin({ exclude: ['node_modules/**', '**/*.spec.tsx'] });
 
 const cssAsRaw = (): Plugin => {
 	return {
@@ -79,7 +92,11 @@ export default defineConfig({
 						),
 					},
 				},
-				plugins: [cssAsRaw(), string({ include: ['**/*.html', '**/*.svg'] })],
+				plugins: [
+					cssAsRaw(),
+					string({ include: ['**/*.html', '**/*.svg'] }),
+					...(reactCompilerDisabled ? [] : [reactCompilerBabel()]),
+				],
 				define: {
 					__VERSION__: JSON.stringify(blocksPkg.version),
 					__DEBUG__: false,
@@ -99,7 +116,11 @@ export default defineConfig({
 					},
 					testTimeout: 15_000,
 				},
-				plugins: [cssAsRaw(), string({ include: ['**/*.html', '**/*.svg'] })],
+				plugins: [
+					cssAsRaw(),
+					string({ include: ['**/*.html', '**/*.svg'] }),
+					...(reactCompilerDisabled ? [] : [reactCompilerBabel()]),
+				],
 				define: {
 					__VERSION__: JSON.stringify(blocksPkg.version),
 					__DEBUG__: false,
