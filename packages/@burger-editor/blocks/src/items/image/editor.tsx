@@ -10,6 +10,7 @@ import {
 	RadioGroup,
 	Tabs,
 	TextField,
+	useExternalFileSelection,
 	useFileBrowser,
 } from '@burger-editor/client/ui';
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
@@ -140,19 +141,22 @@ export function ImageEditor({ state, setState }: ItemEditorProps<ImageData>) {
 	// FileList側で選ばれたファイル（fileBrowser.select経由の外部変更）を
 	// 反映する。selectTab/マウント時の初期化はすでに_updateImageを直接
 	// 呼んでいるため、そこから来た「自分自身の変更」は現在のタブのpathと
-	// 一致し、ここでは再度読み込まない
+	// 一致し、ここでは再度読み込まない。`selected`はengine単位で共有される
+	// FileBrowserStoreの値のため、マウント直後は前に開いていた別itemの
+	// 残留選択の可能性がある — useExternalFileSelectionが初回発火を
+	// スキップし、下のマウント初期化effect（fileSelect(0)がこのitem自身の
+	// pathでselectedを上書きする）に委ねる
 	const selected = useSyncExternalStore(
 		fileBrowser.subscribe,
 		() => fileBrowser.getSnapshot().selected.image,
 	);
-	useEffect(() => {
-		const current = stateRef.current.path?.[currentIndexRef.current] ?? '';
-		if (!selected?.path || selected.path === current) {
-			return;
-		}
-		void _updateImage(selected.path);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [selected]);
+	useExternalFileSelection(
+		selected,
+		() => stateRef.current.path?.[currentIndexRef.current] ?? '',
+		(next) => {
+			void _updateImage(next.path);
+		},
+	);
 
 	// 初期化: タブ0のプレビュー連携と画像読み込み（マウント時のみ）。
 	// state側の初期値はtoEditorStateで正規化済みのためここでは更新しない

@@ -4,6 +4,7 @@ import {
 	FileUploader,
 	Preview,
 	TextField,
+	useExternalFileSelection,
 	useFileBrowser,
 } from '@burger-editor/client/ui';
 import { createItem } from '@burger-editor/core';
@@ -40,25 +41,27 @@ export default createItem<{
 	Editor({ state, setState }) {
 		const fileBrowser = useFileBrowser();
 
-		// ファイル一覧・アップローダーからの選択をエディタ状態に反映する
-		// （マウント時に自分自身がselectした値と一致する場合は反映済みなので
-		// 何もしない — 下のマウントeffectとの二重更新を避ける）
+		// ファイル一覧・アップローダーからの選択をエディタ状態に反映する。
+		// selectedはengine単位で共有されるFileBrowserStoreの値のため、
+		// マウント直後は前に開いていた別itemの残留選択の可能性がある —
+		// useExternalFileSelectionが初回発火をスキップし、下のマウント
+		// effect（自分自身のpathをstoreへ登録する側）に委ねる
 		const selected = useSyncExternalStore(
 			fileBrowser.subscribe,
 			() => fileBrowser.getSnapshot().selected.other,
 		);
-		useEffect(() => {
-			if (!selected?.path || selected.path === (state.path ?? '')) {
-				return;
-			}
-			setState((prev) => ({
-				...prev,
-				path: selected.path,
-				formatedSize: formatByteSize(selected.fileSize),
-				size: selected.fileSize.toString(),
-			}));
-			// eslint-disable-next-line react-hooks/exhaustive-deps
-		}, [selected]);
+		useExternalFileSelection(
+			selected,
+			() => state.path ?? '',
+			(next) => {
+				setState((prev) => ({
+					...prev,
+					path: next.path,
+					formatedSize: formatByteSize(next.fileSize),
+					size: next.fileSize.toString(),
+				}));
+			},
+		);
 
 		// 初回マウント時に現在のファイルをfileBrowserへ登録し、FileListの
 		// ハイライト・アップロード完了時の反映先を揃える

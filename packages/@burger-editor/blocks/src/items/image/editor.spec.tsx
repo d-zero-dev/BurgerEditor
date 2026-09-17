@@ -265,6 +265,78 @@ describe('画像ロード失敗', () => {
 	});
 });
 
+describe('engine単位で共有されるFileBrowserStoreの残留選択（regression）', () => {
+	afterEach(() => {
+		vi.unstubAllGlobals(); // cspell:disable-line
+	});
+
+	test('別itemの選択が残っていても、マウント直後に自分のpathを読み込む（他itemの画像へ差し替わらない）', async () => {
+		/**
+		 * 構築されたsrcを記録するだけで、loadは呼ばれるまで発火しない
+		 * 制御可能なImageスタブ
+		 */
+		class ControllableImage extends EventTarget {
+			naturalHeight = 100;
+			naturalWidth = 100;
+			#src = '';
+			get src() {
+				return this.#src;
+			}
+			set src(value: string) {
+				this.#src = value;
+				ControllableImage.constructedUrls.push(value);
+			}
+			constructor() {
+				super();
+				ControllableImage.instances.push(this);
+			}
+			static constructedUrls: string[] = [];
+			static instances: ControllableImage[] = [];
+		}
+		vi.stubGlobal('Image', ControllableImage);
+
+		const engine = createMockEngine();
+
+		// item A（/img/a.png）をマウントして選択を確定させる（マウント時の
+		// fileSelect(0)がengine共有のFileBrowserStore.selected.imageを
+		// /img/a.pngにする）
+		const { unmount } = render(
+			<Harness engine={engine} initialPath={['/img/a.png', '']} />,
+		);
+		await vi.waitFor(() => {
+			expect(ControllableImage.instances.some((i) => i.src === '/img/a.png')).toBe(true);
+		});
+		unmount();
+
+		// item Aの画像読み込みが完了しないまま（未loadのまま）、
+		// 別item B（/img/b.png）を同じengineでマウントする
+		ControllableImage.constructedUrls = [];
+		let latestB: ImageData | undefined;
+		render(
+			<Harness
+				engine={engine}
+				initialPath={['/img/b.png', '']}
+				onState={(s) => (latestB = s)}
+			/>,
+		);
+
+		await vi.waitFor(() => {
+			expect(ControllableImage.constructedUrls).toContain('/img/b.png');
+		});
+		// item Aの残留選択（/img/a.png）に対する読み込みがBのマウントで
+		// 誘発されていないこと
+		expect(ControllableImage.constructedUrls).not.toContain('/img/a.png');
+
+		// Bの読み込みを完了させ、最終stateがBのままであることを確認する
+		const bInstance = ControllableImage.instances.find((i) => i.src === '/img/b.png');
+		await act(async () => {
+			bInstance?.dispatchEvent(new Event('load'));
+			await Promise.resolve();
+		});
+		expect(latestB?.path?.[0]).toBe('/img/b.png');
+	});
+});
+
 describe('google-mapsのisDisableガード', () => {
 	test('APIキー未設定なら利用不可メッセージを返す', async () => {
 		const { default: googleMapsSeed } = await import('../google-maps/index.js');
