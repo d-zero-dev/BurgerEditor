@@ -21,6 +21,21 @@ export interface FsWatcherOptions {
 }
 
 /**
+ * `fs.watch` callbacks are debounced per relative path by this much before
+ * {@link handleChange} actually runs. A single logical write can otherwise
+ * reach {@link handleChange} as more than one raw callback with real
+ * elapsed time between them — not just the genuinely concurrent
+ * (same-microtask-queue) double-fire `handleChange`'s own hash-recheck
+ * already guards against — observed as an intermittent double `bump()`
+ * (one edit reported as two revisions) specifically under GitHub Actions'
+ * runners, never reproducible locally on macOS or in a local Linux/Docker
+ * container. Collapsing repeated events for the same path into one
+ * deferred call removes the raw-event-count dependency entirely, instead
+ * of trying to widen the race window the recheck relies on.
+ */
+const FS_WATCH_DEBOUNCE_MS = 50;
+
+/**
  * Watches `documentRoot` for changes made outside `local` (an IDE saving a
  * file directly, another process running in disk mode, `git checkout`, …)
  * and pushes an immediate `reload` to any tab with the affected page open,
@@ -45,6 +60,8 @@ export function createFsWatcher(
 	documentRoot: string,
 	options: FsWatcherOptions,
 ): FsWatcher {
+	const pendingByPath = new Map<string, NodeJS.Timeout>();
+
 	const watcher = fs.watch(documentRoot, { recursive: true }, (_eventType, filename) => {
 		if (!filename) {
 			return;
@@ -54,16 +71,31 @@ export function createFsWatcher(
 			'/' + relativePath.split(path.sep).join('/'),
 			options.indexFileName,
 		);
-		handleChange(options.hub, documentRoot, normalizedPage, relativePath).catch(
-			(error) => {
-				log('fs-watcher failed to process a change for %s: %o', relativePath, error);
-			},
+
+		const existingTimer = pendingByPath.get(relativePath);
+		if (existingTimer) {
+			clearTimeout(existingTimer);
+		}
+		pendingByPath.set(
+			relativePath,
+			setTimeout(() => {
+				pendingByPath.delete(relativePath);
+				handleChange(options.hub, documentRoot, normalizedPage, relativePath).catch(
+					(error) => {
+						log('fs-watcher failed to process a change for %s: %o', relativePath, error);
+					},
+				);
+			}, FS_WATCH_DEBOUNCE_MS),
 		);
 	});
 
 	/** Real teardown; `[Symbol.dispose]` and the deprecated `dispose()` both forward here — neither depends on `this`. */
 	function dispose(): void {
 		watcher.close();
+		for (const timer of pendingByPath.values()) {
+			clearTimeout(timer);
+		}
+		pendingByPath.clear();
 	}
 
 	return { [Symbol.dispose]: dispose, dispose };
