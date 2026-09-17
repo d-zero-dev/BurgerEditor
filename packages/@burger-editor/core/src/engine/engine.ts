@@ -58,9 +58,8 @@ export class BurgerEditorEngine implements Disposable {
 	};
 	readonly uiState = new UIStateStore();
 	readonly viewArea: HTMLElement;
-	#contentStylesheetCache: string | null = null;
+	#contentStylesheetCache: Promise<string> | null = null;
 	#current!: EditableContent<EditableAreaType>;
-	#currentBlock: BurgerBlock | null = null;
 	readonly #disposables = new DisposableStack();
 
 	#draft!: EditableContent<'draft'> | null;
@@ -190,7 +189,6 @@ export class BurgerEditorEngine implements Disposable {
 	}
 
 	clearCurrentBlock() {
-		this.#currentBlock = null;
 		this.uiState.setCurrentBlock(null);
 	}
 	/**
@@ -240,31 +238,44 @@ export class BurgerEditorEngine implements Disposable {
 	/**
 	 * Resolve the CSS applied to the content (generalCSS plus non-layered
 	 * stylesheets), for injection into rich-text editors.
+	 *
+	 * Caches the in-flight promise itself, not just the resolved value —
+	 * concurrent callers (e.g. more than one `WysiwygField` mounted at
+	 * once) that call this before the first fetch settles share the same
+	 * promise instead of each issuing their own `fetch` calls.
 	 * @returns The concatenated stylesheet text
 	 */
 	async getContentStylesheet(): Promise<string> {
 		if (this.#contentStylesheetCache) {
 			return this.#contentStylesheetCache;
 		}
-		const css = await Promise.all(
-			this.css.stylesheets
-				.filter((sheet) => sheet.layer == null)
-				.map(async (sheet) => {
-					const res = await fetch(sheet.path);
-					return res.text();
-				}),
-		);
-		// generalCSSを含める
-		const stylesheets = [this.css.generalCSS, ...css];
-		this.#contentStylesheetCache = stylesheets.join('\n');
-		return this.#contentStylesheetCache;
+		const promise = (async () => {
+			const css = await Promise.all(
+				this.css.stylesheets
+					.filter((sheet) => sheet.layer == null)
+					.map(async (sheet) => {
+						const res = await fetch(sheet.path);
+						return res.text();
+					}),
+			);
+			// generalCSSを含める
+			return [this.css.generalCSS, ...css].join('\n');
+		})();
+		// 失敗したフェッチをキャッシュに残さず、次回呼び出しで再試行できる
+		// ようにする
+		promise.catch(() => {
+			this.#contentStylesheetCache = null;
+		});
+		this.#contentStylesheetCache = promise;
+		return promise;
 	}
 	getCurrentBlock() {
-		if (!this.#currentBlock) {
+		const currentBlock = this.uiState.getSnapshot().currentBlock;
+		if (!currentBlock) {
 			// eslint-disable-next-line no-console
 			console.warn('block is unselected.');
 		}
-		return this.#currentBlock;
+		return currentBlock;
 	}
 	getCustomProperties(containerType?: ContainerType) {
 		return getCustomProperties(
@@ -328,7 +339,7 @@ export class BurgerEditorEngine implements Disposable {
 		return !!this.#draft;
 	}
 	isSetBlock() {
-		return !!this.#currentBlock;
+		return !!this.uiState.getSnapshot().currentBlock;
 	}
 	async mainToDraft(confirm?: ConfirmCallback) {
 		if (!this.#draft) {
@@ -406,11 +417,8 @@ export class BurgerEditorEngine implements Disposable {
 	}
 
 	setCurrentBlock(block: BurgerBlock) {
-		let isChanged = true;
-		if (this.#currentBlock) {
-			isChanged = !this.#currentBlock.is(block);
-		}
-		this.#currentBlock = block;
+		const previous = this.uiState.getSnapshot().currentBlock;
+		const isChanged = !previous || !previous.is(block);
 		this.uiState.setCurrentBlock(block);
 		if (isChanged) {
 			this.el.dispatchEvent(

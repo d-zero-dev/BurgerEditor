@@ -3,6 +3,8 @@ import type { Item } from '../item/item.js';
 import type { ItemData } from '../item/types.js';
 import type { EditableAreaType } from '../types.js';
 
+import { BLOCK_OPTION_SCOPE_SELECTOR } from '../const.js';
+
 /**
  * The dialog currently presented by the editor UI, or `null` when no
  * dialog is open. The UI layer renders `<dialog>` elements declaratively
@@ -57,14 +59,18 @@ export interface UIState {
 
 	/**
 	 * 現在表示中の編集エリア。`engine.showMain()` / `engine.showDraft()`
-	 * で切り替わる（旧 `bge:switch-content` イベントの唯一の真実の源）
+	 * で切り替わる。`engine`は同じタイミングで`bge:switch-content`
+	 * イベントも発火するが（DOM購読の非Reactコンシューマ向け）、React側は
+	 * このスナップショットを直接読み、イベント購読を経由しない
 	 */
 	readonly activeArea: EditableAreaType;
 
 	/**
 	 * ホバー選択中のブロック。`engine.setCurrentBlock()` /
-	 * `engine.clearCurrentBlock()` と同期する（旧 `bge:block-change`
-	 * イベントの唯一の真実の源）
+	 * `engine.clearCurrentBlock()` と同期する。`engine`は同じタイミングで
+	 * `bge:block-change`イベントも発火するが（DOM購読の非Reactコンシューマ
+	 * 向け）、React側はこのスナップショットを直接読み、イベント購読を
+	 * 経由しない
 	 */
 	readonly currentBlock: BurgerBlock | null;
 }
@@ -149,8 +155,8 @@ export class UIStateStore {
 	 * @param item - The content item being edited
 	 */
 	openItemEditor(item: Item<ItemData, {}>) {
-		const containerType =
-			item.el.closest<HTMLDivElement>('[data-bge-container]')?.dataset['bgeContainer'];
+		const containerType = item.el.closest<HTMLDivElement>(BLOCK_OPTION_SCOPE_SELECTOR)
+			?.dataset['bgeContainer'];
 		this.#set({ openDialog: { type: 'item-editor', item, containerType } });
 	}
 
