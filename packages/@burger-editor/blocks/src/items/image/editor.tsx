@@ -13,7 +13,14 @@ import {
 	useExternalFileSelection,
 	useFileBrowser,
 } from '@burger-editor/client/ui';
-import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
+import {
+	useEffect,
+	useEffectEvent,
+	useId,
+	useRef,
+	useState,
+	useSyncExternalStore,
+} from 'react';
 
 import { createWidthState } from './width.js';
 
@@ -159,11 +166,18 @@ export function ImageEditor({ state, setState }: ItemEditorProps<ImageData>) {
 	);
 
 	// 初期化: タブ0のプレビュー連携と画像読み込み（マウント時のみ）。
-	// state側の初期値はtoEditorStateで正規化済みのためここでは更新しない
-	useEffect(() => {
+	// state側の初期値はtoEditorStateで正規化済みのためここでは更新しない。
+	// fileSelect/_updateImageは常に最新のクロージャ（stateRefのみ参照する
+	// ため実質安定）だが、useEffectEventに包むことで依存配列を[]のまま
+	// 正直に保てる（exhaustive-depsの抑制が不要になる）。抑制コメントは
+	// React Compilerがコンポーネント全体の最適化を諦める条件でもあるため
+	const initializeOnMount = useEffectEvent(() => {
 		fileSelect(0);
 		void _updateImage(stateRef.current.path?.[0] ?? '');
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+	});
+
+	useEffect(() => {
+		initializeOnMount();
 	}, []);
 
 	const currentPath = state.path?.[currentIndex] ?? '';
