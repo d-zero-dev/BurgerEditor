@@ -15,8 +15,7 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.62.1-noble
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: ./.github/actions/setup-yarn
 
       - name: Install CJK fonts
         # azure.archive.ubuntu.com への接続が一過性にタイムアウトし apt-get update が失敗することがあるためリトライする
@@ -29,27 +28,6 @@ jobs:
             apt-get update
             apt-get install -y --no-install-recommends fonts-noto-cjk
             rm -rf /var/lib/apt/lists/*
-
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 26.8.1
-
-      - name: Enable Corepack and setup Yarn v4
-        run: |
-          corepack enable
-          corepack prepare $(node -p "require('./package.json').packageManager") --activate
-          yarn --version
-
-      - name: Cache dependencies
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .yarn/cache
-          key: yarn-cache-${{ hashFiles('yarn.lock') }}
-          restore-keys: yarn-cache-
-
-      - name: Install dependencies
-        run: yarn install --immutable
 
       - name: Build
         run: yarn build
@@ -79,29 +57,7 @@ jobs:
       BGE_NO_COMPILER: '1'
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 26.8.1
-
-      - name: Enable Corepack and setup Yarn v4
-        run: |
-          corepack enable
-          corepack prepare $(node -p "require('./package.json').packageManager") --activate
-          yarn --version
-
-      - name: Cache dependencies
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .yarn/cache
-          key: yarn-cache-${{ hashFiles('yarn.lock') }}
-          restore-keys: yarn-cache-
-
-      - name: Install dependencies
-        run: yarn install --immutable
+      - uses: ./.github/actions/setup-yarn
 
       - name: Build
         run: yarn build
