@@ -112,7 +112,9 @@ function GoogleMapsEditor({ state, setState }: ItemEditorProps<GoogleMapsData>) 
 		return () => {
 			google.maps.event.clearInstanceListeners(map);
 		};
-	}, []);
+		// setStateはuseStateのディスパッチ関数まで遡る安定した参照（React保証）
+		// なので依存に含めてもこのeffect自体の再実行は起きない
+	}, [setState]);
 
 	const rootRef = useCommand<HTMLDivElement>({
 		'--search-address': () => {

@@ -8,10 +8,11 @@ import {
 	TextField,
 	useExternalFileSelection,
 	useFileBrowser,
+	useMountEffect,
 } from '@burger-editor/client/ui';
 import { createItem } from '@burger-editor/core';
 import { formatByteSize } from '@burger-editor/utils';
-import { useEffect, useEffectEvent, useSyncExternalStore } from 'react';
+import { useSyncExternalStore } from 'react';
 
 import style from './style.css';
 import template from './template.html';
@@ -62,17 +63,10 @@ function DownloadFileEditor({ state, setState }: ItemEditorProps<DownloadFileDat
 	);
 
 	// 初回マウント時に現在のファイルをfileBrowserへ登録し、FileListの
-	// ハイライト・アップロード完了時の反映先を揃える。useEffectEventで
-	// 最新のstateを読むことで依存配列[]を正直に保てる（exhaustive-deps
-	// の抑制が不要になる — 抑制コメントはReact Compilerがコンポーネント
-	// 全体の最適化を諦める条件でもある）
-	const registerOnMount = useEffectEvent(() => {
+	// ハイライト・アップロード完了時の反映先を揃える
+	useMountEffect(() => {
 		fileBrowser.select('other', state.path ?? '', Number.parseFloat(state.size ?? '0'));
 	});
-
-	useEffect(() => {
-		registerOnMount();
-	}, []);
 
 	return (
 		<div data-bge-dialog="2col">
