@@ -6,7 +6,9 @@ import { defineBgeWysiwygEditorElement } from '@burger-editor/custom-element';
 import { BurgerEditorRoot } from './burger-editor-root.js';
 import { registerEngineCommands } from './commands/register-engine-commands.js';
 import { DraftSwitcher } from './components/draft-switcher.js';
+import { EngineProvider } from './engine-context.js';
 import { reactMount } from './mount.js';
+import { RootErrorBoundary } from './root-error-boundary.js';
 import { createReactView } from './view/create-react-view.js';
 
 import './style/ui.css';
@@ -18,6 +20,10 @@ export const version = __VERSION__;
  *
  * `createBurgerEditorClient` に含めず分離しているのは、配置位置
  * （エディタの外側のどこに置くか）がアプリケーション側の判断のため。
+ * 単一rootの対象外（`engine.viewArea`の外側、任意のDOM位置に置かれる
+ * ため）: `createReactView()`が持つ単一rootとは別の独立したReact root
+ * を持つが、`EngineProvider`で包むため`DraftSwitcher`自体は
+ * `useEngine()`で取得する（propsは受け取らない）。
  * @param engine - 対象エンジン。下書きが無い構成では何もしない
  * @returns マウントハンドル（`cleanUp`でアンマウント）。下書きが無い場合はnull
  * @example
@@ -31,7 +37,14 @@ export function attachDraftSwitcher(engine: BurgerEditorEngine) {
 		const container = document.createElement('div');
 		container.dataset.bgeComponent = 'draft-switcher';
 		engine.viewArea.insertAdjacentElement('beforebegin', container);
-		return reactMount(<DraftSwitcher engine={engine} />, container);
+		return reactMount(
+			<EngineProvider engine={engine}>
+				<RootErrorBoundary>
+					<DraftSwitcher />
+				</RootErrorBoundary>
+			</EngineProvider>,
+			container,
+		);
 	}
 
 	return null;
@@ -66,9 +79,14 @@ export function attachDraftSwitcher(engine: BurgerEditorEngine) {
 export async function createBurgerEditorClient(
 	options: Omit<BurgerEditorEngineOptions, 'view'>,
 ) {
+	// `view`への参照を保持し、engine構築後に同じrootへダイアログ群を
+	// 追い足す（`ReactView.mountChrome`）。`createAreaHost`は
+	// `BurgerEditorEngine.new()`の内部（engineがこの関数に返る前）で
+	// 呼ばれるため、単一rootの生成自体はそちら側が担う
+	const view = createReactView();
 	const engine = await BurgerEditorEngine.new({
 		...options,
-		view: createReactView(),
+		view,
 		// wrapperElement/experimental.textOnlyModeがdocument単位で共有される
 		// 前提のWhy notはdefineBgeWysiwygEditorElementのJSDoc参照
 		defineCustomElement(context) {
@@ -89,18 +107,10 @@ export async function createBurgerEditorClient(
 	registerEngineCommands(engine, options.catalog);
 
 	// ダイアログ群をエンジンのUI状態ストアから宣言的にレンダリングする。
-	// マウントハンドルをengineのDisposableStackに載せ、
-	// engine[Symbol.dispose]()（cleanUp()）で確実にunmount+除去する
-	const dialogHost = document.createElement('div');
-	dialogHost.dataset.bgeComponent = 'dialog-host';
-	engine.el.append(dialogHost);
-	const dialogMount = reactMount(<BurgerEditorRoot engine={engine} />, dialogHost);
-	engine.own({
-		[Symbol.dispose]() {
-			dialogMount[Symbol.dispose]();
-			dialogHost.remove();
-		},
-	});
+	// `view`の単一rootが`EngineProvider`/`RootErrorBoundary`で既に包んで
+	// いるため、ここではchrome本体のみ渡す。破棄は`view`
+	// （`engine.#disposables`が既に所有）に任せてよい
+	view.mountChrome(<BurgerEditorRoot />);
 
 	return {
 		engine,

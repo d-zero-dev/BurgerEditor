@@ -18,7 +18,6 @@ import type {
 
 import { BurgerBlock } from '../block/block.js';
 import { CommandBus } from '../command/command-bus.js';
-import { ComponentObserver } from '../component-observer.js';
 import { CSS_LAYER } from '../const.js';
 import { createComponentStylesheet } from '../dom-helpers/create-component-stylesheet.js';
 import { createStylesheetFromUrl } from '../dom-helpers/create-stylesheet-from-url.js';
@@ -42,7 +41,6 @@ import { UIStateStore } from './ui-state.js';
 export class BurgerEditorEngine implements Disposable {
 	readonly catalog: BlockCatalog;
 	readonly commandBus = new CommandBus();
-	readonly componentObserver = new ComponentObserver();
 	readonly config: Config;
 	readonly css: {
 		readonly stylesheets: readonly {
@@ -60,9 +58,8 @@ export class BurgerEditorEngine implements Disposable {
 	};
 	readonly uiState = new UIStateStore();
 	readonly viewArea: HTMLElement;
-	#contentStylesheetCache: string | null = null;
+	#contentStylesheetCache: Promise<string> | null = null;
 	#current!: EditableContent<EditableAreaType>;
-	#currentBlock: BurgerBlock | null = null;
 	readonly #disposables = new DisposableStack();
 
 	#draft!: EditableContent<'draft'> | null;
@@ -108,7 +105,6 @@ export class BurgerEditorEngine implements Disposable {
 		});
 		this.#disposables.use(this.#healthMonitor);
 		this.#disposables.use(this.commandBus);
-		this.#disposables.use(this.componentObserver);
 
 		this.css = {
 			stylesheets: options.config.stylesheets ?? [],
@@ -146,10 +142,6 @@ export class BurgerEditorEngine implements Disposable {
 		this.el.addEventListener('bge:saved', (e) => {
 			const { main, draft } = e.detail;
 			void options.onUpdated?.(main, draft);
-		});
-
-		this.componentObserver.on('select-block', ({ block }) => {
-			this.setCurrentBlock(block);
 		});
 	}
 
@@ -197,7 +189,27 @@ export class BurgerEditorEngine implements Disposable {
 	}
 
 	clearCurrentBlock() {
-		this.#currentBlock = null;
+		this.uiState.setCurrentBlock(null);
+	}
+	/**
+	 * Replace an editable area's content with hand-edited HTML source and
+	 * save. Used when leaving HTML-source editing mode, or whenever the UI
+	 * layer wants to commit an in-progress edit (e.g. the source textarea
+	 * losing focus). A no-op when the area doesn't exist (e.g. no draft).
+	 * @param type - The editable area to commit into
+	 * @param html - The HTML source to replace the area's content with
+	 * @example
+	 * ```ts
+	 * await engine.commitSourceEdit('main', textarea.value);
+	 * ```
+	 */
+	async commitSourceEdit(type: EditableAreaType, html: string): Promise<void> {
+		const content = this.getEditableContent(type);
+		if (!content) {
+			return;
+		}
+		await content.replaceContents(html);
+		this.save();
 	}
 	/**
 	 * ブロックマーカーを持たない生HTMLを、1つのwysiwygアイテムとして
@@ -226,31 +238,44 @@ export class BurgerEditorEngine implements Disposable {
 	/**
 	 * Resolve the CSS applied to the content (generalCSS plus non-layered
 	 * stylesheets), for injection into rich-text editors.
+	 *
+	 * Caches the in-flight promise itself, not just the resolved value —
+	 * concurrent callers (e.g. more than one `WysiwygField` mounted at
+	 * once) that call this before the first fetch settles share the same
+	 * promise instead of each issuing their own `fetch` calls.
 	 * @returns The concatenated stylesheet text
 	 */
 	async getContentStylesheet(): Promise<string> {
 		if (this.#contentStylesheetCache) {
 			return this.#contentStylesheetCache;
 		}
-		const css = await Promise.all(
-			this.css.stylesheets
-				.filter((sheet) => sheet.layer == null)
-				.map(async (sheet) => {
-					const res = await fetch(sheet.path);
-					return res.text();
-				}),
-		);
-		// generalCSSを含める
-		const stylesheets = [this.css.generalCSS, ...css];
-		this.#contentStylesheetCache = stylesheets.join('\n');
-		return this.#contentStylesheetCache;
+		const promise = (async () => {
+			const css = await Promise.all(
+				this.css.stylesheets
+					.filter((sheet) => sheet.layer == null)
+					.map(async (sheet) => {
+						const res = await fetch(sheet.path);
+						return res.text();
+					}),
+			);
+			// generalCSSを含める
+			return [this.css.generalCSS, ...css].join('\n');
+		})();
+		// 失敗したフェッチをキャッシュに残さず、次回呼び出しで再試行できる
+		// ようにする
+		promise.catch(() => {
+			this.#contentStylesheetCache = null;
+		});
+		this.#contentStylesheetCache = promise;
+		return promise;
 	}
 	getCurrentBlock() {
-		if (!this.#currentBlock) {
+		const currentBlock = this.uiState.getSnapshot().currentBlock;
+		if (!currentBlock) {
 			// eslint-disable-next-line no-console
 			console.warn('block is unselected.');
 		}
-		return this.#currentBlock;
+		return currentBlock;
 	}
 	getCustomProperties(containerType?: ContainerType) {
 		return getCustomProperties(
@@ -273,6 +298,7 @@ export class BurgerEditorEngine implements Disposable {
 	getEditableContent(type: EditableAreaType): EditableContent<EditableAreaType> | null {
 		return type === 'main' ? this.#main : this.#draft;
 	}
+
 	/**
 	 * Index of `block` within {@link getLiveBlocks}, or `-1` when it's not
 	 * in the current editable area.
@@ -313,7 +339,7 @@ export class BurgerEditorEngine implements Disposable {
 		return !!this.#draft;
 	}
 	isSetBlock() {
-		return !!this.#currentBlock;
+		return !!this.uiState.getSnapshot().currentBlock;
 	}
 	async mainToDraft(confirm?: ConfirmCallback) {
 		if (!this.#draft) {
@@ -391,11 +417,9 @@ export class BurgerEditorEngine implements Disposable {
 	}
 
 	setCurrentBlock(block: BurgerBlock) {
-		let isChanged = true;
-		if (this.#currentBlock) {
-			isChanged = !this.#currentBlock.is(block);
-		}
-		this.#currentBlock = block;
+		const previous = this.uiState.getSnapshot().currentBlock;
+		const isChanged = !previous || !previous.is(block);
+		this.uiState.setCurrentBlock(block);
 		if (isChanged) {
 			this.el.dispatchEvent(
 				createBgeEvent('bge:block-change', {
@@ -467,6 +491,7 @@ export class BurgerEditorEngine implements Disposable {
 		}
 		this.#current = to;
 		this.migrationCheck(to.containerElement);
+		this.uiState.setActiveArea(this.#current.type);
 		// 各エリアの表示・非表示はUI層がこのイベントを購読して宣言的に
 		// 描画する。エンジンはUI要素の属性を書き換えない
 		this.el.dispatchEvent(

@@ -1,7 +1,13 @@
 import type { ImageData } from './index.js';
-import type { BurgerEditorEngine, ItemData, Item } from '@burger-editor/core';
+import type {
+	BurgerEditorEngine,
+	FileListResult,
+	ItemData,
+	Item,
+} from '@burger-editor/core';
 
-import { ComponentObserver } from '@burger-editor/core';
+import { createMockEngine as createBaseMockEngine } from '@burger-editor/client/testing';
+import { EngineProvider } from '@burger-editor/client/ui';
 import { narrowElement } from '@burger-editor/utils';
 import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { useState } from 'react';
@@ -20,9 +26,9 @@ const testConfig = {
 } as const;
 
 /**
- * 2枚構成の初期エディタ状態。デフォルトはpathを空にして画像ロード
- * （jsdomでは完了しない）を発生させず、サイズ用fieldsetが無効化され
- * ないようにする
+ * 2枚構成の初期エディタ状態。デフォルトはpathを空にして画像ロードの
+ * リクエスト自体を発生させず（実ブラウザ実行でもネットワーク依存を
+ * 作らないため）、サイズ用fieldsetが無効化されないようにする
  * @param path
  */
 function createInitialState(path: string[] = ['', '']): ImageData {
@@ -58,8 +64,10 @@ function createInitialState(path: string[] = ['', '']): ImageData {
 }
 
 /**
- * jsdomはInvoker Commands API未実装のため、commandfor先へ合成command
- * イベントを送ってボタン起動を再現する
+ * 実Chromium（Baseline 2025）はInvoker Commands APIをネイティブ実装
+ * 済みだが、他spec群と実装を揃えるためここでも意図的にcommandfor先へ
+ * 合成commandイベントを送ってボタン起動を再現する（実クリック駆動への
+ * 切り替えは別スコープと判断し見送り済み）
  * @param button
  */
 function invokeCommand(button: HTMLElement) {
@@ -76,37 +84,58 @@ function invokeCommand(button: HTMLElement) {
 }
 
 /**
- *
+ * Suspenseの再開（pending→fulfilledへの遷移をReactが自動でping/retry
+ * する過程）は実Chromium/Vitest Browser Modeでも安定して拾えないことを
+ * 最小再現で確認済み（jsdom固有の制約ではない）。そのため
+ * FileListが読む`getFileList`は最初から解決済みのthenable（use()の
+ * キャッシュ契約 — status/valueを事前に持つと同期的に値を返す）を返す
  */
-function createMockEngine() {
-	return {
-		componentObserver: new ComponentObserver(),
-		serverAPI: {},
-	} as unknown as BurgerEditorEngine;
+function resolvedFileList(): Promise<FileListResult> {
+	const result: FileListResult = {
+		error: false,
+		data: [],
+		pagination: { current: 0, total: 1 },
+	};
+	const resolved = Promise.resolve(result) as Promise<FileListResult> & {
+		status?: 'fulfilled';
+		value?: FileListResult;
+	};
+	resolved.status = 'fulfilled';
+	resolved.value = result;
+	return resolved;
 }
 
 /**
- * state/setStateを実際のReact stateとして供給するテストハーネス
+ *
+ */
+function createMockEngine() {
+	return createBaseMockEngine({ serverAPI: { getFileList: () => resolvedFileList() } });
+}
+
+/**
+ * state/setStateを実際のReact stateとして供給するテストハーネス。
+ * `onState` を渡すと最新の state をレンダーのたびにテスト側へ渡せる
+ * （間接的な通知を経由せず、state遷移を直接assertする）
  * @param root0
  * @param root0.engine
  * @param root0.initialPath
+ * @param root0.onState
  */
 function Harness({
 	engine,
 	initialPath,
+	onState,
 }: {
 	readonly engine: BurgerEditorEngine;
 	readonly initialPath?: string[];
+	readonly onState?: (state: ImageData) => void;
 }) {
 	const [state, setState] = useState<ImageData>(() => createInitialState(initialPath));
+	onState?.(state);
 	return (
-		<ImageEditor
-			state={state}
-			setState={setState}
-			config={testConfig}
-			engine={engine}
-			item={{} as never}
-		/>
+		<EngineProvider engine={engine}>
+			<ImageEditor state={state} setState={setState} item={{} as never} />
+		</EngineProvider>
 	);
 }
 
@@ -178,21 +207,19 @@ describe('ImageEditor', () => {
 		expect(output.textContent).toBe('px');
 	});
 
-	test('幅の数値変更でcssWidthが更新されupdate-css-widthが通知される', () => {
-		const engine = createMockEngine();
-		const cssWidths: string[] = [];
-		engine.componentObserver.on('update-css-width', ({ cssWidth }) => {
-			cssWidths.push(cssWidth);
-		});
+	test('幅の数値変更でcssWidthが更新される', () => {
+		let latestState: ImageData | undefined;
 
-		render(<Harness engine={engine} />);
+		render(
+			<Harness engine={createMockEngine()} onState={(state) => (latestState = state)} />,
+		);
 
 		const numberInput = screen.getByLabelText('幅', {
 			selector: 'input[type="number"]',
 		});
 		fireEvent.change(numberInput, { target: { value: '250' } });
 
-		expect(cssWidths.at(-1)).toBe('250px');
+		expect(latestState?.cssWidth).toBe('250px');
 	});
 
 	test('ポップアップを有効にするとリンク先URLと別タブが無効化される', () => {
@@ -235,6 +262,78 @@ describe('画像ロード失敗', () => {
 			HTMLFieldSetElement,
 		);
 		expect(fieldset.disabled).toBe(false);
+	});
+});
+
+describe('engine単位で共有されるFileBrowserStoreの残留選択（regression）', () => {
+	afterEach(() => {
+		vi.unstubAllGlobals(); // cspell:disable-line
+	});
+
+	test('別itemの選択が残っていても、マウント直後に自分のpathを読み込む（他itemの画像へ差し替わらない）', async () => {
+		/**
+		 * 構築されたsrcを記録するだけで、loadは呼ばれるまで発火しない
+		 * 制御可能なImageスタブ
+		 */
+		class ControllableImage extends EventTarget {
+			naturalHeight = 100;
+			naturalWidth = 100;
+			#src = '';
+			get src() {
+				return this.#src;
+			}
+			set src(value: string) {
+				this.#src = value;
+				ControllableImage.constructedUrls.push(value);
+			}
+			constructor() {
+				super();
+				ControllableImage.instances.push(this);
+			}
+			static constructedUrls: string[] = [];
+			static instances: ControllableImage[] = [];
+		}
+		vi.stubGlobal('Image', ControllableImage);
+
+		const engine = createMockEngine();
+
+		// item A（/img/a.png）をマウントして選択を確定させる（マウント時の
+		// fileSelect(0)がengine共有のFileBrowserStore.selected.imageを
+		// /img/a.pngにする）
+		const { unmount } = render(
+			<Harness engine={engine} initialPath={['/img/a.png', '']} />,
+		);
+		await vi.waitFor(() => {
+			expect(ControllableImage.instances.some((i) => i.src === '/img/a.png')).toBe(true);
+		});
+		unmount();
+
+		// item Aの画像読み込みが完了しないまま（未loadのまま）、
+		// 別item B（/img/b.png）を同じengineでマウントする
+		ControllableImage.constructedUrls = [];
+		let latestB: ImageData | undefined;
+		render(
+			<Harness
+				engine={engine}
+				initialPath={['/img/b.png', '']}
+				onState={(s) => (latestB = s)}
+			/>,
+		);
+
+		await vi.waitFor(() => {
+			expect(ControllableImage.constructedUrls).toContain('/img/b.png');
+		});
+		// item Aの残留選択（/img/a.png）に対する読み込みがBのマウントで
+		// 誘発されていないこと
+		expect(ControllableImage.constructedUrls).not.toContain('/img/a.png');
+
+		// Bの読み込みを完了させ、最終stateがBのままであることを確認する
+		const bInstance = ControllableImage.instances.find((i) => i.src === '/img/b.png');
+		await act(async () => {
+			bInstance?.dispatchEvent(new Event('load'));
+			await Promise.resolve();
+		});
+		expect(latestB?.path?.[0]).toBe('/img/b.png');
 	});
 });
 

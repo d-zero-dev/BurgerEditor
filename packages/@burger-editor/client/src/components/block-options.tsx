@@ -1,6 +1,8 @@
-import type { BurgerBlock, BurgerEditorEngine } from '@burger-editor/core';
+import type { BurgerBlock } from '@burger-editor/core';
 
 import { useId, useMemo, useState } from 'react';
+
+import { useEngine } from '../engine-context.js';
 
 const containerTypeLabel = {
 	grid: 'グリッド',
@@ -13,7 +15,6 @@ const containerTypeLabel = {
  * on submit (uncontrolled, `name="bge-options-*"`); only the fields that
  * drive conditional rendering are controlled.
  * @param root0
- * @param root0.engine
  * @param root0.block
  * @example
  * ```tsx
@@ -21,19 +22,14 @@ const containerTypeLabel = {
  * 	name="options"
  * 	open={block !== null}
  * 	onClose={close}
- * 	onComplete={(formData) => applyBlockOptions(block, formData)}
+ * 	action={(formData) => applyBlockOptions(block, formData)}
  * 	buttons={{ close: 'キャンセル', complete: '決定' }}>
- * 	{block ? <BlockOptions engine={engine} block={block} /> : null}
+ * 	{block ? <BlockOptions block={block} /> : null}
  * </EditorDialog>
  * ```
  */
-export function BlockOptions({
-	engine,
-	block,
-}: {
-	readonly engine: BurgerEditorEngine;
-	readonly block: BurgerBlock;
-}) {
+export function BlockOptions({ block }: { readonly block: BurgerBlock }) {
+	const engine = useEngine();
 	const currentBlock = block;
 	// 同一documentに複数のブロックオプションダイアログが存在してもaria-*の
 	// 参照先が混線しないよう、ハードコードIDではなくuseIdで一意化する

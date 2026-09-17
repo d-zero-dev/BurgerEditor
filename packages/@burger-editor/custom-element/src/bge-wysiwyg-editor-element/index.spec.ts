@@ -1,9 +1,10 @@
 import type { BgeWysiwygEditorElement } from './index.js';
-import type { BgeWysiwygElement } from '../bge-wysiwyg-element/index.js';
 
 import { normalizeHtmlStructure } from '@burger-editor/utils';
 import { Node } from '@tiptap/core';
 import { test, expect, beforeAll, vi, beforeEach, afterEach } from 'vitest';
+
+import { BgeWysiwygElement } from '../bge-wysiwyg-element/index.js';
 
 import { defineBgeWysiwygEditorElement } from './index.js';
 
@@ -62,6 +63,33 @@ test('the "value" attribute is set', () => {
 	document.body.innerHTML = '<bge-wysiwyg-editor><p>test</p></bge-wysiwyg-editor>';
 	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
 	expect(editor.value).toBe('<p>test</p>');
+});
+
+test('contentCssプロパティへの設定が内側の<bge-wysiwyg>のsetStyle()を呼ぶ（React 19がカスタム要素へプロパティとして渡す契約）', () => {
+	document.body.innerHTML = '<bge-wysiwyg-editor><p>test</p></bge-wysiwyg-editor>';
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+	const inner = editor.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const setStyleSpy = vi.spyOn(inner, 'setStyle');
+
+	editor.contentCss = 'body { color: red; }';
+
+	expect(setStyleSpy).toHaveBeenCalledWith('body { color: red; }');
+	expect(editor.contentCss).toBe('body { color: red; }');
+});
+
+test('接続前（document.createElement直後）にcontentCssを設定しても、接続後に内側へ反映される', () => {
+	const setStyleSpy = vi.spyOn(BgeWysiwygElement.prototype, 'setStyle');
+	const editor = document.createElement('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+	editor.innerHTML = '<p>test</p>';
+
+	// #wysiwygElementがまだ存在しないため、この時点では内側への反映は
+	// 起きず、値だけが保持される
+	editor.contentCss = 'body { color: blue; }';
+	expect(setStyleSpy).not.toHaveBeenCalled();
+
+	document.body.append(editor);
+
+	expect(setStyleSpy).toHaveBeenCalledWith('body { color: blue; }');
 });
 
 test('the "button-like-link" block can wrap without "a" element', () => {

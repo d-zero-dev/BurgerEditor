@@ -11,7 +11,6 @@ export { applyBlockOptions } from './block/apply-block-options.js';
 export { dataToHtml as itemImport } from './item/data-to-html.js';
 export { dataFromHtml as itemExport } from './item/data-from-html.js';
 export { render } from './render.js';
-export { ComponentObserver } from './component-observer.js';
 export { CommandBus, COMMAND_BUS_ID } from './command/command-bus.js';
 export { BGE_COMMAND } from './command/commands.js';
 export type { BgeCommand } from './command/commands.js';
@@ -39,6 +38,8 @@ export * from './utils/find-value-pattern-from-array.js';
 export { exportStyleOptions } from './block/export-style-options.js';
 export { getBlockAtPosition } from './get-block-at-position.js';
 export { parseHTMLToBlockData } from './block/parse-html-to-definition.js';
+export { createBgeEvent } from './event/create-bge-event.js';
+export type { BurgerEditorEvent } from './event/create-bge-event.js';
 
 // Document helpers (Front Matter / editable area extraction)
 export { NoEditableAreaError } from './document/no-editable-area-error.js';

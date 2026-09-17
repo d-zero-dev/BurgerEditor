@@ -1,14 +1,36 @@
+import type { BurgerEditorEngine, BurgerBlock } from '@burger-editor/core';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { BlockOptions } from '@burger-editor/client/ui';
+import { BlockOptions, EngineProvider } from '@burger-editor/client/ui';
 
 import { createMockBlock } from '../mocks/create-mock-block.js';
 import { createMockEngine } from '../mocks/create-mock-engine.js';
 
+/**
+ * `BlockOptions` reads the engine via `useEngine()`; this story-only
+ * wrapper keeps the `{engine, block}` args shape the stories below use.
+ * @param root0
+ * @param root0.engine
+ * @param root0.block
+ */
+function BlockOptionsStory({
+	engine,
+	block,
+}: {
+	readonly engine: BurgerEditorEngine;
+	readonly block: BurgerBlock;
+}) {
+	return (
+		<EngineProvider engine={engine}>
+			<BlockOptions block={block} />
+		</EngineProvider>
+	);
+}
+
 const meta = {
 	title: 'Client/Components/BlockOptions',
-	component: BlockOptions,
-} satisfies Meta<typeof BlockOptions>;
+	component: BlockOptionsStory,
+} satisfies Meta<typeof BlockOptionsStory>;
 
 export default meta;
 

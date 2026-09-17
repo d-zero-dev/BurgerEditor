@@ -11,7 +11,12 @@ import { createRoot } from 'react-dom/client';
  * @returns A handle that unmounts the root, via `using` or `cleanUp()`
  * @example
  * ```tsx
- * using mount = reactMount(<DraftSwitcher engine={engine} />, container);
+ * using mount = reactMount(
+ * 	<EngineProvider engine={engine}>
+ * 		<DraftSwitcher />
+ * 	</EngineProvider>,
+ * 	container,
+ * );
  * // Root is unmounted automatically when `mount` goes out of scope.
  * ```
  */

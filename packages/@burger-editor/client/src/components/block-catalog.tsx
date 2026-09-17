@@ -1,11 +1,10 @@
-import type {
-	BlockCatalog as BlockCatalogData,
-	BurgerEditorEngine,
-} from '@burger-editor/core';
+import type { BlockCatalog as BlockCatalogData } from '@burger-editor/core';
 
 import { BGE_COMMAND } from '@burger-editor/core';
 import { IconClipboard } from '@tabler/icons-react';
 import { Fragment } from 'react';
+
+import { useEngine } from '../engine-context.js';
 
 import styles from './block-catalog.module.css';
 
@@ -14,22 +13,16 @@ import styles from './block-catalog.module.css';
  * as engine commands; the catalog entry is identified by
  * `data-category` / `data-index` on the invoker button.
  * @param root0
- * @param root0.engine
  * @param root0.catalog
  * @example
  * ```tsx
  * <EditorDialog name="catalog" open={open} onClose={close} buttons={{ close: 'キャンセル' }}>
- * 	<BlockCatalog engine={engine} catalog={engine.catalog} />
+ * 	<BlockCatalog catalog={engine.catalog} />
  * </EditorDialog>
  * ```
  */
-export function BlockCatalog({
-	engine,
-	catalog,
-}: {
-	readonly engine: BurgerEditorEngine;
-	readonly catalog: BlockCatalogData;
-}) {
+export function BlockCatalog({ catalog }: { readonly catalog: BlockCatalogData }) {
+	const engine = useEngine();
 	const hasCopiedBlock = !!sessionStorage.getItem(engine.storageKey.blockClipboard);
 
 	return (

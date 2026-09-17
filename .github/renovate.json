@@ -94,6 +94,10 @@
 			"matchPackageNames": ["jsdom", "@types/jsdom"]
 		},
 		{
+			"groupName": "use-sync-external-store",
+			"matchPackageNames": ["use-sync-external-store", "@types/use-sync-external-store"]
+		},
+		{
 			"groupName": "semver",
 			"matchPackageNames": ["semver", "@types/semver"]
 		},

@@ -1,15 +1,12 @@
-import type {
-	BurgerEditorEngine,
-	EditableAreaHost,
-	EditableAreaType,
-} from '@burger-editor/core';
+import type { EditableAreaHost, EditableAreaType } from '@burger-editor/core';
 
 import { CSS_LAYER } from '@burger-editor/core';
 import { appendStylesheetTo } from '@burger-editor/utils';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { animateInsertion } from '../animate-insertion.js';
+import { useEngine } from '../engine-context.js';
 import { useUIState } from '../use-engine.js';
 
 import { BlockMenu } from './block-menu.js';
@@ -17,31 +14,6 @@ import { InitialInsertionButton } from './initial-insertion-button.js';
 
 const CONTAINER_PADDING = 10;
 const CONTENT_ID = 'bge-editable-area';
-
-/**
- *
- * @param engine
- * @param type
- * @param value
- * @param syncFromContent
- */
-function commitEditableAreaSource(
-	engine: BurgerEditorEngine,
-	type: EditableAreaType,
-	value: string,
-	syncFromContent: (
-		content: NonNullable<ReturnType<typeof engine.getEditableContent>>,
-	) => void,
-) {
-	const content = engine.getEditableContent(type);
-	if (!content) {
-		return;
-	}
-	void content.replaceContents(value).then(() => {
-		engine.save();
-		syncFromContent(content);
-	});
-}
 
 /**
  * The React shell of one editable area: the iframe hosting the edited
@@ -53,8 +25,9 @@ function commitEditableAreaSource(
  * The iframe is rendered unconditionally at a fixed position in the
  * tree (visibility is `hidden` only) because unmounting an iframe
  * destroys its document, and the engine owns the content inside it.
+ * Reads the engine via {@link useEngine}, wired up by the view that
+ * portals this component in (`createReactView`).
  * @param root0
- * @param root0.engine
  * @param root0.type
  * @param root0.initialContent
  * @param root0.stylesheets
@@ -62,38 +35,34 @@ function commitEditableAreaSource(
  * @param root0.onReady
  * @example
  * ```tsx
- * root.render(
- * 	<EditableAreaView
- * 		engine={engine}
- * 		type="main"
- * 		initialContent={html}
- * 		stylesheets={stylesheets}
- * 		classList={classList}
- * 		onReady={(host) => resolve(host)}
- * 	/>,
- * );
+ * <EditableAreaView
+ * 	type="main"
+ * 	initialContent={html}
+ * 	stylesheets={stylesheets}
+ * 	classList={classList}
+ * 	onReady={(host) => resolve(host)}
+ * />
  * ```
  */
 export function EditableAreaView({
-	engine,
 	type,
 	initialContent,
 	stylesheets,
 	classList,
 	onReady,
 }: {
-	readonly engine: BurgerEditorEngine;
 	readonly type: EditableAreaType;
 	readonly initialContent: string;
 	readonly stylesheets: readonly { readonly path: string; readonly id: string }[];
 	readonly classList: readonly string[];
 	readonly onReady: (host: EditableAreaHost) => void;
 }) {
-	const sourceMode = useUIState(engine, (s) => s.sourceMode[type]);
-	const processing = useUIState(engine, (s) => s.processing);
-	const dialogOpen = useUIState(engine, (s) => s.openDialog !== null);
+	const engine = useEngine();
+	const sourceMode = useUIState((s) => s.sourceMode[type]);
+	const processing = useUIState((s) => s.processing);
+	const dialogOpen = useUIState((s) => s.openDialog !== null);
+	const active = useUIState((s) => s.activeArea === type);
 
-	const [active, setActive] = useState(type === 'main');
 	const [sourceText, setSourceText] = useState(initialContent);
 	const [isEmpty, setIsEmpty] = useState(initialContent.trim() === '');
 	const [height, setHeight] = useState(0);
@@ -205,9 +174,6 @@ export function EditableAreaView({
 	}, []);
 
 	useEffect(() => {
-		const onSwitch = (e: CustomEvent<{ readonly content: EditableAreaType }>) => {
-			setActive(e.detail.content === type);
-		};
 		const onSaved = (
 			e: CustomEvent<{ readonly main: string; readonly draft?: string }>,
 		) => {
@@ -215,53 +181,66 @@ export function EditableAreaView({
 			setSourceText(value);
 			setIsEmpty(value.trim() === '');
 		};
-		engine.el.addEventListener('bge:switch-content', onSwitch);
 		engine.el.addEventListener('bge:saved', onSaved);
 		return () => {
-			engine.el.removeEventListener('bge:switch-content', onSwitch);
 			engine.el.removeEventListener('bge:saved', onSaved);
 		};
 	}, [engine, type]);
 
-	const sourceTextRef = useRef(sourceText);
-	useEffect(() => {
-		sourceTextRef.current = sourceText;
-	});
-
-	// textareaの表示値だけでなくisEmptyもコンテンツの実際の状態に揃える。
-	// ここを揃えないと、ソース編集で空にした直後にビジュアルモードへ戻って
-	// も初期挿入ボタンが復活しない（次のbge:savedまで固着する）
-	const syncFromContent = (
-		content: NonNullable<ReturnType<typeof engine.getEditableContent>>,
-	) => {
-		const value = content.getContentsAsString();
-		setSourceText(value);
-		setIsEmpty(value.trim() === '');
-	};
-
-	// ソースモードに入るときはコンテンツから最新のHTMLを引き直し、
-	// 抜けるときはtextareaの内容をコンテンツへコミットする。uiState
-	// ストアの購読コールバックで遷移を検知してReact stateを更新する
-	useEffect(() => {
-		let prevSourceMode = engine.uiState.getSnapshot().sourceMode[type];
-		return engine.uiState.subscribe(() => {
-			const nextSourceMode = engine.uiState.getSnapshot().sourceMode[type];
-			if (nextSourceMode === prevSourceMode) {
-				return;
-			}
-			prevSourceMode = nextSourceMode;
-			const content = engine.getEditableContent(type);
-			if (nextSourceMode) {
-				setSourceText(content?.getContentsAsString() ?? '');
-			} else if (content) {
-				commitEditableAreaSource(engine, type, sourceTextRef.current, syncFromContent);
-			}
-		});
-	}, [engine, type]);
+	// exit-transition effect（下）から最新のtextarea内容を読むためのフック。
+	// exit effect自体は`sourceMode`の変化だけで再実行したい（キー入力のたび
+	// ではない）ので、`sourceText`を直接deps配列に入れる代わりにこちらを使う
+	const getPendingSourceText = useEffectEvent(() => sourceText);
 
 	const commitSource = (value: string) => {
-		commitEditableAreaSource(engine, type, value, syncFromContent);
+		void engine.commitSourceEdit(type, value).then(() => {
+			const content = engine.getEditableContent(type);
+			const committed = content?.getContentsAsString() ?? '';
+			setSourceText(committed);
+			setIsEmpty(committed.trim() === '');
+		});
 	};
+
+	// ソースモードに入るときはコンテンツから最新のHTMLを同期的に引き直す。
+	// 「propに相当する値（sourceMode）が変わったらstateを調整する」という
+	// レンダー中の調整パターン（Preview.prevPathと同型）— effect内の
+	// 同期setStateはカスケードレンダーを起こすため使わない
+	const [prevSourceMode, setPrevSourceMode] = useState(sourceMode);
+	if (sourceMode !== prevSourceMode) {
+		setPrevSourceMode(sourceMode);
+		if (sourceMode) {
+			const content = engine.getEditableContent(type);
+			const value = content?.getContentsAsString() ?? '';
+			setSourceText(value);
+			setIsEmpty(value.trim() === '');
+		}
+	}
+
+	// 抜けるときはtextareaの内容をコンテンツへコミットする。非同期
+	// （replaceContents→save）なのでeffect側で扱う。true→falseの遷移だけ
+	// を検出する必要があるため、直前の値をrefで追跡する（マウント時や
+	// false→falseの再レンダーでは何もしない）
+	const wasSourceModeRef = useRef(sourceMode);
+	useEffect(() => {
+		const wasSourceMode = wasSourceModeRef.current;
+		wasSourceModeRef.current = sourceMode;
+		if (!wasSourceMode || sourceMode) {
+			return;
+		}
+		let cancelled = false;
+		void engine.commitSourceEdit(type, getPendingSourceText()).then(() => {
+			if (cancelled) {
+				return;
+			}
+			const content = engine.getEditableContent(type);
+			const value = content?.getContentsAsString() ?? '';
+			setSourceText(value);
+			setIsEmpty(value.trim() === '');
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, [engine, type, sourceMode]);
 
 	return (
 		<div
@@ -291,7 +270,7 @@ export function EditableAreaView({
 				? createPortal(
 						<>
 							<div data-bge-component="block-menu">
-								<BlockMenu engine={engine} container={frameBody} />
+								<BlockMenu container={frameBody} />
 							</div>
 							<div
 								data-bge-component="initial-insertion"

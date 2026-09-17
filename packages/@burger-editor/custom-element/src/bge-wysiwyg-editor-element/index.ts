@@ -102,8 +102,25 @@ export function defineBgeWysiwygEditorElement(
 }
 
 export class BgeWysiwygEditorElement extends HTMLElement {
+	#contentCss: string | null = null;
 	#disposables: DisposableStack | null = null;
 	#wysiwygElement: BgeWysiwygElement | null = null;
+
+	/**
+	 * CSS applied inside the WYSIWYG surface so it matches the published
+	 * page's styling. A plain property (not an attribute) — React 19 sets
+	 * it directly on custom elements, so consumers pass it as a JSX prop
+	 * instead of calling {@link setStyle} imperatively. Settable before
+	 * the element connects; the value is applied once the inner
+	 * `<bge-wysiwyg>` exists.
+	 */
+	get contentCss(): string | null {
+		return this.#contentCss;
+	}
+	set contentCss(css: string) {
+		this.#contentCss = css;
+		this.#wysiwygElement?.setStyle(css);
+	}
 	get editor() {
 		if (!this.#wysiwygElement) {
 			throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
@@ -292,6 +309,12 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 			throw new Error('bge-wysiwyg-editor is not connected');
 		}
 		const wysiwygElement = this.#wysiwygElement;
+
+		// contentCssがconnectedCallback（＝ #wysiwygElement 生成）より先に
+		// プロパティとして設定されていた場合、ここで反映する
+		if (this.#contentCss != null) {
+			wysiwygElement.setStyle(this.#contentCss);
+		}
 		stack.defer(() => {
 			try {
 				const setPlainInnerHTML = Object.getOwnPropertyDescriptor(

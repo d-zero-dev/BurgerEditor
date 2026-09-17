@@ -147,21 +147,6 @@ describe('BurgerEditorEngine.new', () => {
 		revokeSpy.mockRestore();
 	});
 
-	test('[Symbol.dispose]()はcomponentObserverのリスナーも解除する（windowリスナーリーク回帰）', async () => {
-		const engine = await BurgerEditorEngine.new(createOptions());
-		const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
-
-		engine[Symbol.dispose]();
-
-		const removedEventNames = removeEventListenerSpy.mock.calls.map(
-			([eventName]) => eventName,
-		);
-		expect(removedEventNames.some((name) => String(name).endsWith(':select-block'))).toBe(
-			true,
-		);
-		removeEventListenerSpy.mockRestore();
-	});
-
 	test('main/draftのcreateAreaHostが並列に呼ばれる（順に await されない）', async () => {
 		const started: EditableAreaType[] = [];
 		const gates = new Map<EditableAreaType, { resolve: () => void }>();

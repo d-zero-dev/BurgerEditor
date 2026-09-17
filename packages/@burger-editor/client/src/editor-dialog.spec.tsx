@@ -1,5 +1,6 @@
-import { cleanup, render } from '@testing-library/react';
-import { afterEach, describe, expect, test } from 'vitest';
+import { narrowElement } from '@burger-editor/utils';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { EditorDialog } from './editor-dialog.js';
 
@@ -63,5 +64,142 @@ describe('同一documentに同名の複数EditorDialogが存在しても互い�
 		expect(
 			containerB.querySelectorAll('[data-bge-component="options-dialog"]'),
 		).toHaveLength(1);
+	});
+});
+
+describe('action ベースの送信', () => {
+	test('成功時はactionを呼び、エラー表示は出ない', async () => {
+		const action = vi.fn(async () => {});
+		render(
+			<EditorDialog
+				name="options"
+				open
+				onClose={() => {}}
+				action={action}
+				buttons={{ close: 'キャンセル', complete: '決定' }}>
+				body
+			</EditorDialog>,
+		);
+		const form = document.querySelector('form')!;
+
+		await act(async () => {
+			fireEvent.submit(form);
+			await Promise.resolve();
+		});
+
+		expect(action).toHaveBeenCalledTimes(1);
+		expect(screen.queryByRole('alert')).toBeNull();
+	});
+
+	test('失敗時はrole=alertでエラーメッセージを表示する', async () => {
+		const action = vi.fn().mockRejectedValue(new Error('保存に失敗しました'));
+		render(
+			<EditorDialog
+				name="options"
+				open
+				onClose={() => {}}
+				action={action}
+				buttons={{ close: 'キャンセル', complete: '決定' }}>
+				body
+			</EditorDialog>,
+		);
+		const form = document.querySelector('form')!;
+
+		await act(async () => {
+			fireEvent.submit(form);
+			await Promise.resolve();
+		});
+
+		const alert = await screen.findByRole('alert');
+		expect(alert.textContent).toBe('保存に失敗しました');
+	});
+
+	test('キャンセル後に別の対象で開き直すと前回の失敗メッセージは残らない（regression）', async () => {
+		const failingAction = vi.fn().mockRejectedValue(new Error('Aの保存に失敗しました'));
+		const { rerender } = render(
+			<EditorDialog
+				name="options"
+				open
+				onClose={() => {}}
+				action={failingAction}
+				buttons={{ close: 'キャンセル', complete: '決定' }}>
+				A
+			</EditorDialog>,
+		);
+		const form = document.querySelector('form')!;
+
+		await act(async () => {
+			fireEvent.submit(form);
+			await Promise.resolve();
+		});
+		await screen.findByRole('alert');
+
+		// キャンセル（EditorDialog自体はアンマウントされず、openがfalseに
+		// なるだけ）
+		rerender(
+			<EditorDialog
+				name="options"
+				open={false}
+				onClose={() => {}}
+				action={failingAction}
+				buttons={{ close: 'キャンセル', complete: '決定' }}>
+				A
+			</EditorDialog>,
+		);
+
+		// 別の対象（Bブロック）で再度開く。同じEditorDialogインスタンスが
+		// openをtrueへ戻すだけなので、useActionStateのerrorが残っていると
+		// Bの何も送信していないフォームにAの失敗メッセージが即座に出る
+		rerender(
+			<EditorDialog
+				name="options"
+				open
+				onClose={() => {}}
+				action={vi.fn(async () => {})}
+				buttons={{ close: 'キャンセル', complete: '決定' }}>
+				B
+			</EditorDialog>,
+		);
+
+		expect(screen.queryByRole('alert')).toBeNull();
+	});
+
+	test('送信中は決定ボタンがdisabled/aria-busyになり、完了後に戻る', async () => {
+		let resolveAction!: () => void;
+		const action = vi.fn(
+			() =>
+				new Promise<void>((resolve) => {
+					resolveAction = resolve;
+				}),
+		);
+		render(
+			<EditorDialog
+				name="options"
+				open
+				onClose={() => {}}
+				action={action}
+				buttons={{ close: 'キャンセル', complete: '決定' }}>
+				body
+			</EditorDialog>,
+		);
+		const form = document.querySelector('form')!;
+		const submitButton = narrowElement(
+			screen.getByRole('button', { name: '決定' }),
+			HTMLButtonElement,
+			'決定',
+		);
+
+		act(() => {
+			fireEvent.submit(form);
+		});
+		expect(submitButton.disabled).toBe(true);
+		expect(submitButton.getAttribute('aria-busy')).toBe('true');
+
+		await act(async () => {
+			resolveAction();
+			await Promise.resolve();
+		});
+		expect(submitButton.disabled).toBe(false);
+		expect(submitButton.getAttribute('aria-busy')).toBe('false');
 	});
 });

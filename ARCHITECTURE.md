@@ -280,7 +280,7 @@ graph TD
 - 責任: `@burger-editor/client` のコンポーネント群と `@burger-editor/local` の Front Matter 編集UI（`@burger-editor/client` 経由で公開）を、`engine` 等の実インスタンスなしに一覧・確認できるカタログを提供
 - **private パッケージ**: publish 対象外。`yarn storybook`（開発起動）/ `yarn build-storybook`（静的ビルド）はルートから実行
 - **見た目確認専用**: 見た目の回帰検知は既存の Playwright + pixelmatch VRT（`vitest --project vr`）が引き続き担う。Storybook 側に test-runner や Chromatic は導入しない
-- **`engine` のモック方針**: `BurgerEditorEngine` は private constructor のため直接生成できない。`uiState`/`commandBus`/`componentObserver` は本物のクラスをそのまま `new` し、それ以外のメソッドだけを `src/mocks/create-mock-engine.ts` の `overrides` で個別に差し込む（各 `*.spec.tsx` に確立された `createMockEngine()` パターンを踏襲）。`BlockMenu` のようにマウス位置から `BurgerBlock` の実インスタンスを解決する設計のコンポーネントは、モックだけでは実表示を再現できないため、描画専用の子コンポーネント（`BlockMenuView`）を切り出してそちらをカタログ化する
+- **`engine` のモック方針**: `BurgerEditorEngine` は private constructor のため直接生成できない。`uiState`/`commandBus` は本物のクラスをそのまま `new` し、それ以外のメソッドだけを `src/mocks/create-mock-engine.ts` の `overrides` で個別に差し込む（各 `*.spec.tsx` に確立された `createMockEngine()` パターンを踏襲）。`BlockMenu` のようにマウス位置から `BurgerBlock` の実インスタンスを解決する設計のコンポーネントは、モックだけでは実表示を再現できないため、描画専用の子コンポーネント（`BlockMenuView`）を切り出してそちらをカタログ化する
 
 ## アーキテクチャ原則
 
@@ -332,13 +332,17 @@ core パッケージは UI フレームワークに依存しない headless エ�
 core が UI に要求する接点は `BurgerEditorView` ひとつです。`createAreaHost()` が編集エリア（main / draft）ごとのホスト UI を生成し、core には編集対象コンテンツの `containerElement`（と任意の挿入アニメーションフック）だけを返します。core は iframe・textarea・メニューなど UI 所有の DOM への参照を一切持たないため、「エンジンが React の描画対象属性を直接書き換えて状態が食い違う」類のバグは型レベルで表現できません。
 
 - core 側: `EditableContent` がコンテンツ操作（ブロック復元・シリアライズ・サニタイズ）を担う。`view` 未指定時は素の div を返す headless フォールバックを使う
-- client 側: `createReactView()` が port を実装し、`EditableAreaView`（iframe/ソース textarea のシェル、ResizeObserver による高さ追従）を React root としてマウント。ブロックメニューと初期挿入ボタンは createPortal で iframe 文書内に描画する
-- 表示状態（main/draft の切替・visual/source モード・processing 中のメニュー非表示）は `engine.uiState` とエンジンイベント（`bge:switch-content` / `bge:saved`）を UI 層が購読して宣言的に描画する。core から UI への命令的呼び出しは存在しない
+- client 側: `createReactView()` が port を実装する。**`engine.viewArea` 配下は React root が 1 つ**（`engine.el` 直下）— `createAreaHost()` は自前の root を作らず、編集エリアごとの `<div>` をその配下に用意してその単一 root から `createPortal` で `EditableAreaView`（iframe/ソース textarea のシェル、ResizeObserver による高さ追従）を描画する。ブロックメニューと初期挿入ボタンはさらに iframe 文書内へ二重に createPortal される。ダイアログ群（`BurgerEditorRoot`）は `view.mountChrome()` 経由で同じ root に相乗りする（`ReactView` は client 内部の型で、core の `BurgerEditorView` 契約はそのまま）。`attachDraftSwitcher()` はこの対象外（`engine.viewArea` の外側、アプリケーション側が任意の位置に置くため）で、`EngineProvider` を自前で被せた独立した React root をもう1つ持つ
+- 表示状態（main/draft の切替・visual/source モード・processing 中のメニュー非表示）は `engine.uiState` を UI 層が `useSyncExternalStore` で直接読んで宣言的に描画する。`bge:switch-content` / `bge:block-change` はこれと同じタイミングで発火するが、非React（DOM購読の）コンシューマ向けであり、UI 層はこれらのイベントを経由しない。core から UI への命令的呼び出しは存在しない
+
+**EngineContext（依存注入）:**
+
+単一 root は `<EngineContext value={engine}>` で自身を包む。配下の全コンポーネント（`client/ui` のエクスポート、item `Editor`）は `engine` を props で受け取らず `useEngine()` で読む — `engine` の props ドリルはコードベースに存在しない。item `Editor` も例外ではなく、`ItemEditorProps` に `engine`/`config` は**含まれない**（`{state, setState, item}` のみ）。
 
 **依存関係の流れ:**
 
 ```
-core（uiState ストア + view port 定義） ← client（React 実装を注入）
+core（uiState ストア + view port 定義） ← client（React 実装 + EngineContext を注入）
 ```
 
 ### 5. Invoker Commands API とコマンドバス
@@ -355,7 +359,7 @@ core（uiState ストア + view port 定義） ← client（React 実装を注�
 
 **アイテムエディタ契約:**
 
-各アイテムは `createItem()` に `Editor`（型付き React コンポーネント）と純関数 `toEditorState` / `toItemData` を渡します。旧来の `editor.html` 文字列テンプレートと命令的ライフサイクルフック（`beforeOpen`/`open`/`beforeChange`/`onSubmit`）は廃止されました。コンテンツ出力側（`template.html` + frozen-patty の `data-bge` バインディング）は従来どおりで、React には依存しません。
+各アイテムは `createItem()` に `Editor`（型付き React コンポーネント）と純関数 `toEditorState` / `toItemData` を渡します。旧来の `editor.html` 文字列テンプレートと命令的ライフサイクルフック（`beforeOpen`/`open`/`beforeChange`/`onSubmit`）は廃止されました。コンテンツ出力側（`template.html` + frozen-patty の `data-bge` バインディング）は従来どおりで、React には依存しません。`Editor` の props は `{state, setState, item}` のみ — engine / config は含まれず、`@burger-editor/client/ui` の `useEngine()`（`useEngine().config`）で読みます。`core` パッケージ自体は React に依存しません（`ItemEditorComponent` の戻り値は `unknown`）。
 
 ### 6. 不変条件と否定的知識
 

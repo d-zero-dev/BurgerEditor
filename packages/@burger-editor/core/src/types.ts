@@ -149,40 +149,6 @@ export interface Config {
 	};
 }
 
-export interface Actions {
-	'file-listup': {
-		readonly fileType: FileType;
-		readonly data: readonly FileListItem[];
-	};
-	'file-select': {
-		readonly path: string;
-		readonly fileSize: number;
-		readonly isEmpty: boolean;
-		readonly isMounted?: boolean;
-	};
-	'file-upload-progress': {
-		readonly blob: string;
-		readonly uploaded: number;
-		readonly total: number;
-	};
-	'file-upload-complete': {
-		readonly uploaded: FileListItem;
-		readonly data: readonly FileListItem[];
-	};
-	'select-block': {
-		readonly block: BurgerBlock;
-		readonly width: number;
-		readonly height: number;
-		readonly x: number;
-		readonly y: number;
-		readonly marginBlockEnd: number;
-	};
-	// Use on test
-	'update-css-width': {
-		readonly cssWidth: string;
-	};
-}
-
 export interface FileAPI {
 	readonly getFileList?: (
 		fileType: FileType,
@@ -273,6 +239,13 @@ export interface BurgerEditorEventMap {
 	'bge:block-change': { readonly block: BurgerBlock };
 	'bge:server-online': { timestamp: number };
 	'bge:server-offline': { timestamp: number };
+	/**
+	 * A React error boundary (or `createRoot`'s `onUncaughtError` /
+	 * `onCaughtError`) caught an error rendering the client UI. This is a
+	 * diagnostics signal only — `core` never reads it, it exists for
+	 * platform layers (e.g. `local`) to log or surface the failure.
+	 */
+	'bge:error': { readonly error: unknown; readonly componentStack?: string };
 }
 
 declare global {
@@ -282,5 +255,6 @@ declare global {
 		'bge:block-change': CustomEvent<BurgerEditorEventMap['bge:block-change']>;
 		'bge:server-online': CustomEvent<BurgerEditorEventMap['bge:server-online']>;
 		'bge:server-offline': CustomEvent<BurgerEditorEventMap['bge:server-offline']>;
+		'bge:error': CustomEvent<BurgerEditorEventMap['bge:error']>;
 	}
 }

@@ -14,6 +14,7 @@ export default defineConfig(({ mode }) => ({
 			entry: {
 				client: 'src/index.tsx',
 				ui: 'src/ui.ts',
+				testing: 'src/testing/index.ts',
 			},
 			name: 'BgE',
 			formats: ['es'],
@@ -23,8 +24,22 @@ export default defineConfig(({ mode }) => ({
 		minify: false,
 		rollupOptions: {
 			// Reactは同梱しない（peer依存）。同梱すると、blocks等の外部参照の
-			// Reactと二重になり、フックのdispatcher不一致で実行時に壊れる
-			external: [/^react($|\/)/, /^react-dom($|\/)/],
+			// Reactと二重になり、フックのdispatcher不一致で実行時に壊れる。
+			// use-sync-external-storeも同梱しない — CJSシムがトップレベルで
+			// `require('react')`するため、バンドルに含めるとNodeのESM実行時に
+			// 「requireが存在しない環境」エラーで落ちる（`node dist/bin.js
+			// catalog-list`のようにclient/uiをNode側から読むcli/blocks経由で
+			// 顕在化する）。dependenciesの実パッケージとして解決させる。
+			// @testing-library/react・@testing-library/dom・vitestはtesting.js
+			// からのみ参照され、テストコンテキスト以外では読み込まれない
+			// （peer依存・optional）ため同様に同梱しない
+			external: [
+				/^react($|\/)/,
+				/^react-dom($|\/)/,
+				/^use-sync-external-store($|\/)/,
+				/^@testing-library\//,
+				/^vitest($|\/)/,
+			],
 		},
 	},
 	plugins: [

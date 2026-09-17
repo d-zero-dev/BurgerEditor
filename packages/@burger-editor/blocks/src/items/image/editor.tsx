@@ -10,9 +10,10 @@ import {
 	RadioGroup,
 	Tabs,
 	TextField,
-	useComponentEvent,
+	useExternalFileSelection,
+	useFileBrowser,
 } from '@burger-editor/client/ui';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 
 import { createWidthState } from './width.js';
 
@@ -30,9 +31,9 @@ type LoadedImage = {
  * @param root0
  * @param root0.state
  * @param root0.setState
- * @param root0.engine
  */
-export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageData>) {
+export function ImageEditor({ state, setState }: ItemEditorProps<ImageData>) {
+	const fileBrowser = useFileBrowser();
 	// 同一documentに複数のimageアイテムエディタが同時に開いてもhtmlFor/
 	// aria-*の参照先が混線しないよう、ハードコードIDではなくuseIdで一意化する
 	const uid = useId();
@@ -68,10 +69,6 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 			scale: widthState.getScale(),
 			cssWidth: widthState.getCSSWidth(),
 		}));
-
-		engine.componentObserver.notify('update-css-width', {
-			cssWidth: widthState.getCSSWidth(),
-		});
 	};
 
 	const updateImage = ($src: LoadedImage) => {
@@ -127,12 +124,7 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 			throw new Error('currentPath is not found');
 		}
 
-		engine.componentObserver.notify('file-select', {
-			path: currentPath,
-			fileSize: Number.parseFloat(current.fileSize ?? '0'),
-			isEmpty: currentPath === '',
-			isMounted: false,
-		});
+		fileBrowser.select('image', currentPath, Number.parseFloat(current.fileSize ?? '0'));
 	};
 
 	const selectTab = (index: number) => {
@@ -146,20 +138,29 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 		setState((prev) => ({ ...prev, mediaInput: media, altEditable }));
 	};
 
-	useComponentEvent(engine, 'file-select', ({ path, isEmpty }) => {
-		if (isEmpty) {
-			return;
-		}
-
-		void _updateImage(path);
-	});
+	// FileList側で選ばれたファイル（fileBrowser.select経由の外部変更）を
+	// 反映する。selectTab/マウント時の初期化はすでに_updateImageを直接
+	// 呼んでいるため、そこから来た「自分自身の変更」は現在のタブのpathと
+	// 一致し、ここでは再度読み込まない。`selected`はengine単位で共有される
+	// FileBrowserStoreの値のため、マウント直後は前に開いていた別itemの
+	// 残留選択の可能性がある — useExternalFileSelectionが初回発火を
+	// スキップし、下のマウント初期化effect（fileSelect(0)がこのitem自身の
+	// pathでselectedを上書きする）に委ねる
+	const selected = useSyncExternalStore(
+		fileBrowser.subscribe,
+		() => fileBrowser.getSnapshot().selected.image,
+	);
+	useExternalFileSelection(
+		selected,
+		() => stateRef.current.path?.[currentIndexRef.current] ?? '',
+		(next) => {
+			void _updateImage(next.path);
+		},
+	);
 
 	// 初期化: タブ0のプレビュー連携と画像読み込み（マウント時のみ）。
 	// state側の初期値はtoEditorStateで正規化済みのためここでは更新しない
 	useEffect(() => {
-		engine.componentObserver.notify('update-css-width', {
-			cssWidth: widthState.getCSSWidth(),
-		});
 		fileSelect(0);
 		void _updateImage(stateRef.current.path?.[0] ?? '');
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -182,7 +183,7 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 						id={`${uid}-tabs-content`}
 						role="tabpanel"
 						aria-label={tabLabel(currentIndex)}>
-						<Preview engine={engine} path={currentPath} />
+						<Preview path={currentPath} />
 						{loadError ? <p role="alert">{loadError}</p> : null}
 						<div>
 							<TextField
@@ -328,8 +329,8 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 				</div>
 			</div>
 			<div>
-				<FileUploader engine={engine} fileType="image" />
-				<FileList engine={engine} fileType="image" />
+				<FileUploader fileType="image" />
+				<FileList fileType="image" />
 			</div>
 		</div>
 	);

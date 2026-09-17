@@ -1,122 +1,86 @@
-import type { BurgerEditorEngine, FileListItem, FileType } from '@burger-editor/core';
+import type { FileType } from '@burger-editor/core';
 import type { ReactNode } from 'react';
 
 import { formatByteSize, formatDate } from '@burger-editor/utils';
-import { Fragment, useId, useRef, useState } from 'react';
+import {
+	Fragment,
+	use,
+	useDeferredValue,
+	useId,
+	useState,
+	useSyncExternalStore,
+	useTransition,
+} from 'react';
 
+import { useFileBrowser } from '../file-browser/use-file-browser.js';
 import { useCommand } from '../use-command.js';
-import { useComponentEvent } from '../use-engine.js';
 
 import styles from './file-list.module.css';
 import { Thumbnail } from './thumbnail.js';
 
 /**
- * Paginated, searchable file list. Selection is broadcast on the
- * engine-level component observer (`file-select`); buttons declare local
- * commands instead of click handlers.
+ * Paginated, searchable file list. Reads its page through `use()` against
+ * the engine's `FileBrowserStore` (suspends into the dialog's Suspense
+ * boundary while loading); selection and in-flight uploads come from the
+ * same store, shared with `FileUploader` and the item's own `Editor`
+ * instead of a broadcast bus.
  * @param root0
- * @param root0.engine
  * @param root0.fileType
  * @example
  * ```tsx
- * <FileUploader engine={engine} fileType="image" />
- * <FileList engine={engine} fileType="image" />
+ * <FileUploader fileType="image" />
+ * <FileList fileType="image" />
  * ```
  */
-export function FileList({
-	engine,
-	fileType,
-}: {
-	readonly engine: BurgerEditorEngine;
-	readonly fileType: FileType;
-}) {
+export function FileList({ fileType }: { readonly fileType: FileType }) {
+	const store = useFileBrowser();
 	const rootId = useId();
 
-	const getFileList = engine.serverAPI.getFileList;
-	const deleteFile = engine.serverAPI.deleteFile;
-
-	const [fileList, setFileList] = useState<readonly FileListItem[]>([]);
-	const [selectedPath, setSelectedPath] = useState('');
+	const [page, setPage] = useState(0);
 	const [searchWord, setSearchWord] = useState('');
-	const [currentPage, setCurrentPage] = useState(0);
-	const [totalPage, setTotalPage] = useState(1);
-	const [progress, setProgress] = useState({ uploaded: 0, total: 100 });
+	const deferredFilter = useDeferredValue(searchWord);
+	const [isPending, startTransition] = useTransition();
 
-	const requestDebounce = useRef(-1);
+	const selected = useSyncExternalStore(
+		store.subscribe,
+		() => store.getSnapshot().selected[fileType],
+	);
+	const uploads = useSyncExternalStore(
+		store.subscribe,
+		() => store.getSnapshot().uploads,
+	);
+	const myUploads = uploads.filter((u) => u.fileType === fileType);
 
-	useComponentEvent(engine, 'file-select', async ({ path, isMounted }) => {
-		setSelectedPath(path);
+	const result = use(store.read({ fileType, page, filter: deferredFilter }));
+	const totalPage = result.pagination.total;
+	const currentPage = result.pagination.current;
 
-		if (
-			!isMounted && // On initial mount
-			getFileList
-		) {
-			const result = await getFileList(fileType, {
-				filter: '',
-				page: 0,
-				selected: path,
-			});
-			setFileList(result.data);
-			setCurrentPage(result.pagination.current);
-			setTotalPage(result.pagination.total);
-		}
+	// アップロード中のblob行を先頭に合成する。サーバーはまだこのファイルを
+	// 知らないため、result.dataとは別にstoreのuploadsから直接描画する
+	const files = [
+		// timestampは常にuploadブランチ側の表示（進捗%）のため未使用 —
+		// アップロード完了行の描画には使われない
+		...myUploads.map((u) => ({
+			fileId: '',
+			name: '',
+			size: 0,
+			timestamp: 0,
+			url: u.blob,
+			sizes: {},
+		})),
+		...result.data.filter((f) => !myUploads.some((u) => u.blob === f.url)),
+	];
 
-		if (path.startsWith('blob:')) {
-			setFileList((prev) => [
-				{
-					fileId: '',
-					name: '',
-					size: 0,
-					timestamp: Date.now(),
-					url: path,
-					sizes: {},
-				},
-				...prev.filter((file) => !file.url.startsWith('blob:')),
-			]);
-		}
-	});
-
-	useComponentEvent(engine, 'file-upload-progress', (p) => {
-		if (p.blob === selectedPath) {
-			setProgress({ uploaded: p.uploaded, total: p.total });
-		}
-	});
-
-	useComponentEvent(engine, 'file-listup', ({ data }) => {
-		setFileList(data);
-	});
-
-	const paginate = (page: number) => {
-		page = Number.isNaN(page) ? 0 : Math.min(Math.max(0, page), totalPage - 1);
-		if (currentPage === page) {
+	const paginate = (nextPage: number) => {
+		nextPage = Number.isNaN(nextPage)
+			? 0
+			: Math.min(Math.max(0, nextPage), totalPage - 1);
+		if (nextPage === currentPage) {
 			return;
 		}
-		setCurrentPage(page);
-		window.clearTimeout(requestDebounce.current);
-		requestDebounce.current = window.setTimeout(async () => {
-			const result = await getFileList?.(fileType, { page });
-			if (result) {
-				setFileList(result.data);
-				setCurrentPage(result.pagination.current);
-				setTotalPage(result.pagination.total);
-			}
-		}, 100);
-	};
-
-	const search = (value: string) => {
-		if (searchWord === value) {
-			return;
-		}
-		setSearchWord(value);
-		window.clearTimeout(requestDebounce.current);
-		requestDebounce.current = window.setTimeout(async () => {
-			const result = await getFileList?.(fileType, { filter: value });
-			if (result) {
-				setFileList(result.data);
-				setCurrentPage(result.pagination.current);
-				setTotalPage(result.pagination.total);
-			}
-		}, 300);
+		startTransition(() => {
+			setPage(nextPage);
+		});
 	};
 
 	const rootRef = useCommand<HTMLDivElement>({
@@ -129,35 +93,19 @@ export function FileList({
 			if (!source) {
 				return;
 			}
-			engine.componentObserver.notify('file-select', {
-				path: source.value,
-				fileSize: Number(source.dataset['size'] ?? '0'),
-				isEmpty: false,
-				isMounted: true,
-			});
+			store.select(fileType, source.value, Number(source.dataset['size'] ?? '0'));
 		},
 		'--delete-file': (e) => {
 			const url = (e.source as HTMLButtonElement | null)?.value;
 			if (!url) {
 				return;
 			}
-			void (async () => {
-				const res = await deleteFile?.(fileType, url);
-				if (!res || res.error) {
-					throw new Error(`Failed to delete file: ${url}`);
+			startTransition(async () => {
+				try {
+					await store.deleteFile(fileType, url);
+				} catch {
+					alert('ファイルの削除に失敗しました。');
 				}
-				// 削除後は現在の検索条件・ページでリストを取り直す
-				const result = await getFileList?.(fileType, {
-					page: currentPage,
-					filter: searchWord,
-				});
-				if (result) {
-					setFileList(result.data);
-					setCurrentPage(result.pagination.current);
-					setTotalPage(result.pagination.total);
-				}
-			})().catch(() => {
-				alert('ファイルの削除に失敗しました。');
 			});
 		},
 	});
@@ -176,7 +124,7 @@ export function FileList({
 	};
 
 	return (
-		<div ref={rootRef} id={rootId}>
+		<div ref={rootRef} id={rootId} aria-busy={isPending}>
 			<div className={styles['ctrl']}>
 				<div className={styles['pagination']}>
 					<button
@@ -214,55 +162,58 @@ export function FileList({
 					type="search"
 					placeholder="検索"
 					value={searchWord}
-					onChange={(e) => search(e.currentTarget.value)}
+					onChange={(e) => setSearchWord(e.currentTarget.value)}
 				/>
 			</div>
 
 			<ul className={styles['list']}>
-				{fileList.map((file) => (
-					<li key={file.url}>
-						<button
-							ref={file.url === selectedPath ? scrollToSelected : undefined}
-							className={styles['file']}
-							type="button"
-							aria-pressed={file.url === selectedPath}
-							command="--select-file"
-							commandfor={rootId}
-							value={file.url}
-							data-size={file.size}>
-							<span className={styles['thumbnail']}>
-								<Thumbnail src={file.url} />
-							</span>
-							{file.url.startsWith('blob:') ? (
-								<span>
-									アップロード中...{' '}
-									<span>{Math.floor((progress.uploaded / progress.total) * 100)}%</span>
-								</span>
-							) : (
-								<span className={styles['attr']}>
-									<span>ID</span>
-									<span>{marked(file.fileId)}</span>
-									<span>名称</span>
-									<span>{marked(file.name)}</span>
-									<span>更新</span>
-									<span>{formatDate(file.timestamp / 1000, 'YYYY-MM-DD HH:mm')}</span>
-									<span>サイズ</span>
-									<span>{formatByteSize(file.size)}</span>
-								</span>
-							)}
-						</button>
-						{!file.url.startsWith('blob:') && deleteFile ? (
+				{files.map((file) => {
+					const upload = myUploads.find((u) => u.blob === file.url);
+					return (
+						<li key={file.url}>
 							<button
-								className={styles['delete']}
+								ref={file.url === selected?.path ? scrollToSelected : undefined}
+								className={styles['file']}
 								type="button"
-								command="--delete-file"
+								aria-pressed={file.url === selected?.path}
+								command="--select-file"
 								commandfor={rootId}
-								value={file.url}>
-								削除
+								value={file.url}
+								data-size={file.size}>
+								<span className={styles['thumbnail']}>
+									<Thumbnail src={file.url} />
+								</span>
+								{upload ? (
+									<span>
+										アップロード中...{' '}
+										<span>{Math.floor((upload.uploaded / upload.total) * 100)}%</span>
+									</span>
+								) : (
+									<span className={styles['attr']}>
+										<span>ID</span>
+										<span>{marked(file.fileId)}</span>
+										<span>名称</span>
+										<span>{marked(file.name)}</span>
+										<span>更新</span>
+										<span>{formatDate(file.timestamp / 1000, 'YYYY-MM-DD HH:mm')}</span>
+										<span>サイズ</span>
+										<span>{formatByteSize(file.size)}</span>
+									</span>
+								)}
 							</button>
-						) : null}
-					</li>
-				))}
+							{!upload && store.canDelete ? (
+								<button
+									className={styles['delete']}
+									type="button"
+									command="--delete-file"
+									commandfor={rootId}
+									value={file.url}>
+									削除
+								</button>
+							) : null}
+						</li>
+					);
+				})}
 			</ul>
 		</div>
 	);

@@ -4,16 +4,20 @@ import { UIStateStore } from '@burger-editor/core';
 import { act } from 'react';
 import { test, expect, afterEach, vi } from 'vitest';
 
+import { suppressConsoleErrors } from '../testing/suppress-console-error.js';
+
 import { createReactView } from './create-react-view.js';
 
-// jsdomはCSS.escape未実装（BlockMenuButtonが使う）。このテストでは
-// EditableAreaView経由でBlockMenuも描画されるため必要
-if (globalThis.CSS === undefined) {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	(globalThis as any).CSS = {
-		escape: (value: string) => String(value).replaceAll(/[^\w-]/g, (ch) => `\\${ch}`),
-	};
-}
+// createAreaHost()は、iframeへのdocument.write→load完了という「Reactの外で
+// 起きる本物のブラウザ非同期」を経てPromiseを解決する。この解決を`act()`で
+// 包むと（iframeのload完了をReactのスケジューラが握っている間ブロックして
+// しまい）テストがハングする — act()は「Reactが起こす更新」を対象にした
+// 仕組みで、iframeのload自体はその対象外であるため、ここは意図的にact()で
+// 包まない。その結果として出る"not wrapped in act(...)"警告は既知のfalse
+// positiveなので、このファイルに限定してテスト出力のノイズとしてのみ抑制
+// する（実際の更新の反映漏れではないことは、この直後のexpectがDOMの実際の
+// 状態を検証していることで担保されている）
+suppressConsoleErrors(['was not wrapped in act(...)']);
 
 afterEach(() => {
 	document.body.innerHTML = '';
@@ -25,12 +29,13 @@ afterEach(() => {
 function createContext(): EditableAreaHostContext {
 	const viewArea = document.createElement('div');
 	document.body.append(viewArea);
+	const el = document.createElement('div');
+	document.body.append(el);
 	const engine = {
-		el: document.createElement('div'),
+		el,
 		viewArea,
 		uiState: new UIStateStore(),
 		commandBus: { createReceiver: vi.fn(), receiverId: 'bge-command-bus-test' },
-		componentObserver: { notify: vi.fn() },
 		getEditableContent: () => null,
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} as any as BurgerEditorEngine;
@@ -59,14 +64,50 @@ test('createAreaHostはviewArea配下にマウントしcontainerElementを持つ
 	expect(iframe?.contentDocument?.contains(host.containerElement)).toBe(true);
 });
 
+test('単一rootがengine.el配下に1つだけ作られ、複数エリアで共有される', async () => {
+	const view = createReactView();
+	const mainContext = createContext();
+	const draftContext = {
+		...createContext(),
+		type: 'draft' as const,
+		engine: mainContext.engine,
+	};
+
+	await view.createAreaHost(mainContext);
+	await view.createAreaHost(draftContext);
+
+	// エリアごとのポータル先divはviewArea配下に1つずつ（2エリア分=2）
+	expect(mainContext.engine.viewArea.children.length).toBe(2);
+	// 実際のReact rootのマウント先はengine.el配下に1つだけ（areaで増えない）
+	expect(mainContext.engine.el.children.length).toBe(1);
+});
+
+test('mountChromeは同じrootへ追加のUIを描画する', async () => {
+	const view = createReactView();
+	const context = createContext();
+	await view.createAreaHost(context);
+
+	act(() => {
+		view.mountChrome('chrome-marker');
+	});
+
+	// chromeはengine.el配下のroot要素の直接の子として描画される（
+	// エリアはviewAreaへportalされるため、ここには現れない）
+	const rootHost = context.engine.el.firstElementChild;
+	expect(rootHost?.textContent).toContain('chrome-marker');
+});
+
 test('destroy()はReact rootのunmountに加えてマウント用の<div>自体も取り除く（regression）', async () => {
 	const view = createReactView();
 	const context = createContext();
 	await view.createAreaHost(context);
 
-	// createAreaHostがviewArea配下に追加したマウント用div
+	// createAreaHostがviewArea配下に追加したポータル先div
 	const mountEl = context.engine.viewArea.firstElementChild;
 	expect(mountEl).not.toBeNull();
+	// engine.el配下に追加されたReact root本体のマウント先
+	const rootHost = context.engine.el.firstElementChild;
+	expect(rootHost).not.toBeNull();
 
 	act(() => {
 		view.destroy();
@@ -74,9 +115,11 @@ test('destroy()はReact rootのunmountに加えてマウント用の<div>自体�
 
 	// unmountだけではmountEl自体はDOMに残る。destroy()はそれ自体も
 	// 除去しなければならない — 放置するとcleanUp()を繰り返すたびに
-	// 空のdivがviewArea配下に積み重なる
+	// 空のdivがviewArea/engine.el配下に積み重なる
 	expect(context.engine.viewArea.contains(mountEl)).toBe(false);
 	expect(context.engine.viewArea.children.length).toBe(0);
+	expect(context.engine.el.contains(rootHost)).toBe(false);
+	expect(context.engine.el.children.length).toBe(0);
 });
 
 test('destroy()はオブジェクトから分割代入して単独で呼び出しても動作する（thisバインディング回帰）', async () => {
@@ -113,4 +156,5 @@ test('destroy()を複数エリアぶん呼んでもすべてのマウント要�
 	});
 
 	expect(mainContext.engine.viewArea.children.length).toBe(0);
+	expect(mainContext.engine.el.children.length).toBe(0);
 });

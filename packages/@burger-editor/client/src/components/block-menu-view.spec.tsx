@@ -4,16 +4,6 @@ import { test, expect, afterEach } from 'vitest';
 
 import { BlockMenuView } from './block-menu-view.js';
 
-// jsdom doesn't implement the CSSOM `CSS` global (no CSS.escape), which
-// BlockMenuButton uses to build an anchor name. Minimal polyfill scoped to
-// this test file only; it isn't exercised in production (real browsers).
-if (globalThis.CSS === undefined) {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	(globalThis as any).CSS = {
-		escape: (value: string) => String(value).replaceAll(/[^\w-]/g, (ch) => `\\${ch}`),
-	};
-}
-
 afterEach(cleanup);
 
 const geometry = {

@@ -1,7 +1,12 @@
-import type { Config, ItemEditorProps, ItemSeed } from '@burger-editor/core';
+import type {
+	BurgerEditorEngine,
+	Config,
+	ItemEditorProps,
+	ItemSeed,
+} from '@burger-editor/core';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { ItemEditorHost, TextField } from '@burger-editor/client/ui';
+import { EngineProvider, ItemEditorHost, TextField } from '@burger-editor/client/ui';
 import { Item } from '@burger-editor/core';
 import { fn } from 'storybook/test';
 
@@ -43,13 +48,34 @@ const sampleSeed: ItemSeed = {
 
 const itemSeeds = new Map<string, ItemSeed>([['sample-text', sampleSeed]]);
 
+/**
+ * `ItemEditorHost` reads the engine via `useEngine()`; this story-only
+ * wrapper keeps the `{engine, item}` args shape the stories below use.
+ * @param root0
+ * @param root0.engine
+ * @param root0.item
+ */
+function ItemEditorHostStory({
+	engine,
+	item,
+}: {
+	readonly engine: BurgerEditorEngine;
+	readonly item: Parameters<typeof ItemEditorHost>[0]['item'];
+}) {
+	return (
+		<EngineProvider engine={engine}>
+			<ItemEditorHost item={item} />
+		</EngineProvider>
+	);
+}
+
 const meta = {
 	title: 'Client/Components/ItemEditorHost',
-	component: ItemEditorHost,
+	component: ItemEditorHostStory,
 	// 自身がEditorDialog（<dialog>）を内包するため、既定のdialogラップは
 	// 二重になってしまう
 	parameters: { wrapper: 'none' },
-} satisfies Meta<typeof ItemEditorHost>;
+} satisfies Meta<typeof ItemEditorHostStory>;
 
 export default meta;
 

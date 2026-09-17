@@ -1,9 +1,13 @@
-import type { BurgerEditorEngine, ItemEditorProps, ItemSeed } from '@burger-editor/core';
+import type { ItemEditorProps, ItemSeed } from '@burger-editor/core';
 
 import { Item, UIStateStore } from '@burger-editor/core';
-import { render, cleanup } from '@testing-library/react';
+import { narrowElement } from '@burger-editor/utils';
+import { screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import { createElement } from 'react';
-import { test, expect, describe, beforeAll, afterEach, vi } from 'vitest';
+import { test, expect, describe, afterEach, vi } from 'vitest';
+
+import { createMockEngine as createBaseMockEngine } from '../testing/create-mock-engine.js';
+import { renderWithEngine } from '../testing/render-with-engine.js';
 
 import { ItemEditorHost } from './item-editor-host.js';
 
@@ -18,96 +22,105 @@ const testConfig = {
 } as const;
 
 /**
- * 実際のtiptapベースのbge-wysiwyg-editorを使わず、setStyle呼び出しだけを
- * 観測できる最小限のカスタム要素スタブ
+ * `data-testid`付きのテキスト入力1つだけを描画する、最小限のEditorスタブ
+ * @param root0
+ * @param root0.state
+ * @param root0.setState
  */
-class StubWysiwygEditorElement extends HTMLElement {
-	setStyle = vi.fn();
+function StubEditor({ state, setState }: ItemEditorProps<{ text: string }>) {
+	return createElement('input', {
+		'data-testid': 'stub-input',
+		value: state.text ?? '',
+		onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+			setState({ ...state, text: e.currentTarget.value }),
+	});
 }
 
-beforeAll(() => {
-	if (!customElements.get('bge-wysiwyg-editor')) {
-		customElements.define('bge-wysiwyg-editor', StubWysiwygEditorElement);
-	}
-	HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
-		this.open = true;
-	};
-	HTMLDialogElement.prototype.close = function (this: HTMLDialogElement) {
-		this.open = false;
-		this.dispatchEvent(new Event('close'));
-	};
-});
-
-/**
- * `<bge-wysiwyg-editor>`スタブをラップ要素内にレンダーするだけのEditor
- * @param _props
- */
-function StubEditor(_props: ItemEditorProps) {
-	return createElement('bge-wysiwyg-editor');
-}
-
-const wysiwygStubSeed: ItemSeed<string, {}, {}, {}> = {
+const stubSeed: ItemSeed<string, { text: string }, {}, { text: string }> = {
 	version: '1',
-	name: 'wysiwyg-stub',
+	name: 'stub-item',
 	template: '<div></div>',
 	style: '',
 	Editor: StubEditor,
 };
 
-const itemSeeds = new Map<string, ItemSeed>([['wysiwyg-stub', wysiwygStubSeed as never]]);
+const noEditorSeed: ItemSeed<string, { text: string }, {}> = {
+	version: '1',
+	name: 'no-editor-item',
+	template: '<div></div>',
+	style: '',
+};
+
+const throwingSeed: ItemSeed<string, { text: string }, {}, { text: string }> = {
+	version: '1',
+	name: 'throwing-item',
+	template: '<div></div>',
+	style: '',
+	Editor: StubEditor,
+	toItemData: () => {
+		throw new Error('conversion failed');
+	},
+};
+
+const itemSeeds = new Map<string, ItemSeed>([
+	['stub-item', stubSeed as never],
+	['no-editor-item', noEditorSeed as never],
+	['throwing-item', throwingSeed as never],
+]);
 
 /**
- *
+ * @param name - itemSeedsに登録済みのitem名
  */
-function createHarness() {
+function createHarness(name: string) {
 	const uiState = new UIStateStore();
-	const getContentStylesheet = vi.fn<() => Promise<string>>();
-	let resolveStylesheet!: (css: string) => void;
-	getContentStylesheet.mockImplementation(
-		() =>
-			new Promise((resolve) => {
-				resolveStylesheet = resolve;
-			}),
-	);
-	const engine = {
-		uiState,
-		save: vi.fn(),
-		config: testConfig,
-		getContentStylesheet,
-	} as unknown as BurgerEditorEngine;
-
-	const item = Item.create<{}, {}>('wysiwyg-stub', itemSeeds, testConfig, {});
+	const engine = createBaseMockEngine({ uiState, save: vi.fn(), config: testConfig });
+	const item = Item.create<{ text: string }, {}>(name, itemSeeds, testConfig, {
+		text: '初期値',
+	});
 	uiState.openItemEditor(item as never);
-
-	return { engine, item, getResolver: () => resolveStylesheet };
+	return { engine, item, uiState };
 }
 
-describe('ItemEditorHost — wysiwygコンテンツスタイルシート注入', () => {
-	test('getContentStylesheetの解決前にunmountされてもsetStyleは呼ばれない（未処理rejection防止）', async () => {
-		const { engine, item, getResolver } = createHarness();
+describe('ItemEditorHost — containerTypeのdata-bge-container配線', () => {
+	test('containerTypeをdata-bge-container属性としてEditorのラッパーへ渡す', () => {
+		const { engine, item } = createHarness('stub-item');
 
-		const { unmount } = render(<ItemEditorHost engine={engine} item={item as never} />);
-		const stub = document.querySelector('bge-wysiwyg-editor') as StubWysiwygEditorElement;
-		expect(stub).not.toBeNull();
+		renderWithEngine(
+			engine,
+			<ItemEditorHost item={item as never} containerType="main" />,
+		);
 
-		unmount();
-		getResolver()('body{color:red}');
-		await Promise.resolve();
-		await Promise.resolve();
-
-		expect(stub.setStyle).not.toHaveBeenCalled();
+		const container = document.querySelector('[data-bge-container="main"]');
+		expect(container).not.toBeNull();
+		expect(container?.querySelector('[data-testid="stub-input"]')).not.toBeNull();
 	});
+});
 
-	test('getContentStylesheetが解決してもunmountされていなければsetStyleが呼ばれる', async () => {
-		const { engine, item, getResolver } = createHarness();
+describe('ItemEditorHost — Editor未定義のフォールバック', () => {
+	test('Editorを持たないitemは名前付きのフォールバックメッセージを表示する', () => {
+		const { engine, item } = createHarness('no-editor-item');
 
-		render(<ItemEditorHost engine={engine} item={item as never} />);
-		const stub = document.querySelector('bge-wysiwyg-editor') as StubWysiwygEditorElement;
+		renderWithEngine(engine, <ItemEditorHost item={item as never} />);
 
-		getResolver()('body{color:red}');
-		await Promise.resolve();
-		await Promise.resolve();
+		expect(screen.getByText(/編集できないコンテンツです.*no-editor-item/)).toBeTruthy();
+	});
+});
 
-		expect(stub.setStyle).toHaveBeenCalledWith('body{color:red}');
+describe('ItemEditorHost — submit失敗時はダイアログを閉じない', () => {
+	test('toItemDataが投げるとcloseAndSaveは呼ばれず、role="alert"でエラーが表示される', async () => {
+		const { engine, item } = createHarness('throwing-item');
+
+		renderWithEngine(engine, <ItemEditorHost item={item as never} />);
+
+		const input = narrowElement(screen.getByTestId('stub-input'), HTMLInputElement);
+		const form = narrowElement(input.form ?? document.body, HTMLFormElement);
+		fireEvent.submit(form);
+
+		await waitFor(() => {
+			expect(screen.getByRole('alert')).toBeTruthy();
+		});
+		// action内のclosedAndSave()（closeDialog + save）は、submitRef.current()の
+		// throwが伝播した時点で以降が実行されないため呼ばれない
+		expect(engine.save).not.toHaveBeenCalled();
 	});
 });

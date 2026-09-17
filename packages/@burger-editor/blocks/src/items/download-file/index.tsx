@@ -4,11 +4,12 @@ import {
 	FileUploader,
 	Preview,
 	TextField,
-	useComponentEvent,
+	useExternalFileSelection,
+	useFileBrowser,
 } from '@burger-editor/client/ui';
 import { createItem } from '@burger-editor/core';
 import { formatByteSize } from '@burger-editor/utils';
-import { useEffect } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 
 import style from './style.css';
 import template from './template.html';
@@ -37,28 +38,35 @@ export default createItem<{
 			download: state.downloadCheck ? (state.name ?? state.path) : '',
 		};
 	},
-	Editor({ state, setState, engine }) {
-		// ファイル一覧・アップローダーからの選択をエディタ状態に反映する
-		useComponentEvent(engine, 'file-select', ({ path, fileSize, isEmpty }) => {
-			if (isEmpty) {
-				return;
-			}
-			setState((prev) => ({
-				...prev,
-				path,
-				formatedSize: formatByteSize(fileSize),
-				size: fileSize.toString(),
-			}));
-		});
+	Editor({ state, setState }) {
+		const fileBrowser = useFileBrowser();
 
-		// 初回マウント時に現在のファイルを通知してファイル一覧をロードさせる
+		// ファイル一覧・アップローダーからの選択をエディタ状態に反映する。
+		// selectedはengine単位で共有されるFileBrowserStoreの値のため、
+		// マウント直後は前に開いていた別itemの残留選択の可能性がある —
+		// useExternalFileSelectionが初回発火をスキップし、下のマウント
+		// effect（自分自身のpathをstoreへ登録する側）に委ねる
+		const selected = useSyncExternalStore(
+			fileBrowser.subscribe,
+			() => fileBrowser.getSnapshot().selected.other,
+		);
+		useExternalFileSelection(
+			selected,
+			() => state.path ?? '',
+			(next) => {
+				setState((prev) => ({
+					...prev,
+					path: next.path,
+					formatedSize: formatByteSize(next.fileSize),
+					size: next.fileSize.toString(),
+				}));
+			},
+		);
+
+		// 初回マウント時に現在のファイルをfileBrowserへ登録し、FileListの
+		// ハイライト・アップロード完了時の反映先を揃える
 		useEffect(() => {
-			engine.componentObserver.notify('file-select', {
-				path: state.path ?? '',
-				fileSize: Number.parseFloat(state.size ?? '0'),
-				isEmpty: (state.path ?? '') === '',
-				isMounted: false,
-			});
+			fileBrowser.select('other', state.path ?? '', Number.parseFloat(state.size ?? '0'));
 			// eslint-disable-next-line react-hooks/exhaustive-deps
 		}, []);
 
@@ -66,7 +74,7 @@ export default createItem<{
 			<div data-bge-dialog="2col">
 				<div data-bge-dialog-ui="sticky">
 					<div>
-						<Preview engine={engine} path={state.path ?? ''} />
+						<Preview path={state.path ?? ''} />
 					</div>
 
 					<div>
@@ -85,8 +93,8 @@ export default createItem<{
 					</div>
 				</div>
 				<div>
-					<FileUploader engine={engine} fileType="other" />
-					<FileList engine={engine} fileType="other" />
+					<FileUploader fileType="other" />
+					<FileList fileType="other" />
 				</div>
 			</div>
 		);

@@ -5,24 +5,18 @@ import type {
 } from '@burger-editor/core';
 
 import { UIStateStore } from '@burger-editor/core';
-import { cleanup, fireEvent, render } from '@testing-library/react';
+import { cleanup, fireEvent } from '@testing-library/react';
 import { act } from 'react';
 import { test, expect, afterEach, beforeEach, vi } from 'vitest';
 
+import { createMockEngine as createBaseMockEngine } from '../testing/create-mock-engine.js';
+import { renderWithEngine } from '../testing/render-with-engine.js';
+
 import { EditableAreaView } from './editable-area-view.js';
 
-// jsdom doesn't implement the CSSOM `CSS` global (no CSS.escape), which
-// BlockMenuButton uses to build an anchor name. Minimal polyfill scoped to
-// this test file only; it isn't exercised in production (real browsers).
-if (globalThis.CSS === undefined) {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	(globalThis as any).CSS = {
-		escape: (value: string) => String(value).replaceAll(/[^\w-]/g, (ch) => `\\${ch}`),
-	};
-}
+// 実際のResizeObserverでは発火タイミングを制御できないため、
+// observe/disconnectの配線そのものを検証するための最小スタブを差し込む
 
-// jsdomはResizeObserver未実装。observe/disconnectの配線を検証するため
-// 最小のスタブを差し込む
 class ResizeObserverStub {
 	disconnect = vi.fn();
 	observe = vi.fn();
@@ -55,26 +49,29 @@ function createMockEngine(contents?: {
 	getContentsAsString?: () => string;
 	replaceContents?: (html: string) => Promise<void>;
 }) {
-	const el = document.createElement('div');
 	const uiState = new UIStateStore();
 	const content = {
 		getContentsAsString: contents?.getContentsAsString ?? (() => ''),
 		replaceContents:
 			contents?.replaceContents ?? vi.fn().mockImplementation(() => Promise.resolve()),
 	};
-	return {
-		el,
+	const save = vi.fn();
+	return createBaseMockEngine({
 		uiState,
-		save: vi.fn(),
+		save,
 		get isProcessed() {
 			return uiState.getSnapshot().processing;
 		},
 		clearCurrentBlock: vi.fn(),
-		componentObserver: { notify: vi.fn() },
 		commandBus: { createReceiver: vi.fn(), receiverId: 'bge-command-bus-test' },
 		getEditableContent: () => content,
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} as any as BurgerEditorEngine;
+		// 実物のengine.commitSourceEditと同じ挙動（replaceContents→save）を
+		// 最小限で再現する
+		commitSourceEdit: async (_type: unknown, html: string) => {
+			await content.replaceContents(html);
+			save();
+		},
+	});
 }
 
 /**
@@ -89,9 +86,9 @@ function renderView(
 	initialContent = '',
 ) {
 	let host: EditableAreaHost | null = null;
-	const utils = render(
+	const utils = renderWithEngine(
+		engine,
 		<EditableAreaView
-			engine={engine}
 			type={type}
 			initialContent={initialContent}
 			stylesheets={[]}
@@ -236,7 +233,7 @@ test('textareaのblurで編集内容がコンテンツにコミットされる',
 	expect(textarea.value).toBe('<p>saved</p>');
 });
 
-test('bge:switch-contentで自エリアの表示・非表示が切り替わる', () => {
+test('uiState.activeAreaで自エリアの表示・非表示が切り替わる', () => {
 	const engine = createMockEngine();
 	const { container } = renderView(engine, 'draft');
 
@@ -245,16 +242,12 @@ test('bge:switch-contentで自エリアの表示・非表示が切り替わる',
 	expect(wrapper.hidden).toBe(true);
 
 	act(() => {
-		engine.el.dispatchEvent(
-			new CustomEvent('bge:switch-content', { detail: { content: 'draft' } }),
-		);
+		engine.uiState.setActiveArea('draft');
 	});
 	expect(wrapper.hidden).toBe(false);
 
 	act(() => {
-		engine.el.dispatchEvent(
-			new CustomEvent('bge:switch-content', { detail: { content: 'main' } }),
-		);
+		engine.uiState.setActiveArea('main');
 	});
 	expect(wrapper.hidden).toBe(true);
 });

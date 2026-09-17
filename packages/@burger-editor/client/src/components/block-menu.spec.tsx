@@ -1,9 +1,12 @@
 import type { BurgerBlock } from '@burger-editor/core';
 
 import { getBlockAtPosition, UIStateStore } from '@burger-editor/core';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
 import { act } from 'react';
 import { test, expect, afterEach, vi } from 'vitest';
+
+import { createMockEngine as createBaseMockEngine } from '../testing/create-mock-engine.js';
+import { renderWithEngine } from '../testing/render-with-engine.js';
 
 import { BlockMenu } from './block-menu.js';
 
@@ -16,24 +19,15 @@ vi.mock('@burger-editor/core', async (importOriginal) => {
 	};
 });
 
-// jsdom doesn't implement the CSSOM `CSS` global (no CSS.escape), which
-// BlockMenuButton uses to build an anchor name. Minimal polyfill scoped to
-// this test file only; it isn't exercised in production (real browsers).
-if (globalThis.CSS === undefined) {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	(globalThis as any).CSS = {
-		escape: (value: string) => String(value).replaceAll(/[^\w-]/g, (ch) => `\\${ch}`),
-	};
-}
-
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
 });
 
 /**
- * jsdom does not compute `pageX`/`pageY` from `clientX`/`clientY`, so set
- * them directly to make the coordinates the component reads deterministic.
+ * `pageX`/`pageY` depend on the document's scroll offset, which is
+ * environment-dependent. Setting them directly keeps the coordinates the
+ * component reads deterministic regardless of scroll position.
  * @param target
  * @param pageX
  * @param pageY
@@ -47,32 +41,35 @@ function dispatchMouseMove(target: EventTarget, pageX: number, pageY: number) {
 
 /**
  * 実際のUIStateStoreを持つengineモック。isProcessedは本物のengineと
- * 同じくストアのprocessingへ委譲する
+ * 同じくストアのprocessingへ委譲する。setCurrentBlockも本物のengine
+ * （engine.ts）と同じくuiState.setCurrentBlock()へ委譲する — そうしないと
+ * block-menu.tsxが`useUIState((s) => s.currentBlock)`で読むcurrentBlockが
+ * 常にnullのままになり、isMutableに応じた分岐がどのテストからも
+ * 到達できなくなる
  */
 function createMockEngine() {
-	const el = document.createElement('div');
 	const uiState = new UIStateStore();
-	return {
-		el,
+	return createBaseMockEngine({
 		uiState,
 		get isProcessed() {
 			return uiState.getSnapshot().processing;
 		},
 		clearCurrentBlock: vi.fn(),
-		componentObserver: { notify: vi.fn() },
+		setCurrentBlock: vi.fn((block: BurgerBlock) => {
+			uiState.setCurrentBlock(block);
+		}),
 		commandBus: { receiverId: 'bge-command-bus-test' },
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} as any;
+	});
 }
 
 /**
- *
+ * @param isMutable - `currentBlock?.isMutable()`が返す値
  */
-function createMockBlock(): BurgerBlock {
+function createMockBlock(isMutable = false): BurgerBlock {
 	const el = document.createElement('div');
 	const block = {
 		el,
-		isMutable: () => false,
+		isMutable: () => isMutable,
 		is: (other: unknown) => other === block,
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} as any;
@@ -109,8 +106,9 @@ test('uiState.processing中はメニューが隠れ、解除後の再ホバー�
 		marginBlockEnd: 0,
 	});
 
-	const { container: renderedRoot } = render(
-		<BlockMenu engine={engine} container={container} />,
+	const { container: renderedRoot } = renderWithEngine(
+		engine,
+		<BlockMenu container={container} />,
 	);
 	const menuEl = renderedRoot.firstElementChild as HTMLElement;
 
@@ -141,7 +139,9 @@ test('uiState.processing中はメニューが隠れ、解除後の再ホバー�
 
 test('メニューのボタンのcommandforはengine.commandBus.receiverIdを指す（配線漏れの検出）', async () => {
 	const engine = createMockEngine();
-	engine.commandBus = { receiverId: 'bge-command-bus-from-engine' };
+	Object.defineProperty(engine, 'commandBus', {
+		value: { receiverId: 'bge-command-bus-from-engine' },
+	});
 	const container = document.createElement('div');
 	document.body.append(container);
 	const block = createMockBlock();
@@ -159,12 +159,62 @@ test('メニューのボタンのcommandforはengine.commandBus.receiverIdを指
 		marginBlockEnd: 0,
 	});
 
-	const { getByLabelText } = render(<BlockMenu engine={engine} container={container} />);
+	const { getByLabelText } = renderWithEngine(
+		engine,
+		<BlockMenu container={container} />,
+	);
 	await hover(document.body);
 
 	expect(getByLabelText('ブロックを削除').getAttribute('commandfor')).toBe(
 		'bge-command-bus-from-engine',
 	);
+});
+
+test('currentBlock.isMutable()がtrueのときだけグリッド追加・削除ボタンが表示される（配線漏れの検出）', async () => {
+	const engine = createMockEngine();
+	const container = document.createElement('div');
+	document.body.append(container);
+	const mutableBlock = createMockBlock(true);
+
+	vi.mocked(getBlockAtPosition).mockReturnValue({
+		block: mutableBlock,
+		rect: {
+			left: 0,
+			top: 0,
+			right: 100,
+			bottom: 100,
+			width: 100,
+			height: 100,
+		} as DOMRect,
+		marginBlockEnd: 0,
+	});
+
+	const { getByLabelText, queryByLabelText } = renderWithEngine(
+		engine,
+		<BlockMenu container={container} />,
+	);
+	await hover(document.body);
+
+	expect(getByLabelText('ブロック内に要素を追加')).toBeTruthy();
+	expect(getByLabelText('ブロック内の要素を削除')).toBeTruthy();
+
+	const immutableBlock = createMockBlock(false);
+	vi.mocked(getBlockAtPosition).mockReturnValue({
+		block: immutableBlock,
+		rect: {
+			left: 100,
+			top: 100,
+			right: 200,
+			bottom: 200,
+			width: 100,
+			height: 100,
+		} as DOMRect,
+		marginBlockEnd: 0,
+	});
+	await hover(document.body);
+
+	expect(queryByLabelText('ブロック内に要素を追加')).toBeNull();
+	expect(queryByLabelText('ブロック内の要素を削除')).toBeNull();
 });
 
 test('processingによる非表示で選択中ブロックがクリアされる', async () => {
@@ -186,7 +236,7 @@ test('processingによる非表示で選択中ブロックがクリアされる'
 		marginBlockEnd: 0,
 	});
 
-	render(<BlockMenu engine={engine} container={container} />);
+	renderWithEngine(engine, <BlockMenu container={container} />);
 
 	await hover(document.body);
 

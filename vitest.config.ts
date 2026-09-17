@@ -52,18 +52,30 @@ export default defineConfig({
 				},
 			},
 			{
-				// Reactエディタコンポーネントのテスト（jsdom + Testing Library）
+				// Reactエディタコンポーネントのテスト（実Chromium + Testing Library）
 				test: {
 					name: 'blocks-editor',
 					include: ['packages/@burger-editor/blocks/**/*.spec.tsx'],
-					...jsdomConfig,
+					setupFiles: ['./packages/@burger-editor/client/src/__tests__/setup.ts'],
+					browser: {
+						enabled: true,
+						provider: playwright(),
+						instances: [{ browser: 'chromium' }],
+						headless: true,
+						viewport: { width: 1280, height: 720 },
+						screenshotFailures: false,
+					},
+					testTimeout: 15_000,
 				},
 				resolve: {
 					alias: {
-						// clientはUIエントリをdist経由で提供するため、テストでは
-						// ソースを直接読んでReactインスタンスを揃える
+						// clientはUI/testingエントリをdist経由で提供するため、
+						// テストではソースを直接読んでReactインスタンスを揃える
 						'@burger-editor/client/ui': path.resolve(
 							'./packages/@burger-editor/client/src/ui.ts',
+						),
+						'@burger-editor/client/testing': path.resolve(
+							'./packages/@burger-editor/client/src/testing/index.ts',
 						),
 					},
 				},
@@ -99,7 +111,16 @@ export default defineConfig({
 					name: 'client',
 					include: ['packages/@burger-editor/client/**/*.spec.{ts,tsx}'],
 					exclude: ['**/*.vr.spec.ts'],
-					...jsdomConfig,
+					setupFiles: ['./packages/@burger-editor/client/src/__tests__/setup.ts'],
+					browser: {
+						enabled: true,
+						provider: playwright(),
+						instances: [{ browser: 'chromium' }],
+						headless: true,
+						viewport: { width: 1280, height: 720 },
+						screenshotFailures: false,
+					},
+					testTimeout: 15_000,
 				},
 				define: {
 					__DEBUG__: false,

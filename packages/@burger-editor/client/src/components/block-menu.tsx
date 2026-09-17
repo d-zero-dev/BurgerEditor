@@ -1,11 +1,13 @@
 import type { MenuGeometry, ItemOverlayRect } from './block-menu-view.js';
-import type { BurgerBlock, BurgerEditorEngine, ItemData } from '@burger-editor/core';
+import type { ItemData } from '@burger-editor/core';
 import type { RefObject } from 'react';
 
 import { Item, getBlockAtPosition } from '@burger-editor/core';
 import { useId, useEffect, useRef, useState, useCallback } from 'react';
 
+import { useEngine } from '../engine-context.js';
 import { useCommand } from '../use-command.js';
+import { useUIState } from '../use-engine.js';
 
 import { BlockMenuView } from './block-menu-view.js';
 
@@ -24,22 +26,16 @@ import { BlockMenuView } from './block-menu-view.js';
  * `BurgerBlock` の実インスタンスなしに見た目だけ確認できるため、
  * Storybook 等では `BlockMenuView` を直接使う。
  * @param root0
- * @param root0.engine
  * @param root0.container
  * @example
  * ```tsx
- * <BlockMenu engine={engine} container={frameBody} />
+ * <BlockMenu container={frameBody} />
  * ```
  */
-export function BlockMenu({
-	engine,
-	container,
-}: {
-	readonly engine: BurgerEditorEngine;
-	readonly container: HTMLElement;
-}) {
+export function BlockMenu({ container }: { readonly container: HTMLElement }) {
+	const engine = useEngine();
 	const menuId = useId();
-	const [currentBlock, setCurrentBlock] = useState<BurgerBlock | null>(null);
+	const currentBlock = useUIState((s) => s.currentBlock);
 	const [visible, setVisible] = useState(false);
 	const [itemRects, setItemRects] = useState<readonly ItemOverlayRect[]>([]);
 	const itemsRef: RefObject<readonly Item<ItemData, {}>[]> = useRef([]);
@@ -70,7 +66,9 @@ export function BlockMenu({
 
 	const hide = useCallback(() => {
 		setVisible(false);
-		setCurrentBlock(null);
+		// engine.uiState.currentBlock もここでnullになる — clearCurrentBlock()
+		// が内部でuiState.setCurrentBlock(null)を呼ぶため、ローカルstateの
+		// 二重管理は不要（store一本が真実の源）
 		engine.clearCurrentBlock();
 	}, [engine]);
 
@@ -84,16 +82,6 @@ export function BlockMenu({
 			}
 		});
 	}, [engine, hide]);
-
-	useEffect(() => {
-		const onBlockChange = (e: CustomEvent<{ readonly block: BurgerBlock }>) => {
-			setCurrentBlock(e.detail.block);
-		};
-		engine.el.addEventListener('bge:block-change', onBlockChange);
-		return () => {
-			engine.el.removeEventListener('bge:block-change', onBlockChange);
-		};
-	}, [engine]);
 
 	useEffect(() => {
 		const doc = container.ownerDocument;
@@ -115,7 +103,8 @@ export function BlockMenu({
 			setVisible(true);
 
 			const { block, rect, marginBlockEnd } = selected;
-			setCurrentBlock(block);
+			// currentBlockはここでは書かない。下のengine.setCurrentBlock()が
+			// uiState（唯一の真実の源）経由でこのコンポーネントへ戻ってくる
 			setGeometry({
 				width: rect.width,
 				height: rect.height,
@@ -148,14 +137,7 @@ export function BlockMenu({
 				}),
 			);
 
-			engine.componentObserver.notify('select-block', {
-				block,
-				width: rect.width,
-				height: rect.height,
-				x: rect.left,
-				y: rect.top,
-				marginBlockEnd,
-			});
+			engine.setCurrentBlock(block);
 		};
 
 		const scheduleUpdate = () => {

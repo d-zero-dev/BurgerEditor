@@ -1,6 +1,11 @@
 import type { Preview } from '@storybook/react-vite';
+import type { ReactNode } from 'react';
 
+import { EngineProvider, RootErrorBoundary } from '@burger-editor/client/ui';
 import { defineBgeWysiwygEditorElement } from '@burger-editor/custom-element';
+import { Suspense, useState } from 'react';
+
+import { createMockEngine } from '../src/mocks/create-mock-engine.js';
 
 import '@burger-editor/client/style';
 import '@burger-editor/local/style';
@@ -21,32 +26,48 @@ defineBgeWysiwygEditorElement();
  * - 'none': ラップしない（編集エリア本体・ページ通常フロー等、
  *   dialog/block-menu の外で使われるコンポーネント）
  */
+/**
+ * 個々のstoryが`useEngine()`/`use()`を呼ぶコンポーネントを直接レンダー
+ * しても`useEngine() must be called under an <EngineProvider>`で落ちない
+ * よう、既定のengineを常に用意する。story固有のengineが必要な場合は
+ * story側で内側に別の`<EngineProvider>`を重ねればそちらが優先される
+ * （Reactのcontextは最も内側のProviderを解決するため）
+ */
+function DefaultEngineProvider({ children }: { readonly children: ReactNode }) {
+	const [engine] = useState(() => createMockEngine());
+	return <EngineProvider engine={engine}>{children}</EngineProvider>;
+}
+
 const preview: Preview = {
 	decorators: [
 		(Story, context) => {
 			const wrapper = context.parameters['wrapper'] ?? 'dialog';
-			if (wrapper === 'none') {
-				return <Story />;
-			}
-			if (wrapper === 'block-menu') {
-				// BlockMenuView は position: absolute で自身を配置するため、
-				// 基準となる position: relative を明示する
-				return (
+			const wrapped =
+				wrapper === 'none' ? (
+					<Story />
+				) : wrapper === 'block-menu' ? (
+					// BlockMenuView は position: absolute で自身を配置するため、
+					// 基準となる position: relative を明示する
 					<div data-bge-component="block-menu" style={{ position: 'relative' }}>
 						<Story />
 					</div>
+				) : (
+					<dialog open className="bge-dialog">
+						<div>
+							<form>
+								<div>
+									<Story />
+								</div>
+							</form>
+						</div>
+					</dialog>
 				);
-			}
 			return (
-				<dialog open className="bge-dialog">
-					<div>
-						<form>
-							<div>
-								<Story />
-							</div>
-						</form>
-					</div>
-				</dialog>
+				<DefaultEngineProvider>
+					<RootErrorBoundary>
+						<Suspense fallback={<p>Loading…</p>}>{wrapped}</Suspense>
+					</RootErrorBoundary>
+				</DefaultEngineProvider>
 			);
 		},
 	],
