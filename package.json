@@ -16,6 +16,8 @@
 		"build-storybook": "yarn workspace @burger-editor/storybook build",
 		"test": "bash scripts/docker-yarn.sh test:unit",
 		"test:unit": "vitest run",
+		"test:no-compiler": "bash scripts/docker-yarn.sh test:no-compiler:unit",
+		"test:no-compiler:unit": "vitest run --project client --project blocks --project blocks-editor",
 		"test:vr": "vitest run --project vr",
 		"test:vr:update": "vitest run --project vr --update",
 		"test:vr:docker": "bash scripts/docker-yarn.sh test:vr",

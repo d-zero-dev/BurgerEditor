@@ -66,3 +66,45 @@ jobs:
         with:
           name: vr-diff-images
           path: packages/@burger-editor/client/src/__tests__/vr/__snapshots__/**/*-diff.png
+
+  # React Compilerを無効化した状態でも同じテストが通ることを確認する
+  # （react.devの「両方のモードで実行する」推奨）。VRはコンパイラの
+  # 有無に左右されないピクセル出力の検証なのでここでは対象外にする
+  test-no-compiler:
+    name: Test (BGE_NO_COMPILER=1)
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+    env:
+      BGE_NO_COMPILER: '1'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 26.8.1
+
+      - name: Enable Corepack and setup Yarn v4
+        run: |
+          corepack enable
+          corepack prepare $(node -p "require('./package.json').packageManager") --activate
+          yarn --version
+
+      - name: Cache dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .yarn/cache
+          key: yarn-cache-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-cache-
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build
+
+      - name: Test
+        run: yarn test:no-compiler

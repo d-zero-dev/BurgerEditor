@@ -33,5 +33,6 @@ docker run --rm \
 	-v bge-vr-node-modules:/work/node_modules \
 	-v bge-vr-yarn-cache:/root/.yarn/berry/cache \
 	-w /work \
+	-e BGE_NO_COMPILER \
 	"$IMAGE_TAG" \
 	bash -lc "yarn install --immutable && yarn $quoted_args"
