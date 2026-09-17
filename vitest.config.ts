@@ -3,30 +3,29 @@ import type { Plugin } from 'vite';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { babel } from '@rollup/plugin-babel';
 import { playwright } from '@vitest/browser-playwright';
 // @ts-ignore - rollup-plugin-string has type incompatibility with vitest's internal rollup version
 import { string } from 'rollup-plugin-string';
 import { defineConfig } from 'vitest/config';
 
 import { vrCommands } from './packages/@burger-editor/client/src/__tests__/vr/vr-commands.ts';
+// @ts-ignore - plain JS module, no ambient types published for it
+import {
+	createReactCompilerBabelPlugin,
+	reactCompilerDisabled,
+} from './scripts/react-compiler-babel.js';
 
 const blocksPkg = JSON.parse(
 	fs.readFileSync('./packages/@burger-editor/blocks/package.json', 'utf8'),
 );
 
-// blocks/rollup.config.jsの本番ビルドと同じReact Compiler設定。テスト側だけ
-// コンパイル対象から外れる（コンパイル済み/非コンパイルの混在）と、本番と
-// テストで挙動が食い違いうる。BGE_NO_COMPILER=1は両方の設定ファイルで揃える
-const noCompiler = process.env.BGE_NO_COMPILER === '1';
+// blocks/rollup.config.jsの本番ビルドと同じReact Compiler設定を共有する
+// （scripts/react-compiler-babel.js）。テスト側だけコンパイル対象から
+// 外れる（コンパイル済み/非コンパイルの混在）と、本番とテストで挙動が
+// 食い違いうる。spec.tsx自体はテスト用のハーネスコンポーネントしか
+// 含まずコンパイルの恩恵がないため対象から除く
 const reactCompilerBabel = () =>
-	babel({
-		babelHelpers: 'bundled',
-		extensions: ['.tsx'],
-		exclude: 'node_modules/**',
-		presets: ['@babel/preset-typescript'],
-		plugins: ['babel-plugin-react-compiler'],
-	});
+	createReactCompilerBabelPlugin({ exclude: ['node_modules/**', '**/*.spec.tsx'] });
 
 const cssAsRaw = (): Plugin => {
 	return {
@@ -96,7 +95,7 @@ export default defineConfig({
 				plugins: [
 					cssAsRaw(),
 					string({ include: ['**/*.html', '**/*.svg'] }),
-					...(noCompiler ? [] : [reactCompilerBabel()]),
+					...(reactCompilerDisabled ? [] : [reactCompilerBabel()]),
 				],
 				define: {
 					__VERSION__: JSON.stringify(blocksPkg.version),
@@ -120,7 +119,7 @@ export default defineConfig({
 				plugins: [
 					cssAsRaw(),
 					string({ include: ['**/*.html', '**/*.svg'] }),
-					...(noCompiler ? [] : [reactCompilerBabel()]),
+					...(reactCompilerDisabled ? [] : [reactCompilerBabel()]),
 				],
 				define: {
 					__VERSION__: JSON.stringify(blocksPkg.version),
