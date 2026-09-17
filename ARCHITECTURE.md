@@ -333,7 +333,7 @@ core が UI に要求する接点は `BurgerEditorView` ひとつです。`creat
 
 - core 側: `EditableContent` がコンテンツ操作（ブロック復元・シリアライズ・サニタイズ）を担う。`view` 未指定時は素の div を返す headless フォールバックを使う
 - client 側: `createReactView()` が port を実装する。**`engine.viewArea` 配下は React root が 1 つ**（`engine.el` 直下）— `createAreaHost()` は自前の root を作らず、編集エリアごとの `<div>` をその配下に用意してその単一 root から `createPortal` で `EditableAreaView`（iframe/ソース textarea のシェル、ResizeObserver による高さ追従）を描画する。ブロックメニューと初期挿入ボタンはさらに iframe 文書内へ二重に createPortal される。ダイアログ群（`BurgerEditorRoot`）は `view.mountChrome()` 経由で同じ root に相乗りする（`ReactView` は client 内部の型で、core の `BurgerEditorView` 契約はそのまま）。`attachDraftSwitcher()` はこの対象外（`engine.viewArea` の外側、アプリケーション側が任意の位置に置くため）で、`EngineProvider` を自前で被せた独立した React root をもう1つ持つ
-- 表示状態（main/draft の切替・visual/source モード・processing 中のメニュー非表示）は `engine.uiState` とエンジンイベント（`bge:switch-content` / `bge:saved`）を UI 層が購読して宣言的に描画する。core から UI への命令的呼び出しは存在しない
+- 表示状態（main/draft の切替・visual/source モード・processing 中のメニュー非表示）は `engine.uiState` を UI 層が `useSyncExternalStore` で直接読んで宣言的に描画する。`bge:switch-content` / `bge:block-change` はこれと同じタイミングで発火するが、非React（DOM購読の）コンシューマ向けであり、UI 層はこれらのイベントを経由しない。core から UI への命令的呼び出しは存在しない
 
 **EngineContext（依存注入）:**
 
