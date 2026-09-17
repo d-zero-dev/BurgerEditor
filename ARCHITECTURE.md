@@ -332,7 +332,7 @@ core パッケージは UI フレームワークに依存しない headless エ�
 core が UI に要求する接点は `BurgerEditorView` ひとつです。`createAreaHost()` が編集エリア（main / draft）ごとのホスト UI を生成し、core には編集対象コンテンツの `containerElement`（と任意の挿入アニメーションフック）だけを返します。core は iframe・textarea・メニューなど UI 所有の DOM への参照を一切持たないため、「エンジンが React の描画対象属性を直接書き換えて状態が食い違う」類のバグは型レベルで表現できません。
 
 - core 側: `EditableContent` がコンテンツ操作（ブロック復元・シリアライズ・サニタイズ）を担う。`view` 未指定時は素の div を返す headless フォールバックを使う
-- client 側: `createReactView()` が port を実装する。**engine 1 つにつき React root は 1 つ**（`engine.el` 直下）— `createAreaHost()` は自前の root を作らず、編集エリアごとの `<div>` を `engine.viewArea` 配下に用意してその単一 root から `createPortal` で `EditableAreaView`（iframe/ソース textarea のシェル、ResizeObserver による高さ追従）を描画する。ブロックメニューと初期挿入ボタンはさらに iframe 文書内へ二重に createPortal される。ダイアログ群（`BurgerEditorRoot`）は `view.mountChrome()` 経由で同じ root に相乗りする（`ReactView` は client 内部の型で、core の `BurgerEditorView` 契約はそのまま）
+- client 側: `createReactView()` が port を実装する。**`engine.viewArea` 配下は React root が 1 つ**（`engine.el` 直下）— `createAreaHost()` は自前の root を作らず、編集エリアごとの `<div>` をその配下に用意してその単一 root から `createPortal` で `EditableAreaView`（iframe/ソース textarea のシェル、ResizeObserver による高さ追従）を描画する。ブロックメニューと初期挿入ボタンはさらに iframe 文書内へ二重に createPortal される。ダイアログ群（`BurgerEditorRoot`）は `view.mountChrome()` 経由で同じ root に相乗りする（`ReactView` は client 内部の型で、core の `BurgerEditorView` 契約はそのまま）。`attachDraftSwitcher()` はこの対象外（`engine.viewArea` の外側、アプリケーション側が任意の位置に置くため）で、`EngineProvider` を自前で被せた独立した React root をもう1つ持つ
 - 表示状態（main/draft の切替・visual/source モード・processing 中のメニュー非表示）は `engine.uiState` とエンジンイベント（`bge:switch-content` / `bge:saved`）を UI 層が購読して宣言的に描画する。core から UI への命令的呼び出しは存在しない
 
 **EngineContext（依存注入）:**
