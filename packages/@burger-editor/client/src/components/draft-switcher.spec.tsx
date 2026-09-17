@@ -1,11 +1,10 @@
-import type { BurgerEditorEngine } from '@burger-editor/core';
-
 import { UIStateStore } from '@burger-editor/core';
 import { cleanup, screen } from '@testing-library/react';
 import { act } from 'react';
 import { test, expect, afterEach } from 'vitest';
 
-import { renderWithEngine } from '../__tests__/render-with-engine.js';
+import { createMockEngine as createBaseMockEngine } from '../testing/create-mock-engine.js';
+import { renderWithEngine } from '../testing/render-with-engine.js';
 
 import { DraftSwitcher } from './draft-switcher.js';
 
@@ -16,16 +15,13 @@ afterEach(cleanup);
  * @param type - 現在表示中のエリア種別
  */
 function createMockEngine(type: 'main' | 'draft' = 'main') {
-	const el = document.createElement('div');
 	const uiState = new UIStateStore();
 	uiState.setActiveArea(type);
-	return {
-		el,
+	return createBaseMockEngine({
 		uiState,
 		content: { type },
 		commandBus: { receiverId: 'bge-command-bus-test' },
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} as any as BurgerEditorEngine;
+	});
 }
 
 test('本稿モードでは本稿ボタンがpressed状態になる', () => {

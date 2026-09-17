@@ -1,16 +1,12 @@
-import type {
-	BurgerEditorEngine,
-	FileListItem,
-	FileListResult,
-} from '@burger-editor/core';
+import type { FileListItem, FileListResult } from '@burger-editor/core';
 
 import { screen, act, cleanup } from '@testing-library/react';
 import { test, expect, afterEach, beforeEach, vi } from 'vitest';
 
 import { FileList } from '../components/file-list.js';
 import { getFileBrowserStore } from '../file-browser/store.js';
-
-import { renderWithEngine } from './render-with-engine.js';
+import { createMockEngine as createBaseMockEngine } from '../testing/create-mock-engine.js';
+import { renderWithEngine } from '../testing/render-with-engine.js';
 
 // vitestはglobals無効のためtesting-libraryの自動cleanupが効かない。
 // レンダー結果がテスト間でリークしないよう明示的に登録する
@@ -19,7 +15,7 @@ afterEach(cleanup);
 const scrollIntoView = vi.fn();
 
 beforeEach(() => {
-	// jsdomはscrollIntoView未実装
+	// scrollIntoViewの呼び出しをspyで検証するため差し替える
 	Element.prototype.scrollIntoView = scrollIntoView;
 	scrollIntoView.mockClear();
 });
@@ -40,7 +36,9 @@ function createFile(url: string): FileListItem {
 }
 
 /**
- * jsdomはSuspenseの再開（pending→fulfilled）を安定して拾えないため、
+ * Suspenseの再開（pending→fulfilledへの遷移をReactが自動でping/retry
+ * する過程）は実Chromium/Vitest Browser Modeでも安定して拾えないことを
+ * 最小再現で確認済み（jsdom固有の制約ではない）。そのため
  * FileListが読む`getFileList`は最初から解決済みのthenable（use()の
  * キャッシュ契約 — status/valueを事前に持つと同期的に値を返す）を返す
  * @param files - 返却するファイル一覧
@@ -66,9 +64,7 @@ function resolvedFileList(files: readonly FileListItem[]): Promise<FileListResul
  */
 function createMockEngine(files: readonly FileListItem[]) {
 	const getFileList = vi.fn(() => resolvedFileList(files));
-	const engine = {
-		serverAPI: { getFileList },
-	} as unknown as BurgerEditorEngine;
+	const engine = createBaseMockEngine({ serverAPI: { getFileList } });
 	return { engine, getFileList };
 }
 
@@ -92,9 +88,7 @@ function createUploadableMockEngine(files: readonly FileListItem[]) {
 			});
 		},
 	);
-	const engine = {
-		serverAPI: { getFileList, postFile },
-	} as unknown as BurgerEditorEngine;
+	const engine = createBaseMockEngine({ serverAPI: { getFileList, postFile } });
 	return {
 		engine,
 		reportProgress: (uploaded: number, total: number) => onProgress?.(uploaded, total),

@@ -4,18 +4,6 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { EditorDialog } from './editor-dialog.js';
 
-// jsdomのHTMLDialogElementはshowModal未実装のバージョンがあるため、
-// open属性の付け外しだけの最小スタブを差し込む
-if (typeof HTMLDialogElement.prototype.showModal !== 'function') {
-	HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
-		this.setAttribute('open', '');
-	};
-	HTMLDialogElement.prototype.close = function (this: HTMLDialogElement) {
-		this.removeAttribute('open');
-		this.dispatchEvent(new Event('close'));
-	};
-}
-
 afterEach(cleanup);
 
 describe('同一documentに同名の複数EditorDialogが存在しても互いを侵さない', () => {

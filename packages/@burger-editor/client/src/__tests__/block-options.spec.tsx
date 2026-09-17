@@ -1,25 +1,15 @@
-import type { BurgerBlock, BurgerEditorEngine } from '@burger-editor/core';
+import type { BurgerBlock } from '@burger-editor/core';
 
 import { screen, fireEvent, cleanup } from '@testing-library/react';
 import { test, expect, afterEach, vi } from 'vitest';
 
 import { BlockOptions } from '../components/block-options.js';
-
-import { renderWithEngine } from './render-with-engine.js';
+import { createMockEngine } from '../testing/create-mock-engine.js';
+import { renderWithEngine } from '../testing/render-with-engine.js';
 
 // vitestはglobals無効のためtesting-libraryの自動cleanupが効かない。
 // レンダー結果がテスト間でリークしないよう明示的に登録する
 afterEach(cleanup);
-
-/**
- * BlockOptionsの描画に必要な最小限のengineモック
- */
-function createMockEngine() {
-	return {
-		getCustomProperties: () => new Map(),
-		getRepeatMinInlineSizeVariants: () => null,
-	} as unknown as BurgerEditorEngine;
-}
 
 /**
  * BlockOptionsの描画に必要な最小限のblockモック

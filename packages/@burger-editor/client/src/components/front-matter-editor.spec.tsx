@@ -7,22 +7,6 @@ import { test, expect, beforeEach, afterEach, vi, describe } from 'vitest';
 
 import { createFrontMatterEditor, FrontMatterStore } from './front-matter-editor.js';
 
-// React 18+のact環境フラグ（Testing LibraryのrenderではなくcreateRootを
-// 直接使うため自前で立てる）
-(globalThis as Record<string, unknown>)['IS_REACT_ACT_ENVIRONMENT'] = true;
-
-// jsdomのHTMLDialogElementはshowModal未実装のバージョンがあるため、
-// open属性の付け外しだけの最小スタブを差し込む
-if (typeof HTMLDialogElement.prototype.showModal !== 'function') {
-	HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
-		this.setAttribute('open', '');
-	};
-	HTMLDialogElement.prototype.close = function (this: HTMLDialogElement) {
-		this.removeAttribute('open');
-		this.dispatchEvent(new Event('close'));
-	};
-}
-
 let container: HTMLElement;
 let editor: FrontMatterEditorHandle | null = null;
 
@@ -62,8 +46,10 @@ function mount(
 }
 
 /**
- * jsdomはInvoker Commands API未実装のため、commandfor先へ合成command
- * イベントを送ってボタン起動を再現する
+ * 実Chromium（Baseline 2025）はInvoker Commands APIをネイティブ実装
+ * 済みだが、他spec群と実装を揃えるためここでも意図的にcommandfor先へ
+ * 合成commandイベントを送ってボタン起動を再現する（実クリック駆動への
+ * 切り替えは別スコープと判断し見送り済み）
  * @param button
  */
 function invokeCommand(button: HTMLElement) {

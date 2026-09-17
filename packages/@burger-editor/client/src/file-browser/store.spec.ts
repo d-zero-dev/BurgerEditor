@@ -2,6 +2,8 @@ import type { BurgerEditorEngine, FileListResult } from '@burger-editor/core';
 
 import { test, expect, describe, vi } from 'vitest';
 
+import { createMockEngine as createBaseMockEngine } from '../testing/create-mock-engine.js';
+
 import { FileBrowserStore, getFileBrowserStore } from './store.js';
 
 /**
@@ -11,9 +13,7 @@ import { FileBrowserStore, getFileBrowserStore } from './store.js';
 function createMockEngine(
 	overrides: Partial<BurgerEditorEngine['serverAPI']> = {},
 ): BurgerEditorEngine {
-	return {
-		serverAPI: { ...overrides },
-	} as unknown as BurgerEditorEngine;
+	return createBaseMockEngine({ serverAPI: { ...overrides } });
 }
 
 describe('getFileBrowserStore', () => {

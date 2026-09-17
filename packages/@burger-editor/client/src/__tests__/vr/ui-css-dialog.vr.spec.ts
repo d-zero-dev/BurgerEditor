@@ -166,4 +166,15 @@ describe('Dialog Layout', () => {
 		);
 		expect(result.pass, result.message).toBe(true);
 	});
+
+	test('dialog normal — 決定失敗時のエラー表示（role="alert"）', async () => {
+		const dialog = renderDialog(hrHtml, { error: '保存に失敗しました' });
+		await waitForRender();
+		const base64 = await page.screenshot({ element: dialog, save: false });
+		const result = await commands.matchScreenshot(
+			base64,
+			'__snapshots__/dialog/normal-error.png',
+		);
+		expect(result.pass, result.message).toBe(true);
+	});
 });

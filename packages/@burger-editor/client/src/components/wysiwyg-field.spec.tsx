@@ -37,9 +37,11 @@ beforeAll(() => {
 /**
  * getContentStylesheetが解決しないPromiseを返すengineモックを作る。
  * fallback表示・unmount安全性など、実際にSuspenseの再開（Scheduler経由の
- * リトライ）を必要としないケースの検証に使う（jsdomにはMessageChannelの
- * ブラウザ実装がなくReactのSuspenseリトライが安定して再開しないため、
- * 「pendingのまま」か「最初から解決済み」のどちらかで検証する）
+ * リトライ）を必要としないケースの検証に使う（`render()`外で解決した
+ * thenableに対するReactの自動retry pingは、実Chromium/Vitest Browser
+ * Modeでも安定して再開しないことを最小再現で確認済み — jsdom固有の
+ * 制約ではない。そのため「pendingのまま」か「最初から解決済み」の
+ * どちらかで検証する）
  */
 function createPendingHarness() {
 	const getContentStylesheet = vi.fn<() => Promise<string>>().mockReturnValue(
@@ -57,8 +59,8 @@ function createPendingHarness() {
  * サスペンドせず同期的に値を返す（react.devの `wrapPromise` キャッシュ
  * パターンと同じthenable拡張）。Suspenseの再開そのもの（pending →
  * fulfilledへの遷移をReactのSchedulerが拾ってリトライする過程）は
- * jsdomでは検証できないため、ここでは「解決済みの値がsetStyleに渡る」
- * という契約だけを確認する
+ * 実ブラウザでも自動では再開しないため検証できない。ここでは
+ * 「解決済みの値がsetStyleに渡る」という契約だけを確認する
  * @param css - `use()` が同期的に返す値
  */
 function createResolvedHarness(css: string) {

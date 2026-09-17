@@ -9,8 +9,10 @@ import { TableEditor } from './table-editor.js';
 afterEach(cleanup);
 
 /**
- * jsdomはInvoker Commands API未実装のため、commandfor先へ合成command
- * イベントを送ってボタン起動を再現する
+ * 実Chromium（Baseline 2025）はInvoker Commands APIをネイティブ実装
+ * 済みだが、他spec群と実装を揃えるためここでも意図的にcommandfor先へ
+ * 合成commandイベントを送ってボタン起動を再現する（実クリック駆動への
+ * 切り替えは別スコープと判断し見送り済み）
  * @param button
  */
 function invokeCommand(button: HTMLElement) {

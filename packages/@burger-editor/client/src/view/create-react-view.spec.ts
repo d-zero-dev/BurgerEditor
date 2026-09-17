@@ -6,15 +6,6 @@ import { test, expect, afterEach, vi } from 'vitest';
 
 import { createReactView } from './create-react-view.js';
 
-// jsdomはCSS.escape未実装（BlockMenuButtonが使う）。このテストでは
-// EditableAreaView経由でBlockMenuも描画されるため必要
-if (globalThis.CSS === undefined) {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	(globalThis as any).CSS = {
-		escape: (value: string) => String(value).replaceAll(/[^\w-]/g, (ch) => `\\${ch}`),
-	};
-}
-
 afterEach(() => {
 	document.body.innerHTML = '';
 });

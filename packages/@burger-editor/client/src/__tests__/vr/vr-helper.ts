@@ -16,18 +16,37 @@ export function injectCSS(): void {
 }
 
 /**
- *
+ * `EditorDialog`（editor-dialog.tsx）が実際に描画する
+ * `dialog.bge-dialog > div > form > div` + `footer` の骨格を再現する。
+ * footerはキャンセル・決定の2ボタン構成（`ui.css`の`footer { gap }`は
+ * ボタン数で見え方が変わる）、formにはエラー行（`role="alert"`）を
+ * 追加できるようにして、実マークアップとの乖離を防ぐ
  * @param innerHtml
+ * @param options
+ * @param options.error - 確定ボタン押下後のエラー文言（`role="alert"`の行を追加する）
  */
-export function renderDialog(innerHtml: string): HTMLDialogElement {
+export function renderDialog(
+	innerHtml: string,
+	options?: { readonly error?: string },
+): HTMLDialogElement {
 	const dialog = document.createElement('dialog');
+	dialog.className = 'bge-dialog';
 	const div = document.createElement('div');
 	const form = document.createElement('form');
-	form.innerHTML = innerHtml;
+	const body = document.createElement('div');
+	body.innerHTML = innerHtml;
+	form.append(body);
+	if (options?.error !== undefined) {
+		const error = document.createElement('p');
+		error.setAttribute('role', 'alert');
+		error.textContent = options.error;
+		form.append(error);
+	}
 	div.append(form);
 
 	const footer = document.createElement('footer');
-	footer.innerHTML = '<button type="button">OK</button>';
+	footer.innerHTML =
+		'<button type="button">キャンセル</button><button type="submit" aria-busy="false">決定</button>';
 
 	dialog.append(div);
 	dialog.append(footer);

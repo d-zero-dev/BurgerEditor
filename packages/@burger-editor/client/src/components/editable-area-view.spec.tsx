@@ -5,26 +5,18 @@ import type {
 } from '@burger-editor/core';
 
 import { UIStateStore } from '@burger-editor/core';
-import { cleanup, fireEvent, render } from '@testing-library/react';
+import { cleanup, fireEvent } from '@testing-library/react';
 import { act } from 'react';
 import { test, expect, afterEach, beforeEach, vi } from 'vitest';
 
-import { EngineProvider } from '../engine-context.js';
+import { createMockEngine as createBaseMockEngine } from '../testing/create-mock-engine.js';
+import { renderWithEngine } from '../testing/render-with-engine.js';
 
 import { EditableAreaView } from './editable-area-view.js';
 
-// jsdom doesn't implement the CSSOM `CSS` global (no CSS.escape), which
-// BlockMenuButton uses to build an anchor name. Minimal polyfill scoped to
-// this test file only; it isn't exercised in production (real browsers).
-if (globalThis.CSS === undefined) {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	(globalThis as any).CSS = {
-		escape: (value: string) => String(value).replaceAll(/[^\w-]/g, (ch) => `\\${ch}`),
-	};
-}
+// 実際のResizeObserverでは発火タイミングを制御できないため、
+// observe/disconnectの配線そのものを検証するための最小スタブを差し込む
 
-// jsdomはResizeObserver未実装。observe/disconnectの配線を検証するため
-// 最小のスタブを差し込む
 class ResizeObserverStub {
 	disconnect = vi.fn();
 	observe = vi.fn();
@@ -57,7 +49,6 @@ function createMockEngine(contents?: {
 	getContentsAsString?: () => string;
 	replaceContents?: (html: string) => Promise<void>;
 }) {
-	const el = document.createElement('div');
 	const uiState = new UIStateStore();
 	const content = {
 		getContentsAsString: contents?.getContentsAsString ?? (() => ''),
@@ -65,8 +56,7 @@ function createMockEngine(contents?: {
 			contents?.replaceContents ?? vi.fn().mockImplementation(() => Promise.resolve()),
 	};
 	const save = vi.fn();
-	return {
-		el,
+	return createBaseMockEngine({
 		uiState,
 		save,
 		get isProcessed() {
@@ -81,8 +71,7 @@ function createMockEngine(contents?: {
 			await content.replaceContents(html);
 			save();
 		},
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} as any as BurgerEditorEngine;
+	});
 }
 
 /**
@@ -97,18 +86,17 @@ function renderView(
 	initialContent = '',
 ) {
 	let host: EditableAreaHost | null = null;
-	const utils = render(
-		<EngineProvider engine={engine}>
-			<EditableAreaView
-				type={type}
-				initialContent={initialContent}
-				stylesheets={[]}
-				classList={['bge-contents']}
-				onReady={(h) => {
-					host = h;
-				}}
-			/>
-		</EngineProvider>,
+	const utils = renderWithEngine(
+		engine,
+		<EditableAreaView
+			type={type}
+			initialContent={initialContent}
+			stylesheets={[]}
+			classList={['bge-contents']}
+			onReady={(h) => {
+				host = h;
+			}}
+		/>,
 	);
 	// onReadyはiframeのrefコールバック（commit時）に同期で呼ばれる
 	expect(host).not.toBeNull();

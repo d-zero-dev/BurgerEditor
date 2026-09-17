@@ -6,6 +6,7 @@ import type {
 	Item,
 } from '@burger-editor/core';
 
+import { createMockEngine as createBaseMockEngine } from '@burger-editor/client/testing';
 import { EngineProvider } from '@burger-editor/client/ui';
 import { narrowElement } from '@burger-editor/utils';
 import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
@@ -25,9 +26,9 @@ const testConfig = {
 } as const;
 
 /**
- * 2枚構成の初期エディタ状態。デフォルトはpathを空にして画像ロード
- * （jsdomでは完了しない）を発生させず、サイズ用fieldsetが無効化され
- * ないようにする
+ * 2枚構成の初期エディタ状態。デフォルトはpathを空にして画像ロードの
+ * リクエスト自体を発生させず（実ブラウザ実行でもネットワーク依存を
+ * 作らないため）、サイズ用fieldsetが無効化されないようにする
  * @param path
  */
 function createInitialState(path: string[] = ['', '']): ImageData {
@@ -63,8 +64,10 @@ function createInitialState(path: string[] = ['', '']): ImageData {
 }
 
 /**
- * jsdomはInvoker Commands API未実装のため、commandfor先へ合成command
- * イベントを送ってボタン起動を再現する
+ * 実Chromium（Baseline 2025）はInvoker Commands APIをネイティブ実装
+ * 済みだが、他spec群と実装を揃えるためここでも意図的にcommandfor先へ
+ * 合成commandイベントを送ってボタン起動を再現する（実クリック駆動への
+ * 切り替えは別スコープと判断し見送り済み）
  * @param button
  */
 function invokeCommand(button: HTMLElement) {
@@ -81,7 +84,9 @@ function invokeCommand(button: HTMLElement) {
 }
 
 /**
- * jsdomはSuspenseの再開（pending→fulfilled）を安定して拾えないため、
+ * Suspenseの再開（pending→fulfilledへの遷移をReactが自動でping/retry
+ * する過程）は実Chromium/Vitest Browser Modeでも安定して拾えないことを
+ * 最小再現で確認済み（jsdom固有の制約ではない）。そのため
  * FileListが読む`getFileList`は最初から解決済みのthenable（use()の
  * キャッシュ契約 — status/valueを事前に持つと同期的に値を返す）を返す
  */
@@ -104,9 +109,7 @@ function resolvedFileList(): Promise<FileListResult> {
  *
  */
 function createMockEngine() {
-	return {
-		serverAPI: { getFileList: () => resolvedFileList() },
-	} as unknown as BurgerEditorEngine;
+	return createBaseMockEngine({ serverAPI: { getFileList: () => resolvedFileList() } });
 }
 
 /**
