@@ -1,9 +1,7 @@
 import type { Filter, FrozenPattyData, PrimitiveDatum } from './types.js';
 
 import { getValues } from './get-values.js';
-import { arrayToHash } from './utils.js';
-
-const reverseListElementSelectors = ['picture'];
+import { arrayToHash, REVERSE_LIST_ELEMENTS } from './utils.js';
 
 /**
  *
@@ -21,7 +19,7 @@ export function getComponent(
 	el = el.cloneNode(true) as Element;
 
 	const reverseListElements = el.querySelectorAll(
-		`:is(${reverseListElementSelectors.join(',')})[data-${attr}-list]`,
+		`:is(${REVERSE_LIST_ELEMENTS.join(',')})[data-${attr}-list]`,
 	);
 	for (const reverseListElement of reverseListElements) {
 		const children: Element[] = [];

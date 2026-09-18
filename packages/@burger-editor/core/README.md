@@ -133,6 +133,8 @@ CSS カスタムプロパティ `--bge-repeat-min-inline-size--<variant>` で折
 | `data-bge="f1:a1, f2:a2"` | 1 要素に複数バインド                           |
 | `data-bge-list` (親要素)  | 子要素を配列データの長さだけ複製               |
 
+`data-bge-list` を付けた `picture` は特別扱いされ、配列 index 0 が `img`、index 1 以降が `source` に変換される（詳細は `@burger-editor/frozen-patty` の README）。`source` には `alt` / `loading` 属性を持たせられないため、これらは常に `img`（index 0）にのみ適用される。
+
 `field:attr` の `attr` に指定できる特別な値:
 
 | 特別属性 | 効果                                       |

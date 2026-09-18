@@ -927,6 +927,96 @@ test('picture with duplicate paths - duplicates are removed', () => {
 	});
 });
 
+test('picture: merge → toHTML → 再mergeの2パスでもimgのalt / loadingバインドが保持される', () => {
+	const fp1 = new FrozenPatty(
+		[
+			'<picture data-field-list>',
+			'<img src="/path/to/1" alt="" width="100" height="100" loading="lazy" data-field="path:src, :alt, :width, :height, :loading, :media">',
+			'</picture>',
+		].join(''),
+		{ typeConvert: true },
+	);
+	fp1.merge({
+		path: ['/path/to/1', '/path/to/2'],
+		width: [100, 200],
+		height: [10, 20],
+		media: [null, '(min-width: 1000px)'],
+		alt: ['代替テキスト'],
+		loading: ['lazy'],
+	});
+
+	// 1回目のmerge結果（保存済みHTML）を、そのまま新しいFrozenPattyの
+	// テンプレートとして2回目のmergeに使う。Item.importが現在のinnerHTMLを
+	// テンプレートとして再利用する実運用の経路を模す
+	const html = fp1.toHTML();
+	const fp2 = new FrozenPatty(html, { typeConvert: true });
+	fp2.merge({ path: ['/path/to/1', '/path/to/3'] });
+
+	const elements = [...fp2.toDOM().firstChild.children];
+	expect(elements.length).toBe(2);
+
+	expect(elements[0].localName).toBe('source');
+	expect(elements[0].getAttribute('srcset')).toBe('/path/to/3');
+	expect(elements[0].dataset.field).toBe('path:srcset, :width, :height, :media');
+
+	expect(elements[1].localName).toBe('img');
+	expect(elements[1].getAttribute('src')).toBe('/path/to/1');
+	expect(elements[1].getAttribute('alt')).toBe('代替テキスト');
+	expect(elements[1].getAttribute('loading')).toBe('lazy');
+	expect(elements[1].dataset.field).toBe(
+		'path:src, :alt, :width, :height, :loading, :media',
+	);
+
+	expect(fp2.toJSON()).toStrictEqual({
+		alt: ['代替テキスト'],
+		loading: ['lazy'],
+		path: ['/path/to/1', '/path/to/3'],
+		width: [100, 200],
+		height: [10, 20],
+		// 2回目のmergeではpathしか渡していないため、mediaは1回目の値
+		// （sourceのmedia属性）がそのまま保持される
+		media: [null, '(min-width: 1000px)'],
+	});
+});
+
+test('picture: 先頭の子がsourceのHTMLでも末尾のimgを雛形にする', () => {
+	const fp = new FrozenPatty(
+		[
+			'<picture data-field-list>',
+			'<source srcset="/path/to/2" width="200" media="(min-width: 1000px)" data-field="path:srcset, :width, :media">',
+			'<img src="/path/to/1" alt="代替" width="100" data-field="path:src, :alt, :width, :media, :loading">',
+			'</picture>',
+		].join(''),
+		{ typeConvert: true },
+	);
+
+	fp.merge({ path: ['/path/to/1', '/path/to/2'] });
+
+	const img = fp.toDOM().querySelector('img');
+	expect(img?.dataset.field).toContain(':alt');
+	expect(img?.dataset.field).toContain(':loading');
+	// フィールド宣言が残っているだけでなく、実際に値も適用されていることを
+	// 確認する（元のimg要素が持っていたaltがそのまま維持される）
+	expect(img?.getAttribute('alt')).toBe('代替');
+});
+
+test('picture: imgを持たないsourceのみのHTMLでは末尾のsourceを雛形にする（altは復元されない）', () => {
+	const fp = new FrozenPatty(
+		[
+			'<picture data-field-list>',
+			'<source srcset="/path/to/1" width="100" data-field="path:srcset, :width">',
+			'</picture>',
+		].join(''),
+		{ typeConvert: true },
+	);
+
+	fp.merge({ path: ['/path/to/1', '/path/to/2'] });
+
+	const img = fp.toDOM().querySelector('img');
+	expect(img).not.toBeNull();
+	expect(img?.hasAttribute('alt')).toBe(false);
+});
+
 test('toHTML()', () => {
 	const fp = new FrozenPatty('<div data-foo="bar" data-field="foo:data-foo"></div>');
 	expect(fp.toHTML()).toBe('<div data-foo="bar" data-field="foo:data-foo"></div>');

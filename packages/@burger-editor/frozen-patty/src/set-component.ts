@@ -9,6 +9,7 @@ import {
 	flattenData,
 	getFields,
 	hasField,
+	isReverseListElement,
 	maxLengthOf,
 	removeProp,
 	replaceNode,
@@ -53,12 +54,21 @@ export function setComponent(
 	}
 
 	for (const listRoot of el.querySelectorAll(`[data-${attr}-list]`)) {
+		const reverse = isReverseListElement(listRoot);
 		const decendants = listRoot.querySelectorAll('*');
 		const definedFieldsOfDecendants = new Set(
 			[...decendants].flatMap((el) => definedFields(el, attr)),
 		);
 		const maxLength = maxLengthOf(data, [...definedFieldsOfDecendants]);
-		const listItem = listRoot.children[0]?.cloneNode(true);
+		// 逆順リスト（picture）では DOM 末尾の要素（img）が配列 index 0 に
+		// 対応する。先頭要素（source）を雛形にすると、source は alt /
+		// loading のバインドを持たない（下の removeProp 参照）ため、一度
+		// 保存された HTML を再度テンプレートとして merge した際に img から
+		// alt / loading が失われる（Item.import が現在の innerHTML を
+		// テンプレートとして再利用するため、2回目以降の保存で発生する）。
+		// getComponent 側の「末尾 = index 0」という読み取り規則と対称にする
+		const templateEl = reverse ? listRoot.lastElementChild : listRoot.firstElementChild;
+		const listItem = templateEl?.cloneNode(true);
 		if (!listItem) {
 			continue;
 		}
@@ -71,11 +81,9 @@ export function setComponent(
 		for (let i = 0; i < maxLength; i++) {
 			let item = listItem.cloneNode(true) as Element;
 			const itemData = flattenData(data, i);
-			let reverse = false;
 
 			switch (listRoot.localName) {
 				case 'picture': {
-					reverse = true;
 					// Check for duplicate paths and skip if found
 					const pathValue = itemData.path;
 					if (pathValue != null && usedPaths.has(String(pathValue))) {

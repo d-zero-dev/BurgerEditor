@@ -1,5 +1,6 @@
 import type { Config } from '@burger-editor/core';
 
+import { Item } from '@burger-editor/core';
 import { test, expect, describe, beforeEach } from 'vitest';
 
 import imageItemSeed from './index.js';
@@ -390,6 +391,142 @@ describe('imageItemSeed', () => {
 			expect(result?.style).toBe('--css-width: 200px');
 			expect(result?.style).not.toContain('--object-fit');
 			expect(result?.style).not.toContain('--aspect-ratio');
+		});
+
+		test('altはaltEditableから1要素配列に正規化される', async () => {
+			const data = {
+				path: ['/path/to/image.jpg'],
+				alt: ['old1', 'old2'],
+				width: [100],
+				height: [50],
+				media: [''],
+				fileSize: '100KB',
+				mediaInput: '',
+				style: '',
+				cssWidth: '100px',
+				scaleType: 'original',
+				scale: 100,
+				aspectRatio: 'revert',
+				cssWidthNumber: 100,
+				cssWidthUnit: 'px',
+				lazy: false,
+				loading: ['eager'],
+				caption: '',
+				altEditable: '新しい代替テキスト',
+				node: 'div',
+				href: '',
+				popup: false,
+				target: null,
+				targetBlank: false,
+				command: null,
+			} as const satisfies Readonly<ImageItemData>;
+
+			const result = await imageItemSeed.toItemData?.(data, testConfig);
+
+			expect(result?.alt).toStrictEqual(['新しい代替テキスト']);
+		});
+
+		test('altEditableが空文字の場合、altは空文字1要素になる', async () => {
+			const data = {
+				path: ['/path/to/image.jpg'],
+				alt: ['old1', 'old2'],
+				width: [100],
+				height: [50],
+				media: [''],
+				fileSize: '100KB',
+				mediaInput: '',
+				style: '',
+				cssWidth: '100px',
+				scaleType: 'original',
+				scale: 100,
+				aspectRatio: 'revert',
+				cssWidthNumber: 100,
+				cssWidthUnit: 'px',
+				lazy: false,
+				loading: ['eager'],
+				caption: '',
+				altEditable: '',
+				node: 'div',
+				href: '',
+				popup: false,
+				target: null,
+				targetBlank: false,
+				command: null,
+			} as const satisfies Readonly<ImageItemData>;
+
+			const result = await imageItemSeed.toItemData?.(data, testConfig);
+
+			expect(result?.alt).toStrictEqual(['']);
+		});
+
+		test('altEditableが未定義（型を満たさない不正なstate）でも空文字1要素にフォールバックする', async () => {
+			// ImageData.altEditableは必須のstring型だが、toItemDataはMCP等
+			// toEditorStateを経由しない呼び出し元からも呼ばれうるため、
+			// undefined/nullに対する防御的フォールバック（?? ''）を持つ。
+			// その分岐を型キャストで直接検証する
+			const data = {
+				path: ['/path/to/image.jpg'],
+				alt: ['old1', 'old2'],
+				width: [100],
+				height: [50],
+				media: [''],
+				fileSize: '100KB',
+				mediaInput: '',
+				style: '',
+				cssWidth: '100px',
+				scaleType: 'original',
+				scale: 100,
+				aspectRatio: 'revert',
+				cssWidthNumber: 100,
+				cssWidthUnit: 'px',
+				lazy: false,
+				loading: ['eager'],
+				caption: '',
+				altEditable: undefined,
+				node: 'div',
+				href: '',
+				popup: false,
+				target: null,
+				targetBlank: false,
+				command: null,
+			} as unknown as Readonly<ImageItemData>;
+
+			const result = await imageItemSeed.toItemData?.(data, testConfig);
+
+			expect(result?.alt).toStrictEqual(['']);
+		});
+	});
+
+	describe('template → HTML → data の往復（回帰）', () => {
+		test('2枚目を設定して2回保存してもaltとloadingが保持される', async () => {
+			const seeds = new Map([['image', imageItemSeed as never]]);
+			const item = Item.create('image', seeds, testConfig);
+
+			// 1回目の決定: 2枚目（レスポンシブ）の画像・サイズ・メディアクエリーを設定
+			let state = imageItemSeed.toEditorState!(item.export() as never, testConfig);
+			state = {
+				...state,
+				path: [state.path[0] ?? '', '/img/sp.png'],
+				width: [...state.width, 300],
+				height: [...state.height, 200],
+				media: [state.media[0] ?? '', '(max-width: 767px)'],
+			};
+			item.import((await imageItemSeed.toItemData!(state, testConfig)) as never);
+
+			// 2回目の決定: 何も変えずにもう一度保存（Item.importが現在の
+			// innerHTMLをテンプレートとして再利用する経路をなぞる）
+			state = imageItemSeed.toEditorState!(item.export() as never, testConfig);
+			item.import((await imageItemSeed.toItemData!(state, testConfig)) as never);
+
+			const exported = item.export() as never as ImageItemData;
+			expect(exported.alt).toStrictEqual(['サンプル画像']);
+			// テンプレート初期値（template.html）のloading="lazy"が保持されること
+			expect(exported.loading).toStrictEqual(['lazy']);
+			expect(exported.path).toHaveLength(2);
+			expect(item.el.querySelectorAll('source')).toHaveLength(1);
+
+			const img = item.el.querySelector('img');
+			expect(img?.getAttribute('alt')).toBe('サンプル画像');
 		});
 	});
 });

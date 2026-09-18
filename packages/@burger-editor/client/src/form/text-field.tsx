@@ -13,6 +13,7 @@
  * @param root0.name
  * @param root0.disabled
  * @param root0.placeholder
+ * @param root0.describedBy
  * @example
  * ```tsx
  * <TextField
@@ -31,6 +32,7 @@ export function TextField({
 	name,
 	disabled,
 	placeholder,
+	describedBy,
 }: {
 	readonly label: string;
 	readonly value: string;
@@ -39,6 +41,7 @@ export function TextField({
 	readonly name?: string;
 	readonly disabled?: boolean;
 	readonly placeholder?: string;
+	readonly describedBy?: string;
 }) {
 	return (
 		<label>
@@ -49,6 +52,7 @@ export function TextField({
 				value={value}
 				disabled={disabled}
 				placeholder={placeholder}
+				aria-describedby={describedBy}
 				onChange={(e) => onChange(e.currentTarget.value)}
 			/>
 		</label>
