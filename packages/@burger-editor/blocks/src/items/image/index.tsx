@@ -10,6 +10,12 @@ const ORIGIN = '__org';
 export type ImageData = {
 	// Images (Multiple)
 	path: string[];
+	/**
+	 * 代替テキスト。`<picture>` の `<source>` 要素には `alt` 属性が無いため、
+	 * 実際に HTML へ反映されるのは index 0（`<img>` に変換される画像）の値のみ。
+	 * 2枚目以降の値はエディタ上では保持しない（`toItemData` で index 0 の
+	 * 1要素配列に正規化する）
+	 */
 	alt: string[];
 	width: number[];
 	height: number[];
@@ -80,6 +86,10 @@ export default createItem<ImageData>({
 	},
 	toItemData(state) {
 		const loading: ('eager' | 'lazy')[] = [state.lazy ? 'lazy' : 'eager'];
+		// altはimg（index 0）にしか反映されないため、常に1要素配列に正規化する。
+		// state.alt[1]以降（エディタの内部状態に残り得る値）をそのまま渡すと
+		// 意味のない値が配列に残る
+		const alt = [state.altEditable ?? ''];
 		const node = state.popup ? 'button' : state.href ? 'a' : 'div';
 		const target = node === 'a' && state.targetBlank ? '_blank' : null;
 		const command = node === 'button' ? 'show-modal' : null;
@@ -100,6 +110,7 @@ export default createItem<ImageData>({
 
 		return {
 			...state,
+			alt,
 			loading,
 			node,
 			target,

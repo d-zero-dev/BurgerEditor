@@ -147,6 +147,21 @@ function getInput(label: string): HTMLInputElement {
 	return narrowElement(screen.getByLabelText(label), HTMLInputElement, label);
 }
 
+/**
+ * srcを設定してもload/errorイベントを一切発火しない`Image`スタブ。
+ * disabled状態や注記表示など同期的なUI検証だけを行うテストで、
+ * 実ブラウザへの画像読み込みリクエスト（成功・失敗いずれのタイミングも
+ * 非同期でact()外の再レンダーを起こしうる）を避けるために使う
+ */
+class SilentImage extends EventTarget {
+	naturalHeight = 100;
+	naturalWidth = 100;
+
+	set src(_value: string) {
+		// 意図的に何もしない
+	}
+}
+
 // vitestはglobals無効のためtesting-libraryの自動cleanupが効かない。
 // レンダー結果がテスト間でリークしないよう明示的に登録する
 afterEach(cleanup);
@@ -154,19 +169,28 @@ afterEach(cleanup);
 describe('ImageEditor', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
+		vi.stubGlobal('Image', SilentImage);
 	});
 
-	test('タブ切替でaltEditableとメディアクエリーが選択画像の値に更新される', () => {
-		render(<Harness engine={createMockEngine()} />);
+	afterEach(() => {
+		vi.unstubAllGlobals(); // cspell:disable-line
+	});
+
+	test('タブ切替でメディアクエリーは選択画像の値に更新され、altは画像1の値のまま無効化される', () => {
+		// altは<source>要素に持てないためimg（画像1）にしか反映されない。
+		// タブ2でも画像1のaltEditableをそのまま表示し、編集は無効化する
+		render(<Harness engine={createMockEngine()} initialPath={['', '/img/sp.png']} />);
 
 		const altInput = getInput('画像の代替テキスト(alt)');
 		const mediaInput = getInput('メディアクエリー');
 		expect(altInput.value).toBe('Aの説明');
+		expect(altInput.disabled).toBe(false);
 		expect(screen.getByRole('tabpanel', { name: '画像1' })).toBeTruthy();
 
 		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
 
-		expect(altInput.value).toBe('Bの説明');
+		expect(altInput.value).toBe('Aの説明');
+		expect(altInput.disabled).toBe(true);
 		expect(mediaInput.value).toBe('(min-width: 768px)');
 		expect(mediaInput.disabled).toBe(false);
 		expect(screen.getByRole('tabpanel', { name: '画像2' })).toBeTruthy();
@@ -174,23 +198,62 @@ describe('ImageEditor', () => {
 		invokeCommand(screen.getByRole('tab', { name: '画像1' }));
 
 		expect(altInput.value).toBe('Aの説明');
+		expect(altInput.disabled).toBe(false);
 		expect(mediaInput.disabled).toBe(true);
 		expect(screen.getByRole('tabpanel', { name: '画像1' })).toBeTruthy();
 	});
 
-	test('タブ2でaltを編集してもタブ1のaltは破壊されない', () => {
+	test('タブ2ではalt欄が無効化され、画像1で編集する旨の注記が表示される', () => {
+		render(<Harness engine={createMockEngine()} initialPath={['', '/img/sp.png']} />);
+
+		const altInput = getInput('画像の代替テキスト(alt)');
+		expect(altInput.getAttribute('aria-describedby')).toBeNull();
+		expect(screen.queryByText(/画像1のタブで編集/)).toBeNull();
+
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+
+		expect(altInput.disabled).toBe(true);
+		const note = screen.getByText(/画像1のタブで編集/);
+		expect(altInput.getAttribute('aria-describedby')).toBe(note.id);
+	});
+
+	test('alt編集はaltEditable（画像1用の値）に書き込まれる', () => {
+		let latestState: ImageData | undefined;
+
+		render(
+			<Harness
+				engine={createMockEngine()}
+				initialPath={['', '/img/sp.png']}
+				onState={(state) => (latestState = state)}
+			/>,
+		);
+
+		const altInput = getInput('画像の代替テキスト(alt)');
+		fireEvent.change(altInput, { target: { value: '新しい説明' } });
+
+		expect(latestState?.altEditable).toBe('新しい説明');
+	});
+
+	test('タブ2で画像が未選択の間はメディアクエリー欄が無効化され注記が出る', () => {
 		render(<Harness engine={createMockEngine()} />);
 
 		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
 
-		const altInput = getInput('画像の代替テキスト(alt)');
-		fireEvent.change(altInput, { target: { value: '新しいBの説明' } });
+		const mediaInput = getInput('メディアクエリー');
+		expect(mediaInput.disabled).toBe(true);
+		const note = screen.getByText(/先に画像を選択/);
+		expect(mediaInput.getAttribute('aria-describedby')).toBe(note.id);
+	});
 
-		invokeCommand(screen.getByRole('tab', { name: '画像1' }));
-		expect(altInput.value).toBe('Aの説明');
+	test('タブ2で画像が選択済みならメディアクエリー欄が有効になる', () => {
+		render(<Harness engine={createMockEngine()} initialPath={['', '/img/sp.png']} />);
 
 		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
-		expect(altInput.value).toBe('新しいBの説明');
+
+		const mediaInput = getInput('メディアクエリー');
+		expect(mediaInput.disabled).toBe(false);
+		expect(mediaInput.getAttribute('aria-describedby')).toBeNull();
+		expect(screen.queryByText(/先に画像を選択/)).toBeNull();
 	});
 
 	test('基準をコンテナに切り替えると単位がcqiになる', () => {

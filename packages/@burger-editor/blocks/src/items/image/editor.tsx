@@ -140,9 +140,11 @@ export function ImageEditor({ state, setState }: ItemEditorProps<ImageData>) {
 		fileSelect(index);
 		void _updateImage(stateRef.current.path?.[index] ?? '');
 
+		// altEditableはここでは更新しない。altは<source>要素に持てず、
+		// HTMLへは常にaltEditable（画像1用の値）だけが反映されるため
+		// （toItemData参照）、タブ2以降でも画像1のaltを表示し続ける
 		const media = stateRef.current.media?.[index] ?? '';
-		const altEditable = stateRef.current.alt?.[index] ?? '';
-		setState((prev) => ({ ...prev, mediaInput: media, altEditable }));
+		setState((prev) => ({ ...prev, mediaInput: media }));
 	};
 
 	// FileList側で選ばれたファイル（fileBrowser.select経由の外部変更）を
@@ -173,6 +175,11 @@ export function ImageEditor({ state, setState }: ItemEditorProps<ImageData>) {
 	});
 
 	const currentPath = state.path?.[currentIndex] ?? '';
+	// タブ2以降で画像未選択のままmediaを入力すると、frozen-patty側でpathが
+	// 先頭画像にフォールバックし重複pathとして扱われ、source要素ごと（＝
+	// 入力したmediaごと）無言で破棄される（set-component.tsのusedPaths判定）。
+	// UI側で先に画像選択を促すことでこの経路を回避する
+	const mediaLocked = currentIndex > 0 && !currentPath;
 
 	return (
 		<div data-bge-dialog="2col">
@@ -196,7 +203,8 @@ export function ImageEditor({ state, setState }: ItemEditorProps<ImageData>) {
 								label="メディアクエリー"
 								name="bge-media-input"
 								value={state.mediaInput ?? ''}
-								disabled={currentIndex === 0}
+								disabled={currentIndex === 0 || mediaLocked}
+								describedBy={mediaLocked ? `${uid}-media-desc` : undefined}
 								onChange={(mediaInput) => {
 									const index = currentIndexRef.current;
 									setState((prev) => {
@@ -206,6 +214,11 @@ export function ImageEditor({ state, setState }: ItemEditorProps<ImageData>) {
 									});
 								}}
 							/>
+							{mediaLocked ? (
+								<small id={`${uid}-media-desc`}>
+									先に画像を選択してください。メディアクエリーは画像を選択した後に入力できます。
+								</small>
+							) : null}
 						</div>
 					</div>
 				</div>
@@ -284,15 +297,15 @@ export function ImageEditor({ state, setState }: ItemEditorProps<ImageData>) {
 						label="画像の代替テキスト(alt)"
 						name="bge-alt-editable"
 						value={state.altEditable ?? ''}
-						onChange={(altEditable) => {
-							const index = currentIndexRef.current;
-							setState((prev) => {
-								const alt = [...(prev.alt ?? [])];
-								alt[index] = altEditable;
-								return { ...prev, altEditable, alt };
-							});
-						}}
+						disabled={currentIndex > 0}
+						describedBy={currentIndex > 0 ? `${uid}-alt-desc` : undefined}
+						onChange={(altEditable) => setState((prev) => ({ ...prev, altEditable }))}
 					/>
+					{currentIndex > 0 ? (
+						<small id={`${uid}-alt-desc`}>
+							代替テキストは画像1（img要素）に設定され、画面幅で切り替わるすべての画像に共通で使われます。画像1のタブで編集してください。
+						</small>
+					) : null}
 					<TextField
 						label="キャプション"
 						name="bge-caption"
