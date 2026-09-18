@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.73](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.72...v4.0.0-alpha.73) (2026-09-18)
+
+### Bug Fixes
+
+- **frozen-patty:** use the trailing element as the picture list template ([819dce9](https://github.com/d-zero-dev/BurgerEditor/commit/819dce9c5d24932ba00d5e69cc1fcb407e3af6bc))
+
 # [4.0.0-alpha.72](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.71...v4.0.0-alpha.72) (2026-09-02)
 
 **Note:** Version bump only for package @burger-editor/frozen-patty

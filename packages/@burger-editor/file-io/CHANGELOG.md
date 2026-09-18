@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.73](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.72...v4.0.0-alpha.73) (2026-09-18)
+
+**Note:** Version bump only for package @burger-editor/file-io
+
 # [4.0.0-alpha.72](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.71...v4.0.0-alpha.72) (2026-09-02)
 
 - fix(file-io)!: reject page paths that resolve outside documentRoot ([ea45605](https://github.com/d-zero-dev/BurgerEditor/commit/ea456054aa182fc33fe212fc4c010bd6c9ad32d9))

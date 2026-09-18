@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.73](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.72...v4.0.0-alpha.73) (2026-09-18)
+
+### Bug Fixes
+
+- **local:** avoid an embedded raw NUL byte in routes/static.ts ([c1daeac](https://github.com/d-zero-dev/BurgerEditor/commit/c1daeac47786d61dac54a2d2c1a10bdaa200abda))
+- **local:** bind and connect bootLocalServer's boot test via 127.0.0.1 ([8dfbdc8](https://github.com/d-zero-dev/BurgerEditor/commit/8dfbdc8f3cd56dedb93dda3142edbfc604ce7fd8))
+- **local:** debounce fs.watch callbacks per path to dedupe CI double-fires ([228d2ce](https://github.com/d-zero-dev/BurgerEditor/commit/228d2ce87d4f7007cdc61dcc3084614010459996)), closes [#948](https://github.com/d-zero-dev/BurgerEditor/issues/948)
+
+- refactor(local)!: restructure Hono app assembly and drop @hono/node-ws ([294ad37](https://github.com/d-zero-dev/BurgerEditor/commit/294ad3760245708397bd0551cdc45bd3740f09a3)), closes [#869](https://github.com/d-zero-dev/BurgerEditor/issues/869)
+
+### BREAKING CHANGES
+
+- setRoute()/AgentRouteDeps (route.tsx) are removed;
+  callers use createApp()/AppType from app.ts and createLocalServer() from
+  create-local-server.ts. /ws/editor now rejects an unauthenticated or
+  untrusted-Host upgrade with HTTP 401/403 at the handshake instead of
+  accepting it and closing with code 1008. Neither symbol was published via
+  package.json exports, and @burger-editor/local is 4.0.0-alpha, so this
+  ships without a migration guide.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
 # [4.0.0-alpha.72](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.71...v4.0.0-alpha.72) (2026-09-02)
 
 ### Bug Fixes
