@@ -376,13 +376,23 @@ core（uiState ストア + view port 定義） ← client（React 実装 + Engin
 
 テストは vitest を使用し、パッケージごとに適切な実行環境を使い分けます。
 
-| プロジェクト | 実行環境                        | 対象パッケージ               |
-| ------------ | ------------------------------- | ---------------------------- |
-| core         | Playwright Chromium（ブラウザ） | core, blocks, custom-element |
-| client       | jsdom                           | client                       |
+| プロジェクト         | 実行環境                                    | 対象                                                                                |
+| -------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------- |
+| default              | jsdom                                       | cli, file-io, frozen-patty, legacy, mcp-server, migrator, utils                     |
+| blocks-editor        | Playwright Chromium（ブラウザ）             | blocks（React エディタコンポーネント、`*.spec.tsx`）                                |
+| blocks               | Playwright Chromium（ブラウザ）             | blocks（`*.spec.ts`）                                                               |
+| client               | Playwright Chromium（ブラウザ）             | client                                                                              |
+| custom-element       | Playwright Chromium（ブラウザ）             | custom-element                                                                      |
+| core                 | Playwright Chromium（ブラウザ）             | core                                                                                |
+| local                | Node                                        | local（`import` / `client` 配下を除く。Agent Hub サーバー実装）                     |
+| local/import         | jsdom                                       | local/src/import                                                                    |
+| local/client         | jsdom                                       | local/src/client（`*.browser.spec.ts` を除く）                                      |
+| local/client-browser | Playwright Chromium（ブラウザ）             | local/src/client（`*.browser.spec.ts`、実 `BurgerEditorEngine` と組み合わせて検証） |
+| vr                   | Playwright Chromium（ブラウザ、VRコマンド） | client（Visual Regression スペック、`*.vr.spec.ts`）                                |
 
-- core プロジェクト: iframe の `contentWindow` 等、実ブラウザ API が必要なテストはブラウザ環境で実行
-- client プロジェクト: React コンポーネントのテストは jsdom 環境 + Testing Library で実行
+- ブラウザ実行が必要なプロジェクト（blocks-editor, blocks, client, custom-element, core, local/client-browser, vr）: iframe の `contentWindow` 等、実ブラウザ API が必要なテストは実 Chromium 上で実行
+- jsdom で足りるプロジェクト（default, local/import, local/client）: 実ブラウザ API に依存しないテスト・React コンポーネントのテストは jsdom 環境 + Testing Library で実行
+- local プロジェクトのみ Node 環境: `local/vite.config.ts` を extends するのみで DOM 環境を指定しないため、vitest の既定である Node 環境になる（Agent Hub のサーバー側実装を対象とするため妥当）
 
 ## モノレポ構成の利点
 
