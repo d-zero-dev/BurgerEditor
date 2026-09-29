@@ -751,7 +751,7 @@ __metadata:
     debug: "npm:4.4.3"
     dotenv: "npm:17.4.2"
     hono: "npm:4.13.5"
-    open: "npm:11.0.2"
+    open: "npm:11.0.4"
     prettier: "npm:3.9.6"
     react: "npm:19.3.0"
     react-dom: "npm:19.3.0"
@@ -14140,9 +14140,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"open@npm:11.0.2":
-  version: 11.0.2
-  resolution: "open@npm:11.0.2"
+"open@npm:11.0.4":
+  version: 11.0.4
+  resolution: "open@npm:11.0.4"
   dependencies:
     default-browser: "npm:^5.5.1"
     define-lazy-prop: "npm:^3.0.0"
@@ -14150,7 +14150,7 @@ __metadata:
     is-inside-container: "npm:^1.0.0"
     powershell-utils: "npm:^0.2.1"
     wsl-utils: "npm:^1.0.0"
-  checksum: 10c0/f37914b4cf3b0d13cf97eed4cfff6cd17278a92f35b6e12b8a75f57f0ad1d100984a5042ff51cb443108a8592612c4d48627fa8071254b32f1d097138648e052
+  checksum: 10c0/5be0a902323ea9266cf7323edf8d714b516f739519485e98b2508e38e1ffe6f98e3426aeb182fc88239bf98777258b27abbfe5cb1938bff8dbccec2fd603aca5
   languageName: node
   linkType: hard
 
