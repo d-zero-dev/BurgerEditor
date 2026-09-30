@@ -145,7 +145,7 @@ graph TD
   1. **shared by local & cli & mcp-server** — fs を触る全パッケージのフロントエンド。同じ config / 同じパス解釈 / 同じ Front Matter パーサを共有することで、ブラウザ UI 経由の編集と AI エージェント経由の編集が必ず一致する
   2. **遅延 DOM インストール** — `import '@burger-editor/file-io'` は `globalThis.document` / `DOMParser` 等のアクセサだけを置き、最初のアクセスで初めて JSDOM を構築する。DOM 不要な CLI コマンド（`catalog-list` 等）は JSDOM コストを払わない
   3. **cosmiconfig `searchStrategy: 'project'`** — サブディレクトリから CLI / MCP を起動してもプロジェクトルートの設定が見つかる
-  4. **設定ファイルの直接指定は resolver 側で解決** — `configPath` オプション（local / mcp-server の `--config`）→ 環境変数 `BGE_CONFIG` → 探索の順。`BGE_CONFIG` を各エントリポイントではなく `resolveConfig` 自身が読むことで、1 リポジトリに複数サイトの設定が並んでも local / cli / mcp-server が同じファイルに解決される（設計判断 1 の前提を崩さない）
+  4. **設定ファイルの直接指定は resolver 側で解決** — `configPath` オプション（local / cli / mcp-server の `--config`）→ 環境変数 `BGE_CONFIG` → 探索の順。`BGE_CONFIG` を各エントリポイントではなく `resolveConfig` 自身が読むことで、1 リポジトリに複数サイトの設定が並んでも local / cli / mcp-server が同じファイルに解決される（設計判断 1 の前提を崩さない）
 - **構成ファイル**:
   - `src/config/resolve.ts` — `resolveConfig(searchFrom?, { configPath? })` / `clearConfigCache()`
   - `src/document/edit-content.ts` — `loadContent` / `saveContent` / `FileNotFoundError`
@@ -166,6 +166,7 @@ graph TD
   2. **3-way spec input** — `--spec`（インライン）/ `--spec-file`（ファイル）/ stdin の優先順で受け取り。シェルクォート地獄を回避
   3. **atomic 操作** — `page-create` は `fs.writeFile(... flag: 'wx')` で原子的に reserve、`page-rename` は rename 失敗時に作成済みディレクトリを巻き戻す
   4. **ツール定義の一本化** — AI エージェント向けツールは `src/agent-tools/tools/*.ts` に 1 ツール 1 定義（`agentTools` 配列）。`mcp-server` と `local` の Agent Hub は同じ配列を登録するだけ
+  5. **`--config` は全サブコマンドが個別に持つ** — `@d-zero/roar` にはプログラム全体のフラグが無いため、`src/commands.ts` の `CONFIG_FLAG` を各コマンドの `flags` に展開している。展開し忘れたサブコマンドは `--config` を黙って無視するため、`commands.spec.ts` が全コマンドについて検証する
 - **詳細ドキュメント**: [`packages/@burger-editor/cli/README.md`](packages/@burger-editor/cli/README.md)
 
 **`@burger-editor/inspector`**
