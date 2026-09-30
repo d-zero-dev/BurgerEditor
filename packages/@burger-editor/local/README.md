@@ -55,7 +55,10 @@ yarn add @burger-editor/local
 npx bge                          # 開発サーバー起動（デフォルト http://localhost:5255）
 npx bge search "margin=normal"   # HTML 内の CSS 変数を検索
 npx bge search --help
+npx bge --config ./burgereditor.child.config.js   # 設定ファイルを指定して起動（後述）
 ```
+
+`--config <path>` は `bge` と `bge search` のどちらにも使える。
 
 ### `bge search` クエリ形式
 
@@ -68,7 +71,7 @@ npx bge search --help
 
 ## `burgereditor.config.js`
 
-プロジェクトルートに置く。cosmiconfig が `package.json` を持つ祖先まで遡って検索する。`.js` / `.mjs` / `.ts` / `.cjs` / `.json` をサポート。
+プロジェクトルートに置く。cosmiconfig が `package.json` を持つ祖先まで遡って検索する。探索で見つかるのは `.js` / `.mjs` / `.ts` / `.cjs`（`burgereditor.config.json` は探索対象外で、`--config` で直接指定すれば読める）。
 
 ### 必須
 
@@ -115,6 +118,37 @@ export default {
 	assetsRoot: './public',
 };
 ```
+
+### 設定ファイルを指定する（`--config` / `BGE_CONFIG`）
+
+1 つのリポジトリで本体サイトとサブディレクトリの子サイトを別々の設定で編集するときなど、探索に頼らず設定ファイルを直接指定できる。
+
+```sh
+npx bge --config ./burgereditor.child.config.js
+BGE_CONFIG=./burgereditor.child.config.js npx bge
+```
+
+- **優先順位**: `--config` → 環境変数 `BGE_CONFIG` → `burgereditor.config.*` の探索
+- **ファイル名は任意**: `burgereditor.config.*` である必要はない。拡張子（`.js` / `.mjs` / `.cjs` / `.ts` / `.json` / `.yaml` など）で読み込み方が決まる
+- **相対パスの基準**: 指定したパス自体はカレントディレクトリ基準。設定ファイル内の `documentRoot` などは、探索で見つかった場合と同じく設定ファイルのディレクトリ基準
+- **ファイルが無いときはエラー終了**: 指定したファイルが存在しない場合、既定値で起動せずに終了する
+- **確認方法**: 起動バナーの `Config:` 行に読み込んだ設定ファイルが表示される
+- **cli / mcp-server**: どちらも `BGE_CONFIG` を読む。mcp-server は `--config` も受け付ける（[mcp-server の README](../mcp-server/README.md#起動オプション) を参照）
+
+2 つのサイトを同時に起動する場合は、どちらかの設定で `port` を変える（既定はどちらも `5255`）。
+
+```js
+// burgereditor.child.config.js
+/** @type {import('@burger-editor/local').LocalServerConfigUserSettings} */
+export default {
+	documentRoot: './src/child',
+	assetsRoot: './public',
+	port: 5256,
+};
+```
+
+- 子サイトが本体の `documentRoot` の配下にある場合、本体側のページツリーには子サイトのページも表示される
+- `host` をループバック以外（LAN IP や `0.0.0.0`）にして 2 つ同時に起動する場合は、設定ファイルを別々のディレクトリに置く。Agent Hub のトークンは設定ファイルと同じディレクトリの `.burgereditor/agent-token` に書かれるため、同じディレクトリだと後から起動したほうが上書きし、先に終了したほうが削除してしまう（後述の「非ループバック bind 時のトークン」を参照）
 
 ## Virtual File Tree
 
@@ -180,7 +214,7 @@ AI エージェント（`@burger-editor/mcp-server` 経由）が、開いてい�
 - **エンドポイント**: `GET /api/agent/tools`（ツール定義一覧）、`GET /api/agent/status`（到達確認）、`GET /api/agent/events`（状態変化のロングポーリング）、`POST /api/agent/invoke`（ツール呼び出し）、WebSocket `/ws/editor`（ブラウザタブとの接続）
 - **無効化**: `agent: { enabled: false }` で上記すべてがマウントされなくなる
 - **状態観測・外部変更検知の詳細**: [`docs/agent-hub.md`](./docs/agent-hub.md) を参照（`GET /api/agent/events` / `editor_wait_for_event` の契約、`fs.watch` による外部変更の能動検知、ナビツリー再ハイドレート・通知バナー）
-- **非ループバック bind 時のトークン**: `host` を LAN IP や `0.0.0.0` にすると、起動ごとのトークンが必要になる。起動バナーに `http://<host>:<port>/?token=…` が表示されるので **一度だけそれを開く**と `bge_session` cookie が発行され、以後そのブラウザは認可される。同じトークンは `<configDir>/.burgereditor/agent-token`（mode 0600、終了時に削除）にも書かれる。**`.burgereditor/` を `.gitignore` に追加すること**。同じマシンで動く `mcp-server` はこのファイルを自動で読むので設定は不要。別マシンや任意の値を使いたいときは環境変数 `BGE_AGENT_TOKEN` で上書きできる。`localhost` / `127.0.0.1` / `::1` に bind している間はトークン不要
+- **非ループバック bind 時のトークン**: `host` を LAN IP や `0.0.0.0` にすると、起動ごとのトークンが必要になる。起動バナーに `http://<host>:<port>/?token=…` が表示されるので **一度だけそれを開く**と `bge_session` cookie が発行され、以後そのブラウザは認可される。同じトークンは `<configDir>/.burgereditor/agent-token`（`configDir` は読み込んだ設定ファイルのディレクトリ。mode 0600、終了時に削除）にも書かれる。**`.burgereditor/` を `.gitignore` に追加すること**。同じマシンで動く `mcp-server` はこのファイルを自動で読むので設定は不要。ただし `local` を `--config` / `BGE_CONFIG` で起動した場合は、`mcp-server` にも同じ設定ファイルを指定する（そうしないと別のディレクトリのトークンを探してしまう）。別マシンや任意の値を使いたいときは環境変数 `BGE_AGENT_TOKEN` で上書きできる。`localhost` / `127.0.0.1` / `::1` に bind している間はトークン不要
 - **認証されていない upgrade の扱い**: 非ループバック bind で cookie / bearer の無い `/ws/editor` の upgrade は HTTP 401、`Host` / `Origin` が許可リストに無い場合は 403 で、いずれもハンドシェイク時点で拒否される（`/api/agent/*` と同じ `hostGuard` / cookie-or-bearer 判定を upgrade 前に通す）。ハンドシェイクを受理してから close するのではなく、`app.request()` で in-process に検証できる
 - **利用側**: `@burger-editor/mcp-server --mode local`（既定の `auto` でも、`local` に到達できれば自動的にここへ転送される）
 - **デバッグ**: サーバー側は `DEBUG=@bge:local`、ブラウザ側は console の `[bge-agent-ws]` / `[bge-agent-link]` 行。ブラウザ側でフレーム全文のログを有効にするには `localStorage.setItem('bge:debug', '1')`（この設定は並行して実装中）。`/api/agent/*` の応答に付く ISO `timestamp` で両者を突き合わせられる

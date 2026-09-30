@@ -1,5 +1,6 @@
 import type { AgentDeps } from '../agent/env.js';
 import type { LocalServerConfig } from '../types.js';
+import type { ResolveConfigOptions } from '@burger-editor/file-io';
 
 import path from 'node:path';
 
@@ -97,33 +98,41 @@ export async function bootLocalServer(
  * CLI entry point for `bge` (no subcommand). Resolves the user's config,
  * boots the server, optionally opens a browser, and prints the startup
  * banner.
+ * @param configOptions Which config file to boot with (`--config`)
  */
-export async function runServerCommand(): Promise<void> {
-	const { config, configDir } = await getUserConfig();
+export async function runServerCommand(
+	configOptions: ResolveConfigOptions = {},
+): Promise<void> {
+	const { config, configDir, configPath } = await getUserConfig(configOptions);
 	const isWatchMode = process.env.DEV_MODE === 'true';
 
 	const handle = await bootLocalServer(config, configDir);
 
-	const relDocumentRoot =
-		'.' + path.sep + path.relative(process.cwd(), config.documentRoot);
+	// With several configs in one repository (`--config` / `BGE_CONFIG`), the
+	// banner is where the operator confirms which one this server is using.
+	const configLabel = configPath
+		? c.bold.gray(toDisplayPath(configPath))
+		: c.yellow('not found — using defaults');
 
 	if (config.open && !isWatchMode) {
 		await open(handle.url);
 	}
 
 	const agentLoginUrl = handle.agent ? loginUrl(handle.url, handle.agent.auth) : null;
+	const tokenFilePath = handle.agent?.auth.tokenFilePath;
 
 	process.stdout.write(`
 🍔 ${c.bold.greenBright('BurgerEditor Local App')} 🍔
 
    ${c.blue('Location')}: ${c.bold(handle.url)}
-   ${c.blue('DocumentRoot')}: ${c.bold.gray(relDocumentRoot)}
+   ${c.blue('Config')}: ${configLabel}
+   ${c.blue('DocumentRoot')}: ${c.bold.gray(toDisplayPath(config.documentRoot))}
 ${
-	agentLoginUrl
+	agentLoginUrl && tokenFilePath
 		? `
    ${c.yellow('Agent access requires a token')} — open this URL once to authorize this browser:
    ${c.bold(agentLoginUrl)}
-   The token is also written to ${c.bold('.burgereditor/agent-token')} — add ${c.bold('.burgereditor/')} to .gitignore.
+   The token is also written to ${c.bold(toDisplayPath(tokenFilePath))} — add ${c.bold('.burgereditor/')} to .gitignore.
 `
 		: ''
 }
@@ -131,4 +140,22 @@ ${
 `);
 
 	log('Config: %O', config);
+}
+
+/**
+ * `./`-prefixed path relative to the working directory, for the banner. A
+ * path outside the working directory (reachable via `--config`) stays
+ * absolute rather than turning into a `./../../..` chain.
+ * @param absolutePath
+ */
+function toDisplayPath(absolutePath: string): string {
+	const relative = path.relative(process.cwd(), absolutePath);
+	if (
+		relative === '..' ||
+		relative.startsWith('..' + path.sep) ||
+		path.isAbsolute(relative)
+	) {
+		return absolutePath;
+	}
+	return '.' + path.sep + relative;
 }
