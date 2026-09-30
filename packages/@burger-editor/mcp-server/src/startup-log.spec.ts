@@ -73,6 +73,7 @@ describe('mcp-server bin startup logging', () => {
 		const stderr = await captureStartupStderr(/\[burger-editor mcp\] starting/);
 		expect(stderr).toMatch(/mode=auto/);
 		expect(stderr).toMatch(/url=http:\/\/localhost:5255/);
+		expect(stderr).not.toMatch(/config=/);
 	}, 20_000);
 
 	test('--mode and --url flags override the defaults in the "starting" line', async () => {
@@ -84,5 +85,13 @@ describe('mcp-server bin startup logging', () => {
 		]);
 		expect(stderr).toMatch(/mode=disk/);
 		expect(stderr).toMatch(/url=http:\/\/localhost:9999/);
+	}, 20_000);
+
+	test('--config is reported in the "starting" line, so two registered servers can be told apart in the host log', async () => {
+		const stderr = await captureStartupStderr(/\[burger-editor mcp\] starting/, 15_000, [
+			'--config',
+			'./burgereditor.child.config.js',
+		]);
+		expect(stderr).toMatch(/config=\.\/burgereditor\.child\.config\.js/);
 	}, 20_000);
 });

@@ -13,15 +13,24 @@ const MODES: readonly McpMode[] = ['auto', 'local', 'disk'];
 const DEFAULT_LOCAL_URL = 'http://localhost:5255';
 
 /**
- * `--mode` (`BGE_MCP_MODE`, default `auto`) and `--url` (`BGE_LOCAL_URL`,
- * default `http://localhost:5255`) are the only flags this server takes.
+ * `--mode` (`BGE_MCP_MODE`, default `auto`), `--url` (`BGE_LOCAL_URL`,
+ * default `http://localhost:5255`) and `--config` (`BGE_CONFIG`, default:
+ * search for `burgereditor.config.*`) are the only flags this server takes.
  * CLI flags win over environment variables so a one-off override doesn't
- * require touching the host config's env block.
+ * require touching the host config's env block. `BGE_CONFIG` is not read
+ * here but by `resolveConfig` (`@burger-editor/file-io`) itself, so the
+ * same variable also reaches `@burger-editor/cli` and `@burger-editor/local`.
  * @param argv
+ * @example
+ * ```ts
+ * parseRouterOptions(['--mode', 'local', '--config', './burgereditor.child.config.js']);
+ * // → { mode: 'local', localUrl: 'http://localhost:5255', configPath: './burgereditor.child.config.js' }
+ * ```
  */
 export function parseRouterOptions(argv: readonly string[]): RouterOptions {
 	let mode = (process.env.BGE_MCP_MODE as McpMode | undefined) ?? 'auto';
 	let localUrl = process.env.BGE_LOCAL_URL ?? DEFAULT_LOCAL_URL;
+	let configPath: string | undefined;
 	for (let i = 0; i < argv.length; i++) {
 		if (argv[i] === '--mode' && argv[i + 1]) {
 			mode = argv[i + 1] as McpMode;
@@ -29,12 +38,15 @@ export function parseRouterOptions(argv: readonly string[]): RouterOptions {
 		} else if (argv[i] === '--url' && argv[i + 1]) {
 			localUrl = argv[i + 1]!;
 			i++;
+		} else if (argv[i] === '--config' && argv[i + 1]) {
+			configPath = argv[i + 1]!;
+			i++;
 		}
 	}
 	if (!MODES.includes(mode)) {
 		throw new Error(`Invalid --mode "${mode}" — expected one of: ${MODES.join(', ')}.`);
 	}
-	return { mode, localUrl };
+	return { mode, localUrl, configPath };
 }
 
 /**
@@ -67,8 +79,9 @@ export async function run() {
 	const startedAt = process.hrtime.bigint();
 	try {
 		const options = parseRouterOptions(process.argv.slice(2));
+		const configLabel = options.configPath ? `, config=${options.configPath}` : '';
 		process.stderr.write(
-			`[burger-editor mcp] starting (pid ${process.pid}, mode=${options.mode}, url=${options.localUrl})\n`,
+			`[burger-editor mcp] starting (pid ${process.pid}, mode=${options.mode}, url=${options.localUrl}${configLabel})\n`,
 		);
 		registerTools(server, options);
 		const transport = new StdioServerTransport();

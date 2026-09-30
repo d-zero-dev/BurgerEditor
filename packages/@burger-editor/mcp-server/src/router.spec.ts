@@ -509,6 +509,83 @@ describe('routeToolCall — auto mode', () => {
 	}, 10_000);
 });
 
+describe('routeToolCall — configPath (--config)', () => {
+	// A second site in the same project whose config the cwd search would
+	// never pick: only naming it reaches it.
+	let childDir: string;
+	let childConfigPath: string;
+	let fakeLocal: { close: () => Promise<void>; url: string } | null = null;
+
+	beforeAll(async () => {
+		childDir = path.join(projectDir, 'child');
+		await fs.mkdir(path.join(childDir, 'src'), { recursive: true });
+		childConfigPath = path.join(childDir, 'burgereditor.child.config.mjs');
+		await fs.writeFile(
+			childConfigPath,
+			`export default { documentRoot: './src' };\n`,
+			'utf8',
+		);
+	});
+
+	afterEach(async () => {
+		await fakeLocal?.close();
+		fakeLocal = null;
+		await fs.rm(path.join(childDir, '.burgereditor'), { recursive: true, force: true });
+	});
+
+	test('disk mode runs the tool against the named config instead of the one found from cwd', async () => {
+		const result = await routeToolCall(
+			pageListTool,
+			{},
+			{ mode: 'disk', localUrl: 'http://127.0.0.1:1', configPath: childConfigPath },
+		);
+		expect(result.result).toMatchObject({ documentRoot: path.join(childDir, 'src') });
+	});
+
+	test('auto mode falling back to disk because local is unreachable still uses the named config', async () => {
+		const result = await routeToolCall(
+			pageListTool,
+			{},
+			{ mode: 'auto', localUrl: 'http://127.0.0.1:1', configPath: childConfigPath },
+		);
+		expect(result.appliedTo).toBe('disk');
+		expect(result.result).toMatchObject({ documentRoot: path.join(childDir, 'src') });
+	});
+
+	test('auto mode falling back to disk after a mid-window crash still uses the named config', async () => {
+		fakeLocal = await startEchoingLocal();
+		const localUrl = fakeLocal.url;
+		const options = { mode: 'auto', localUrl, configPath: childConfigPath } as const;
+		// Warm the reachability cache, then kill the server inside its TTL.
+		await routeToolCall(pageListTool, {}, options);
+		await fakeLocal.close();
+		fakeLocal = null;
+
+		const result = await routeToolCall(pageListTool, {}, options);
+		expect(result.appliedTo).toBe('disk');
+		expect(result.result).toMatchObject({ documentRoot: path.join(childDir, 'src') });
+	});
+
+	test('the forwarded call reads the token next to the named config, where local started with the same --config writes it', async () => {
+		let receivedAuth: string | undefined;
+		fakeLocal = await startEchoingLocal((req) => {
+			receivedAuth = req.headers.authorization;
+		});
+		await fs.mkdir(path.join(childDir, '.burgereditor'), { recursive: true });
+		await fs.writeFile(
+			path.join(childDir, '.burgereditor', 'agent-token'),
+			'child-token',
+			'utf8',
+		);
+		await routeToolCall(
+			pageListTool,
+			{},
+			{ mode: 'auto', localUrl: fakeLocal.url, configPath: childConfigPath },
+		);
+		expect(receivedAuth).toBe('Bearer child-token');
+	});
+});
+
 describe('computeWaitForEventTimeoutMs', () => {
 	test('defaults to 10s plus the margin when timeoutMs is omitted', () => {
 		expect(computeWaitForEventTimeoutMs({})).toBe(10_000 + 5000);

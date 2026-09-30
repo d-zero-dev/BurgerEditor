@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/@burger-editor%2Fmcp-server.svg)](https://badge.fury.io/js/@burger-editor%2Fmcp-server)
 
-AI クライアント（Claude Desktop / Claude Code / Cursor / Cline 等）から自然言語で BurgerEditor v4 プロジェクトを操作するための MCP (Model Context Protocol) サーバー。stdio トランスポートで起動し、`burgereditor.config.{js,mjs,ts,cjs,json}` が見つかるディレクトリ階層内のページ・ブロック・Front Matter を読み書きする AI エージェント向けツール 28 個と v3 互換ツール 3 個を公開する。
+AI クライアント（Claude Desktop / Claude Code / Cursor / Cline 等）から自然言語で BurgerEditor v4 プロジェクトを操作するための MCP (Model Context Protocol) サーバー。stdio トランスポートで起動し、`burgereditor.config.{js,mjs,ts,cjs}` が見つかるディレクトリ階層内のページ・ブロック・Front Matter を読み書きする AI エージェント向けツール 28 個と v3 互換ツール 3 個を公開する。
 
 エージェント向けツールの定義は [`@burger-editor/cli`](../cli/) の `src/agent-tools/tools/*.ts` に一本化されており、mcp-server はその `agentTools` 配列を登録するだけ（`src/register-agent-tools.ts`）。`@burger-editor/local` の開発サーバーが起きていればツール呼び出しをそこへ転送し、開いているブラウザタブに直接適用する。起きていなければディスクに直接適用する（後述の `--mode`）。
 
@@ -117,11 +117,12 @@ VS Code 設定の `cline.mcpServers` に同じ shape で追記:
 
 ## 起動オプション
 
-| フラグ   | 環境変数          | 既定値                  | 説明                                                                                                                                                                                                                                                                                                                                                  |
-| -------- | ----------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--mode` | `BGE_MCP_MODE`    | `auto`                  | `auto` … `local` の `GET /api/agent/status` を探索し、応答があれば転送、無ければディスクに直接適用（セッション中の起動・停止にも追従）。`local` … 転送のみ（到達不能なら `local-unreachable` エラー）。`disk` … 探索せず常にディスク                                                                                                                  |
-| `--url`  | `BGE_LOCAL_URL`   | `http://localhost:5255` | 転送先の `@burger-editor/local` の URL                                                                                                                                                                                                                                                                                                                |
-| —        | `BGE_AGENT_TOKEN` | なし                    | `local` が非ループバックアドレス（LAN IP / `0.0.0.0`）に bind されているときだけ意味を持つ。未設定なら `<configDir>/.burgereditor/agent-token`（`local` が書く起動ごとのトークン）を自動で読むので、同一マシンなら設定不要。別マシンの `local` に繋ぐときや値を明示したいときに起動バナーのトークンを設定する。`Authorization: Bearer` として送られる |
+| フラグ     | 環境変数          | 既定値                                 | 説明                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ---------- | ----------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--mode`   | `BGE_MCP_MODE`    | `auto`                                 | `auto` … `local` の `GET /api/agent/status` を探索し、応答があれば転送、無ければディスクに直接適用（セッション中の起動・停止にも追従）。`local` … 転送のみ（到達不能なら `local-unreachable` エラー）。`disk` … 探索せず常にディスク                                                                                                                                                                                             |
+| `--url`    | `BGE_LOCAL_URL`   | `http://localhost:5255`                | 転送先の `@burger-editor/local` の URL                                                                                                                                                                                                                                                                                                                                                                                           |
+| `--config` | `BGE_CONFIG`      | なし（`burgereditor.config.*` を探索） | 読み込む設定ファイル。指定すると探索せずにこのファイルを使い、存在しなければディスクへ直接適用する呼び出しがエラーになる（`local` への転送はそのまま動く）。相対パスはサーバープロセスのカレントディレクトリ基準で、MCP host によって異なるため絶対パスが確実。`local` を `--config` / `BGE_CONFIG` で起動しているなら同じファイルを指定する（ディスクへの直接適用に使う設定と、後述のトークンを探すディレクトリがこれで決まる） |
+| —          | `BGE_AGENT_TOKEN` | なし                                   | `local` が非ループバックアドレス（LAN IP / `0.0.0.0`）に bind されているときだけ意味を持つ。未設定なら `<configDir>/.burgereditor/agent-token`（`local` が書く起動ごとのトークン）を自動で読むので、同一マシンなら設定不要。別マシンの `local` に繋ぐときや値を明示したいときに起動バナーのトークンを設定する。`Authorization: Bearer` として送られる                                                                            |
 
 CLI フラグは環境変数より優先される。ループバック（`localhost` / `127.0.0.1` / `::1`）に bind された `local` にはトークン不要。
 
@@ -136,6 +137,34 @@ CLI フラグは環境変数より優先される。ループバック（`localh
 	}
 }
 ```
+
+### 1 つのリポジトリで複数サイトを扱う
+
+本体サイトと子サイトを別々の設定ファイルで運用している場合は、サイトごとにサーバーを登録し、`--config` と `--url` をそれぞれの `local` に合わせる。1 つのサーバープロセスが扱う設定ファイルは 1 つだけ。
+
+```json
+{
+	"mcpServers": {
+		"burger-editor-main": {
+			"command": "npx",
+			"args": ["-y", "@burger-editor/mcp-server", "--url", "http://localhost:5255"]
+		},
+		"burger-editor-child": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"@burger-editor/mcp-server",
+				"--config",
+				"/path/to/project/burgereditor.child.config.js",
+				"--url",
+				"http://localhost:5256"
+			]
+		}
+	}
+}
+```
+
+`--config` を指定すると起動ログの `starting` 行に `config=<path>` が出るので、どちらのサーバーかを host のログで区別できる（`BGE_CONFIG` で渡した場合は出ない）。実際に使われている `documentRoot` などは `config_resolve` ツールで確認できる。
 
 ## プログラムからの起動
 
@@ -163,7 +192,7 @@ Claude は自動的に `create_block_v3` を呼び出す。
 
 ## AI エージェント向けツール（28 個）
 
-`burgereditor.config.{js,mjs,ts,cjs,json}` が見つかるディレクトリ階層内で動作する。定義の正は [`@burger-editor/cli`](../cli/) の `src/agent-tools/tools/*.ts`（説明・入力スキーマ・annotations）。「readToken」列が✓のツールは、直前にそのページを読んだときの `readToken` を渡さないと `read-required` / `stale` で失敗する（契約の詳細は [`skills/burger-editor-v4/SKILL.md`](../../../skills/burger-editor-v4/SKILL.md) と `cli/src/agent-tools/read-token.ts` の JSDoc）。
+`burgereditor.config.{js,mjs,ts,cjs}` が見つかるディレクトリ階層内で動作する。定義の正は [`@burger-editor/cli`](../cli/) の `src/agent-tools/tools/*.ts`（説明・入力スキーマ・annotations）。「readToken」列が✓のツールは、直前にそのページを読んだときの `readToken` を渡さないと `read-required` / `stale` で失敗する（契約の詳細は [`skills/burger-editor-v4/SKILL.md`](../../../skills/burger-editor-v4/SKILL.md) と `cli/src/agent-tools/read-token.ts` の JSDoc）。
 
 ### ページ操作
 
@@ -289,7 +318,7 @@ npx @burger-editor/mcp-server --version
 1. クライアントを完全に終了して再起動（Claude Desktop はメニューから Quit、Dock からも消えていることを確認）
 2. 設定 JSON の構文が正しいか確認
 3. `disabled: false` になっているか確認（Claude Desktop の場合）
-4. プロジェクトルートに `burgereditor.config.{js,mjs,ts,cjs,json}` が存在するか確認
+4. プロジェクトルートに `burgereditor.config.{js,mjs,ts,cjs}` が存在するか確認
 
 ## 検索キーワード
 

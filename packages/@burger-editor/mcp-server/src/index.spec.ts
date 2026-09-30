@@ -6,11 +6,20 @@ import { mkdtempDisposable } from '@d-zero/shared/mkdtemp-disposable';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import {
+	afterAll,
+	afterEach,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	test,
+	vi,
+} from 'vitest';
 
 import { __resetV4ContextCache } from './context.js';
 
-import { registerTools } from './index.js';
+import { parseRouterOptions, registerTools } from './index.js';
 
 // Spelled out rather than derived from `agentTools` so that a tool
 // accidentally dropped from (or renamed in) cli's registry fails here
@@ -202,5 +211,44 @@ describe('registerTools — v3 compat + agent tools coexist', () => {
 		const list = await client.listTools();
 		const v3 = list.tools.find((t) => t.name === 'get_block_type');
 		expect(v3).toBeDefined();
+	});
+});
+
+describe('parseRouterOptions', () => {
+	beforeEach(() => {
+		// Keep the host shell's settings from leaking into the defaults.
+		// eslint-disable-next-line unicorn/no-useless-undefined -- `undefined` is how vi.stubEnv removes a variable; the argument is required
+		vi.stubEnv('BGE_MCP_MODE', undefined);
+		// eslint-disable-next-line unicorn/no-useless-undefined -- same as above
+		vi.stubEnv('BGE_LOCAL_URL', undefined);
+	});
+
+	afterEach(() => {
+		vi.unstubAllEnvs();
+	});
+
+	test('leaves configPath unset without --config, so resolveConfig falls back to BGE_CONFIG / the search', () => {
+		expect(parseRouterOptions([])).toEqual({
+			mode: 'auto',
+			localUrl: 'http://localhost:5255',
+			configPath: undefined,
+		});
+	});
+
+	test('--config <path> sets configPath alongside the other flags', () => {
+		expect(
+			parseRouterOptions([
+				'--config',
+				'./burgereditor.child.config.js',
+				'--mode',
+				'local',
+				'--url',
+				'http://localhost:5256',
+			]),
+		).toEqual({
+			mode: 'local',
+			localUrl: 'http://localhost:5256',
+			configPath: './burgereditor.child.config.js',
+		});
 	});
 });

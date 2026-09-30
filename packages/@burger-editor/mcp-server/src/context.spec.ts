@@ -9,6 +9,7 @@ import { __resetV4ContextCache, getContext } from './context.js';
 let stack: AsyncDisposableStack;
 let brokenProject: string;
 let validProject: string;
+let childConfigPath: string;
 
 const VALID_CONFIG = `import { defaultCatalog } from '@burger-editor/blocks';
 export default {
@@ -52,6 +53,14 @@ beforeAll(async () => {
 		VALID_CONFIG,
 		'utf8',
 	);
+
+	// A second site's config under a name the cwd search never matches.
+	childConfigPath = path.join(validProject, 'burgereditor.child.config.mjs');
+	await fs.writeFile(
+		childConfigPath,
+		`export default { documentRoot: './child' };\n`,
+		'utf8',
+	);
 });
 
 afterAll(async () => {
@@ -84,5 +93,21 @@ describe('getContext', () => {
 		const first = await getContext();
 		const second = await getContext();
 		expect(second).toBe(first);
+	});
+
+	test('a named configPath is loaded instead of the config the cwd search finds', async () => {
+		process.chdir(validProject);
+		const ctx = await getContext(childConfigPath);
+		expect(ctx.configPath).toBe(childConfigPath);
+		expect(ctx.config.documentRoot).toBe(path.join(validProject, 'child'));
+	});
+
+	test('a call naming a different configPath reloads instead of reusing the cached context', async () => {
+		process.chdir(validProject);
+		const searched = await getContext();
+		const named = await getContext(childConfigPath);
+		expect(named).not.toBe(searched);
+		expect(named.configPath).toBe(childConfigPath);
+		expect(await getContext(childConfigPath)).toBe(named);
 	});
 });

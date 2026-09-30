@@ -12,6 +12,8 @@ export type McpMode = 'auto' | 'local' | 'disk';
 export interface RouterOptions {
 	readonly mode: McpMode;
 	readonly localUrl: string;
+	/** `--config` value; `undefined` lets `resolveConfig` fall back to `BGE_CONFIG`, then the search. */
+	readonly configPath?: string;
 }
 
 export interface RouteResult {
@@ -141,15 +143,16 @@ function hasSince(value: unknown): value is { since: number } {
  *
  * Returns `null` when neither source yields a token — a loopback-bound
  * `local` needs none, so the absence is the normal case, not an error.
+ * @param configPath the `--config` value, so the token is looked up next to the same config file `local` was started with
  */
-async function resolveAgentToken(): Promise<string | null> {
+async function resolveAgentToken(configPath?: string): Promise<string | null> {
 	const fromEnv = process.env.BGE_AGENT_TOKEN;
 	if (fromEnv) {
 		return fromEnv;
 	}
 	let configDir = process.cwd();
 	try {
-		const ctx = await getContext();
+		const ctx = await getContext(configPath);
 		if (ctx.configPath) {
 			configDir = path.dirname(ctx.configPath);
 		}
@@ -182,13 +185,15 @@ interface RemoteErrorResponse {
  * @param localUrl
  * @param toolName
  * @param args
+ * @param configPath
  */
 async function invokeRemote(
 	localUrl: string,
 	toolName: string,
 	args: unknown,
+	configPath: string | undefined,
 ): Promise<RouteResult> {
-	const token = await resolveAgentToken();
+	const token = await resolveAgentToken(configPath);
 	// Only the fetch itself may throw a non-AgentError from here: a network
 	// failure genuinely means `local` is gone and `routeToolCall` may fall
 	// back to disk. Once ANY HTTP response arrives, `local` answered, and
@@ -275,12 +280,14 @@ async function invokeRemote(
 /**
  * @param tool
  * @param args
+ * @param configPath
  */
 async function runDisk(
 	tool: AgentTool<unknown, unknown>,
 	args: unknown,
+	configPath: string | undefined,
 ): Promise<RouteResult> {
-	const ctx = await getContext();
+	const ctx = await getContext(configPath);
 	const result = await tool.run(ctx, args);
 	return { result, appliedTo: 'disk' };
 }
@@ -302,13 +309,13 @@ export async function routeToolCall(
 	options: RouterOptions,
 ): Promise<RouteResult> {
 	if (options.mode === 'disk') {
-		return await runDisk(tool, args);
+		return await runDisk(tool, args, options.configPath);
 	}
 
 	const reachable = await checkReachable(options.localUrl);
 	if (reachable) {
 		try {
-			return await invokeRemote(options.localUrl, tool.name, args);
+			return await invokeRemote(options.localUrl, tool.name, args, options.configPath);
 		} catch (error) {
 			// An AgentError means `local` answered and rejected the call on its
 			// own terms (bad readToken, user-editing, …) — that's an authoritative
@@ -334,7 +341,7 @@ export async function routeToolCall(
 						'It may have crashed — restart it, or retry with --mode disk / auto.',
 				);
 			}
-			return await runDisk(tool, args);
+			return await runDisk(tool, args, options.configPath);
 		}
 	}
 
@@ -346,5 +353,5 @@ export async function routeToolCall(
 		);
 	}
 
-	return await runDisk(tool, args);
+	return await runDisk(tool, args, options.configPath);
 }
