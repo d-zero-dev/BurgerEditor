@@ -6,6 +6,7 @@ import type {
 	FileDirSettings,
 } from '../types.js';
 
+import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { defaultCatalog } from '@burger-editor/blocks';
@@ -18,9 +19,34 @@ import { cosmiconfig } from 'cosmiconfig';
 // `package.json` (then check that ancestor too).
 const explorer = cosmiconfig('burgereditor', { searchStrategy: 'project' });
 
+// Read here rather than by each entry point so `local`, `cli` and
+// `mcp-server` all honor it through the one resolver they share — an agent
+// process launched from the project root then lands on the same config file
+// as the `local` server it talks to.
+const CONFIG_PATH_ENV = 'BGE_CONFIG';
+
 export interface ResolvedConfig {
 	readonly config: BurgerEditorConfig;
 	readonly configPath: string | null;
+}
+
+/**
+ * Options for {@link resolveConfig}.
+ * @example
+ * ```ts
+ * const options: ResolveConfigOptions = { configPath: './burgereditor.child.config.js' };
+ * ```
+ */
+export interface ResolveConfigOptions {
+	/**
+	 * A config file to load directly instead of searching, under any file
+	 * name whose extension cosmiconfig has a loader for (`.js`, `.mjs`,
+	 * `.cjs`, `.ts`, `.json`, `.yaml`, …). A relative path resolves against `process.cwd()`;
+	 * relative paths *inside* the config keep resolving against the config
+	 * file's own directory. Omitted, the `BGE_CONFIG` environment variable is
+	 * used the same way; with neither, the directory search runs.
+	 */
+	readonly configPath?: string;
 }
 
 /**
@@ -35,12 +61,35 @@ export function clearConfigCache(): void {
 }
 
 /**
- * Locate `burgereditor.config.{js,mjs,ts,cjs,json}` via cosmiconfig, walking up
- * from `searchFrom` (defaults to `process.cwd()`), and merge with defaults.
- * @param searchFrom directory to start the search from
+ * Locate the user's BurgerEditor config and merge it with defaults.
+ *
+ * The file is taken from, in order: `options.configPath`, the `BGE_CONFIG`
+ * environment variable, or a cosmiconfig search for
+ * `burgereditor.config.{js,mjs,ts,cjs}` walking up from `searchFrom`
+ * (defaults to `process.cwd()`). An explicitly named file must exist — it
+ * rejects instead of falling back to defaults, which would otherwise boot
+ * with `documentRoot` set to the working directory. A search that finds
+ * nothing still resolves to the defaults.
+ * @param searchFrom directory to start the search from; ignored when a config file is named explicitly
+ * @param options see {@link ResolveConfigOptions}
+ * @returns the merged config, and the path of the file it came from (`null` when the search found none)
+ * @example
+ * ```ts
+ * // Search upward from the working directory
+ * const { config, configPath } = await resolveConfig();
+ *
+ * // Load a specific file (e.g. a sub-site sharing the repository)
+ * const child = await resolveConfig(undefined, {
+ * 	configPath: './burgereditor.child.config.js',
+ * });
+ * console.log(child.config.documentRoot);
+ * ```
  */
-export async function resolveConfig(searchFrom?: string): Promise<ResolvedConfig> {
-	const res = await explorer.search(searchFrom);
+export async function resolveConfig(
+	searchFrom?: string,
+	options: ResolveConfigOptions = {},
+): Promise<ResolvedConfig> {
+	const res = await findUserConfig(searchFrom, options.configPath);
 
 	const userConfig: BurgerEditorConfigUserSettings = res?.config ?? {};
 	const rootDir = path.dirname(res?.filepath ?? '') || (searchFrom ?? process.cwd());
@@ -90,6 +139,39 @@ export async function resolveConfig(searchFrom?: string): Promise<ResolvedConfig
 	};
 
 	return { config, configPath: res?.filepath ?? null };
+}
+
+/**
+ * Load the explicitly named config file, or search when none is named.
+ * @param searchFrom
+ * @param configPath
+ */
+async function findUserConfig(searchFrom: string | undefined, configPath?: string) {
+	const fromEnv = process.env[CONFIG_PATH_ENV];
+	const named = configPath || fromEnv;
+	if (!named) {
+		return await explorer.search(searchFrom);
+	}
+	const filepath = path.resolve(named);
+	const origin = configPath ? '' : ` (from ${CONFIG_PATH_ENV}=${fromEnv})`;
+	// Checked up front rather than by matching cosmiconfig's read error: an
+	// ENOENT thrown by code *inside* the config would be indistinguishable,
+	// and a directory surfaces as a bare EISDIR without the path. Only a
+	// missing path is translated; any other stat failure (EACCES, …) keeps
+	// its own message instead of being reported as "not found".
+	const stat = await fs.stat(filepath).catch((error: NodeJS.ErrnoException) => {
+		if (error.code === 'ENOENT' || error.code === 'ENOTDIR') {
+			return null;
+		}
+		throw error;
+	});
+	if (!stat) {
+		throw new Error(`Config file not found: ${filepath}${origin}`);
+	}
+	if (!stat.isFile()) {
+		throw new Error(`Config path is not a file: ${filepath}${origin}`);
+	}
+	return await explorer.load(filepath);
 }
 
 /**
