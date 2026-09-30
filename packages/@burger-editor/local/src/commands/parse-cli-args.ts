@@ -39,9 +39,16 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
 		strict: false,
 	});
 
-	// Non-strict parsing yields `true` for a bare `--config` and `''` for
-	// `--config=`; both mean the path is missing.
-	if (values.config === true || values.config === '') {
+	// Non-strict parsing yields `true` for a bare `--config`, `''` for
+	// `--config=`, and takes the next token even when it is another flag
+	// (`--config --url` → `'--url'`, swallowing `--url`). All three mean the
+	// path is missing; a path that really starts with `-` can be written as
+	// `./-name.js`.
+	if (
+		values.config === true ||
+		values.config === '' ||
+		(typeof values.config === 'string' && values.config.startsWith('-'))
+	) {
 		throw new Error('--config requires a path to a config file.');
 	}
 	const configPath = typeof values.config === 'string' ? values.config : undefined;

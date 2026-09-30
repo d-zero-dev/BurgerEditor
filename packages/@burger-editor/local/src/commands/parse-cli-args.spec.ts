@@ -89,4 +89,23 @@ describe('parseCliArgs — --config without a path', () => {
 			'--config requires a path to a config file.',
 		);
 	});
+
+	test('a flag right after --config is rejected instead of being taken as the path', () => {
+		expect(() => parseCliArgs(['--config', '--url', 'search', 'margin=normal'])).toThrow(
+			'--config requires a path to a config file.',
+		);
+	});
+
+	test('a short flag right after --config (-h) is rejected too, not swallowed', () => {
+		expect(() => parseCliArgs(['search', '--config', '-h'])).toThrow(
+			'--config requires a path to a config file.',
+		);
+	});
+
+	test('a path starting with "-" can still be given with a ./ prefix', () => {
+		expect(parseCliArgs(['--config', './-odd.config.js'])).toEqual({
+			command: 'server',
+			configPath: './-odd.config.js',
+		});
+	});
 });
