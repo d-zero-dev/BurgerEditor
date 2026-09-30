@@ -51,13 +51,14 @@ npx @burger-editor/cli <subcommand> [args] [flags]
 
 ### 設定ファイルを指定する
 
-既定ではカレントディレクトリから `burgereditor.config.*` を探索する。1 つのリポジトリで複数サイトの設定を使い分けるときは、環境変数 `BGE_CONFIG` で読み込むファイルを指定する（`--config` フラグは持たない）。
+既定ではカレントディレクトリから `burgereditor.config.*` を探索する。1 つのリポジトリで複数サイトの設定を使い分けるときは、全サブコマンド共通の `--config <path>` か環境変数 `BGE_CONFIG` で読み込むファイルを指定する（`--config` が優先）。
 
 ```sh
+npx @burger-editor/cli page-list --config ./burgereditor.child.config.js
 BGE_CONFIG=./burgereditor.child.config.js npx @burger-editor/cli page-list
 ```
 
-どのファイルが読まれたかは `config-resolve` の `configPath` で確認できる。指定したファイルが存在しない場合はエラーになる。解決規則は `@burger-editor/file-io` の `resolveConfig` の JSDoc を参照。
+どのファイルが読まれたかは `config-resolve` の `configPath` で確認できる。指定したファイルが存在しない場合や、`--config` にパスが無い・2 回以上指定された場合はエラーになる。解決規則は `@burger-editor/file-io` の `resolveConfig` の JSDoc を参照。
 
 ## 設計判断
 

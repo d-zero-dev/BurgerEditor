@@ -367,3 +367,86 @@ export default {
 		void stderr; // tolerate non-empty stderr (deps may warn).
 	}, 30_000);
 });
+
+describe('bin.js --config', () => {
+	// A second site's config under a name the cwd search never matches, next
+	// to the fixture's main `burgereditor.config.mjs` that the search finds.
+	let childConfigPath: string;
+	let childDocRoot: string;
+
+	beforeAll(async () => {
+		const childDir = path.join(FIXTURE_ROOT, 'child');
+		childDocRoot = path.join(childDir, 'src');
+		await fs.mkdir(childDocRoot, { recursive: true });
+		await fs.writeFile(
+			path.join(childDocRoot, 'index.html'),
+			`<div class="content"></div>`,
+			'utf8',
+		);
+		childConfigPath = path.join(childDir, 'burgereditor.child.config.mjs');
+		await fs.writeFile(
+			childConfigPath,
+			`export default { documentRoot: './src', editableArea: '.content' };\n`,
+			'utf8',
+		);
+	});
+
+	test('config-resolve --config reports the named file instead of the searched one', async () => {
+		const result = await run([
+			'config-resolve',
+			'--config',
+			'./child/burgereditor.child.config.mjs',
+		]);
+		expect(result.code).toBe(0);
+		expect(JSON.parse(result.stdout)).toMatchObject({
+			configPath: childConfigPath,
+			documentRoot: childDocRoot,
+		});
+	}, 20_000);
+
+	test('a command that defines no flags of its own (page-list) accepts --config too', async () => {
+		const result = await run(['page-list', '--config', childConfigPath]);
+		expect(result.code).toBe(0);
+		expect(JSON.parse(result.stdout)).toMatchObject({ documentRoot: childDocRoot });
+	}, 20_000);
+
+	test('page-list --help lists --config', async () => {
+		const result = await run(['page-list', '--help']);
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain('--config');
+	}, 20_000);
+
+	test('a bare --config is rejected as a JSON error instead of silently searching', async () => {
+		const result = await run(['page-list', '--config']);
+		expect(result.code).toBe(1);
+		expect(JSON.parse(result.stderr)).toEqual({
+			error: 'invalid',
+			message: '--config requires a single path to a config file.',
+		});
+	}, 20_000);
+
+	test('a repeated --config is rejected with the same message', async () => {
+		const result = await run([
+			'page-list',
+			'--config',
+			childConfigPath,
+			'--config',
+			childConfigPath,
+		]);
+		expect(result.code).toBe(1);
+		expect(JSON.parse(result.stderr)).toEqual({
+			error: 'invalid',
+			message: '--config requires a single path to a config file.',
+		});
+	}, 20_000);
+
+	test('--config naming a missing file fails instead of falling back to defaults', async () => {
+		const missing = path.join(FIXTURE_ROOT, 'no-such.config.mjs');
+		const result = await run(['page-list', '--config', missing]);
+		expect(result.code).toBe(1);
+		expect(JSON.parse(result.stderr)).toEqual({
+			error: 'invalid',
+			message: `Config file not found: ${missing}`,
+		});
+	}, 20_000);
+});
