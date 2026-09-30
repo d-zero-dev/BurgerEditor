@@ -251,4 +251,16 @@ describe('parseRouterOptions', () => {
 			configPath: './burgereditor.child.config.js',
 		});
 	});
+
+	test('a bare --config is fatal instead of silently falling back to the searched config', () => {
+		expect(() => parseRouterOptions(['--config'])).toThrow(
+			'--config requires a path to a config file.',
+		);
+	});
+
+	test('a flag right after --config is rejected instead of being taken as the path', () => {
+		expect(() => parseRouterOptions(['--config', '--mode', 'local'])).toThrow(
+			'--config requires a path to a config file.',
+		);
+	});
 });

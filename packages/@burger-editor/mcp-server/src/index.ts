@@ -21,6 +21,7 @@ const DEFAULT_LOCAL_URL = 'http://localhost:5255';
  * here but by `resolveConfig` (`@burger-editor/file-io`) itself, so the
  * same variable also reaches `@burger-editor/cli` and `@burger-editor/local`.
  * @param argv
+ * @throws {Error} when `--mode` is not a known mode, or `--config` has no path after it
  * @example
  * ```ts
  * parseRouterOptions(['--mode', 'local', '--config', './burgereditor.child.config.js']);
@@ -38,8 +39,15 @@ export function parseRouterOptions(argv: readonly string[]): RouterOptions {
 		} else if (argv[i] === '--url' && argv[i + 1]) {
 			localUrl = argv[i + 1]!;
 			i++;
-		} else if (argv[i] === '--config' && argv[i + 1]) {
-			configPath = argv[i + 1]!;
+		} else if (argv[i] === '--config') {
+			// Unlike --mode/--url, a missing path is fatal rather than skipped:
+			// silently ignoring it would run against the searched config, i.e.
+			// possibly another site's. A following flag is not a path either.
+			const next = argv[i + 1];
+			if (!next || next.startsWith('-')) {
+				throw new Error('--config requires a path to a config file.');
+			}
+			configPath = next;
 			i++;
 		}
 	}
