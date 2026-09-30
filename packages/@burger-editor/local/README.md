@@ -133,7 +133,7 @@ BGE_CONFIG=./burgereditor.child.config.js npx bge
 - **相対パスの基準**: 指定したパス自体はカレントディレクトリ基準。設定ファイル内の `documentRoot` などは、探索で見つかった場合と同じく設定ファイルのディレクトリ基準
 - **ファイルが無いときはエラー終了**: 指定したファイルが存在しない場合、既定値で起動せずに終了する
 - **確認方法**: 起動バナーの `Config:` 行に読み込んだ設定ファイルが表示される
-- **cli / mcp-server**: どちらも `BGE_CONFIG` を読む。mcp-server は `--config` も受け付ける（[mcp-server の README](../mcp-server/README.md#起動オプション) を参照）
+- **cli / mcp-server**: どちらも同じく `--config` と `BGE_CONFIG` を受け付ける（[cli の README](../cli/README.md#設定ファイルを指定する)、[mcp-server の README](../mcp-server/README.md#起動オプション) を参照）
 
 2 つのサイトを同時に起動する場合は、どちらかの設定で `port` を変える（既定はどちらも `5255`）。
 
