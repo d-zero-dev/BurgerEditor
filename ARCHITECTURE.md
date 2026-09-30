@@ -145,8 +145,9 @@ graph TD
   1. **shared by local & cli & mcp-server** — fs を触る全パッケージのフロントエンド。同じ config / 同じパス解釈 / 同じ Front Matter パーサを共有することで、ブラウザ UI 経由の編集と AI エージェント経由の編集が必ず一致する
   2. **遅延 DOM インストール** — `import '@burger-editor/file-io'` は `globalThis.document` / `DOMParser` 等のアクセサだけを置き、最初のアクセスで初めて JSDOM を構築する。DOM 不要な CLI コマンド（`catalog-list` 等）は JSDOM コストを払わない
   3. **cosmiconfig `searchStrategy: 'project'`** — サブディレクトリから CLI / MCP を起動してもプロジェクトルートの設定が見つかる
+  4. **設定ファイルの直接指定は resolver 側で解決** — `configPath` オプション（local / mcp-server の `--config`）→ 環境変数 `BGE_CONFIG` → 探索の順。`BGE_CONFIG` を各エントリポイントではなく `resolveConfig` 自身が読むことで、1 リポジトリに複数サイトの設定が並んでも local / cli / mcp-server が同じファイルに解決される（設計判断 1 の前提を崩さない）
 - **構成ファイル**:
-  - `src/config/resolve.ts` — `resolveConfig(searchFrom?)` / `clearConfigCache()`
+  - `src/config/resolve.ts` — `resolveConfig(searchFrom?, { configPath? })` / `clearConfigCache()`
   - `src/document/edit-content.ts` — `loadContent` / `saveContent` / `FileNotFoundError`
   - `src/file-tree.ts` — `generateFileTree` / `buildFileTreeFromLogicalPaths`
   - `src/virtual-path-resolver.ts` — `loadResolverState` / `toDiskPath` 他（旧 local からの移植）
@@ -197,6 +198,7 @@ graph TD
 - **CLI機能**:
   - `bge` - 開発サーバー起動
   - `bge search` - HTML内のCSS変数検索（`@burger-editor/inspector`を使用）
+  - `--config <path>` - 両コマンド共通。引数解析は `commands/parse-cli-args.ts`（`node:util` の `parseArgs`）
 - **プログラマティックAPI**:
   - ファイルアップロード機能をプログラムから利用可能
   - Honoサーバーと同じロジックを共有
@@ -250,7 +252,7 @@ graph TD
 - 機能:
   - v3 ツール 3 個（`create_block_v3` / `get_block_data_params_v3` / `get_block_type`）— v3 プロジェクト互換
   - AI エージェント向けツール 28 個（`page_*` / `block_*` / `item_*` / `front_matter_*` / `catalog_*` / `style_options_list` / `container_options_list` / `config_resolve` / `editor_*`）— ツール定義は `@burger-editor/cli` の `agent-tools/` に一本化されており、mcp-server はそれを登録するだけ（`register-agent-tools.ts`）。ページ・ブロック CRUD、カタログ・スタイルオプションの参照に加え、既存ページへの変更系ツールは `readToken`（内容ハッシュに束縛したトークン）を要求する「読んでから書く」契約を持つ
-  - `loadContext()` の結果はサーバープロセス内で 1 回だけ評価し、以降の全ツールで再利用（テスト用に `__resetV4ContextCache()` を export）
+  - `loadContext()` の結果はサーバープロセス内で 1 回だけ評価し、以降の全ツールで再利用（テスト用に `__resetV4ContextCache()` を export）。`--config` の値はキャッシュのキーに含まれ、ディスク適用と `local` 用トークンの探索の両方に使われる
 
 **`@burger-editor/legacy`**
 
