@@ -58,7 +58,7 @@ npx @burger-editor/cli page-list --config ./burgereditor.child.config.js
 BGE_CONFIG=./burgereditor.child.config.js npx @burger-editor/cli page-list
 ```
 
-どのファイルが読まれたかは `config-resolve` の `configPath` で確認できる。指定したファイルが存在しない場合や、`--config` にパスが無い・2 回以上指定された場合はエラーになる。解決規則は `@burger-editor/file-io` の `resolveConfig` の JSDoc を参照。
+どのファイルが読まれたかは `config-resolve` の `configPath` で確認できる。指定したファイルが存在しない場合や、`--config` にパスが無い場合はエラーになる。`--config` はサブコマンドの後ろに書く（`npx @burger-editor/cli --config x page-list` の順は受け付けない）。2 回以上指定した場合は最後の値が使われる。解決規則は `@burger-editor/file-io` の `resolveConfig` の JSDoc を参照。
 
 ## 設計判断
 

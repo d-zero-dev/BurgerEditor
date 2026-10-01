@@ -10,7 +10,6 @@ import type { BlockSpec } from './block-builder.js';
 import { parseCli } from '@d-zero/roar';
 
 import { pageBlocksTool } from './agent-tools/tools/page-blocks.js';
-import { commands } from './commands.js';
 import { loadContext } from './context.js';
 import * as h from './handlers.js';
 import { writeErrorJson } from './output.js';
@@ -36,21 +35,138 @@ async function loadContextWithSilencedStdout(
 }
 
 /**
- * Validate the parsed `--config` flag. yargs-parser reads a bare `--config`
- * (or `--config=`) as `''`, which `resolveConfig` would treat as "not named"
- * and silently fall back to the search; a repeated `--config` arrives as an
- * array despite the `string` type. Both are rejected with one message.
+ * Reject a `--config` given without a path. roar passes a bare `--config` (or
+ * `--config=`, or one followed by another flag) through as `''` and leaves
+ * rejecting it to the caller; `resolveConfig` would read `''` as "not named"
+ * and silently fall back to the search.
  * @param value the parsed `--config` flag
  */
-function toConfigPath(value: unknown): string | undefined {
-	if (value === undefined) {
-		return undefined;
-	}
-	if (typeof value !== 'string' || value === '') {
-		throw new Error('--config requires a single path to a config file.');
+function toConfigPath(value: string | undefined): string | undefined {
+	if (value === '') {
+		throw new Error('--config requires a path to a config file.');
 	}
 	return value;
 }
+
+// Accepted by every command (roar `globalFlags`): each one loads a context,
+// so each one needs to know which config file to load.
+const globalFlags = {
+	config: {
+		type: 'string',
+		desc: 'Config file to use instead of searching for burgereditor.config.* (or set BGE_CONFIG)',
+	},
+} as const;
+
+// IMPORTANT — flag keys MUST be camelCase. roar derives the user-facing
+// `--kebab-case` form automatically; if you define `'spec-file'` literally
+// here, roar silently drops the flag entirely. (See @d-zero/roar's
+// camelCase→kebab-case conversion contract.)
+//
+// Positional argument hints live in the `desc` string (roar's help generator
+// doesn't carry positional info separately). Keep the `<usage>` suffix
+// consistent so `<package-cli> <cmd> --help` reads like the project README.
+const commands = {
+	'page-list': {
+		desc: 'List pages under documentRoot, plus invalidPages (resolver-skipped files)',
+	},
+	'page-get': {
+		desc: 'Get raw page content + front matter — usage: page-get <path>',
+	},
+	'page-create': {
+		desc: 'Create a new page (optional initial blocks via --spec*) — usage: page-create <path>',
+		flags: {
+			spec: { type: 'string', desc: 'Inline JSON spec' },
+			specFile: { type: 'string', desc: 'Path to a JSON spec file' },
+		},
+	},
+	'page-delete': { desc: 'Delete a page file — usage: page-delete <path>' },
+	'page-rename': { desc: 'Rename / move a page file — usage: page-rename <from> <to>' },
+	'page-copy': { desc: 'Copy a page file — usage: page-copy <from> <to>' },
+	'page-concat': {
+		desc: 'Append editable content of sources onto target — usage: page-concat <target> <source...>',
+	},
+	'front-matter-get': {
+		desc: 'Get a page front matter — usage: front-matter-get <path>',
+	},
+	'front-matter-set': {
+		desc: 'Set a page front matter (merge by default; --replace to overwrite) — usage: front-matter-set <path>',
+		flags: {
+			spec: { type: 'string', desc: 'Inline JSON object' },
+			specFile: { type: 'string', desc: 'Path to JSON file' },
+			replace: {
+				type: 'boolean',
+				desc: 'Replace front matter entirely instead of merging',
+			},
+		},
+	},
+	'page-blocks': {
+		desc: 'List every block in a page (id/text/headings summary) — usage: page-blocks <path>',
+	},
+	'block-get': { desc: 'Get a single block by index — usage: block-get <path> <index>' },
+	'block-insert': {
+		desc: 'Insert a block at index — usage: block-insert <path> <atIndex>',
+		flags: {
+			spec: { type: 'string', desc: 'Inline JSON block spec' },
+			specFile: { type: 'string', desc: 'Path to JSON block spec' },
+			dryRun: {
+				type: 'boolean',
+				desc: 'Compute the would-be HTML but do not write — returns previewContent',
+			},
+		},
+	},
+	'block-replace': {
+		desc: 'Replace a block at index — usage: block-replace <path> <index>',
+		flags: {
+			spec: { type: 'string', desc: 'Inline JSON block spec' },
+			specFile: { type: 'string', desc: 'Path to JSON block spec' },
+			dryRun: { type: 'boolean', desc: 'Compute the would-be HTML but do not write' },
+		},
+	},
+	'block-delete': {
+		desc: 'Delete a block at index — usage: block-delete <path> <index>',
+		flags: {
+			dryRun: { type: 'boolean', desc: 'Compute the would-be HTML but do not write' },
+		},
+	},
+	'block-move': {
+		desc: 'Move a block — usage: block-move <path> <from> <to> (to = destination in FINAL list, splice convention)',
+		flags: {
+			dryRun: { type: 'boolean', desc: 'Compute the would-be HTML but do not write' },
+		},
+	},
+	'block-duplicate': {
+		desc: 'Duplicate a block right after itself — usage: block-duplicate <path> <index>',
+		flags: {
+			dryRun: { type: 'boolean', desc: 'Compute the would-be HTML but do not write' },
+		},
+	},
+	'block-ensure-id': {
+		desc: 'Assign a stable bge-<n> id to a block that has none (idempotent) — usage: block-ensure-id <path> <index>',
+	},
+	'item-update': {
+		desc: 'Merge new data into one item within a block — usage: item-update <path> <blockIndex> <itemIndex>',
+		flags: {
+			spec: { type: 'string', desc: 'Inline JSON data patch' },
+			specFile: { type: 'string', desc: 'Path to JSON data patch' },
+			dryRun: { type: 'boolean', desc: 'Compute the would-be HTML but do not write' },
+		},
+	},
+	'catalog-list': {
+		desc: 'List catalog block definitions available in this project',
+	},
+	'catalog-get': {
+		desc: 'Get a single catalog block definition (with ready-to-insert template) — usage: catalog-get <name>',
+	},
+	'item-list': { desc: 'List item names' },
+	'item-schema': {
+		desc: 'Get item editor template + camelCase dataKeys — usage: item-schema <name>',
+	},
+	'style-options-list': {
+		desc: 'List CSS bge-options custom property axes found in project stylesheets',
+	},
+	'container-options-list': { desc: 'List container layout option values (static)' },
+	'config-resolve': { desc: 'Resolve and print the active burgereditor config summary' },
+} as const;
 
 /**
  * Validate that a resolved spec is shaped like a BlockSpec — i.e. an object,
@@ -108,6 +224,7 @@ async function resolveSpecForCommand(
 async function main() {
 	const result = parseCli({
 		name: '@burger-editor/cli',
+		globalFlags,
 		commands,
 		onError: () => true,
 	});

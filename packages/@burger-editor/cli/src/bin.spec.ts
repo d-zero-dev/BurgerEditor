@@ -410,9 +410,10 @@ describe('bin.js --config', () => {
 		expect(JSON.parse(result.stdout)).toMatchObject({ documentRoot: childDocRoot });
 	}, 20_000);
 
-	test('page-list --help lists --config', async () => {
+	test('page-list --help lists --config under the global options', async () => {
 		const result = await run(['page-list', '--help']);
 		expect(result.code).toBe(0);
+		expect(result.stdout).toContain('Global options:');
 		expect(result.stdout).toContain('--config');
 	}, 20_000);
 
@@ -421,23 +422,38 @@ describe('bin.js --config', () => {
 		expect(result.code).toBe(1);
 		expect(JSON.parse(result.stderr)).toEqual({
 			error: 'invalid',
-			message: '--config requires a single path to a config file.',
+			message: '--config requires a path to a config file.',
 		});
 	}, 20_000);
 
-	test('a repeated --config is rejected with the same message', async () => {
+	test('a flag right after --config is rejected instead of running against the searched config', async () => {
+		// Falling back to the search would create this page in the main site.
+		const created = path.join(docRoot, 'created-by-fallback.html');
 		const result = await run([
-			'page-list',
+			'page-create',
+			'created-by-fallback.html',
 			'--config',
-			childConfigPath,
-			'--config',
-			childConfigPath,
+			'--spec',
+			'{}',
 		]);
 		expect(result.code).toBe(1);
 		expect(JSON.parse(result.stderr)).toEqual({
 			error: 'invalid',
-			message: '--config requires a single path to a config file.',
+			message: '--config requires a path to a config file.',
 		});
+		await expect(fs.access(created)).rejects.toMatchObject({ code: 'ENOENT' });
+	}, 20_000);
+
+	test('a repeated --config keeps the last value, like local and most CLIs', async () => {
+		const result = await run([
+			'page-list',
+			'--config',
+			path.join(FIXTURE_ROOT, 'burgereditor.config.mjs'),
+			'--config',
+			childConfigPath,
+		]);
+		expect(result.code).toBe(0);
+		expect(JSON.parse(result.stdout)).toMatchObject({ documentRoot: childDocRoot });
 	}, 20_000);
 
 	test('--config naming a missing file fails instead of falling back to defaults', async () => {
