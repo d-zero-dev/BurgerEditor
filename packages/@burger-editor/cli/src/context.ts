@@ -1,5 +1,6 @@
 import type {
 	BurgerEditorConfig,
+	ResolveConfigOptions,
 	ResolverInvalidEntry,
 	ResolverState,
 } from '@burger-editor/file-io';
@@ -22,11 +23,22 @@ export interface CliContext {
 }
 
 /**
- *
+ * Resolve the project config (see `resolveConfig` in `@burger-editor/file-io`
+ * for how the file is located, including `BGE_CONFIG`) and, when virtualTree
+ * is enabled, scan documentRoot into a resolver state.
  * @param searchFrom directory to start the cosmiconfig search from
+ * @param options forwarded to `resolveConfig` — `configPath` names the config file directly
+ * @example
+ * ```ts
+ * const ctx = await loadContext(undefined, { configPath: './burgereditor.child.config.js' });
+ * console.log(ctx.configPath, ctx.config.documentRoot);
+ * ```
  */
-export async function loadContext(searchFrom?: string): Promise<CliContext> {
-	const { config, configPath } = await resolveConfig(searchFrom);
+export async function loadContext(
+	searchFrom?: string,
+	options?: ResolveConfigOptions,
+): Promise<CliContext> {
+	const { config, configPath } = await resolveConfig(searchFrom, options);
 	if (!config.virtualTree.enabled) {
 		return { config, configPath, resolverState: null, invalidPages: [] };
 	}

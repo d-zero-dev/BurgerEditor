@@ -2,8 +2,9 @@ import type { BlockCatalog, FileType, SelectableValue } from '@burger-editor/cor
 import type { Mergeable } from '@burger-editor/utils';
 
 /**
- * Configuration loaded from `burgereditor.config.{js,mjs,ts,cjs,json}` via
- * cosmiconfig. Shared between the local CMS server (`@burger-editor/local`)
+ * Configuration loaded via cosmiconfig from the searched
+ * `burgereditor.config.{js,mjs,ts,cjs}`, or from a file named with `--config`
+ * / `BGE_CONFIG`. Shared between the local CMS server (`@burger-editor/local`)
  * and the agent-facing CLI/MCP layer.
  */
 export interface BurgerEditorConfig {

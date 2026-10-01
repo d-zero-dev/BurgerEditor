@@ -565,7 +565,7 @@ __metadata:
     "@burger-editor/core": "npm:4.0.0-alpha.73"
     "@burger-editor/file-io": "npm:4.0.0-alpha.73"
     "@burger-editor/frozen-patty": "npm:4.0.0-alpha.73"
-    "@d-zero/roar": "npm:2.2.1"
+    "@d-zero/roar": "npm:2.3.0"
     "@d-zero/shared": "npm:0.23.0"
     "@types/node": "npm:26.5.1"
     zod: "npm:4.4.3"
@@ -1923,12 +1923,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@d-zero/roar@npm:2.2.1":
-  version: 2.2.1
-  resolution: "@d-zero/roar@npm:2.2.1"
+"@d-zero/roar@npm:2.3.0":
+  version: 2.3.0
+  resolution: "@d-zero/roar@npm:2.3.0"
   dependencies:
     yargs-parser: "npm:22.0.0"
-  checksum: 10c0/b9c62c12f7b0334d37aedb77142d4dc2c38f3d9fcd03d5c17121c7ad3c66025c23da061a0a8048885d8ab3b940a31798301023d1b5b3e724150baf57b2fc5a10
+  checksum: 10c0/b9557b2e8a1eb5ae24a2758167f83d5497a8ec2e3f5f9df8b9fd22f3937e192df21e76910ffd592858da892c11df1a05bde24d4e4f6a39b8c6369cbb2d32e88c
   languageName: node
   linkType: hard
 

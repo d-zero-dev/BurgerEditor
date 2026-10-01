@@ -1,4 +1,5 @@
 import type { LocalServerConfig } from '../types.js';
+import type { ResolveConfigOptions } from '@burger-editor/file-io';
 import type { SearchMatch, SearchParams } from '@burger-editor/inspector';
 
 import fs from 'node:fs/promises';
@@ -116,10 +117,12 @@ export function formatSearchResults(
  * Run the search command (entry point with side effects)
  * @param queries Array of search query strings (e.g., ["margin=normal", "bg-color=blue"])
  * @param flags Command line flags (--url, --help)
+ * @param configOptions Which config file to search under (`--config`)
  */
 export async function runSearchCommand(
 	queries: readonly string[],
 	flags: SearchFlags,
+	configOptions: ResolveConfigOptions = {},
 ): Promise<void> {
 	// Handle --help flag
 	if (flags.help) {
@@ -137,7 +140,7 @@ export async function runSearchCommand(
 	}
 
 	// Load configuration
-	const { config } = await getUserConfig();
+	const { config } = await getUserConfig(configOptions);
 
 	// Execute search
 	const searchResult = await executeSearch(config.documentRoot, parseResult.params);
@@ -178,8 +181,10 @@ Query Format:
 Multiple queries perform AND search (files must match ALL queries).
 
 Options:
-  --url         Show results as localhost URLs instead of file paths
-  --help, -h    Show this help message
+  --url            Show results as localhost URLs instead of file paths
+  --config <path>  Use this config file instead of searching for burgereditor.config.*
+                   (also settable via the BGE_CONFIG environment variable)
+  --help, -h       Show this help message
 
 Examples:
   bge search "margin=normal"

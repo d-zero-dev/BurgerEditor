@@ -25,11 +25,37 @@ const realStdoutWrite = process.stdout.write.bind(process.stdout);
 
 /**
  *
+ * @param configPath the `--config` value; `undefined` falls back to `BGE_CONFIG`, then the search
  */
-async function loadContextWithSilencedStdout(): ReturnType<typeof loadContext> {
+async function loadContextWithSilencedStdout(
+	configPath: string | undefined,
+): ReturnType<typeof loadContext> {
 	using _ = silenceStdout();
-	return await loadContext();
+	return await loadContext(undefined, { configPath });
 }
+
+/**
+ * Reject a `--config` given without a path. roar passes a bare `--config` (or
+ * `--config=`, or one followed by another flag) through as `''` and leaves
+ * rejecting it to the caller; `resolveConfig` would read `''` as "not named"
+ * and silently fall back to the search.
+ * @param value the parsed `--config` flag
+ */
+function toConfigPath(value: string | undefined): string | undefined {
+	if (value === '') {
+		throw new Error('--config requires a path to a config file.');
+	}
+	return value;
+}
+
+// Accepted by every command (roar `globalFlags`): each one loads a context,
+// so each one needs to know which config file to load.
+const globalFlags = {
+	config: {
+		type: 'string',
+		desc: 'Config file to use instead of searching for burgereditor.config.* (or set BGE_CONFIG)',
+	},
+} as const;
 
 // IMPORTANT — flag keys MUST be camelCase. roar derives the user-facing
 // `--kebab-case` form automatically; if you define `'spec-file'` literally
@@ -198,10 +224,11 @@ async function resolveSpecForCommand(
 async function main() {
 	const result = parseCli({
 		name: '@burger-editor/cli',
+		globalFlags,
 		commands,
 		onError: () => true,
 	});
-	const ctx = await loadContextWithSilencedStdout();
+	const ctx = await loadContextWithSilencedStdout(toConfigPath(result.flags.config));
 
 	switch (result.command) {
 		case 'page-list': {

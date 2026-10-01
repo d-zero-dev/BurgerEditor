@@ -9,7 +9,10 @@ import { loadContext } from '@burger-editor/cli';
  * would add O(files × calls) work to an agent session. Invalidated by
  * `__resetV4ContextCache()` so tests can swap fixtures between cases.
  */
-let cachedContextPromise: Promise<CliContext> | null = null;
+let cachedContext: {
+	readonly configPath: string | undefined;
+	readonly promise: Promise<CliContext>;
+} | null = null;
 
 /**
  * Resolve (and memoize) the `CliContext` for this process. Only a
@@ -20,23 +23,29 @@ let cachedContextPromise: Promise<CliContext> | null = null;
  * the agent host restarts the server, even after the user fixed the file.
  * Re-running cosmiconfig on the next call after a failure is cheap compared
  * to that, and the success path still pays the load exactly once.
+ *
+ * The cache remembers which `configPath` it was loaded for, so a call
+ * naming a different file reloads instead of being handed the other file's
+ * context.
+ * @param configPath the `--config` value, forwarded to `loadContext`; `undefined` falls back to `BGE_CONFIG`, then the search
  */
-export function getContext(): Promise<CliContext> {
-	if (!cachedContextPromise) {
-		const loading = loadContext();
-		cachedContextPromise = loading;
+export function getContext(configPath?: string): Promise<CliContext> {
+	if (!cachedContext || cachedContext.configPath !== configPath) {
+		const loading = loadContext(undefined, { configPath });
+		const entry = { configPath, promise: loading };
+		cachedContext = entry;
 		loading.catch(() => {
 			// Only drop the cache if it still holds THIS attempt — a reset
 			// and a fresh load may already have replaced it.
-			if (cachedContextPromise === loading) {
-				cachedContextPromise = null;
+			if (cachedContext === entry) {
+				cachedContext = null;
 			}
 		});
 	}
-	return cachedContextPromise;
+	return cachedContext.promise;
 }
 
 /** Test-only: clear the per-process context cache. */
 export function __resetV4ContextCache(): void {
-	cachedContextPromise = null;
+	cachedContext = null;
 }
