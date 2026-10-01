@@ -166,7 +166,7 @@ graph TD
   2. **3-way spec input** — `--spec`（インライン）/ `--spec-file`（ファイル）/ stdin の優先順で受け取り。シェルクォート地獄を回避
   3. **atomic 操作** — `page-create` は `fs.writeFile(... flag: 'wx')` で原子的に reserve、`page-rename` は rename 失敗時に作成済みディレクトリを巻き戻す
   4. **ツール定義の一本化** — AI エージェント向けツールは `src/agent-tools/tools/*.ts` に 1 ツール 1 定義（`agentTools` 配列）。`mcp-server` と `local` の Agent Hub は同じ配列を登録するだけ
-  5. **`--config` は全サブコマンドが個別に持つ** — `@d-zero/roar` にはプログラム全体のフラグが無いため、`src/commands.ts` の `CONFIG_FLAG` を各コマンドの `flags` に展開している。展開し忘れたサブコマンドは `--config` を黙って無視するため、`commands.spec.ts` が全コマンドについて検証する
+  5. **`--config` は roar の `globalFlags`** — 全サブコマンドが設定を読み込むため、コマンドごとの `flags` ではなく共通フラグとして定義する。roar は値なしの文字列フラグを `''` のまま渡すので、`bin.ts` の `toConfigPath` で拒否する（`resolveConfig` が `''` を「指定なし」と読んで探索に戻らないように）
 - **詳細ドキュメント**: [`packages/@burger-editor/cli/README.md`](packages/@burger-editor/cli/README.md)
 
 **`@burger-editor/inspector`**
