@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.74](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.73...v4.0.0-alpha.74) (2026-10-01)
+
+### Features
+
+- **cli:** add --config option to every subcommand ([a646e91](https://github.com/d-zero-dev/BurgerEditor/commit/a646e9192de3811ac4c64ca4918bfa788e88529c))
+- **cli:** define --config with roar's globalFlags ([54324ea](https://github.com/d-zero-dev/BurgerEditor/commit/54324ea9c680bb5d1c2d257215b4c6f4c553be88)), closes [d-zero-dev/tools#966](https://github.com/d-zero-dev/tools/issues/966)
+- **cli:** forward config file options through loadContext ([ecf0232](https://github.com/d-zero-dev/BurgerEditor/commit/ecf02326789839d546beff39097015a9c8352163))
+
 # [4.0.0-alpha.73](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.72...v4.0.0-alpha.73) (2026-09-18)
 
 **Note:** Version bump only for package @burger-editor/cli

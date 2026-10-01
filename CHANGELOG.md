@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.74](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.73...v4.0.0-alpha.74) (2026-10-01)
+
+### Bug Fixes
+
+- **local:** reject a flag given right after --config ([b86e8c7](https://github.com/d-zero-dev/BurgerEditor/commit/b86e8c7f2ebad48e5bc83eacb123369b38c20257))
+- **mcp-server:** fail at startup when --config has no path ([0200164](https://github.com/d-zero-dev/BurgerEditor/commit/02001640dff2c2068bedce080435ad0cbccd8cce))
+
+### Features
+
+- **cli:** add --config option to every subcommand ([a646e91](https://github.com/d-zero-dev/BurgerEditor/commit/a646e9192de3811ac4c64ca4918bfa788e88529c))
+- **cli:** define --config with roar's globalFlags ([54324ea](https://github.com/d-zero-dev/BurgerEditor/commit/54324ea9c680bb5d1c2d257215b4c6f4c553be88)), closes [d-zero-dev/tools#966](https://github.com/d-zero-dev/tools/issues/966)
+- **cli:** forward config file options through loadContext ([ecf0232](https://github.com/d-zero-dev/BurgerEditor/commit/ecf02326789839d546beff39097015a9c8352163))
+- **file-io:** allow naming the config file via configPath or BGE_CONFIG ([19843f9](https://github.com/d-zero-dev/BurgerEditor/commit/19843f95c30bdfab6d037d28a045b842ca4e2a3a))
+- **local:** add --config option to bge and bge search ([5520249](https://github.com/d-zero-dev/BurgerEditor/commit/5520249a53afa03556982b05b4ecc3b85bdf9bc4))
+- **mcp-server:** add --config option ([27c9836](https://github.com/d-zero-dev/BurgerEditor/commit/27c9836a3ee413ea91b11975c4d00e81087d0841))
+
 # [4.0.0-alpha.73](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.72...v4.0.0-alpha.73) (2026-09-18)
 
 ### Bug Fixes

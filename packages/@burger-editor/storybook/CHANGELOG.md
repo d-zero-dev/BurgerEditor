@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.74](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.73...v4.0.0-alpha.74) (2026-10-01)
+
+**Note:** Version bump only for package @burger-editor/storybook
+
 # [4.0.0-alpha.73](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.72...v4.0.0-alpha.73) (2026-09-18)
 
 - refactor(client)!: back FrontMatterEditor with a FrontMatterStore ([6875428](https://github.com/d-zero-dev/BurgerEditor/commit/68754285c7181c52a384b3145077381d8cc49f8e))

@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/local",
-	"version": "4.0.0-alpha.73",
+	"version": "4.0.0-alpha.74",
 	"type": "module",
 	"repository": {
 		"type": "git",
@@ -58,11 +58,11 @@
 		"dev:server": "DEV_MODE=true DEBUG=\"@bge:*\" tsx watch src/index.ts"
 	},
 	"dependencies": {
-		"@burger-editor/blocks": "4.0.0-alpha.73",
-		"@burger-editor/cli": "4.0.0-alpha.73",
-		"@burger-editor/core": "4.0.0-alpha.73",
-		"@burger-editor/file-io": "4.0.0-alpha.73",
-		"@burger-editor/inspector": "4.0.0-alpha.73",
+		"@burger-editor/blocks": "4.0.0-alpha.74",
+		"@burger-editor/cli": "4.0.0-alpha.74",
+		"@burger-editor/core": "4.0.0-alpha.74",
+		"@burger-editor/file-io": "4.0.0-alpha.74",
+		"@burger-editor/inspector": "4.0.0-alpha.74",
 		"@hono/node-server": "2.1.1",
 		"@hono/zod-validator": "0.9.0",
 		"ansi-colors": "4.1.3",
@@ -74,7 +74,7 @@
 		"zod": "4.4.3"
 	},
 	"devDependencies": {
-		"@burger-editor/client": "4.0.0-alpha.73",
+		"@burger-editor/client": "4.0.0-alpha.74",
 		"@d-zero/shared": "0.23.0",
 		"@types/debug": "4.1.13",
 		"@types/node": "26.5.1",

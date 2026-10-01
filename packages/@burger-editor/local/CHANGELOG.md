@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.74](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.73...v4.0.0-alpha.74) (2026-10-01)
+
+### Bug Fixes
+
+- **local:** reject a flag given right after --config ([b86e8c7](https://github.com/d-zero-dev/BurgerEditor/commit/b86e8c7f2ebad48e5bc83eacb123369b38c20257))
+
+### Features
+
+- **local:** add --config option to bge and bge search ([5520249](https://github.com/d-zero-dev/BurgerEditor/commit/5520249a53afa03556982b05b4ecc3b85bdf9bc4))
+
 # [4.0.0-alpha.73](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.72...v4.0.0-alpha.73) (2026-09-18)
 
 ### Bug Fixes

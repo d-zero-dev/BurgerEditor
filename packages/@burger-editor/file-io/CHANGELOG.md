@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.74](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.73...v4.0.0-alpha.74) (2026-10-01)
+
+### Features
+
+- **file-io:** allow naming the config file via configPath or BGE_CONFIG ([19843f9](https://github.com/d-zero-dev/BurgerEditor/commit/19843f95c30bdfab6d037d28a045b842ca4e2a3a))
+
 # [4.0.0-alpha.73](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.72...v4.0.0-alpha.73) (2026-09-18)
 
 **Note:** Version bump only for package @burger-editor/file-io

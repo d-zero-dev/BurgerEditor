@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.74](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.73...v4.0.0-alpha.74) (2026-10-01)
+
+### Bug Fixes
+
+- **mcp-server:** fail at startup when --config has no path ([0200164](https://github.com/d-zero-dev/BurgerEditor/commit/02001640dff2c2068bedce080435ad0cbccd8cce))
+
+### Features
+
+- **mcp-server:** add --config option ([27c9836](https://github.com/d-zero-dev/BurgerEditor/commit/27c9836a3ee413ea91b11975c4d00e81087d0841))
+
 # [4.0.0-alpha.73](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.72...v4.0.0-alpha.73) (2026-09-18)
 
 **Note:** Version bump only for package @burger-editor/mcp-server
