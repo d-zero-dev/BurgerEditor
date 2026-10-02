@@ -66,7 +66,7 @@ describe('GET /ws/editor handshake — non-loopback bind', () => {
 			headers: {
 				...UPGRADE_HEADERS,
 				host: FOREIGN_HOST,
-				authorization: `Bearer ${t.auth!.token}`,
+				authorization: `Bearer ${t.auth.token}`,
 			},
 		});
 		expect(res.status).toBe(403);

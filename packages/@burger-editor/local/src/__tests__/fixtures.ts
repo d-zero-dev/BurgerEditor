@@ -149,7 +149,8 @@ export interface TestApp extends AsyncDisposable {
 	readonly config: LocalServerConfig;
 	/** `null` when `config.agent.enabled` is `false`. */
 	readonly hub: AgentHub | null;
-	readonly auth: AgentAuth | null;
+	/** Always present, even when `config.agent.enabled` is `false`; `required` is `false` on a loopback host. */
+	readonly auth: AgentAuth;
 	/** `app.request` with `Host: config.host` injected unless the caller set one. */
 	request(urlPath: string, init?: RequestInit): Promise<Response>;
 	/** `POST /api/agent/invoke` — untyped on purpose (the route has no `zValidator`). */
@@ -175,18 +176,18 @@ export async function createTestApp(options: TestAppOptions): Promise<TestApp> {
 		resolverState = loaded.state;
 	}
 
+	// Like `bootLocalServer`: the credential gate exists even with the agent disabled.
+	const auth = await createAgentAuth(
+		config.host,
+		options.configDir ?? path.dirname(config.documentRoot),
+	);
 	let hub: AgentHub | null = null;
-	let auth: AgentAuth | null = null;
 	let agent: AgentDeps | null = null;
 	if (config.agent.enabled) {
 		hub = createAgentHub({ indexFileName: config.indexFileName, ...options.hub });
-		auth = await createAgentAuth(
-			config.host,
-			options.configDir ?? path.dirname(config.documentRoot),
-		);
 		agent = { hub, auth };
 	}
-	const app = createApp({ config, resolverState, agent });
+	const app = createApp({ config, resolverState, agent, auth });
 	const request = async (urlPath: string, init: RequestInit = {}) =>
 		app.request(urlPath, { ...init, headers: mergeHost(config.host, init) });
 
@@ -205,7 +206,7 @@ export async function createTestApp(options: TestAppOptions): Promise<TestApp> {
 			}),
 		async [Symbol.asyncDispose]() {
 			hub?.dispose();
-			await auth?.[Symbol.asyncDispose]();
+			await auth[Symbol.asyncDispose]();
 		},
 	};
 }

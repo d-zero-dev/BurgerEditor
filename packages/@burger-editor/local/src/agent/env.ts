@@ -22,9 +22,11 @@ export type AgentEnv = { Variables: { agent: AgentDeps } };
  * static shape regardless of runtime config. Otherwise exposes `deps` to
  * downstream handlers as `c.get('agent')`.
  *
- * Registered as the FIRST middleware on each sub-app, before
- * {@link import('./host-guard.js').hostGuard} — a disabled server must
- * answer 404 to every `Host`, not 403 to a foreign one.
+ * Registered as the FIRST middleware on each sub-app, before the sub-app's
+ * own {@link import('./host-guard.js').hostGuard}. `createApp` also runs
+ * `hostGuard` app-wide ahead of every route, so a foreign `Host` is 403
+ * here even when the agent is disabled; the sub-app copy keeps each
+ * sub-app safe when mounted on its own.
  * @param deps
  * @example
  * new Hono<AgentEnv>().use(agentEnabled(deps)).use(hostGuard(host))

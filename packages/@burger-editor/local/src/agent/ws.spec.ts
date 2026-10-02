@@ -233,7 +233,7 @@ describe('WS /ws/editor — non-loopback bind requires the session cookie or bea
 
 	test('an upgrade carrying the bge_session cookie registers a tab that receives welcome after hello', async () => {
 		await using t = await bootServer(LAN_HOST);
-		const ws = await t.connectWs({ cookie: `bge_session=${t.auth!.token}` });
+		const ws = await t.connectWs({ cookie: `bge_session=${t.auth.token}` });
 		try {
 			const welcomePromise = nextMessage(ws);
 			ws.send(
@@ -256,7 +256,7 @@ describe('WS /ws/editor — non-loopback bind requires the session cookie or bea
 
 	test('an upgrade carrying Authorization: Bearer is accepted too', async () => {
 		await using t = await bootServer(LAN_HOST);
-		const ws = await t.connectWs({ authorization: `Bearer ${t.auth!.token}` });
+		const ws = await t.connectWs({ authorization: `Bearer ${t.auth.token}` });
 		try {
 			const welcomePromise = nextMessage(ws);
 			ws.send(

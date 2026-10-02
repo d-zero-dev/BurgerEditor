@@ -1,3 +1,4 @@
+import type { AgentAuth } from '../agent/auth.js';
 import type { AgentDeps } from '../agent/env.js';
 import type { LocalServerConfig } from '../types.js';
 import type { ResolveConfigOptions } from '@burger-editor/file-io';
@@ -22,6 +23,8 @@ export interface LocalServerHandle extends AsyncDisposable {
 	readonly url: string;
 	/** `null` when `config.agent.enabled` is `false`. */
 	readonly agent: AgentDeps | null;
+	/** Always present; `required` is `false` on a loopback bind. Gates the whole app, not only the agent. */
+	readonly auth: AgentAuth;
 }
 
 /**
@@ -50,10 +53,12 @@ export async function bootLocalServer(
 		: null;
 
 	const resources = new AsyncDisposableStack();
+	// Created regardless of `agent.enabled`: on a non-loopback bind the token
+	// gates the pages and `/api/content` / `/api/file` too, not only the agent.
+	const auth = resources.use(await createAgentAuth(config.host, configDir));
 	let agent: AgentDeps | null = null;
 	if (config.agent.enabled) {
 		const hub = resources.use(createAgentHub({ indexFileName: config.indexFileName }));
-		const auth = resources.use(await createAgentAuth(config.host, configDir));
 		agent = { hub, auth };
 		// Only meaningful when a page's disk path IS its logical path — see
 		// `fs-watcher.ts`'s doc comment for why virtualTree-enabled sites stay
@@ -68,14 +73,14 @@ export async function bootLocalServer(
 		}
 	}
 
-	const app = createApp({ config, resolverState, agent });
+	const app = createApp({ config, resolverState, agent, auth });
 	const local = resources.use(
 		await createLocalServer({ app, hostname: config.host, port: config.port }),
 	);
 
 	// LIFO on dispose: the HTTP/WS server stops accepting traffic first, then
-	// the fs watcher, then the token file is deleted, then the hub's ping
-	// timer/tabHub — the reverse of the `resources.use()` calls above.
+	// the fs watcher, then the hub's ping timer/tabHub, then the token file is
+	// deleted — the reverse of the `resources.use()` calls above.
 	const shutdown = () => {
 		void resources.disposeAsync().finally(() => process.exit(0));
 	};
@@ -86,6 +91,7 @@ export async function bootLocalServer(
 		port: local.port,
 		url: local.url,
 		agent,
+		auth,
 		async [Symbol.asyncDispose]() {
 			process.off('SIGINT', shutdown);
 			process.off('SIGTERM', shutdown);
@@ -118,8 +124,8 @@ export async function runServerCommand(
 		await open(handle.url);
 	}
 
-	const agentLoginUrl = handle.agent ? loginUrl(handle.url, handle.agent.auth) : null;
-	const tokenFilePath = handle.agent?.auth.tokenFilePath;
+	const agentLoginUrl = loginUrl(handle.url, handle.auth);
+	const tokenFilePath = handle.auth.tokenFilePath;
 
 	process.stdout.write(`
 🍔 ${c.bold.greenBright('BurgerEditor Local App')} 🍔
@@ -130,7 +136,7 @@ export async function runServerCommand(
 ${
 	agentLoginUrl && tokenFilePath
 		? `
-   ${c.yellow('Agent access requires a token')} — open this URL once to authorize this browser:
+   ${c.yellow('Access requires a token')} — open this URL once to authorize this browser:
    ${c.bold(agentLoginUrl)}
    The token is also written to ${c.bold(toDisplayPath(tokenFilePath))} — add ${c.bold('.burgereditor/')} to .gitignore.
 `

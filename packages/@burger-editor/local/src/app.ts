@@ -1,3 +1,4 @@
+import type { AgentAuth } from './agent/auth.js';
 import type { AgentDeps } from './agent/env.js';
 import type { AppContext } from './app-context.js';
 import type { ResolverState } from './model/virtual-path-resolver.js';
@@ -7,6 +8,7 @@ import path from 'node:path';
 
 import { Hono } from 'hono';
 
+import { hostGuard } from './agent/host-guard.js';
 import { createAgentRoutes } from './agent/route.js';
 import { HEALTH_CHECK_END_POINT } from './constants.js';
 import { defaultConfig } from './model/default-config.js';
@@ -14,6 +16,7 @@ import { createResolverStateStore } from './resolver-state-store.js';
 import { createContentApi } from './routes/content-api.js';
 import { createFileApi } from './routes/file-api.js';
 import { createPageRoutes } from './routes/pages.js';
+import { requireAuth } from './routes/require-auth.js';
 import { assetsFallback, mountAppAssets, mountMediaDirs } from './routes/static.js';
 import { tokenLogin } from './routes/token-login.js';
 import { createWsRoutes } from './routes/ws.js';
@@ -27,6 +30,13 @@ export interface CreateAppOptions {
 	readonly resolverState?: ResolverState | null;
 	/** `null`/omitted (agent.enabled: false) mounts the agent/WS sub-apps in a 404-everything state. */
 	readonly agent?: AgentDeps | null;
+	/**
+	 * Credential gate for a non-loopback bind. Independent of `agent` so the
+	 * pages and `/api/content` / `/api/file` stay protected even when
+	 * `agent.enabled` is `false`. Falls back to `agent.auth` when omitted;
+	 * `null` (both omitted) leaves every route open, as on a loopback bind.
+	 */
+	readonly auth?: AgentAuth | null;
 	/**
 	 * Where the built client assets are read from. Defaults to the package's
 	 * own `dist`/`style` directories; overridable so a spec can point at a
@@ -47,6 +57,11 @@ export interface CreateAppOptions {
  * `.route()`d before the trailing asset catch-all (whose `/:file{.+$}}`-style
  * fallthrough would otherwise shadow them), and the catch-all itself is the
  * very last thing registered.
+ *
+ * Three app-wide middlewares run before any route, in this order: `hostGuard`
+ * (DNS-rebinding defence), `tokenLogin` (`?token=` → cookie), and
+ * `requireAuth` (cookie-or-bearer on a non-loopback bind). They cover media
+ * directories, static assets, pages, `/api/content` and `/api/file` alike.
  * @param options
  * @example
  * const app = createApp({ config, resolverState: null });
@@ -63,7 +78,11 @@ export function createApp(options: CreateAppOptions) {
 		...options.assetDirs,
 	};
 
-	const app = new Hono().use('*', tokenLogin(agent?.auth ?? null));
+	const auth = options.auth ?? agent?.auth ?? null;
+	const app = new Hono()
+		.use('*', hostGuard(config.host))
+		.use('*', tokenLogin(auth))
+		.use('*', requireAuth(auth));
 	mountMediaDirs(app, config);
 	mountAppAssets(app, assetDirs);
 
