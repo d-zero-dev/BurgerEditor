@@ -2,7 +2,7 @@ import type { Config } from '@burger-editor/core';
 
 import { test, expect, describe } from 'vitest';
 
-import googleMapsItemSeed from './index.js';
+import googleMapsItemSeed from './definition.js';
 
 type GoogleMapsItemData = typeof googleMapsItemSeed._;
 

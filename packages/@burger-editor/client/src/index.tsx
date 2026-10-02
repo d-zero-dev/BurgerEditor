@@ -62,13 +62,14 @@ export function attachDraftSwitcher(engine: BurgerEditorEngine) {
  * @example
  * ```ts
  * import { createBurgerEditorClient, attachDraftSwitcher } from '@burger-editor/client';
- * import itemSeeds from '@burger-editor/blocks';
+ * import { generalCSS } from '@burger-editor/blocks';
+ * import { items } from '@burger-editor/blocks/editor';
  *
  * const { engine } = await createBurgerEditorClient({
  * 	root: '#editor',
  * 	config,
  * 	catalog,
- * 	items: itemSeeds,
+ * 	items,
  * 	initialContents: { main, draft },
  * 	generalCSS,
  * 	fileIO: serverAPI,

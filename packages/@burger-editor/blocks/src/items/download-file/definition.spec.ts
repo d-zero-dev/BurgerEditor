@@ -2,7 +2,7 @@ import type { Config } from '@burger-editor/core';
 
 import { test, expect, describe } from 'vitest';
 
-import downloadFileItemSeed from './index.js';
+import downloadFileItemSeed from './definition.js';
 
 type DownloadFileItemData = typeof downloadFileItemSeed._;
 

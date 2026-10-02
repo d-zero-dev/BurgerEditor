@@ -2,7 +2,7 @@ import type { Config } from '@burger-editor/core';
 
 import { test, expect, describe } from 'vitest';
 
-import youtubeItemSeed from './index.js';
+import youtubeItemSeed from './definition.js';
 
 type YoutubeItemData = typeof youtubeItemSeed._;
 

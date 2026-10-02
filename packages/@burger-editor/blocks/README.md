@@ -12,12 +12,32 @@ yarn add @burger-editor/blocks
 
 ## Usage
 
+2 つのエントリがある。
+
+| エントリ                       | 内容                                                                              | 実行環境                   | React |
+| ------------------------------ | --------------------------------------------------------------------------------- | -------------------------- | ----- |
+| `@burger-editor/blocks`        | `items`（`Editor` なしの定義）/ `defaultCatalog` / `legacyCatalog` / `generalCSS` | Node.js / ブラウザ         | 不要  |
+| `@burger-editor/blocks/editor` | `items`（`Editor` 付き）                                                          | ブラウザ（エディタ UI 用） | 必要  |
+
+### Node.js・設定ファイル（`burgereditor.config.js` など）
+
 ```ts
 import { items, defaultCatalog } from '@burger-editor/blocks';
 
 const wysiwygItem = items.wysiwyg;
 const catalog = defaultCatalog;
 ```
+
+### ブラウザのエディタ UI
+
+`@burger-editor/client` の `createBurgerEditorClient` に渡す `items` は、`Editor` を含むこちらを使う。
+
+```ts
+import { generalCSS } from '@burger-editor/blocks';
+import { items } from '@burger-editor/blocks/editor';
+```
+
+`@burger-editor/blocks/editor` は `react` と `react-dom`（どちらも 19.3.0）を peerDependencies に持つ（optional）。利用側でインストールするか、アプリのバンドルに 1 つだけ含める。ルートエントリは React を必要としない。
 
 ## Related Packages
 

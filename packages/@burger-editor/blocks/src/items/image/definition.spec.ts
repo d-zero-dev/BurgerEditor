@@ -3,7 +3,7 @@ import type { Config } from '@burger-editor/core';
 import { Item } from '@burger-editor/core';
 import { test, expect, describe, beforeEach } from 'vitest';
 
-import imageItemSeed from './index.js';
+import imageItemSeed from './definition.js';
 
 type ImageItemData = typeof imageItemSeed._;
 

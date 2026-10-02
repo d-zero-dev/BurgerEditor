@@ -11,12 +11,26 @@ import {
 
 const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 
+/**
+ * 依存パッケージはバンドルに含めず実行時に解決する。`react` / `react-dom` /
+ * `@burger-editor/client` は`dist/editor.js`だけが参照する。`dist/index.js`
+ * （Node.jsとユーザーの設定ファイルから読まれる）から辿れるチャンクが
+ * これらを import しないことは `yarn verify:blocks-boundary` が検査する。
+ */
+const EXTERNAL = /^(?:react|@burger-editor\/|@d-zero\/)/;
+
 export default defineConfig([
 	{
-		input: './src/index.ts',
+		input: {
+			index: './src/index.ts',
+			editor: './src/editor.ts',
+		},
+		external: (id) => EXTERNAL.test(id),
 		output: {
-			file: './dist/index.js',
+			dir: './dist',
 			format: 'esm',
+			entryFileNames: '[name].js',
+			chunkFileNames: 'chunks/[name]-[hash].js',
 		},
 		plugins: [
 			string({ include: ['**/*.html', '**/*.css', '**/*.svg'] }),

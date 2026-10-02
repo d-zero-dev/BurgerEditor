@@ -3,7 +3,7 @@ import type { ItemSeed } from '@burger-editor/core';
 import { render } from '@burger-editor/core';
 import { test, expect } from 'vitest';
 
-import wysiwyg from './index.js';
+import wysiwyg from './definition.js';
 
 const items = { wysiwyg } as unknown as Record<string, ItemSeed>;
 

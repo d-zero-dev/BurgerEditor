@@ -1,6 +1,7 @@
 import type { AppType } from '../app.js';
 
-import { generalCSS, items } from '@burger-editor/blocks';
+import { generalCSS } from '@burger-editor/blocks';
+import { items } from '@burger-editor/blocks/editor';
 import { createBurgerEditorClient } from '@burger-editor/client';
 import {
 	createFrontMatterEditor,

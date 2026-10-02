@@ -67,6 +67,45 @@ export default [
 		},
 	},
 	{
+		// blocksのルートエントリ（dist/index.js）はNode.js（file-io / cli /
+		// mcp-server）とユーザーの設定ファイルから読まれる。Reactと
+		// @burger-editor/client（→ react-dom）を引き込むと、peer依存を自動
+		// 導入しない環境で起動時に落ちる。Editor付きの定義は
+		// `@burger-editor/blocks/editor`（src/editor.ts）側に置く
+		files: [
+			'packages/@burger-editor/blocks/src/index.ts',
+			'packages/@burger-editor/blocks/src/items/items.ts',
+			'packages/@burger-editor/blocks/src/items/*/definition.ts',
+			'packages/@burger-editor/blocks/src/catalogs/**/*.ts',
+		],
+		rules: {
+			'no-restricted-imports': [
+				2,
+				{
+					patterns: [
+						{
+							group: [
+								'react',
+								'react/*',
+								'react-dom',
+								'react-dom/*',
+								'@burger-editor/client',
+								'@burger-editor/client/*',
+							],
+							message:
+								'blocksのルートエントリはNode.jsから読まれるためReact / @burger-editor/clientをimportできません。Editorはeditor.tsxに置き、index.tsxで合成してください。',
+						},
+						{
+							group: ['**/editor.js', '**/editor-items.js', '**/*/index.js'],
+							message:
+								'定義側からEditor付きのモジュールをimportできません。Editor付きの定義は@burger-editor/blocks/editor（src/editor.ts）から提供します。',
+						},
+					],
+				},
+			],
+		},
+	},
+	{
 		// リポジトリルートのビルドツール向けスクリプト（scripts/）は、
 		// vitest.config.ts等の*.config.tsと同様にワークスペース横断解決を
 		// 前提にしており、ルートpackage.jsonへの個別宣言は求めない
