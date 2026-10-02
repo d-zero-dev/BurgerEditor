@@ -66,10 +66,15 @@ interface RunResult {
  *
  * @param args
  * @param stdinPayload
+ * @param nodeArgs Node.js 本体へ渡す引数（`--import` など）。bin のサブコマンド引数の前に置かれる
  */
-function run(args: readonly string[], stdinPayload?: string): Promise<RunResult> {
+function run(
+	args: readonly string[],
+	stdinPayload?: string,
+	nodeArgs: readonly string[] = [],
+): Promise<RunResult> {
 	return new Promise((resolve, reject) => {
-		const child = spawn(process.execPath, [BIN_PATH, ...args], {
+		const child = spawn(process.execPath, [...nodeArgs, BIN_PATH, ...args], {
 			cwd: FIXTURE_ROOT,
 			env: { ...process.env, DOTENV_CONFIG_QUIET: 'true' },
 		});
@@ -90,6 +95,71 @@ function run(args: readonly string[], stdinPayload?: string): Promise<RunResult>
 		}
 	});
 }
+
+// react / react-dom を解決できない環境（peer 依存を自動導入しない
+// パッケージマネージャー）の再現。フィクスチャの設定は
+// `@burger-editor/blocks` のルートを import するため、blocks が React 系
+// モジュールを引き込めば起動時に ERR_MODULE_NOT_FOUND で落ちる
+const BLOCK_REACT = [
+	'--import',
+	path.resolve(import.meta.dirname, 'testing/block-react.mjs'),
+];
+
+describe('bin.js without react installed', () => {
+	test('フックは react の import を実際に拒否する（以降のテストが空振りでないことの対照）', async () => {
+		const result = await new Promise<RunResult>((resolve, reject) => {
+			const child = spawn(
+				process.execPath,
+				[...BLOCK_REACT, '--input-type=module', '-e', "await import('react')"],
+				{ cwd: FIXTURE_ROOT },
+			);
+			let stderr = '';
+			child.stderr.on('data', (chunk) => {
+				stderr += chunk;
+			});
+			child.on('error', reject);
+			child.on('close', (code) => resolve({ stdout: '', stderr, code }));
+		});
+		expect(result.code).not.toBe(0);
+		expect(result.stderr).toContain("Cannot find package 'react'");
+	}, 20_000);
+
+	test('config が @burger-editor/blocks のルートを import していても catalog-list が動く', async () => {
+		const result = await run(['catalog-list'], undefined, BLOCK_REACT);
+		expect(result.stderr).not.toContain('Cannot find package');
+		expect(result.code).toBe(0);
+		const payload = JSON.parse(result.stdout) as { catalogs: { name: string }[] };
+		expect(payload.catalogs.find((c) => c.name === 'h2')).toBeDefined();
+	}, 20_000);
+
+	test('標準アイテムの一覧が Editor なしの定義から返る', async () => {
+		const result = await run(['item-list'], undefined, BLOCK_REACT);
+		expect(result.stderr).not.toContain('Cannot find package');
+		expect(result.code).toBe(0);
+		expect(JSON.parse(result.stdout)).toEqual({
+			items: [
+				'button',
+				'details',
+				'download-file',
+				'google-maps',
+				'hr',
+				'image',
+				'import',
+				'table',
+				'title-h2',
+				'title-h3',
+				'wysiwyg',
+				'youtube',
+			],
+		});
+	}, 20_000);
+
+	test('ブロックのレンダリング（page-blocks）も React なしで動く', async () => {
+		const result = await run(['page-blocks', 'index.html'], undefined, BLOCK_REACT);
+		expect(result.stderr).not.toContain('Cannot find package');
+		expect(result.code).toBe(0);
+	}, 20_000);
+});
 
 describe('bin.js end-to-end', () => {
 	test('catalog-list prints catalogs as a single JSON document on stdout', async () => {
