@@ -142,8 +142,8 @@ fs を触る全パッケージの共通フロントエンド。**同じ config /
 
 ### `loadContent` / `saveContent` の挙動
 
-- `loadContent` はファイル不在時 `newFileContent` で新規作成する。自動生成が望ましくないケース（例: `pageConcat` の source path）では呼び出し前に `fs.access` で確認する
-- `saveContent` は外部削除を `FileNotFoundError` で検知（race）
+- `loadContent` はファイル不在時 `newFileContent` で新規作成する。表示するだけでファイルを作りたくない場合（例: `local` でページを開いたとき）は `{ createMissingFile: false }` を渡す。不在を作成ではなくエラーとして扱いたいケース（例: `pageConcat` の source path）では呼び出し前に `fs.access` で確認する
+- `saveContent` は外部削除を `FileNotFoundError` で検知（race）。`{ newFileContent }` を渡すと、不在のファイルをそのテンプレートから作成して保存する（例: `local` で開いたページの初回保存）
 - editableArea セレクタ不一致時は `NoEditableAreaError`。**フルドキュメント / fragment 共通の挙動**
 
 ## メンテナンス責任
