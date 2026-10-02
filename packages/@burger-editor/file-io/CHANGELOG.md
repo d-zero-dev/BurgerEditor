@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.75](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.74...v4.0.0-alpha.75) (2026-10-02)
+
+### Features
+
+- **file-io:** let loadContent skip creating a missing file and saveContent create one ([7f61a66](https://github.com/d-zero-dev/BurgerEditor/commit/7f61a66a51011ca8d1f3c8636bf42a80860eea9a)), closes [#966](https://github.com/d-zero-dev/BurgerEditor/issues/966)
+
 # [4.0.0-alpha.74](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.73...v4.0.0-alpha.74) (2026-10-01)
 
 ### Features

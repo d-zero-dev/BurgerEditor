@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.75](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.74...v4.0.0-alpha.75) (2026-10-02)
+
+### Bug Fixes
+
+- **local:** import the editor-bound items from the blocks editor entry ([83ad7b0](https://github.com/d-zero-dev/BurgerEditor/commit/83ad7b09b27891fd8a66935134c94d6cbb7a22dc))
+- **local:** stop creating and saving a page just by opening it ([c62be37](https://github.com/d-zero-dev/BurgerEditor/commit/c62be37994539a837637c048d40805618524a5ca)), closes [#966](https://github.com/d-zero-dev/BurgerEditor/issues/966)
+
 # [4.0.0-alpha.74](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.73...v4.0.0-alpha.74) (2026-10-01)
 
 ### Bug Fixes
