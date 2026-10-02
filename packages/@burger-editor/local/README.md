@@ -93,7 +93,7 @@ npx bge --config ./burgereditor.child.config.js   # 設定ファイルを指定�
 | `editableArea`      | `string \| null`                                                   | `null`                                              | 編集可能エリアのセレクタ                     |
 | `indexFileName`     | `string`                                                           | `'index.html'`                                      | `/` で終わるパスのインデックスファイル名     |
 | `catalog`           | `BlockCatalog`                                                     | `defaultCatalog`                                    | ブロックカタログ                             |
-| `newFileContent`    | `string`                                                           | `''`                                                | 新規ファイル作成時のテンプレート             |
+| `newFileContent`    | `string`                                                           | `''`                                                | 新規ページのひな型。初回保存時に作成         |
 | `filesDir`          | `string \| FileDirSettings \| { image, pdf, video, audio, other }` | `assetsRoot` 配下                                   | アップロード先ディレクトリ（タイプ別指定可） |
 | `sampleImagePath`   | `` `/${string}` \| `https://${string}` \| `base64:${string}` ``    | `${filesDir.image.clientPath}/sample.png`           | サンプル画像のパス                           |
 | `sampleFilePath`    | 同上                                                               | `${filesDir.other.clientPath}/sample.pdf`           | サンプルファイルのパス                       |

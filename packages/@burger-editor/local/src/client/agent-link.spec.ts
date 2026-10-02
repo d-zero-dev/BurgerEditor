@@ -295,6 +295,101 @@ describe('createAgentLink — outbound', () => {
 		]);
 	});
 
+	test('handleOpen includes normalizedHtml in hello until a human save', () => {
+		const { adapter } = fakeAdapter();
+		const { transport, sent } = fakeTransport();
+		const link = createAgentLink({
+			adapter,
+			transport,
+			page: '/a.html',
+			serverSession: 'srv-1',
+			normalizedHtml: '<div>normalized</div>',
+		});
+
+		link.handleOpen();
+		link.notifyHumanSave();
+		link.handleOpen();
+
+		expect(sent).toEqual([
+			{
+				type: 'hello',
+				page: '/a.html',
+				revision: 0,
+				serverSession: 'srv-1',
+				uiState: idleUiState(),
+				normalizedHtml: '<div>normalized</div>',
+			},
+			{ type: 'saved', revision: 0 },
+			{
+				type: 'hello',
+				page: '/a.html',
+				revision: 0,
+				serverSession: 'srv-1',
+				uiState: idleUiState(),
+			},
+		]);
+	});
+
+	test('a committed frame stops normalizedHtml from being reported in hello', () => {
+		const { adapter } = fakeAdapter();
+		const { transport, sent } = fakeTransport();
+		const link = createAgentLink({
+			adapter,
+			transport,
+			page: '/a.html',
+			serverSession: 'srv-1',
+			normalizedHtml: '<div>normalized</div>',
+		});
+
+		link.handleMessage(JSON.stringify({ type: 'committed', revision: 0 }));
+		link.handleOpen();
+
+		expect(sent).toEqual([
+			{
+				type: 'hello',
+				page: '/a.html',
+				revision: 0,
+				serverSession: 'srv-1',
+				uiState: idleUiState(),
+			},
+		]);
+	});
+
+	test('an acked op stops normalizedHtml from being reported in hello', async () => {
+		const { adapter } = fakeAdapter();
+		const { transport, sent } = fakeTransport();
+		const link = createAgentLink({
+			adapter,
+			transport,
+			page: '/a.html',
+			serverSession: 'srv-1',
+			normalizedHtml: '<div>normalized</div>',
+		});
+
+		link.handleMessage(
+			JSON.stringify({
+				type: 'apply',
+				id: 'op-1',
+				area: 'main',
+				op: { op: 'delete', index: 0 },
+				baseRevision: 1,
+				revision: 2,
+				highlight: true,
+			}),
+		);
+		await Promise.resolve();
+		await Promise.resolve();
+		link.handleOpen();
+
+		expect(sent.at(-1)).toStrictEqual({
+			type: 'hello',
+			page: '/a.html',
+			revision: 2,
+			serverSession: 'srv-1',
+			uiState: idleUiState(),
+		});
+	});
+
 	test('a UI state change is pushed as a ui-state message', () => {
 		const { adapter, setUiState } = fakeAdapter();
 		const { transport, sent } = fakeTransport();

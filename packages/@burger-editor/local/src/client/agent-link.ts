@@ -50,7 +50,7 @@ export interface AgentLink {
 	 * can skip re-POSTing content the server already has.
 	 */
 	consumeEcho(): boolean;
-	/** Call when the editor saves for a reason other than an agent-applied op (a human edit). */
+	/** Call when a save for a reason other than an agent-applied op (a human edit) has reached disk — not after a failed one, which leaves the open-time `normalizedHtml` still unsaved. */
 	notifyHumanSave(): void;
 	/** Call when the browser tab regains focus — feeds the server's primary-tab selection with a freshness signal. */
 	notifyFocus(): void;
@@ -68,6 +68,15 @@ export interface AgentLinkOptions {
 	readonly transport: Transport;
 	readonly page: string;
 	readonly serverSession: string;
+	/**
+	 * The main-area HTML as the editor normalized it on open, when that changed
+	 * the block list loaded from disk and opening deliberately didn't save it
+	 * (`client/block-structure.ts`). Reported in
+	 * every `hello` until the content reaches disk (a human save, an acked op,
+	 * or a `committed` frame), so the server can take it onto disk before an
+	 * agent's op addresses blocks by index — see `agent/route.ts`.
+	 */
+	readonly normalizedHtml?: string;
 	/** Called for every `page-event` frame (a page created/deleted/renamed elsewhere) — wire to `nav-tree.ts`'s `hydrateNavTree()` and any "this page is gone" notification. */
 	readonly onPageEvent?: (message: PageEventMessage) => void;
 }
@@ -93,6 +102,7 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 	let echoPending = false;
 	let disposed = false;
 	let revision = 0;
+	let normalizedHtml = options.normalizedHtml ?? null;
 	/** Timers / subscriptions still waiting on a UI-state change; released by `dispose()`. */
 	const pendingCleanups = new Set<() => void>();
 
@@ -183,6 +193,7 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 				},
 			});
 			revision = message.revision;
+			normalizedHtml = null;
 			browserLog(LOG_TAG, 'apply succeeded, acking', {
 				id: message.id,
 				revision: message.revision,
@@ -241,6 +252,7 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 			return false;
 		},
 		notifyHumanSave() {
+			normalizedHtml = null;
 			if (!disposed) {
 				send({ type: 'saved', revision });
 			}
@@ -291,6 +303,7 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 				}
 				case 'committed': {
 					browserLog(LOG_TAG, message.type, message);
+					normalizedHtml = null;
 					break;
 				}
 				case 'page-event': {
@@ -316,6 +329,7 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 				revision,
 				serverSession: options.serverSession,
 				uiState: adapter.getUIState(),
+				...(normalizedHtml === null ? {} : { normalizedHtml }),
 			});
 		},
 		dispose() {

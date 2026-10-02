@@ -41,6 +41,16 @@ Agent Hub 全体の概要（エンドポイント一覧、非ループバック 
 
 **Linux（Docker テスト環境）での `recursive: true` 対応**: Node のドキュメント上、`recursive` オプションは元々 macOS / Windows でのみ確実にサポートされるとされていた。`fs-watcher.spec.ts` はサブディレクトリを含む実ファイル変更で検証しており、`yarn test`（Docker/Linux）がこの機能の実地確認を兼ねる。Linux で機能しないことが判明した場合は chokidar 等サードパーティ実装への切り替えを検討する（新規依存追加はサプライチェーン方針上ユーザー確認が必要）。
 
+## 開いた時の正規化の取り込み（`normalizedHtml`）
+
+ページを開いただけではディスクに書かない（issue #966）。`client/create-editor.ts` は、エンジン初期化中の `save()` から来る `onUpdated` では POST しない。ところがエディターは開いた時点で内容を正規化することがある（ブロックマーカーの無い生 HTML をフォールバックブロックで包む、旧形式のマークアップを移行する、など）。その場合、タブのブロックとディスクのブロックが食い違う。エージェントはディスクから index を得て、ブラウザ経由の操作はその index でタブに適用されるので、そのままでは別のブロックを操作してしまう。
+
+このため、正規化でブロック一覧（ブロックの数と名前の並び。`client/block-structure.ts`）が変わったタブは、保存しない代わりに正規化後の HTML を `hello` の `normalizedHtml` で Hub に伝える（`agent/tab-hub.ts` の `TabSessionSnapshot.normalizedHtml`）。`runViaBrowserOrDisk` は、primary タブにこれが残っているときだけ、ディスクではなくタブの文字列を 1 度だけディスクに書き込む。そして `committed` をそのタブに送り、新しい `readToken` を付けた `stale` を返して読み直しを促す。ディスクに書くのは、もともと書き込むはずだったエージェントの変更時だけで、開いただけ・読んだだけでは書かない。
+
+文字列の一致で判定しないのは、ディスクの HTML は Prettier で整形されていて前後の空白も残る一方、エディターの出力は trim され直列化し直されるため、ブロックが同じでもほぼ全ページで差が出るから。
+
+成功した人の保存（`POST /api/content` → `setSyncedHash`）、ack された操作、`committed` のいずれかで内容がディスクに届いたら、サーバー側・タブ側の両方で `normalizedHtml` を破棄する。再接続時の `hello` で古い内容を送り直さないため。
+
 ## ブラウザ側: ナビツリー再ハイドレート・通知バナー
 
 `client/agent-link.ts` の `AgentLinkOptions.onPageEvent` に登録したコールバックが、`page-event`（作成・削除・改名）を受信するたびに呼ばれる。`client/create-editor.ts` はここで:

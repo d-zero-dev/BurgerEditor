@@ -360,3 +360,73 @@ describe('TabHub — pingAll', () => {
 		expect(hub.get(id)).toBeUndefined();
 	});
 });
+
+describe('TabHub — normalizedHtml', () => {
+	/**
+	 *
+	 */
+	function helloWithNormalization() {
+		const hub = new TabHub({ serverSession: 's' });
+		const { socket, sent } = fakeSocket();
+		const id = hub.register(socket);
+		hub.hello(id, {
+			page: '/a.html',
+			revision: 1,
+			serverSession: 's',
+			uiState: idleUiState(),
+			normalizedHtml: '<div data-bge-name="wysiwyg">raw</div>',
+		});
+		sent.length = 0;
+		return { hub, id, sent };
+	}
+
+	test('hello records the reported normalizedHtml, and a hello without it records null', () => {
+		const { hub, id } = helloWithNormalization();
+		expect(hub.get(id)?.normalizedHtml).toBe('<div data-bge-name="wysiwyg">raw</div>');
+
+		hub.hello(id, {
+			page: '/a.html',
+			revision: 1,
+			serverSession: 's',
+			uiState: idleUiState(),
+		});
+		expect(hub.get(id)?.normalizedHtml).toBeNull();
+	});
+
+	test('commit clears normalizedHtml, records the hash and sends committed with the current revision', () => {
+		const { hub, id, sent } = helloWithNormalization();
+
+		hub.commit(id, 'hash-1');
+
+		expect(hub.get(id)?.normalizedHtml).toBeNull();
+		expect(hub.get(id)?.syncedHash).toBe('hash-1');
+		expect(sent).toEqual([{ type: 'committed', revision: 1 }]);
+	});
+
+	test('setSyncedHash clears normalizedHtml', () => {
+		const { hub, id } = helloWithNormalization();
+
+		hub.setSyncedHash(id, 'hash-1');
+
+		expect(hub.get(id)?.normalizedHtml).toBeNull();
+	});
+
+	test('an ack clears normalizedHtml', async () => {
+		const { hub, id, sent } = helloWithNormalization();
+		const applyPromise = hub.apply('/a.html', 'main', { op: 'delete', index: 0 }, 1);
+		const applyMessage = sent.at(-1) as { id: string };
+
+		hub.resolveAck(id, applyMessage.id, 2, '<div>updated</div>');
+		await applyPromise;
+
+		expect(hub.get(id)?.normalizedHtml).toBeNull();
+	});
+
+	test('commit on an unknown sessionId sends nothing', () => {
+		const { hub, sent } = helloWithNormalization();
+
+		hub.commit('ghost', 'hash-1');
+
+		expect(sent).toEqual([]);
+	});
+});

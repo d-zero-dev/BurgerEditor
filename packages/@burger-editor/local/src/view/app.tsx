@@ -11,6 +11,8 @@ type Props = {
 	hasFrontMatter?: boolean;
 	/** This server process's Agent Hub session token, or `null` when `agent.enabled` is `false`. Read by `client/create-editor.ts` for the WS `hello` message — see `agent/tab-hub.ts`'s `hello`. */
 	serverSession?: string | null;
+	/** Whether the page's file didn't exist when it was opened. Read by `client/create-editor.ts` to create the file on its first save. */
+	isNewFile?: boolean;
 };
 
 /**
@@ -23,6 +25,7 @@ type Props = {
  * @param props.frontMatter - Front Matter data
  * @param props.hasFrontMatter - Whether Front Matter exists
  * @param props.serverSession - This server process's Agent Hub session token
+ * @param props.isNewFile - Whether the page's file didn't exist when it was opened
  */
 export function App({
 	path,
@@ -32,6 +35,7 @@ export function App({
 	frontMatter,
 	hasFrontMatter,
 	serverSession,
+	isNewFile,
 }: Props) {
 	return (
 		<Layout lang={lang}>
@@ -70,6 +74,7 @@ export function App({
 								id="has-front-matter"
 								value={String(hasFrontMatter ?? false)}
 							/>
+							<input type="hidden" id="is-new-file" value={String(isNewFile ?? false)} />
 						</>
 					)}
 				</div>

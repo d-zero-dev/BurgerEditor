@@ -37,6 +37,8 @@ export const browserToServerMessageSchema = z.discriminatedUnion('type', [
 		revision: z.number().int().nonnegative(),
 		serverSession: z.string(),
 		uiState: uiStateFieldsSchema,
+		/** Main-area HTML as the editor normalized it on open, sent only while it differs from disk and hasn't been saved — see `agent/tab-hub.ts`'s `TabSessionSnapshot.normalizedHtml`. */
+		normalizedHtml: z.string().optional(),
 	}),
 	z.object({ type: z.literal('focus') }),
 	z.object({ type: z.literal('ui-state') }).merge(uiStateFieldsSchema),
@@ -86,6 +88,7 @@ export interface WelcomeMessage {
 	readonly revision: number;
 }
 
+/** The tab's content at `revision` has been written to disk on its behalf (`agent/tab-hub.ts`'s `commit`). */
 export interface CommittedMessage {
 	readonly type: 'committed';
 	readonly revision: number;
