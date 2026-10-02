@@ -41,6 +41,14 @@ jobs:
       - name: Build
         run: yarn build
 
+      - name: Verify blocks entry boundary
+        # blocksのルートエントリ（Node.js・ユーザーの設定ファイルから読まれる）が
+        # react / react-dom / @burger-editor/client に依存しないことをビルド
+        # 成果物で検証する（scripts/check-blocks-entry-boundary.mjs）。
+        # モノレポ内はルートのdevDependenciesにReactがあるため他のテストでは
+        # 検出できない
+        run: yarn verify:blocks-boundary
+
       - name: Lint
         run: yarn lint
 
