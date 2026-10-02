@@ -726,6 +726,36 @@ async function runViaBrowserOrDisk(
 		if (loaded instanceof NoEditableAreaError) {
 			throw loaded;
 		}
+
+		if (primary.normalizedHtml !== null) {
+			// Opening a page doesn't save it (`client/create-editor.ts`), so a
+			// tab whose editor normalized the markup on open (raw HTML wrapped
+			// into a fallback block, legacy markup migrated) holds blocks that
+			// disk doesn't. The agent's indices come from disk, and the op
+			// would be applied by index to the tab — so take the tab's content
+			// onto disk once, and make the agent re-read before it mutates.
+			log('primary tab for %s has unsaved normalization — writing it', normalizedPage);
+			await saveContent(
+				filePath,
+				primary.normalizedHtml,
+				ctx.config.editableArea,
+				loaded.frontMatter,
+				loaded.originalFrontMatter,
+			);
+			const normalizedHash = await computeContentHash(filePath);
+			const bumped = hub.revisions.bump(normalizedPage, normalizedHash);
+			hub.tabHub.commit(primary.id, normalizedHash);
+			hub.tabHub.reloadOthers(normalizedPage, primary.id, bumped.revision, 'other-tab');
+			hub.events.append('content-saved', { page: normalizedPage, appliedTo: 'browser' });
+			throw new AgentError(
+				'stale',
+				'The open tab had normalized this page (e.g. wrapped raw HTML into blocks) ' +
+					'without saving it, so its blocks differed from disk. That content is now ' +
+					'on disk — re-read with page_blocks and retry.',
+				{ readToken: await issueReadToken(pathInput, filePath) },
+			);
+		}
+
 		const blocks = listBlocks(loaded.editableContent, null);
 		if (blocks instanceof NoEditableAreaError) {
 			throw blocks;

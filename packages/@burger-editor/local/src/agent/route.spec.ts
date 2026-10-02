@@ -461,10 +461,12 @@ describe('POST /api/agent/invoke — with a tab open', () => {
 	/**
 	 * @param hub
 	 * @param page
+	 * @param normalizedHtml - What the tab reports as its unsaved normalization on open
 	 */
 	function connectPrimaryTab(
 		hub: Awaited<ReturnType<typeof buildApp>>['hub'],
 		page = '/a.html',
+		normalizedHtml?: string,
 	) {
 		const sent: unknown[] = [];
 		const sessionId = hub.tabHub.register({
@@ -481,9 +483,13 @@ describe('POST /api/agent/invoke — with a tab open', () => {
 				processing: false,
 				editingBlockIndex: null,
 			},
+			normalizedHtml,
 		});
 		return { sessionId, sent };
 	}
+
+	const RAW_PAGE_HTML =
+		'<html><body><div class="content"><p>hello</p></div></body></html>';
 
 	test('matches a root-page tab (hello page: "/") against an agent path of "/index.html"', async () => {
 		const { app, hub } = await buildApp(makeConfig(documentRoot));
@@ -528,6 +534,100 @@ describe('POST /api/agent/invoke — with a tab open', () => {
 		const written = await fs.readFile(path.join(documentRoot, 'a.html'), 'utf8');
 		expect(written).not.toContain('data-bge-name="text"');
 		expect(hub.events.since(0).events.some((e) => e.type === 'content-saved')).toBe(true);
+	});
+
+	test("takes the tab's unsaved normalization onto disk once and answers stale, then relays the retry", async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		// Disk has raw HTML with no block markers; the tab's editor wrapped it
+		// into a block on open but (deliberately) didn't save that.
+		await fs.writeFile(path.join(documentRoot, 'a.html'), RAW_PAGE_HTML, 'utf8');
+		const { sessionId, sent } = connectPrimaryTab(hub, '/a.html', PAGE_INNER);
+		const token = await readToken(app, '/a.html');
+
+		const first = await postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 0 }, readToken: token },
+		});
+
+		expect(first.status).toBe(409);
+		const firstBody = (await first.json()) as { error: string; readToken: string };
+		expect(firstBody.error).toBe('stale');
+		const written = await fs.readFile(path.join(documentRoot, 'a.html'), 'utf8');
+		expect(written).toContain('data-bge-name="text"');
+		expect(sent.some((m) => (m as { type: string }).type === 'apply')).toBe(false);
+		expect(sent.at(-1)).toStrictEqual({ type: 'committed', revision: 1 });
+		expect(hub.tabHub.get(sessionId)?.normalizedHtml).toBeNull();
+
+		const retryPromise = postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 0 }, readToken: firstBody.readToken },
+		});
+		const applyMessage = await waitForApply(sent);
+		hub.tabHub.resolveAck(sessionId, applyMessage.id, 2, '');
+
+		const retry = await retryPromise;
+		expect(retry.status).toBe(200);
+		const retryBody = (await retry.json()) as { appliedTo: string };
+		expect(retryBody.appliedTo).toBe('browser');
+	});
+
+	test("an external edit is reported as stale before the tab's unsaved normalization is taken onto disk, so it is not overwritten", async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const filePath = path.join(documentRoot, 'a.html');
+		await fs.writeFile(filePath, RAW_PAGE_HTML, 'utf8');
+		connectPrimaryTab(hub, '/a.html', PAGE_INNER);
+		await readToken(app, '/a.html');
+
+		const externallyEdited = RAW_PAGE_HTML.replace('hello', 'externally edited');
+		await fs.writeFile(filePath, externallyEdited, 'utf8');
+		const freshDiskToken = encodeReadToken({
+			path: '/a.html',
+			contentHash: await computeContentHash(filePath),
+		});
+
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 0 }, readToken: freshDiskToken },
+		});
+
+		expect(res.status).toBe(409);
+		const body = (await res.json()) as { error: string; message: string };
+		expect(body.error).toBe('stale');
+		expect(body.message).toContain('outside local');
+		expect(await fs.readFile(filePath, 'utf8')).toBe(externallyEdited);
+	});
+
+	test("a readToken that no longer matches disk is rejected before the tab's unsaved normalization is taken onto disk", async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const filePath = path.join(documentRoot, 'a.html');
+		await fs.writeFile(filePath, RAW_PAGE_HTML, 'utf8');
+		const { sessionId } = connectPrimaryTab(hub, '/a.html', PAGE_INNER);
+		const token = await readToken(app, '/a.html');
+		const editedByAnotherReader = RAW_PAGE_HTML.replace('hello', 'edited');
+		await fs.writeFile(filePath, editedByAnotherReader, 'utf8');
+
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 0 }, readToken: token },
+		});
+
+		expect(res.status).toBe(409);
+		expect(await fs.readFile(filePath, 'utf8')).toBe(editedByAnotherReader);
+		expect(hub.tabHub.get(sessionId)?.normalizedHtml).toBe(PAGE_INNER);
+	});
+
+	test("a human save of the page (POST /api/content) drops the tab's unsaved normalization", async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		await fs.writeFile(path.join(documentRoot, 'a.html'), RAW_PAGE_HTML, 'utf8');
+		const { sessionId } = connectPrimaryTab(hub, '/a.html', PAGE_INNER);
+
+		const res = await postJson(app, '/api/content', {
+			path: '/a.html',
+			content: PAGE_INNER,
+		});
+
+		expect(res.status).toBe(200);
+		expect(hub.tabHub.get(sessionId)?.normalizedHtml).toBeNull();
 	});
 
 	test('rejects with stale when the readToken no longer matches disk content', async () => {

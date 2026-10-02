@@ -158,6 +158,31 @@ describe('AgentHub.handleSocketMessage', () => {
 		expect(hub.tabHub.get(sessionId)?.page).toBe('/a.html');
 	});
 
+	test("a `hello` frame's normalizedHtml reaches the TabHub session", () => {
+		hub = createAgentHub({ pingIntervalMs: 60_000 });
+		const { socket } = fakeSocket();
+		const sessionId = hub.tabHub.register(socket);
+		hub.handleSocketMessage(
+			sessionId,
+			JSON.stringify({
+				type: 'hello',
+				page: '/a.html',
+				revision: 7,
+				serverSession: hub.serverSession,
+				uiState: {
+					openDialog: null,
+					sourceMode: false,
+					processing: false,
+					editingBlockIndex: null,
+				},
+				normalizedHtml: '<div data-bge-container="grid:1">normalized</div>',
+			}),
+		);
+		expect(hub.tabHub.get(sessionId)?.normalizedHtml).toBe(
+			'<div data-bge-container="grid:1">normalized</div>',
+		);
+	});
+
 	test('an `ack` frame resolves the pending apply with the acked revision and html', async () => {
 		hub = createAgentHub({ pingIntervalMs: 60_000 });
 		const { socket, sent } = fakeSocket();

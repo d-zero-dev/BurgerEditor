@@ -72,6 +72,13 @@ export interface TabSessionSnapshot {
 	readonly page: string | null;
 	readonly revision: number;
 	readonly syncedHash: string | null;
+	/**
+	 * The tab's main-area HTML as the editor normalized it on open (raw HTML
+	 * wrapped into a fallback block, legacy markup migrated, …), reported in
+	 * `hello` when it differs from disk. `null` once the tab's content has
+	 * reached disk by any route (a human save, an acked op, {@link TabHub.commit}).
+	 */
+	readonly normalizedHtml: string | null;
 	readonly uiState: UIState | null;
 	readonly lastActiveAt: number;
 }
@@ -82,6 +89,7 @@ interface TabSessionInternal {
 	page: string | null;
 	revision: number;
 	syncedHash: string | null;
+	normalizedHtml: string | null;
 	uiState: UIState | null;
 	lastActiveAt: number;
 	readonly pendingApplies: Map<string, PendingApply>;
@@ -92,6 +100,7 @@ export interface HelloPayload {
 	readonly revision: number;
 	readonly serverSession: string;
 	readonly uiState: UIState;
+	readonly normalizedHtml?: string;
 }
 
 export interface TabHubOptions {
@@ -202,6 +211,22 @@ export class TabHub {
 		}
 	}
 	/**
+	 * Record that the tab's current content has been written to disk on its
+	 * behalf (its {@link TabSessionSnapshot.normalizedHtml}), and tell the tab
+	 * with a `committed` frame so it stops reporting it on reconnect.
+	 * @param sessionId
+	 * @param syncedHash - Hash of the file as written
+	 */
+	commit(sessionId: string, syncedHash: string): void {
+		const session = this.#sessions.get(sessionId);
+		if (!session) {
+			return;
+		}
+		session.syncedHash = syncedHash;
+		session.normalizedHtml = null;
+		this.#send(session, { type: 'committed', revision: session.revision });
+	}
+	/**
 	 * @param sessionId
 	 */
 	disconnect(sessionId: string): void {
@@ -246,6 +271,7 @@ export class TabHub {
 		session.page = normalizeLogicalPath(payload.page, this.#indexFileName);
 		session.revision = payload.revision;
 		session.uiState = payload.uiState;
+		session.normalizedHtml = payload.normalizedHtml ?? null;
 		session.lastActiveAt = this.#now();
 		if (payload.serverSession !== this.#serverSession) {
 			log(
@@ -317,6 +343,7 @@ export class TabHub {
 			page: null,
 			revision: 0,
 			syncedHash: null,
+			normalizedHtml: null,
 			uiState: null,
 			lastActiveAt: this.#now(),
 			pendingApplies: new Map(),
@@ -372,6 +399,9 @@ export class TabHub {
 		clearTimeout(pending.timer);
 		session.pendingApplies.delete(id);
 		session.revision = revision;
+		// The acked HTML is built on top of the normalized content and is
+		// what the caller persists next.
+		session.normalizedHtml = null;
 		pending.resolve({ revision, html });
 	}
 	/**
@@ -391,6 +421,9 @@ export class TabHub {
 		pending.reject(new ApplyNackError(reason, detail));
 	}
 	/**
+	 * Mark the tab as in step with the file on disk at `syncedHash`. Also drops
+	 * its pending {@link TabSessionSnapshot.normalizedHtml}: whatever is on
+	 * disk now is the baseline, so there is nothing left to bring in from it.
 	 * @param sessionId
 	 * @param syncedHash
 	 */
@@ -398,6 +431,7 @@ export class TabHub {
 		const session = this.#sessions.get(sessionId);
 		if (session) {
 			session.syncedHash = syncedHash;
+			session.normalizedHtml = null;
 		}
 	}
 
@@ -485,6 +519,7 @@ function snapshot(session: TabSessionInternal): TabSessionSnapshot {
 		page: session.page,
 		revision: session.revision,
 		syncedHash: session.syncedHash,
+		normalizedHtml: session.normalizedHtml,
 		uiState: session.uiState,
 		lastActiveAt: session.lastActiveAt,
 	};

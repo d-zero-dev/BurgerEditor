@@ -26,6 +26,7 @@ import { createEngineAdapter } from './engine-adapter.js';
 import { hydrateNavTree } from './nav-tree.js';
 import { pageGoneBannerFor, showPageGoneBanner } from './page-event-banner.js';
 import { saveContentRequest } from './save-content-request.js';
+import { createSaveGate } from './save-gate.js';
 import { createWsTransport } from './ws-transport.js';
 
 const client = hc<AppType>(location.origin);
@@ -87,6 +88,13 @@ export async function createEditor() {
 	let frontMatterEditor: FrontMatterEditorHandle | null = null;
 	let agentLink: AgentLink | null = null;
 
+	// `routes/pages.tsx` doesn't create a missing page when it's opened, and
+	// marks it as new so its first save asks the server to.
+	const isNewFileInput = document.getElementById(
+		'is-new-file',
+	) as HTMLInputElement | null;
+	const saveGate = createSaveGate({ isNewFile: isNewFileInput?.value === 'true' });
+
 	/**
 	 * Save content to server
 	 * @param content
@@ -98,13 +106,14 @@ export async function createEditor() {
 		frontMatterData?: Record<string, unknown>,
 		originalFrontMatter?: string,
 	) {
-		await saveContentRequest(
+		const saved = await saveContentRequest(
 			client.api.content.$post,
 			{
 				path: location.pathname,
 				content,
 				frontMatter: frontMatterData,
 				originalFrontMatter,
+				createIfMissing: saveGate.createIfMissing,
 			},
 			{
 				// eslint-disable-next-line no-console
@@ -113,7 +122,10 @@ export async function createEditor() {
 				error: (message) => console.error(message),
 			},
 		);
-		agentLink?.notifyHumanSave();
+		saveGate.recordSave(saved);
+		if (saved) {
+			agentLink?.notifyHumanSave();
+		}
 	}
 
 	/**
@@ -216,7 +228,14 @@ export async function createEditor() {
 				return;
 			}
 
+			const previous = mainInput.value;
 			mainInput.value = content;
+
+			// The engine's own `save()` while it initializes lands here too —
+			// see `SaveGate.shouldPost`.
+			if (!saveGate.shouldPost(previous, content)) {
+				return;
+			}
 
 			// Prepare Front Matter data if editor exists
 			const frontMatterData = frontMatterEditor?.getData();
@@ -270,6 +289,7 @@ export async function createEditor() {
 			},
 		},
 	});
+	saveGate.ready();
 
 	// Absent when `agent.enabled` is `false` (`view/app.tsx` only renders
 	// `#server-session` in that case) — no WS connection, no AgentLink.
@@ -296,6 +316,7 @@ export async function createEditor() {
 			transport,
 			page,
 			serverSession: serverSessionInput.value,
+			normalizedHtml: saveGate.normalizedOnOpen,
 			onPageEvent: (message) => {
 				void hydrateNavTree();
 				const banner = pageGoneBannerFor(message, page, config.indexFileName);

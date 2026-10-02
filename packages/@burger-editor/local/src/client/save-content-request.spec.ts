@@ -56,12 +56,13 @@ describe('saveContentRequest', () => {
 		);
 		const log = makeLog();
 
-		await saveContentRequest(
+		const saved = await saveContentRequest(
 			post as unknown as SaveContentPost,
 			{ path: '/about.html', content: '<h1>About</h1>' },
 			log,
 		);
 
+		expect(saved).toBe(true);
 		expect(log.info).toHaveBeenCalledOnce();
 		expect(log.info.mock.calls[0]?.[0]).toBe('Saved: /tmp/docs/about.html');
 		expect(log.error).not.toHaveBeenCalled();
@@ -96,12 +97,13 @@ describe('saveContentRequest', () => {
 			);
 		const log = makeLog();
 
-		await saveContentRequest(
+		const saved = await saveContentRequest(
 			post as unknown as SaveContentPost,
 			{ path: '/missing.html', content: '<h1/>' },
 			log,
 		);
 
+		expect(saved).toBe(false);
 		expect(log.error).toHaveBeenCalledOnce();
 		expect(log.error.mock.calls[0]?.[0]).toBe(
 			'Failed to save: Unknown logical path: /missing.html',
@@ -135,12 +137,13 @@ describe('saveContentRequest', () => {
 			.mockResolvedValue(jsonResponse({ saved: false, path: '/x.html' }));
 		const log = makeLog();
 
-		await saveContentRequest(
+		const saved = await saveContentRequest(
 			post as unknown as SaveContentPost,
 			{ path: '/x.html', content: '<h1/>' },
 			log,
 		);
 
+		expect(saved).toBe(false);
 		expect(log.error).toHaveBeenCalledWith('Save did not complete');
 		expect(log.info).not.toHaveBeenCalled();
 	});
@@ -161,7 +164,7 @@ describe('saveContentRequest', () => {
 		expect(log.info).not.toHaveBeenCalled();
 	});
 
-	test('forwards path / content / frontMatter / originalFrontMatter unchanged to the post body', async () => {
+	test('forwards path / content / frontMatter / originalFrontMatter / createIfMissing unchanged to the post body', async () => {
 		const post = vi.fn<FakePost>().mockResolvedValue(
 			jsonResponse({
 				saved: true,
@@ -178,17 +181,19 @@ describe('saveContentRequest', () => {
 				content: '<h1>X</h1>',
 				frontMatter: { title: 'X' },
 				originalFrontMatter: 'title: old',
+				createIfMissing: true,
 			},
 			log,
 		);
 
 		expect(post).toHaveBeenCalledOnce();
-		expect(post.mock.calls[0]?.[0]).toEqual({
+		expect(post.mock.calls[0]?.[0]).toStrictEqual({
 			json: {
 				path: '/x.html',
 				content: '<h1>X</h1>',
 				frontMatter: { title: 'X' },
 				originalFrontMatter: 'title: old',
+				createIfMissing: true,
 			},
 		});
 	});

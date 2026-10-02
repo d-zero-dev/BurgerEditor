@@ -51,6 +51,7 @@ const apiSchema = z.object({
 	content: z.string(),
 	frontMatter: z.record(z.string(), z.unknown()).optional(),
 	originalFrontMatter: z.string().optional(),
+	createIfMissing: z.boolean().optional(),
 });
 
 // `id` becomes part of the on-disk filename, so we forbid anything that could
@@ -156,12 +157,18 @@ export function createContentApi(ctx: AppContext) {
 				}
 
 				try {
+					// Opening a page doesn't create it (`routes/pages.tsx`), so the
+					// first save of a page that didn't exist when it was opened
+					// builds it from `newFileContent`. Any other missing file was
+					// deleted or moved after it was opened — report it instead of
+					// bringing it back.
 					await saveContent(
 						targetFilePath,
 						data.content,
 						config.editableArea,
 						data.frontMatter,
 						data.originalFrontMatter,
+						data.createIfMissing ? { newFileContent: config.newFileContent } : {},
 					);
 				} catch (error) {
 					if (error instanceof NoEditableAreaError) {

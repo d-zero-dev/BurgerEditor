@@ -784,7 +784,7 @@ describe('POST /api/content (non-virtual passthrough)', () => {
 		expect(after.toSorted()).toEqual(before.toSorted());
 	});
 
-	test('returns 404 with a JSON error when the target file does not exist yet', async () => {
+	test('returns 404 with a JSON error when the target file does not exist and createIfMissing is not set', async () => {
 		const app = await buildApp(documentRoot, assetsRoot, {
 			virtualTreeEnabled: false,
 			editableArea: 'body',
@@ -801,6 +801,58 @@ describe('POST /api/content (non-virtual passthrough)', () => {
 		expect(res.status).toBe(404);
 		const body = (await res.json()) as { error: string };
 		expect(body.error).toBe(`File not found: ${path.join(documentRoot, 'missing.html')}`);
+		await expect(
+			fs.access(path.join(documentRoot, 'missing.html')),
+		).rejects.toMatchObject({ code: 'ENOENT' });
+	});
+
+	test('creates the target file from newFileContent when it does not exist and createIfMissing is true', async () => {
+		const app = await buildApp(documentRoot, assetsRoot, {
+			virtualTreeEnabled: false,
+			editableArea: 'body',
+		});
+
+		const res = await app.request('/api/content', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({
+				path: 'missing.html',
+				content: '<p>new</p>',
+				createIfMissing: true,
+			}),
+		});
+		expect(res.status).toBe(200);
+		const written = await fs.readFile(path.join(documentRoot, 'missing.html'), 'utf8');
+		expect(written).toBe(
+			'<!DOCTYPE html>\n<html>\n  <head></head>\n  <body>\n    <p>new</p>\n  </body>\n</html>\n',
+		);
+	});
+
+	test('createIfMissing does not apply newFileContent to a file that already exists', async () => {
+		await fs.writeFile(
+			path.join(documentRoot, 'existing.html'),
+			'<html><head><title>Kept</title></head><body><p>old</p></body></html>',
+			'utf8',
+		);
+		const app = await buildApp(documentRoot, assetsRoot, {
+			virtualTreeEnabled: false,
+			editableArea: 'body',
+		});
+
+		const res = await app.request('/api/content', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({
+				path: 'existing.html',
+				content: '<p>new</p>',
+				createIfMissing: true,
+			}),
+		});
+		expect(res.status).toBe(200);
+		const written = await fs.readFile(path.join(documentRoot, 'existing.html'), 'utf8');
+		expect(written).toBe(
+			'<html>\n  <head>\n    <title>Kept</title>\n  </head>\n  <body>\n    <p>new</p>\n  </body>\n</html>\n',
+		);
 	});
 
 	test('writes file at the requested disk path when virtualTree is disabled', async () => {
@@ -890,7 +942,7 @@ describe('GET / (site root)', () => {
 		await tmp?.[Symbol.asyncDispose]();
 	});
 
-	test('creates and serves index.html on first visit when virtualTree is disabled', async () => {
+	test('serves index.html from newFileContent without creating it when virtualTree is disabled (issue #966)', async () => {
 		const app = await buildApp(documentRoot, assetsRoot, {
 			virtualTreeEnabled: false,
 			editableArea: 'body',
@@ -898,12 +950,33 @@ describe('GET / (site root)', () => {
 
 		const res = await app.request('/');
 		expect(res.status).toBe(200);
+		expect(await res.text()).toContain(
+			'<input type="hidden" id="is-new-file" value="true"/>',
+		);
 
-		const written = await fs.readFile(path.join(documentRoot, 'index.html'), 'utf8');
-		expect(written).toBe('<!doctype html><html><body></body></html>');
+		await expect(fs.access(path.join(documentRoot, 'index.html'))).rejects.toMatchObject({
+			code: 'ENOENT',
+		});
 	});
 
-	test('allows saving the site root after it has been visited once (regression: FileNotFoundError)', async () => {
+	test('does not mark an existing page as new', async () => {
+		await fs.writeFile(
+			path.join(documentRoot, 'index.html'),
+			'<!doctype html><html><body><h1>Home</h1></body></html>',
+			'utf8',
+		);
+		const app = await buildApp(documentRoot, assetsRoot, {
+			virtualTreeEnabled: false,
+			editableArea: 'body',
+		});
+
+		const res = await app.request('/');
+		expect(await res.text()).toContain(
+			'<input type="hidden" id="is-new-file" value="false"/>',
+		);
+	});
+
+	test('creates index.html from newFileContent on the first save of the site root', async () => {
 		const app = await buildApp(documentRoot, assetsRoot, {
 			virtualTreeEnabled: false,
 			editableArea: 'body',
@@ -917,6 +990,7 @@ describe('GET / (site root)', () => {
 			body: JSON.stringify({
 				path: '/',
 				content: '<h1>Home</h1>',
+				createIfMissing: true,
 			}),
 		});
 		expect(res.status).toBe(200);
