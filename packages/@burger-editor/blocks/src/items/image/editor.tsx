@@ -1,4 +1,4 @@
-import type { ImageData } from './index.js';
+import type { ImageData } from './definition.js';
 import type { ItemEditorProps } from '@burger-editor/core';
 
 import {

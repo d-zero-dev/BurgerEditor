@@ -2,7 +2,7 @@ import type { Config } from '@burger-editor/core';
 
 import { test, expect, describe } from 'vitest';
 
-import tableItemSeed from './index.js';
+import tableItemSeed from './definition.js';
 
 type TableItemData = typeof tableItemSeed._;
 
