@@ -218,7 +218,8 @@ graph TD
   - `app-context.ts` - `AppContext`（`config` / `store` / `agent`）型。ルートのサブアプリ factory 群への受け渡しに使う
   - `resolver-state-store.ts::createResolverStateStore()` - `ResolverState` と `withStateLock` の唯一の所有者
   - `create-local-server.ts::createLocalServer()` - `@hono/node-server` の `serve()` + `ws` の `WebSocketServer({ noServer: true })` を束ね、`AsyncDisposable` なハンドルを返す
-  - `routes/{pages.tsx,content-api.ts,file-api.ts,static.ts,token-login.ts,ws.ts}` - ページ SSR・コンテンツ API・ファイル API・静的配信・`?token=` ログイン・WebSocket の各サブアプリ
+  - `routes/{pages.tsx,content-api.ts,file-api.ts,static.ts,token-login.ts,require-auth.ts,ws.ts}` - ページ SSR・コンテンツ API・ファイル API・静的配信・`?token=` ログイン・非ループバック時の認証ゲート・WebSocket の各サブアプリ/middleware
+  - **アプリ全体のガード**: `createApp` は全ルートの前に `hostGuard`（DNS rebinding 対策）→ `tokenLogin` → `requireAuth`（非ループバック bind 時の cookie / Bearer 必須）を掛ける。認証（`AgentAuth`）は `agent.enabled` と独立に生成されるため、agent を無効にしてもページと `/api/content` / `/api/file` は保護される。`/api/agent/*` と `/ws/*` は自前で認証し、`/api/health` だけが認証なしで応答する。新しいルートを足したときはこのゲートの内側に置くこと
   - `agent/env.ts` - `/api/agent/*` と `/ws/*` サブアプリ共通の `agentEnabled()`（agent 無効時 404）/ `requireAgentAuth()`（401）middleware
   - `helpers/scan-directory.ts` - ファイルスキャン共通ロジック（EXCLUDE_FILE_NAMES定義）
   - `helpers/get-max-file-id.ts` - 最大ファイルID取得

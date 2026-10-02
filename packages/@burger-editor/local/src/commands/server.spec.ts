@@ -129,4 +129,35 @@ describe('bootLocalServer — successful boot', () => {
 		});
 		expect(res.status).toBe(200);
 	});
+
+	test('a non-loopback bind with agent.enabled: false still requires the token for pages and /api/content', async () => {
+		await using handle = await bootLocalServer(
+			makeLocalServerConfig({
+				documentRoot: roots.documentRoot,
+				host: '0.0.0.0',
+				agent: { enabled: false },
+			}),
+			roots.path,
+		);
+		expect(handle.agent).toBeNull();
+		expect(handle.auth.required).toBe(true);
+		const base = `http://127.0.0.1:${handle.port}`;
+
+		const anonymousPage = await fetch(`${base}/config.json`, {
+			headers: { connection: 'close' },
+		});
+		expect(anonymousPage.status).toBe(401);
+
+		const anonymousWrite = await fetch(`${base}/api/content`, {
+			method: 'POST',
+			headers: { connection: 'close', 'content-type': 'application/json' },
+			body: '{}',
+		});
+		expect(anonymousWrite.status).toBe(401);
+
+		const authed = await fetch(`${base}/config.json`, {
+			headers: { connection: 'close', authorization: `Bearer ${handle.auth.token}` },
+		});
+		expect(authed.status).toBe(200);
+	});
 });

@@ -70,8 +70,8 @@ const PAGE_BLOCKS = { tool: 'page_blocks', args: { path: '/a.html' } };
 
 describe('non-loopback bind — the auth fixture itself', () => {
 	test('createAgentAuth for 203.0.113.10 requires a 48-hex-char token', () => {
-		expect(t.auth!.required).toBe(true);
-		expect(t.auth!.token).toMatch(/^[0-9a-f]{48}$/);
+		expect(t.auth.required).toBe(true);
+		expect(t.auth.token).toMatch(/^[0-9a-f]{48}$/);
 	});
 });
 
@@ -83,7 +83,7 @@ describe('non-loopback bind — POST /api/agent/invoke', () => {
 	});
 
 	test('with the correct Authorization: Bearer token is 200', async () => {
-		const res = await invoke(PAGE_BLOCKS, { authorization: `Bearer ${t.auth!.token}` });
+		const res = await invoke(PAGE_BLOCKS, { authorization: `Bearer ${t.auth.token}` });
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as { ok: boolean; appliedTo: string };
 		expect(body.ok).toBe(true);
@@ -103,18 +103,18 @@ describe('non-loopback bind — POST /api/agent/invoke', () => {
 	});
 
 	test('with the token in an Authorization header that is not a Bearer scheme is 401', async () => {
-		const res = await invoke(PAGE_BLOCKS, { authorization: `Basic ${t.auth!.token}` });
+		const res = await invoke(PAGE_BLOCKS, { authorization: `Basic ${t.auth.token}` });
 		expect(res.status).toBe(401);
 	});
 
 	test('with the correct bge_session cookie is 200', async () => {
-		const res = await invoke(PAGE_BLOCKS, { cookie: `bge_session=${t.auth!.token}` });
+		const res = await invoke(PAGE_BLOCKS, { cookie: `bge_session=${t.auth.token}` });
 		expect(res.status).toBe(200);
 	});
 
 	test('with the correct bge_session cookie among other cookies is 200', async () => {
 		const res = await invoke(PAGE_BLOCKS, {
-			cookie: `theme=dark; bge_session=${t.auth!.token}; lang=en`,
+			cookie: `theme=dark; bge_session=${t.auth.token}; lang=en`,
 		});
 		expect(res.status).toBe(200);
 	});
@@ -135,7 +135,7 @@ describe('non-loopback bind — POST /api/agent/invoke', () => {
 		const res = await req(
 			'/api/agent/tools',
 			{},
-			{ authorization: `Bearer ${t.auth!.token}` },
+			{ authorization: `Bearer ${t.auth.token}` },
 		);
 		expect(res.status).toBe(200);
 	});
@@ -143,18 +143,18 @@ describe('non-loopback bind — POST /api/agent/invoke', () => {
 
 describe('non-loopback bind — GET /?token= login', () => {
 	test('a valid token sets an HttpOnly, SameSite=Strict bge_session cookie and redirects to the URL without the token', async () => {
-		const res = await req(`/?token=${t.auth!.token}`);
+		const res = await req(`/?token=${t.auth.token}`);
 		expect(res.status).toBe(302);
 		expect(res.headers.get('location')).toBe('/');
 		const setCookie = res.headers.get('set-cookie') ?? '';
-		expect(setCookie).toContain(`bge_session=${t.auth!.token}`);
+		expect(setCookie).toContain(`bge_session=${t.auth.token}`);
 		expect(setCookie).toContain('HttpOnly');
 		expect(setCookie).toContain('SameSite=Strict');
 		expect(setCookie).toContain('Path=/');
 	});
 
 	test('the redirect keeps every other query parameter but drops token', async () => {
-		const res = await req(`/a.html?token=${t.auth!.token}&draft=1`);
+		const res = await req(`/a.html?token=${t.auth.token}&draft=1`);
 		expect(res.status).toBe(302);
 		expect(res.headers.get('location')).toBe('/a.html?draft=1');
 	});
@@ -167,7 +167,7 @@ describe('non-loopback bind — GET /?token= login', () => {
 	});
 
 	test('the cookie the login handed out then authorizes /api/agent/invoke', async () => {
-		const login = await req(`/?token=${t.auth!.token}`);
+		const login = await req(`/?token=${t.auth.token}`);
 		const cookiePair = (login.headers.get('set-cookie') ?? '').split(';')[0]!;
 		const res = await invoke(PAGE_BLOCKS, { cookie: cookiePair });
 		expect(res.status).toBe(200);
@@ -186,7 +186,7 @@ describe('non-loopback bind — GET /api/agent/status', () => {
 		const res = await req(
 			'/api/agent/status',
 			{},
-			{ authorization: `Bearer ${t.auth!.token}` },
+			{ authorization: `Bearer ${t.auth.token}` },
 		);
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as Record<string, unknown>;
@@ -207,7 +207,7 @@ describe('non-loopback bind — GET /api/agent/status', () => {
 describe('non-loopback bind — Host guard on /api/agent/*', () => {
 	test('a Host header naming a different address is 403 even with a valid bearer token', async () => {
 		const res = await t.app.request('/api/agent/status', {
-			headers: { host: '203.0.113.99', authorization: `Bearer ${t.auth!.token}` },
+			headers: { host: '203.0.113.99', authorization: `Bearer ${t.auth.token}` },
 		});
 		expect(res.status).toBe(403);
 		expect(await res.text()).toBe('Forbidden: untrusted Host header');
@@ -215,7 +215,7 @@ describe('non-loopback bind — Host guard on /api/agent/*', () => {
 
 	test('a loopback Host header is still allowed alongside the configured LAN host', async () => {
 		const res = await t.app.request('/api/agent/status', {
-			headers: { host: 'localhost', authorization: `Bearer ${t.auth!.token}` },
+			headers: { host: 'localhost', authorization: `Bearer ${t.auth.token}` },
 		});
 		expect(res.status).toBe(200);
 	});

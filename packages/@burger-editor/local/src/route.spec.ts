@@ -1,5 +1,3 @@
-import type { AppType } from './app.js';
-
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -9,6 +7,7 @@ import {
 	createTestApp,
 	makeLocalServerConfig,
 	makeTmpRoots,
+	type TestApp,
 	type TmpRoots,
 } from './__tests__/fixtures.js';
 
@@ -47,7 +46,7 @@ async function buildApp(
 	documentRoot: string,
 	assetsRoot: string,
 	overrides: ConfigOverrides,
-): Promise<AppType> {
+): Promise<Pick<TestApp, 'request'>> {
 	const { virtualTreeEnabled, pathKey = 'path', editableArea = null } = overrides;
 	const t = await createTestApp({
 		config: makeLocalServerConfig({
@@ -58,7 +57,9 @@ async function buildApp(
 			agent: { enabled: false },
 		}),
 	});
-	return t.app;
+	// `request` injects the `Host` header a real HTTP client always sends; the
+	// app-wide `hostGuard` answers 403 to a request that has none.
+	return { request: t.request };
 }
 
 describe('GET /api/tree', () => {
