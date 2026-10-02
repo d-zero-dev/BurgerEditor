@@ -27,7 +27,7 @@
 		"build": "node build.js"
 	},
 	"devDependencies": {
-		"@burger-editor/blocks": "4.0.0-alpha.70",
+		"@burger-editor/blocks": "4.0.0-alpha.75",
 		"glob": "13.0.6",
 		"postcss": "8.5.28",
 		"vitest": "4.1.11"
