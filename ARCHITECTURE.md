@@ -33,6 +33,8 @@ graph TD
     %% Block dependencies
     core --> blocks
     utils --> blocks
+    %% blocks/editor サブパスのみ（ルートエントリは client に依存しない）
+    client -.-> blocks
 
     %% CSS distribution
     blocks --> css
@@ -117,8 +119,12 @@ graph TD
 **`@burger-editor/blocks`**
 
 - 標準ブロックとアイテムの定義
-- 依存関係: core, utils
+- 依存関係: core, utils（ルートエントリ）。`./editor` サブパスのみ `client/ui` と `react` / `react-dom`（optional な peer）に依存
 - 責任: HTMLテンプレート、ブロック仕様、デフォルトカタログ
+- **2 つのエントリ**:
+  - `@burger-editor/blocks`（ルート）— `items`（`Editor` を含まない定義）/ `defaultCatalog` / `legacyCatalog` / `generalCSS`。**Node.js から読み込まれる**（`file-io` の config 解決、`cli`、ユーザーの `burgereditor.config.js`）ため、React と `@burger-editor/client` を import しない
+  - `@burger-editor/blocks/editor` — 定義に React の `Editor` を合成した `items`。**ブラウザ専用**（`local` のブラウザ側が使う）
+- この境界を守る理由と仕組みは「不変条件と否定的知識」を参照
 
 #### UI Layer（UI層）
 
@@ -362,7 +368,15 @@ core（uiState ストア + view port 定義） ← client（React 実装 + Engin
 
 **アイテムエディタ契約:**
 
-各アイテムは `createItem()` に `Editor`（型付き React コンポーネント）と純関数 `toEditorState` / `toItemData` を渡します。旧来の `editor.html` 文字列テンプレートと命令的ライフサイクルフック（`beforeOpen`/`open`/`beforeChange`/`onSubmit`）は廃止されました。コンテンツ出力側（`template.html` + frozen-patty の `data-bge` バインディング）は従来どおりで、React には依存しません。`Editor` の props は `{state, setState, item}` のみ — engine / config は含まれず、`@burger-editor/client/ui` の `useEngine()`（`useEngine().config`）で読みます。`core` パッケージ自体は React に依存しません（`ItemEditorComponent` の戻り値は `unknown`）。
+各アイテムは `createItem()` に `Editor`（型付き React コンポーネント）と純関数 `toEditorState` / `toItemData` を渡します。旧来の `editor.html` 文字列テンプレートと命令的ライフサイクルフック（`beforeOpen`/`open`/`beforeChange`/`onSubmit`）は廃止されました。コンテンツ出力側（`template.html` + frozen-patty の `data-bge` バインディング）は従来どおりで、React には依存しません。
+
+`blocks` の標準アイテムは Node.js 側（`file-io` / `cli`）でもレンダリング用に読み込まれるため、次の 3 ファイルに分けます:
+
+- `definition.ts` — `XxxData` 型、`xxxDefinition`（`version` / `name` / `template` / `style` / `toEditorState` / `toItemData`。`Editor` なし）、それを `createItem` に通した default export。React に依存しない
+- `editor.tsx` — `Editor` コンポーネント（名前付きトップレベル関数）。`client/ui` と React に依存する
+- `index.tsx` — `createItem({ ...xxxDefinition, Editor: XxxEditor })`。ブラウザ専用の `@burger-editor/blocks/editor` が集約する
+
+`createItem` の戻り値は `get _()`（テスト専用の型取得用 getter）を持ち、スプレッドすると throw するため、合成は生成済みの seed ではなく素の `xxxDefinition` に対して行います。`Editor` の props は `{state, setState, item}` のみ — engine / config は含まれず、`@burger-editor/client/ui` の `useEngine()`（`useEngine().config`）で読みます。`core` パッケージ自体は React に依存しません（`ItemEditorComponent` の戻り値は `unknown`）。
 
 ### 6. 不変条件と否定的知識
 
@@ -373,7 +387,8 @@ core（uiState ストア + view port 定義） ← client（React 実装 + Engin
 - **`BlockOp` 型の所有者は core** — [`core/src/block/types.ts`](packages/@burger-editor/core/src/block/types.ts) が定義し、`cli` の zod `blockOpSchema`（[`cli/src/agent-tools/block-op.ts`](packages/@burger-editor/cli/src/agent-tools/block-op.ts)）はそれを検証するだけ。core は cli に依存してはならない（依存方向は Platform → Core の一方向）
 - **`readToken` は署名されておらず、セキュリティ境界ではない** — 「読んでから書く」を**手順**として強制するための内容ハッシュ束縛トークンであり、偽造耐性は意図的に持たない。パスに関するセキュリティ境界は `resolvePathInput` の documentRoot 封じ込め（`PathOutsideDocumentRootError`）にある。→ [`cli/src/agent-tools/read-token.ts`](packages/@burger-editor/cli/src/agent-tools/read-token.ts)、[`file-io/src/path-input.ts`](packages/@burger-editor/file-io/src/path-input.ts)
 - **同一 document に複数の `BurgerEditorEngine` を共存させられる** — document スコープの固定 ID はエンジン局所の識別子に置き換えてある。コマンドバスの受信要素 ID は `engine.commandBus.receiverId`（連番）、ダイアログ・フォームの ID は `EditorDialog` の `useId()`。逆に共有される前提のものは意図的にそのまま: `<bge-wysiwyg-editor>` の `classList` / `experimental.itemOptions.wysiwyg.enableTextOnlyMode`（static プロパティ、document 単位）、Google Maps の script タグ（先勝ち）、ブロッククリップボード（`sessionStorage`、`storageKey` で分離可能）。→ [`core/src/command/command-bus.ts`](packages/@burger-editor/core/src/command/command-bus.ts)、[`client/src/editor-dialog.tsx`](packages/@burger-editor/client/src/editor-dialog.tsx)
-- **React Compiler は `createItem({ Editor(props) {...} })` のオブジェクトメソッド省略記法をコンポーネントとして認識しない** — 診断ログにも出ない静かな非対象になる。`blocks` の item `Editor` は必ず名前付きトップレベル関数として定義し `Editor: XxxEditor` の形で参照する（`image/editor.tsx` と同様）。`useEffect` に `eslint-disable-next-line react-hooks/exhaustive-deps` を残すとコンポーネント全体がコンパイル対象から外れる（`useEffectEvent` で回避できないか先に検討する）。`BGE_NO_COMPILER=1` でコンパイラを無効化してビルド・テストできる（`client/vite.config.ts`、`blocks/rollup.config.js`、`vitest.config.ts` が共通で見る環境変数）。→ [`client/vite.config.ts`](packages/@burger-editor/client/vite.config.ts)、[`blocks/rollup.config.js`](packages/@burger-editor/blocks/rollup.config.js)
+- **Node.js 側のコードは `@burger-editor/blocks` のルートエントリだけを import する** — `file-io` / `cli` / `mcp-server` / ユーザーの `burgereditor.config.js` は `blocks` を Node.js で評価する。`@burger-editor/blocks/editor`（や `client/ui`）を読み込むと `react` / `react-dom` が必要になり、peer 依存を自動導入しないパッケージマネージャーでは起動時に `Cannot find package 'react'` で落ちる（モノレポ内ではルートの devDependencies に React があるため再現しない）。このため ESLint の `no-restricted-imports`、ビルド成果物の import グラフを検査する `yarn verify:blocks-boundary`（CI の `test` ジョブ）、React 未解決環境で `bin.js` を起動する `cli` の E2E（`bin.spec.ts`）で守る。→ [`scripts/check-blocks-entry-boundary.mjs`](scripts/check-blocks-entry-boundary.mjs)、[`eslint.config.js`](eslint.config.js)
+- **React Compiler は `createItem({ Editor(props) {...} })` のオブジェクトメソッド省略記法をコンポーネントとして認識しない** — 診断ログにも出ない静かな非対象になる。`blocks` の item `Editor` は必ず各 item の `editor.tsx` に名前付きトップレベル関数として定義し、`index.tsx` で `Editor: XxxEditor` の形で参照する。`useEffect` に `eslint-disable-next-line react-hooks/exhaustive-deps` を残すとコンポーネント全体がコンパイル対象から外れる（`useEffectEvent` で回避できないか先に検討する）。`BGE_NO_COMPILER=1` でコンパイラを無効化してビルド・テストできる（`client/vite.config.ts`、`blocks/rollup.config.js`、`vitest.config.ts` が共通で見る環境変数）。→ [`client/vite.config.ts`](packages/@burger-editor/client/vite.config.ts)、[`blocks/rollup.config.js`](packages/@burger-editor/blocks/rollup.config.js)
 
 ## テストアーキテクチャ
 
