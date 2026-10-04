@@ -48,7 +48,7 @@
 	"resolutions": {
 		"@burger-editor/mcp-server/zod": "4.4.3",
 		"css-tree": "3.2.1",
-		"prosemirror-model": "1.25.11",
+		"prosemirror-model": "1.25.12",
 		"prosemirror-transform": "1.12.1",
 		"prosemirror-view": "1.42.3"
 	},
