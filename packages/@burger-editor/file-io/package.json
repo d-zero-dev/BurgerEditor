@@ -33,7 +33,7 @@
 		"@burger-editor/utils": "4.0.0-alpha.75",
 		"cosmiconfig": "10.0.1",
 		"jsdom": "28.1.0",
-		"prettier": "3.9.8"
+		"prettier": "3.9.9"
 	},
 	"devDependencies": {
 		"@d-zero/shared": "0.23.0",
