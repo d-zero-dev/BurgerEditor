@@ -59,7 +59,7 @@ export default defineConfig({
 				test: {
 					name: 'default',
 					include: [
-						'packages/@burger-editor/{cli,file-io,frozen-patty,legacy,mcp-server,migrator,utils}/**/*.spec.ts',
+						'packages/@burger-editor/{cli,file-io,frozen-patty,inspector,legacy,mcp-server,migrator,utils}/**/*.spec.ts',
 					],
 					...jsdomConfig,
 				},
