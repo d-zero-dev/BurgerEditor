@@ -24,6 +24,7 @@
 		"test:vr:docker:update": "bash scripts/docker-yarn.sh test:vr --update",
 		"verify:react-compiler": "node scripts/check-react-compiler-coverage.mjs",
 		"verify:blocks-boundary": "node scripts/check-blocks-entry-boundary.mjs",
+		"verify:packed-install": "node scripts/verify-packed-install.mjs",
 		"lint": "run-s lint:eslint lint:stylelint lint:markuplint lint:prettier lint:textlint:fix lint:textlint:check lint:cspell",
 		"lint:cspell": "npx cspell --no-progress --show-suggestions \"{*,**/*}/\"",
 		"lint:eslint": "npx eslint --fix \"{*,**/*}.{js,cjs,mjs,jsx,ts,cts,mts,tsx}\"",
