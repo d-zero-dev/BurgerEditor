@@ -7,7 +7,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import { type AgentToolFixture, makeFixture } from '../__tests__/fixture.js';
-import { AgentError } from '../errors.js';
+import { AgentError, toAgentError } from '../errors.js';
 
 import { pageBlocksTool } from './page-blocks.js';
 
@@ -31,6 +31,16 @@ describe('page_blocks — first call (no readToken)', () => {
 		expect(typeof result.next).toBe('string');
 		expect(result.blocks).toBeUndefined();
 		expect(result.recommendation).toBe('fetch-all');
+	});
+
+	test('a non-existent page is not-found (not an empty page) and no readToken is issued', async () => {
+		const error = await pageBlocksTool
+			.run(fixture.ctx, { path: 'no-such-page.html' })
+			.catch((error_: unknown) => error_);
+		expect(toAgentError(error).code).toBe('not-found');
+		await expect(
+			fs.access(path.join(fixture.docRoot, 'no-such-page.html')),
+		).rejects.toMatchObject({ code: 'ENOENT' });
 	});
 });
 

@@ -185,6 +185,18 @@ describe('bin.js end-to-end', () => {
 		expect(payload.blocks[0]!.name).toBe('h2');
 	}, 20_000);
 
+	test('page-blocks on a non-existent page fails with not-found and does not create the page', async () => {
+		const result = await run(['page-blocks', 'no-such-page.html']);
+		expect(result.code).toBe(1);
+		expect(JSON.parse(result.stderr)).toMatchObject({ error: 'not-found' });
+		expect(result.stdout).toBe('');
+		await expect(
+			fs.access(path.join(docRoot, 'no-such-page.html')),
+		).rejects.toMatchObject({
+			code: 'ENOENT',
+		});
+	}, 20_000);
+
 	test('block-insert accepts a spec via --spec inline JSON and persists the page', async () => {
 		const spec = JSON.stringify({
 			catalog: 'h2',

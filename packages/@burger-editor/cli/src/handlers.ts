@@ -428,12 +428,17 @@ export interface BlockTarget {
 }
 
 /**
- *
+ * Read-only counterpart of `writeEditable`'s load. `loadContent` silently
+ * CREATES a missing file, which is right for the write path but wrong here:
+ * a read of a non-existent page must fail with ENOENT (mapped to `not-found`)
+ * so the caller can tell "no such page" from "empty page", and must leave no
+ * stray file under documentRoot.
  * @param ctx
  * @param pathInput
  */
 async function readEditable(ctx: CliContext, pathInput: string) {
 	const filePath = expectPath(pathInput, ctx);
+	await fs.access(filePath);
 	const result = await loadContent(filePath, ctx.config.editableArea, '');
 	if (result instanceof NoEditableAreaError) {
 		throw result;
