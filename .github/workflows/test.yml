@@ -49,6 +49,14 @@ jobs:
         # 検出できない
         run: yarn verify:blocks-boundary
 
+      - name: Verify packed install
+        # 公開パッケージを yarn pack した tarball だけから React 未導入の空
+        # ディレクトリへインストールし、cli / bge / bge-mcp-server が起動する
+        # ことを検証する（scripts/verify-packed-install.mjs）。exports /
+        # files / dependencies / peerDependencies の過不足はモノレポ内の
+        # シンボリックリンク解決では検出できない
+        run: yarn verify:packed-install
+
       - name: Lint
         run: yarn lint
 
