@@ -223,6 +223,11 @@ export class FileBrowserStore {
 	 * `Preview` can both show it) and selecting the resulting URL once the
 	 * server responds — a blob URL is selected immediately so the UI has
 	 * something to show while the upload is in flight.
+	 *
+	 * The blob URL is revoked once the upload settles. On failure the
+	 * selection is restored to what it was before the upload (empty path if
+	 * nothing was selected), so a revoked blob URL is never left selected
+	 * for the dialog to confirm.
 	 * @param fileType - The file type to upload into
 	 * @param file - The file to upload
 	 * @throws {Error} When no `postFile` API is configured, or the server
@@ -231,6 +236,7 @@ export class FileBrowserStore {
 	async upload(fileType: FileType, file: File): Promise<void> {
 		const postFile = this.#engine.serverAPI.postFile;
 		const blob = URL.createObjectURL(file);
+		const previous = this.#state.selected[fileType];
 		this.select(fileType, blob, file.size);
 		this.#patch({
 			uploads: [
@@ -254,8 +260,16 @@ export class FileBrowserStore {
 			}
 			this.invalidate(fileType);
 			this.select(fileType, res.uploaded.url, res.uploaded.size);
+		} catch (error) {
+			// 失敗したblob URLを選択に残すと、解放後に壊れたプレビューと無効な
+			// pathが確定されてしまうため、アップロード前の選択へ戻す
+			this.select(fileType, previous?.path ?? '', previous?.fileSize);
+			throw error;
 		} finally {
 			this.#patch({ uploads: this.#state.uploads.filter((u) => u.blob !== blob) });
+			// blob URLはアップロード中のプレビュー専用。成功時は選択が実URLへ
+			// 移っており、失敗時もこれ以上の参照元はないので、必ずここで解放する
+			URL.revokeObjectURL(blob);
 		}
 	}
 

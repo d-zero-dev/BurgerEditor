@@ -1,6 +1,6 @@
 import type { BurgerEditorEngine, FileListResult } from '@burger-editor/core';
 
-import { test, expect, describe, vi } from 'vitest';
+import { test, expect, describe, vi, afterEach } from 'vitest';
 
 import { createMockEngine as createBaseMockEngine } from '../testing/create-mock-engine.js';
 
@@ -335,5 +335,101 @@ describe('FileBrowserStore.upload', () => {
 		);
 
 		expect(store.getSnapshot().uploads).toHaveLength(0);
+	});
+
+	describe('object URLの解放', () => {
+		const file = new File(['x'], 'a.png', { type: 'image/png' });
+
+		/**
+		 * Stub `URL.createObjectURL` to always return `blob:preview` and spy on
+		 * `URL.revokeObjectURL`.
+		 * @returns The `revokeObjectURL` spy
+		 */
+		function spyObjectURL() {
+			vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:preview');
+			const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+			return { revokeSpy };
+		}
+
+		afterEach(() => {
+			vi.restoreAllMocks();
+		});
+
+		test('成功したらプレビュー用のblob URLをrevokeする', async () => {
+			const { revokeSpy } = spyObjectURL();
+			const uploaded = {
+				fileId: '1',
+				name: 'a.png',
+				url: '/img/uploaded.png',
+				size: 1,
+				timestamp: 0,
+				sizes: {},
+			};
+			const postFile = vi.fn().mockResolvedValue({
+				error: false,
+				uploaded,
+				result: { error: false, data: [uploaded], pagination: { current: 0, total: 1 } },
+			});
+			const store = new FileBrowserStore(createMockEngine({ postFile }));
+
+			await store.upload('image', file);
+
+			expect(revokeSpy).toHaveBeenCalledExactlyOnceWith('blob:preview');
+		});
+
+		test('アップロード中はrevokeしない', () => {
+			const { revokeSpy } = spyObjectURL();
+			const postFile = vi.fn(() => new Promise<never>(() => {}));
+			const store = new FileBrowserStore(createMockEngine({ postFile }));
+
+			void store.upload('image', file);
+
+			expect(revokeSpy).not.toHaveBeenCalled();
+		});
+
+		test('失敗してもblob URLをrevokeする', async () => {
+			const { revokeSpy } = spyObjectURL();
+			const postFile = vi.fn().mockRejectedValue(new Error('network error'));
+			const store = new FileBrowserStore(createMockEngine({ postFile }));
+
+			await expect(store.upload('image', file)).rejects.toThrow('network error');
+
+			expect(revokeSpy).toHaveBeenCalledExactlyOnceWith('blob:preview');
+		});
+
+		test('失敗したらアップロード前の選択へ戻す', async () => {
+			spyObjectURL();
+			const postFile = vi.fn().mockRejectedValue(new Error('network error'));
+			const store = new FileBrowserStore(createMockEngine({ postFile }));
+			store.select('image', '/img/old.png', 512);
+
+			await expect(store.upload('image', file)).rejects.toThrow('network error');
+
+			expect(store.getSnapshot().selected.image).toEqual({
+				path: '/img/old.png',
+				fileSize: 512,
+			});
+		});
+
+		test('選択がなかった状態で失敗したら未選択（空path）へ戻す', async () => {
+			spyObjectURL();
+			const postFile = vi.fn().mockRejectedValue(new Error('network error'));
+			const store = new FileBrowserStore(createMockEngine({ postFile }));
+
+			await expect(store.upload('image', file)).rejects.toThrow('network error');
+
+			expect(store.getSnapshot().selected.image).toEqual({ path: '', fileSize: 0 });
+		});
+
+		test('postFile未設定でもblob URLをrevokeする', async () => {
+			const { revokeSpy } = spyObjectURL();
+			const store = new FileBrowserStore(createMockEngine());
+
+			await expect(store.upload('image', file)).rejects.toThrow(
+				'postFile is not configured',
+			);
+
+			expect(revokeSpy).toHaveBeenCalledExactlyOnceWith('blob:preview');
+		});
 	});
 });
