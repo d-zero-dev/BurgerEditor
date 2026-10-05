@@ -247,15 +247,16 @@ export default {
 		{ cwd: project, timeoutMs: 30_000 },
 	);
 	let catalogs = [];
+	let parseError = '';
 	try {
 		catalogs = JSON.parse(cli.stdout).catalogs ?? [];
-	} catch {
-		// 失敗は下の check で出力付きで報告する
+	} catch (error) {
+		parseError = `stdout が JSON ではありません: ${error instanceof Error ? error.message : String(error)}\n`;
 	}
 	check(
 		'@burger-editor/cli: catalog-list が起動して標準カタログを返す',
 		cli.code === 0 && catalogs.length > 0,
-		`exit=${cli.code}\n${cli.stdout}${cli.stderr}`,
+		`exit=${cli.code}\n${parseError}${cli.stdout}${cli.stderr}`,
 	);
 
 	// 2. bge
