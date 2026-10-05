@@ -571,6 +571,19 @@ describe('front matter handlers', () => {
 });
 
 describe('block handlers', () => {
+	test('readBlocks rejects a non-existent page with ENOENT and does NOT create it', async () => {
+		// A read must tell "empty page" from "no such page", and must not leave
+		// a stray file under documentRoot (loadContent would create one).
+		await expect(readBlocks(ctx, 'no-such-page.html')).rejects.toMatchObject({
+			code: 'ENOENT',
+		});
+		await expect(
+			fs.access(path.join(docRoot, 'no-such-page.html')),
+		).rejects.toMatchObject({
+			code: 'ENOENT',
+		});
+	});
+
 	test('readBlocks returns metadata + parsed item data per block', async () => {
 		const result = await readBlocks(ctx, 'about.html');
 		expect(result).toHaveLength(2);
