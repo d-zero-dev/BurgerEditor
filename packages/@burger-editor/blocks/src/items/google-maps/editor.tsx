@@ -77,6 +77,8 @@ export function GoogleMapsEditor({ state, setState }: ItemEditorProps<GoogleMaps
 		let dragTimer: number | undefined;
 
 		google.maps.event.addListener(map, 'dragend', () => {
+			// 連続発火で前のIDを失うとcleanupから止められなくなる
+			window.clearTimeout(dragTimer);
 			dragTimer = window.setTimeout(() => {
 				moveMarkerToCenter();
 			}, 10);
@@ -98,6 +100,9 @@ export function GoogleMapsEditor({ state, setState }: ItemEditorProps<GoogleMaps
 		});
 
 		return () => {
+			// clearInstanceListenersはリスナーを外すだけで、dragendが仕掛けた
+			// 保留中のタイマーは止めない。残すとunmount後にsetStateが走る
+			window.clearTimeout(dragTimer);
 			google.maps.event.clearInstanceListeners(map);
 		};
 		// setStateはuseStateのディスパッチ関数まで遡る安定した参照（React保証）
