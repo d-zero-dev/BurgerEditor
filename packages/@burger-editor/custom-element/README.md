@@ -88,6 +88,22 @@ wysiwyg.addEventListener('bge:structure-change', (event) => {
 
 TipTap のトランザクション単位で発火するイベント。`event.detail.state` にエディタ状態が入り、マークアップボタン（太字・斜体など）の押下状態の同期に使う。
 
+## スタイル
+
+HTMLモードの内容にデザインモードで表示できない構造が含まれるとき、`<bge-wysiwyg>` は textarea の下に補足メッセージを表示する。これはエラーではなく状態の説明なので、既定ではグレー系の中立色で表示する。色は次の CSS カスタムプロパティで変更できる。
+
+| プロパティ                      | 既定値                             |
+| ------------------------------- | ---------------------------------- |
+| `--bge-notice-background-color` | `#f4f5f7`                          |
+| `--bge-notice-border-color`     | `var(--bge-border-color, #d6d8de)` |
+| `--bge-notice-text-color`       | `#4a4f5c`                          |
+
+```css
+bge-wysiwyg {
+	--bge-notice-background-color: #fffbe6;
+}
+```
+
 ## ドキュメント
 
 設計詳細・API リファレンス・カスタマイズ手順は `docs/` 配下を参照。
