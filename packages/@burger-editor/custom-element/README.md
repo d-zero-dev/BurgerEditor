@@ -73,23 +73,20 @@ editor.editor.chain().focus().toggleBold().run(); // TipTap への直接アク�
 
 ### `bge:structure-change`
 
-エディタ内のブロック構造（段落・リスト・見出しレベル・リンク状態など）が変化したときに発火する CustomEvent。ツールバーの押下状態同期に使う。
+HTMLモードの内容がデザインモードで表示できない構造を含むかどうか（`hasStructureChange`）が変化したときに発火する CustomEvent。デザインモードへの切り替え UI の有効/無効を同期するのに使う。
 
 ```ts
-editor.addEventListener('bge:structure-change', (event) => {
-	const { detail } = event;
-	// detail: {
-	//   active: Record<string, boolean>;   // 例: { bold: true, italic: false, 'heading-3': false, ... }
-	//   canExecute: Record<string, boolean>; // 各コマンドが現在のカーソル位置で実行可能か
-	// }
+wysiwyg.addEventListener('bge:structure-change', (event) => {
+	// detail: { hasStructureChange: boolean }
+	designModeButton.disabled = event.detail.hasStructureChange;
 });
 ```
 
-`active` のキーは `commands` 属性で指定する値と同じ命名規則。`canExecute` は無効化状態のボタン UI を作るときに使う。
+発火タイミングの詳細は [`docs/EVENTS.md`](./docs/EVENTS.md) を参照。
 
 ### `transaction`
 
-TipTap のトランザクション単位で発火する低レベルイベント。`bge:structure-change` で間に合わないユースケース（IME 中の入力ステップを観測したい等）でのみ使用。
+TipTap のトランザクション単位で発火するイベント。`event.detail.state` にエディタ状態が入り、マークアップボタン（太字・斜体など）の押下状態の同期に使う。
 
 ## ドキュメント
 
