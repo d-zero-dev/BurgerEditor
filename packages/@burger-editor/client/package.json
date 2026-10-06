@@ -45,7 +45,7 @@
 		"@burger-editor/migrator": "4.0.0-alpha.76",
 		"@burger-editor/utils": "4.0.0-alpha.76",
 		"@tabler/icons-react": "3.46.0",
-		"react-error-boundary": "6.1.5",
+		"react-error-boundary": "6.1.6",
 		"use-sync-external-store": "1.7.0"
 	},
 	"devDependencies": {
