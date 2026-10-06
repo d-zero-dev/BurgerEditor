@@ -20,6 +20,14 @@ declare global {
 }
 
 /**
+ * HTMLモードで構造変更があるときに表示する文言。
+ * UIはユーザーの行動（「〜で編集してください」）ではなく状態だけを説明する。
+ * 利用できる他のモードはツールバーから分かるため、experimental.textOnlyModeでも文言を分けない
+ */
+const STRUCTURE_CHANGE_MESSAGE =
+	'デザインモードで表示できないHTML構造が含まれているため、デザインモードに切り替えはできません。';
+
+/**
  *
  * @param options
  * @param global
@@ -374,11 +382,10 @@ export class BgeWysiwygElement extends HTMLElement {
 		const itemName = this.getAttribute('item-name');
 		const messageId = `bge-structure-change-message-${Math.random().toString(36).slice(2, 11)}`;
 
-		const structureChangeMessage = BgeWysiwygElement.experimentalTextOnlyMode
-			? 'HTMLの構造がデザインモードに対応していません。HTMLモードまたはテキスト編集モードで編集してください。'
-			: 'HTMLの構造がWYSIWYG（デザイン）モードに対応していません。HTMLモードで編集してください。';
-
-		this.shadowRoot.innerHTML = `<div data-bge-mode="wysiwyg"><iframe></iframe><textarea aria-label="${label} HTML" aria-describedby="${messageId}"></textarea><div id="${messageId}" role="alert" aria-live="polite" style="display: none;">${structureChangeMessage}</div></div>`;
+		// 構造変更はエラーではなく状態なので、割り込むrole="alert"ではなくpoliteなrole="status"で伝える。
+		// ライブリージョンはDOMに常駐させ、文言の挿入・除去で表示を切り替える（display:noneの
+		// 切り替えだとライブリージョンごとアクセシビリティツリーから外れ、読み上げが不安定になるため）
+		this.shadowRoot.innerHTML = `<div data-bge-mode="wysiwyg"><iframe></iframe><textarea aria-label="${label} HTML"></textarea><div id="${messageId}" role="status" data-bge-structure-change-message></div></div>`;
 
 		const preview = this.shadowRoot.querySelector('iframe');
 
@@ -425,7 +432,7 @@ export class BgeWysiwygElement extends HTMLElement {
 
 		this.#textarea = textarea;
 		this.#structureChangeMessage = this.shadowRoot.querySelector<HTMLDivElement>(
-			`#${messageId}`,
+			'[data-bge-structure-change-message]',
 		);
 
 		const extensions: Extensions = [
@@ -589,10 +596,14 @@ export class BgeWysiwygElement extends HTMLElement {
 			return;
 		}
 
+		// 非表示中もaria-describedbyが残ると、隠れた文言が説明として読み上げられてしまうため
+		// 表示と同時に付け外しする
 		if (this.mode === 'html' && this.#hasStructureChange) {
-			this.#structureChangeMessage.style.display = 'block';
+			this.#structureChangeMessage.textContent = STRUCTURE_CHANGE_MESSAGE;
+			this.#textarea?.setAttribute('aria-describedby', this.#structureChangeMessage.id);
 		} else {
-			this.#structureChangeMessage.style.display = 'none';
+			this.#structureChangeMessage.textContent = '';
+			this.#textarea?.removeAttribute('aria-describedby');
 		}
 	}
 

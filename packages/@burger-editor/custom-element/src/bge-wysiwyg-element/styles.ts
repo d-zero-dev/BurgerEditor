@@ -74,14 +74,18 @@ export const controlUIStyles = `
 		outline-offset: 2px;
 	}
 
-	[role="alert"] {
+	[data-bge-structure-change-message] {
 		margin-block-start: 0.5rem;
 		padding: 0.5rem;
-		background-color: var(--bge-error-color, #fee);
-		border: 1px solid var(--bge-error-border-color, #fcc);
+		background-color: var(--bge-notice-background-color, #f4f5f7);
+		border: 1px solid var(--bge-notice-border-color, var(--bge-border-color, #d6d8de));
 		border-radius: var(--border-radius);
-		color: var(--bge-error-text-color, #c00);
+		color: var(--bge-notice-text-color, #4a4f5c);
 		font-size: 0.875rem;
+	}
+
+	[data-bge-structure-change-message]:empty {
+		display: none;
 	}
 `;
 
