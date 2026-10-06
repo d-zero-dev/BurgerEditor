@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
+
+### Bug Fixes
+
+- **blocks:** clear the pending drag timer when GoogleMapsEditor unmounts ([644b721](https://github.com/d-zero-dev/BurgerEditor/commit/644b7217f56c5f6e2d7d5e154515cfb7d0bd5b37))
+
 # [4.0.0-alpha.75](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.74...v4.0.0-alpha.75) (2026-10-02)
 
 ### Features

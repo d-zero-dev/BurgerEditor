@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/blocks",
-	"version": "4.0.0-alpha.75",
+	"version": "4.0.0-alpha.76",
 	"description": "BurgerEditor Blocks",
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)",
@@ -35,9 +35,9 @@
 		"dev": "rollup -c -w"
 	},
 	"dependencies": {
-		"@burger-editor/client": "4.0.0-alpha.75",
-		"@burger-editor/core": "4.0.0-alpha.75",
-		"@burger-editor/utils": "4.0.0-alpha.75",
+		"@burger-editor/client": "4.0.0-alpha.76",
+		"@burger-editor/core": "4.0.0-alpha.76",
+		"@burger-editor/utils": "4.0.0-alpha.76",
 		"@d-zero/shared": "0.23.0"
 	},
 	"peerDependencies": {
@@ -55,7 +55,7 @@
 	"devDependencies": {
 		"@babel/core": "7.29.7",
 		"@babel/preset-typescript": "7.29.7",
-		"@burger-editor/custom-element": "4.0.0-alpha.75",
+		"@burger-editor/custom-element": "4.0.0-alpha.76",
 		"@rollup/plugin-babel": "7.1.0",
 		"@testing-library/dom": "10.4.2",
 		"@testing-library/react": "16.3.3",

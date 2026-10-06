@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
+
+### Bug Fixes
+
+- **cli:** fail page-blocks with not-found on a page that does not exist ([f8768b5](https://github.com/d-zero-dev/BurgerEditor/commit/f8768b5b1e67cc0ae556e50164dc848fd5c80cc4)), closes [#903](https://github.com/d-zero-dev/BurgerEditor/issues/903)
+
 # [4.0.0-alpha.75](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.74...v4.0.0-alpha.75) (2026-10-02)
 
 **Note:** Version bump only for package @burger-editor/cli

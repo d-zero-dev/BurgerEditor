@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
+
+### Bug Fixes
+
+- **local:** apply hostGuard and the non-loopback auth gate to the whole app ([dcbb4f6](https://github.com/d-zero-dev/BurgerEditor/commit/dcbb4f6c4438c3012143ee00470673f32d793329)), closes [#968](https://github.com/d-zero-dev/BurgerEditor/issues/968)
+
 # [4.0.0-alpha.75](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.74...v4.0.0-alpha.75) (2026-10-02)
 
 ### Bug Fixes

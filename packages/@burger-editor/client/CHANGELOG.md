@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
+
+### Bug Fixes
+
+- **client:** revoke the preview object URL when a file upload settles ([c04f185](https://github.com/d-zero-dev/BurgerEditor/commit/c04f185635f947b96d3511dc102a9bf83b49ff54)), closes [#868](https://github.com/d-zero-dev/BurgerEditor/issues/868)
+
 # [4.0.0-alpha.75](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.74...v4.0.0-alpha.75) (2026-10-02)
 
 **Note:** Version bump only for package @burger-editor/client

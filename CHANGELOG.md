@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
+
+### Bug Fixes
+
+- **blocks:** clear the pending drag timer when GoogleMapsEditor unmounts ([644b721](https://github.com/d-zero-dev/BurgerEditor/commit/644b7217f56c5f6e2d7d5e154515cfb7d0bd5b37))
+- **client:** revoke the preview object URL when a file upload settles ([c04f185](https://github.com/d-zero-dev/BurgerEditor/commit/c04f185635f947b96d3511dc102a9bf83b49ff54)), closes [#868](https://github.com/d-zero-dev/BurgerEditor/issues/868)
+- **cli:** fail page-blocks with not-found on a page that does not exist ([f8768b5](https://github.com/d-zero-dev/BurgerEditor/commit/f8768b5b1e67cc0ae556e50164dc848fd5c80cc4)), closes [#903](https://github.com/d-zero-dev/BurgerEditor/issues/903)
+- **custom-element:** show the structure change message as a neutral notice, not an error ([5ca3134](https://github.com/d-zero-dev/BurgerEditor/commit/5ca313499d57388a6f56d5a7ca5b8ed9cfa241ac))
+- **deps:** align css and runtime blocks pins with the workspace version ([2157080](https://github.com/d-zero-dev/BurgerEditor/commit/21570809fbce972950028272c68720fa500cca54)), closes [#964](https://github.com/d-zero-dev/BurgerEditor/issues/964)
+- **frozen-patty:** drop attributes invalid for the converted picture child ([5f44a53](https://github.com/d-zero-dev/BurgerEditor/commit/5f44a5394fe134f63f9d878e8962952e40385be3))
+- **local:** apply hostGuard and the non-loopback auth gate to the whole app ([dcbb4f6](https://github.com/d-zero-dev/BurgerEditor/commit/dcbb4f6c4438c3012143ee00470673f32d793329)), closes [#968](https://github.com/d-zero-dev/BurgerEditor/issues/968)
+
 # [4.0.0-alpha.75](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.74...v4.0.0-alpha.75) (2026-10-02)
 
 ### Bug Fixes

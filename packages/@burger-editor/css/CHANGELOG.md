@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
+
+### Bug Fixes
+
+- **deps:** align css and runtime blocks pins with the workspace version ([2157080](https://github.com/d-zero-dev/BurgerEditor/commit/21570809fbce972950028272c68720fa500cca54)), closes [#964](https://github.com/d-zero-dev/BurgerEditor/issues/964)
+
 # [4.0.0-alpha.75](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.74...v4.0.0-alpha.75) (2026-10-02)
 
 **Note:** Version bump only for package @burger-editor/css
