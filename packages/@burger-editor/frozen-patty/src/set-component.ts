@@ -17,6 +17,57 @@ import {
 } from './utils.js';
 
 /**
+ * `picture` 内の `source` で無効な、`img` 専用の属性。
+ * `source` で有効な属性の allowlist にしないのは、グローバル属性・`data-*`・
+ * `aria-*` を列挙しきれず、取りこぼすと正しい属性まで落としてしまうため
+ */
+const PICTURE_SOURCE_INVALID_ATTRS: readonly string[] = [
+	'alt',
+	'src',
+	'loading',
+	'decoding',
+	'fetchpriority',
+	'crossorigin',
+	'referrerpolicy',
+	'usemap',
+	'ismap',
+	'elementtiming',
+	'attributionsrc',
+	// Obsolete img attributes
+	'align',
+	'border',
+	'hspace',
+	'vspace',
+	'longdesc',
+	'name',
+	'lowsrc',
+];
+
+/**
+ * `picture` 内の `img` で無効な、`source` 専用の属性
+ */
+const PICTURE_IMG_INVALID_ATTRS: readonly string[] = ['media', 'type'];
+
+/**
+ * 要素から指定した属性を取り除く
+ *
+ * replaceNode は未バインドの静的属性を要素の種類に関係なく引き継ぎ、
+ * 変換元と変換先の要素が同じ場合は何もしない。そのため、雛形 img の静的な
+ * alt が source に付いたり、過去の出力で img に付いた media が残ったりする。
+ * 変換の有無にかかわらず、ここで必ず落とす。
+ * バインドされたフィールドは落とさない。要素のプロパティに無い属性は
+ * setValue が書き込まないため（propInElement）、データの index 対応を
+ * 崩してまで data-* 宣言から外す必要がない
+ * @param el
+ * @param names
+ */
+function removeAttrs(el: Element, names: readonly string[]) {
+	for (const name of names) {
+		el.removeAttribute(name);
+	}
+}
+
+/**
  *
  * @param el
  * @param data
@@ -97,6 +148,7 @@ export function setComponent(
 					if (i === 0) {
 						// Convert first item to img element
 						item = replaceNode(item, 'img', attr, xssSanitize);
+						removeAttrs(item, PICTURE_IMG_INVALID_ATTRS);
 						fields = replaceProp(fields, 'srcset', 'src');
 						fields = removeProp(fields, 'sizes');
 						const fieldQuery = stringifyFields(fields);
@@ -104,6 +156,7 @@ export function setComponent(
 					} else {
 						// Convert subsequent items to source elements
 						item = replaceNode(item, 'source', attr, xssSanitize);
+						removeAttrs(item, PICTURE_SOURCE_INVALID_ATTRS);
 						fields = replaceProp(fields, 'src', 'srcset');
 						fields = removeProp(fields, 'alt');
 						fields = removeProp(fields, 'loading');
