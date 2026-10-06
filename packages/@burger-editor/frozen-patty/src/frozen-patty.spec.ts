@@ -1017,6 +1017,114 @@ test('picture: imgを持たないsourceのみのHTMLでは末尾のsourceを雛�
 	expect(img?.hasAttribute('alt')).toBe(false);
 });
 
+test('picture: 雛形imgの未バインドな静的属性のうちimg専用のものはsourceに引き継がない', () => {
+	const fp = new FrozenPatty(
+		[
+			'<picture data-field-list>',
+			'<img src="/path/to/1" alt="サンプル画像" loading="lazy" decoding="async" class="c" width="100" data-field="path:src, :width, :media">',
+			'</picture>',
+		].join(''),
+		{ typeConvert: true },
+	);
+
+	fp.merge({
+		path: ['/path/to/1', '/path/to/2'],
+		width: [100, 200],
+		media: [null, '(min-width: 1000px)'],
+	});
+
+	expect(fp.toHTML()).toBe(
+		[
+			'<picture data-field-list="">',
+			'<source class="c" data-field="path:srcset, :width, :media" srcset="/path/to/2" width="200" media="(min-width: 1000px)">',
+			'<img src="/path/to/1" alt="サンプル画像" loading="lazy" decoding="async" class="c" width="100" data-field="path:src, :width, :media">',
+			'</picture>',
+		].join(''),
+	);
+});
+
+test('picture: sourceにaltが付いた保存済みHTMLを再mergeするとsourceからaltが消える', () => {
+	const fp = new FrozenPatty(
+		[
+			'<picture data-field-list="">',
+			'<source data-field="path:srcset, :width, :height, :media" alt="サンプル画像" srcset="/path/to/2" width="686" height="386" media="(width < 768px)">',
+			'<img data-field="path:src, :width, :height, :media" alt="サンプル画像" src="/path/to/1" width="1160" height="440">',
+			'</picture>',
+		].join(''),
+		{ typeConvert: true },
+	);
+
+	fp.merge({ path: ['/path/to/1', '/path/to/2'] });
+
+	expect(fp.toHTML()).toBe(
+		[
+			'<picture data-field-list="">',
+			'<source data-field="path:srcset, :width, :height, :media" srcset="/path/to/2" width="686" height="386" media="(width < 768px)">',
+			'<img data-field="path:src, :width, :height, :media" alt="サンプル画像" src="/path/to/1" width="1160" height="440">',
+			'</picture>',
+		].join(''),
+	);
+});
+
+test('picture: sourceを雛形にしたときsource専用の静的属性はimgに引き継がない', () => {
+	const fp = new FrozenPatty(
+		[
+			'<picture data-field-list>',
+			'<source srcset="/path/to/1" media="(min-width: 1000px)" type="image/webp" data-field="path:srcset">',
+			'</picture>',
+		].join(''),
+		{ typeConvert: true },
+	);
+
+	fp.merge({ path: ['/path/to/1'] });
+
+	expect(fp.toHTML()).toBe(
+		'<picture data-field-list=""><img data-field="path:src" src="/path/to/1"></picture>',
+	);
+});
+
+test('picture: imgにmedia / typeが付いた保存済みHTMLを再mergeするとimgから消える', () => {
+	const fp = new FrozenPatty(
+		[
+			'<picture data-field-list="">',
+			'<img media="(min-width: 1000px)" type="image/webp" alt="代替" data-field="path:src" src="/path/to/1">',
+			'</picture>',
+		].join(''),
+		{ typeConvert: true },
+	);
+
+	fp.merge({ path: ['/path/to/1'] });
+
+	expect(fp.toHTML()).toBe(
+		'<picture data-field-list=""><img alt="代替" data-field="path:src" src="/path/to/1"></picture>',
+	);
+});
+
+test('picture: 変換先の要素に無いプロパティへバインドされた値は書き込まれない', () => {
+	const fp = new FrozenPatty(
+		[
+			'<picture data-field-list>',
+			'<img src="/path/to/1" data-field="path:src, :decoding, :media">',
+			'</picture>',
+		].join(''),
+		{ typeConvert: true },
+	);
+
+	fp.merge({
+		path: ['/path/to/1', '/path/to/2'],
+		decoding: ['async', 'async'],
+		media: ['(min-width: 1000px)', '(min-width: 2000px)'],
+	});
+
+	// img 側の decoding は JSDOM が HTMLImageElement#decoding を実装していない
+	// ため書き込まれず、実行環境で結果が変わるので検証対象にしない
+	const source = fp.toDOM().querySelector('source');
+	const img = fp.toDOM().querySelector('img');
+	expect(source?.hasAttribute('decoding')).toBe(false);
+	expect(source?.getAttribute('media')).toBe('(min-width: 2000px)');
+	expect(img?.hasAttribute('media')).toBe(false);
+});
+
 test('toHTML()', () => {
 	const fp = new FrozenPatty('<div data-foo="bar" data-field="foo:data-foo"></div>');
 	expect(fp.toHTML()).toBe('<div data-foo="bar" data-field="foo:data-foo"></div>');
