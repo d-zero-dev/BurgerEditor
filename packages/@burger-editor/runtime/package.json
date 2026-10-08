@@ -33,7 +33,7 @@
 		"@burger-editor/core": "4.0.0-alpha.76",
 		"@burger-editor/css": "4.0.0-alpha.76",
 		"typescript": "5.9.3",
-		"vite": "8.3.1",
+		"vite": "8.3.2",
 		"vite-plugin-dts": "5.1.1"
 	}
 }
