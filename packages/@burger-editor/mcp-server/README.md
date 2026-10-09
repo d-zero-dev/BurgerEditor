@@ -171,7 +171,10 @@ CLI フラグは環境変数より優先される。ループバック（`localh
 ```ts
 import { run } from '@burger-editor/mcp-server';
 
-await run();
+const handle = await run();
+
+// サーバーを止めるとき
+await handle[Symbol.asyncDispose]();
 ```
 
 ## v3 互換ツール（3 個）
