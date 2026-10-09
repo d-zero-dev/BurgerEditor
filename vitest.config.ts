@@ -14,6 +14,8 @@ import {
 	createReactCompilerBabelPlugin,
 	reactCompilerDisabled,
 } from './scripts/react-compiler-babel.js';
+// @ts-ignore - plain JS module, no ambient types published for it
+import { assertProjectsGrouped } from './scripts/vitest-project-groups.js';
 
 const blocksPkg = JSON.parse(
 	fs.readFileSync('./packages/@burger-editor/blocks/package.json', 'utf8'),
@@ -54,7 +56,10 @@ const jsdomConfig = {
 export default defineConfig({
 	test: {
 		exclude: ['**/node_modules/**', '**/dist/**'],
-		projects: [
+		// yarn testはscripts/vitest-project-groups.jsのグループ単位で別プロセス
+		// 実行する（#997）。グループ未登録のプロジェクトはyarn testで実行され
+		// なくなるため、定義のずれを設定読み込み時に検出する
+		projects: assertProjectsGrouped([
 			{
 				test: {
 					name: 'default',
@@ -255,6 +260,6 @@ export default defineConfig({
 					testTimeout: 15_000,
 				},
 			},
-		],
+		]),
 	},
 });

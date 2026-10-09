@@ -42,7 +42,8 @@ yarn commit                   # Commitizen（cz）でコミット
 ### コマンド制約
 
 - **yarn のみ使用**: npm / pnpm / bun / deno によるコマンド実行は禁止
-- **全体実行の強制**: 時間がかかっても `yarn build` / `yarn lint` / `yarn test` のリポジトリ全体実行を使う。`tsc` / `eslint` / `prettier` / `stylelint` の単発実行・ファイルスコープ実行（`npx eslint <file>` 等）は禁止
+- **build / lint は全体実行**: 時間がかかっても `yarn build` / `yarn lint` のリポジトリ全体実行を使う。`tsc` / `eslint` / `prettier` / `stylelint` の単発実行・ファイルスコープ実行（`npx eslint <file>` 等）は禁止
+- **test はプロジェクト単位**: ローカルでは変更に関連する Vitest プロジェクトだけを `yarn test --project <name>` で実行する（プロジェクト名は `vitest.config.ts` の `name`）。全体実行は CI に任せる。詳細は「テスト」節
 - **パッケージディレクトリに cd しない**: 常にリポジトリルートから実行する。個別パッケージを対象にする場合は `yarn workspace <package-name> <command>` を使う
 - **コマンドの連続実行禁止**: `&&`、`;`、改行によるコマンド連結をしない。1回の Bash 呼び出しで1コマンドのみ実行する。連結されたコマンドは settings.json の permissions でパターンマッチできず、毎回ユーザーの手動承認が必要になる
 - **main / dev ブランチでの作業・コミット禁止**: 作業開始前に `git branch --show-current` で現ブランチを確認し、`main` / `dev` にいる場合は `git switch -c <topic>` でトピックブランチを作ってから作業する
@@ -55,7 +56,10 @@ yarn commit                   # Commitizen（cz）でコミット
 - **初回はイメージビルドが走る**（Apple Silicon では QEMU エミュレーションのため遅い）。2回目以降は `node_modules` と Yarn キャッシュの named volume を再利用する
 - **イメージの Node バージョンは `package.json` の `volta.node` から読まれる**。Node を上げるときは `volta.node` を更新すれば追従する（Dockerfile 側の書き換えは不要）
 - `/.dockerenv` / `CI` / `SKIP_DOCKER` のいずれかがあると Docker ラッパーを飛ばして直接実行する。CI は自前の Playwright コンテナ内で動くため、入れ子の Docker にならない
-- 開発中に VR 以外を素早く回したいときは `yarn test:unit`（ホスト実行）を使う
+- **ローカル検証は関連プロジェクトのみ**: 変更したパッケージのテストを含むプロジェクトを `yarn test --project <name>`（複数可）で実行する。依存先パッケージを変更した場合は、利用側パッケージのプロジェクトも含める。引数なしの `yarn test`（全プロジェクト）は CI とリリース前（`prerelease`）が担い、作業中のローカル検証では使わない
+- VR を含まないプロジェクトを Docker を経由せず素早く回したいときは `yarn test:unit --project <name>`（ホスト実行）を使う
+- **UI に関わる変更では `yarn test:vr:docker` も実行する**（VR は Docker 内でしか CI と一致しない）
+- **`yarn test` / `yarn test:unit` はプロジェクトをグループごとに別プロセスで順に実行する**（`scripts/run-vitest-groups.mjs`。理由と引数の扱いは同ファイルと `scripts/vitest-project-groups.js` を参照）。`vitest.config.ts` にプロジェクトを追加したら `scripts/vitest-project-groups.js` にも登録する（未登録だと設定の読み込みで失敗する）
 - **UI を意図的に変更したら `yarn test:vr:docker:update` でベースラインを再生成する**
 - **`BGE_NO_COMPILER=1` で React Compiler を無効化できる**（`client/vite.config.ts` / `blocks/rollup.config.js` / `vitest.config.ts` が共通で見る環境変数、`scripts/react-compiler-babel.js` で一元管理）。CI は `test`（有効）と `test-no-compiler`（無効）の両方を回す。コンパイルの有無で挙動が変わる不具合を疑うときは `BGE_NO_COMPILER=1 yarn test:unit` で切り分ける
 

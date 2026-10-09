@@ -768,7 +768,7 @@ test('expectHTML preserves data-bgc-align attribute', () => {
 ```bash
 yarn lint   # コードの静的解析
 yarn build  # ビルド確認
-yarn test   # テスト実行
+yarn test --project custom-element  # テスト実行（全プロジェクトはCIで実行）
 ```
 
 ### 4. よくある落とし穴と注意点
