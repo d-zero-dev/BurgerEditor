@@ -125,6 +125,20 @@ describe('bge --config (built bin)', () => {
 		expect(result.stdout).not.toContain('BurgerEditor Local App');
 	}, 20_000);
 
+	test('a 0.0.0.0 host exits 1 with the explanation alone on stderr, without booting (regression: #1001)', async () => {
+		await fs.writeFile(
+			path.join(tmp.path, 'wildcard.config.mjs'),
+			`export default { documentRoot: './site', port: 0, host: '0.0.0.0', open: false };\n`,
+			'utf8',
+		);
+		const result = await runBin(['--config', './wildcard.config.mjs'], tmp.path);
+		expect(result.code).toBe(1);
+		expect(result.stderr).toContain('Invalid host "0.0.0.0" in the BurgerEditor config.');
+		expect(result.stderr).toContain('Chrome and Safari block requests to 0.0.0.0.');
+		expect(result.stderr).not.toMatch(/^\s+at\s/m);
+		expect(result.stdout).not.toContain('BurgerEditor Local App');
+	}, 20_000);
+
 	test('--config naming a missing file exits 1 instead of booting with defaults', async () => {
 		const result = await runBin(['--config', './missing.config.mjs'], tmp.path);
 		expect(result.code).toBe(1);

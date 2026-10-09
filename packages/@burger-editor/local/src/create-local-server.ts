@@ -6,11 +6,13 @@ import { once } from 'node:events';
 import { serve } from '@hono/node-server';
 import { WebSocketServer } from 'ws';
 
+import { toUrlHost } from './helpers/host.js';
+
 export interface LocalServer extends AsyncDisposable {
 	readonly server: ServerType;
 	/** Actual bound port — differs from the requested one when `port: 0`. */
 	readonly port: number;
-	/** `http://${hostname}:${port}` — what the banner prints and `open()` launches. */
+	/** `http://${hostname}:${port}` (IPv6 bracketed) — what the banner prints and `open()` launches. */
 	readonly url: string;
 	readonly wss: WebSocketServer;
 }
@@ -55,7 +57,7 @@ export async function createLocalServer(
 		server,
 		wss,
 		port,
-		url: `http://${options.hostname}:${port}`,
+		url: `http://${toUrlHost(options.hostname)}:${port}`,
 		async [Symbol.asyncDispose]() {
 			// node-server registers `server.on('close', () => wss.close())` for
 			// us, but `wss.close()` (ws@8) only stops accepting NEW connections —

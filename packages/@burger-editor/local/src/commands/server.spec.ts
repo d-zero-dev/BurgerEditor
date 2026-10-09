@@ -335,11 +335,10 @@ describe('runServerCommand — a step after boot fails (regression: #1000)', () 
 		vi.stubEnv('DEV_MODE', 'false');
 		roots = await makeTmpRoots('bge-run-server-');
 		configPath = path.join(roots.path, 'burgereditor.config.mjs');
-		// Non-loopback so a token file is written; `open: true` reaches the
-		// mocked `open()`, which rejects.
+		// `open: true` reaches the mocked `open()`, which rejects.
 		await fs.writeFile(
 			configPath,
-			`export default { documentRoot: ${JSON.stringify(roots.documentRoot)}, host: '0.0.0.0', port: 0, open: true };\n`,
+			`export default { documentRoot: ${JSON.stringify(roots.documentRoot)}, host: '127.0.0.1', port: 0, open: true };\n`,
 			'utf8',
 		);
 	});
@@ -349,7 +348,7 @@ describe('runServerCommand — a step after boot fails (regression: #1000)', () 
 		await roots[Symbol.asyncDispose]();
 	});
 
-	test('disposes the booted server before rethrowing, so no signal handler or token file outlives the failed command', async () => {
+	test('disposes the booted server before rethrowing, so its signal handlers do not outlive the failed command', async () => {
 		const sigintBefore = process.listenerCount('SIGINT');
 		const sigtermBefore = process.listenerCount('SIGTERM');
 
@@ -357,10 +356,8 @@ describe('runServerCommand — a step after boot fails (regression: #1000)', () 
 			'no browser available',
 		);
 
+		// The handlers are removed only by disposing the boot handle.
 		expect(process.listenerCount('SIGINT')).toBe(sigintBefore);
 		expect(process.listenerCount('SIGTERM')).toBe(sigtermBefore);
-		await expect(
-			fs.access(path.join(roots.path, '.burgereditor', 'agent-token')),
-		).rejects.toMatchObject({ code: 'ENOENT' });
 	});
 });

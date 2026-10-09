@@ -7,7 +7,7 @@ import { afterEach, describe, expect, test } from 'vitest';
 import { createAgentAuth, loginUrl } from './auth.js';
 
 describe('createAgentAuth — loopback', () => {
-	test.each(['localhost', '127.0.0.1', '::1'])(
+	test.each(['localhost', '127.0.0.1', '::1', '0:0:0:0:0:0:0:1'])(
 		'requires no token when bound to %s',
 		async (host) => {
 			const auth = await createAgentAuth(host, '/tmp/unused');
