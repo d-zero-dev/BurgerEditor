@@ -66,10 +66,10 @@ export function EditableAreaView({
 	const [sourceText, setSourceText] = useState(initialContent);
 	const [isEmpty, setIsEmpty] = useState(initialContent.trim() === '');
 	const [height, setHeight] = useState(0);
-	const [frameBody, setFrameBody] = useState<HTMLElement | null>(null);
+	const [containerElement, setContainerElement] = useState<HTMLElement | null>(null);
+	const frameBody = containerElement?.ownerDocument.body ?? null;
 
 	const initializedRef = useRef(false);
-	const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
 	// iframe文書はここで一度だけ組み立てる。再レンダリングでiframeが
 	// unmountされると文書ごと消えるため、初期化はrefコールバック +
@@ -140,38 +140,43 @@ export function EditableAreaView({
 		// このiframe文書内のボタンが commandfor で参照するバス受信要素
 		engine.commandBus.createReceiver(frameDoc.body);
 
-		const containerElement = frameDoc.createElement('div');
-		containerElement.id = CONTENT_ID;
-		containerElement.style.setProperty('padding', `${CONTAINER_PADDING}px`, 'important');
-		containerElement.style.setProperty('overflow', 'hidden', 'important');
-		containerElement.style.setProperty('margin', '0', 'important');
-		containerElement.style.setProperty('box-sizing', 'border-box', 'important');
-		containerElement.classList.add(...classList);
-		containerElement.dataset.bgeComponent = 'editable-area';
-		frameDoc.body.append(containerElement);
+		const content = frameDoc.createElement('div');
+		content.id = CONTENT_ID;
+		content.style.setProperty('padding', `${CONTAINER_PADDING}px`, 'important');
+		content.style.setProperty('overflow', 'hidden', 'important');
+		content.style.setProperty('margin', '0', 'important');
+		content.style.setProperty('box-sizing', 'border-box', 'important');
+		content.classList.add(...classList);
+		content.dataset.bgeComponent = 'editable-area';
+		frameDoc.body.append(content);
 
-		// コンテンツの実サイズにiframeの高さを追従させる
-		if (typeof ResizeObserver !== 'undefined') {
-			const observer = new ResizeObserver(() => {
-				requestAnimationFrame(() => {
-					setHeight(
-						containerElement.getBoundingClientRect().height + CONTAINER_PADDING * 2,
-					);
-				});
-			});
-			observer.observe(containerElement);
-			resizeObserverRef.current = observer;
-		}
-
-		setFrameBody(frameDoc.body);
-		onReady({ containerElement, animateInsertion });
+		setContainerElement(content);
+		onReady({ containerElement: content, animateInsertion });
 	};
 
+	// コンテンツの実サイズにiframeの高さを追従させる。監視の開始と解除を
+	// 同じeffectに置き、待機中のrAFもアンマウントで取り消す
 	useEffect(() => {
-		return () => {
-			resizeObserverRef.current?.disconnect();
-		};
-	}, []);
+		if (!containerElement || typeof ResizeObserver === 'undefined') {
+			return;
+		}
+		const stack = new DisposableStack();
+		let raf = 0;
+		stack.defer(() => cancelAnimationFrame(raf));
+
+		const observer = new ResizeObserver(() => {
+			cancelAnimationFrame(raf);
+			raf = requestAnimationFrame(() => {
+				setHeight(
+					containerElement.getBoundingClientRect().height + CONTAINER_PADDING * 2,
+				);
+			});
+		});
+		observer.observe(containerElement);
+		stack.defer(() => observer.disconnect());
+
+		return () => stack.dispose();
+	}, [containerElement]);
 
 	useEffect(() => {
 		const onSaved = (

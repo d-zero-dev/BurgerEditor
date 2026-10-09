@@ -21,7 +21,9 @@ class ResizeObserverStub {
 	disconnect = vi.fn();
 	observe = vi.fn();
 	unobserve = vi.fn();
-	constructor() {
+	readonly callback: ResizeObserverCallback;
+	constructor(callback: ResizeObserverCallback) {
+		this.callback = callback;
 		ResizeObserverStub.instances.push(this);
 	}
 	static instances: ResizeObserverStub[] = [];
@@ -351,4 +353,33 @@ test('アンマウントでResizeObserverが解除される', () => {
 	unmount();
 
 	expect(observer?.disconnect).toHaveBeenCalled();
+});
+
+test('サイズ変化の通知でiframeの高さがコンテンツに追従する', async () => {
+	const engine = createMockEngine();
+	const { host, container } = renderView(engine);
+	vi.spyOn(host.containerElement, 'getBoundingClientRect').mockReturnValue({
+		height: 300,
+	} as DOMRect);
+
+	const observer = ResizeObserverStub.instances.at(0)!;
+	await act(async () => {
+		observer.callback([], observer as unknown as ResizeObserver);
+		await new Promise((resolve) => requestAnimationFrame(resolve));
+	});
+
+	expect(container.querySelector('iframe')?.getAttribute('height')).toBe('320');
+});
+
+test('アンマウント前に積まれた高さ更新はアンマウントで取り消される', async () => {
+	const engine = createMockEngine();
+	const { host, unmount } = renderView(engine);
+	const measure = vi.spyOn(host.containerElement, 'getBoundingClientRect');
+
+	const observer = ResizeObserverStub.instances.at(0)!;
+	observer.callback([], observer as unknown as ResizeObserver);
+	unmount();
+	await new Promise((resolve) => requestAnimationFrame(resolve));
+
+	expect(measure).not.toHaveBeenCalled();
 });
