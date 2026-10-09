@@ -32,7 +32,7 @@ disable-model-invocation: true
    - 動作が維持されていることを確認するため、頻繁にテストを実行する
 
 5. **リファクタリング検証**
-   - 関連テストを全て実行する: `yarn test`
+   - 関連テストを全て実行する: `yarn test --project <name>`（変更に関連する Vitest プロジェクトを指定。全体実行は CI に任せる）
    - ビルドチェックを実行する: `yarn build`
    - lint を実行する: `yarn lint`
 

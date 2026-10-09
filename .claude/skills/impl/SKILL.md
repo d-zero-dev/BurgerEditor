@@ -21,7 +21,7 @@ disable-model-invocation: true
 6. `/qa-engineer` を実行し、指摘を fix all
 7. `/product-manager` を実行し、指摘を fix all（ドキュメント整合 — JSDoc・コメント原則・ARCHITECTURE.md と実装の一致 — のチェックを含む）
 8. `yarn lint` を実行し、エラーを修正
-9. `yarn test` を実行し、失敗を修正（Docker 経由で VR まで走るため時間がかかるが省略しない）
+9. 変更に関連する Vitest プロジェクトを `yarn test --project <name>` で実行し、失敗を修正する。UI に関わる変更では `yarn test:vr:docker` も実行する。全プロジェクトの実行は CI に任せる（CLAUDE.md の「テスト」節）
 10. `/git` の手順でコミット
 11. `/pr` の手順で PR 作成
 
