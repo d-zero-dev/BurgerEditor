@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
 import { commands, page } from 'vitest/browser';
 
-import { cleanUp, injectCSS, renderDialog, waitForRender } from './vr-helper.js';
+import { injectCSS, renderDialog, waitForRender } from './vr-helper.js';
 
 // 各アイテムのエディタ（React版）が描画するマークアップと同等のフィクスチャ
 
@@ -106,10 +106,6 @@ const tableHtml = `<div data-bge-dialog="wide">
 describe('Dialog Layout', () => {
 	beforeEach(() => {
 		injectCSS();
-	});
-
-	afterEach(() => {
-		cleanUp();
 	});
 
 	test('dialog normal — hr (select)', async () => {
