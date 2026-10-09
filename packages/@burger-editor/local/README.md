@@ -86,7 +86,7 @@ npx bge --config ./burgereditor.child.config.js   # 設定ファイルを指定�
 | ------------------- | ------------------------------------------------------------------ | --------------------------------------------------- | -------------------------------------------- |
 | `version`           | `string`                                                           | `'0.0.0-unknown'`                                   | 設定ファイルのバージョン                     |
 | `port`              | `number`                                                           | `5255`                                              | サーバーポート                               |
-| `host`              | `` 'localhost' \| `${number}.${number}.${number}.${number}` ``     | `'localhost'`                                       | ホスト名                                     |
+| `host`              | `` 'localhost' \| `${number}.${number}.${number}.${number}` ``     | `'localhost'`                                       | ホスト名（`0.0.0.0` / `::` は設定エラー）    |
 | `lang`              | `string`                                                           | `'en'`                                              | エディタ UI 言語                             |
 | `stylesheets`       | `string[]`                                                         | `[]`                                                | 編集領域にロードする CSS                     |
 | `classList`         | `string[]`                                                         | `[]`                                                | 編集領域ルートに付与するクラス               |
@@ -148,7 +148,7 @@ export default {
 ```
 
 - 子サイトが本体の `documentRoot` の配下にある場合、本体側のページツリーには子サイトのページも表示される
-- `host` をループバック以外（LAN IP や `0.0.0.0`）にして 2 つ同時に起動する場合は、設定ファイルを別々のディレクトリに置く。Agent Hub のトークンは設定ファイルと同じディレクトリの `.burgereditor/agent-token` に書かれるため、同じディレクトリだと後から起動したほうが上書きし、先に終了したほうが削除してしまう（後述の「非ループバック bind 時のトークン」を参照）
+- `host` をループバック以外（LAN IP）にして 2 つ同時に起動する場合は、設定ファイルを別々のディレクトリに置く。Agent Hub のトークンは設定ファイルと同じディレクトリの `.burgereditor/agent-token` に書かれるため、同じディレクトリだと後から起動したほうが上書きし、先に終了したほうが削除してしまう（後述の「非ループバック bind 時のトークン」を参照）
 
 ## Virtual File Tree
 
@@ -214,8 +214,8 @@ AI エージェント（`@burger-editor/mcp-server` 経由）が、開いてい�
 - **エンドポイント**: `GET /api/agent/tools`（ツール定義一覧）、`GET /api/agent/status`（到達確認）、`GET /api/agent/events`（状態変化のロングポーリング）、`POST /api/agent/invoke`（ツール呼び出し）、WebSocket `/ws/editor`（ブラウザタブとの接続）
 - **無効化**: `agent: { enabled: false }` で上記すべてがマウントされなくなる
 - **状態観測・外部変更検知の詳細**: [`docs/agent-hub.md`](./docs/agent-hub.md) を参照（`GET /api/agent/events` / `editor_wait_for_event` の契約、`fs.watch` による外部変更の能動検知、ナビツリー再ハイドレート・通知バナー）
-- **非ループバック bind 時のトークン**: `host` を LAN IP や `0.0.0.0` にすると、起動ごとのトークンが必要になる（エディター画面・`/api/content`・`/api/file`・静的ファイルを含むアプリ全体が対象で、`agent.enabled: false` でも同じ。`/api/health` のみ認証なしで応答する）。起動バナーに `http://<host>:<port>/?token=…` が表示されるので **一度だけそれを開く**と `bge_session` cookie が発行され、以後そのブラウザは認可される。同じトークンは `<configDir>/.burgereditor/agent-token`（`configDir` は読み込んだ設定ファイルのディレクトリ。mode 0600、終了時に削除）にも書かれる。**`.burgereditor/` を `.gitignore` に追加すること**。同じマシンで動く `mcp-server` はこのファイルを自動で読むので設定は不要。ただし `local` を `--config` / `BGE_CONFIG` で起動した場合は、`mcp-server` にも同じ設定ファイルを指定する（そうしないと別のディレクトリのトークンを探してしまう）。別マシンや任意の値を使いたいときは環境変数 `BGE_AGENT_TOKEN` で上書きできる。`localhost` / `127.0.0.1` / `::1` に bind している間はトークン不要
-- **Host / Origin 検査（DNS rebinding 対策）**: `hostGuard` はアプリ全体に掛かる。`Host`（と、あれば `Origin`）が `localhost` / ループバック / 設定した `host` 以外なら、ループバック bind でも 403（`0.0.0.0` / `::` への bind では `Host` 検査を省き、`Origin` が `Host` と一致するかだけを見る）
+- **非ループバック bind 時のトークン**: `host` を LAN IP にすると、起動ごとのトークンが必要になる（エディター画面・`/api/content`・`/api/file`・静的ファイルを含むアプリ全体が対象で、`agent.enabled: false` でも同じ。`/api/health` のみ認証なしで応答する）。起動バナーに `http://<host>:<port>/?token=…` が表示されるので **一度だけそれを開く**と `bge_session` cookie が発行され、以後そのブラウザは認可される。同じトークンは `<configDir>/.burgereditor/agent-token`（`configDir` は読み込んだ設定ファイルのディレクトリ。mode 0600、終了時に削除）にも書かれる。**`.burgereditor/` を `.gitignore` に追加すること**。同じマシンで動く `mcp-server` はこのファイルを自動で読むので設定は不要。ただし `local` を `--config` / `BGE_CONFIG` で起動した場合は、`mcp-server` にも同じ設定ファイルを指定する（そうしないと別のディレクトリのトークンを探してしまう）。別マシンや任意の値を使いたいときは環境変数 `BGE_AGENT_TOKEN` で上書きできる。`localhost` / `127.0.0.1` / `::1` に bind している間はトークン不要
+- **Host / Origin 検査（DNS rebinding 対策）**: `hostGuard` はアプリ全体に掛かる。`Host`（と、あれば `Origin`）が `localhost` / ループバック / 設定した `host` 以外なら、ループバック bind でも 403
 - **認証されていない upgrade の扱い**: 非ループバック bind で cookie / bearer の無い `/ws/editor` の upgrade は HTTP 401、`Host` / `Origin` が許可リストに無い場合は 403 で、いずれもハンドシェイク時点で拒否される（`/api/agent/*` と同じ `hostGuard` / cookie-or-bearer 判定を upgrade 前に通す）。ハンドシェイクを受理してから close するのではなく、`app.request()` で in-process に検証できる
 - **利用側**: `@burger-editor/mcp-server --mode local`（既定の `auto` でも、`local` に到達できれば自動的にここへ転送される）
 - **デバッグ**: サーバー側は `DEBUG=@bge:local`、ブラウザ側は console の `[bge-agent-ws]` / `[bge-agent-link]` 行。ブラウザ側でフレーム全文のログを有効にするには `localStorage.setItem('bge:debug', '1')`（この設定は並行して実装中）。`/api/agent/*` の応答に付く ISO `timestamp` で両者を突き合わせられる

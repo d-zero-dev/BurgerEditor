@@ -2,9 +2,9 @@ import { randomBytes, timingSafeEqual } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-export const AGENT_SESSION_COOKIE = 'bge_session';
+import { isLoopbackHost } from '../helpers/host.js';
 
-const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
+export const AGENT_SESSION_COOKIE = 'bge_session';
 
 export interface AgentAuth extends AsyncDisposable {
 	/** `false` when bound to a loopback address — every route is open, no token exists. */
@@ -21,7 +21,7 @@ export interface AgentAuth extends AsyncDisposable {
 }
 
 /**
- * Bound to a non-loopback address (a LAN IP, `0.0.0.0`, …), anyone who can
+ * Bound to a non-loopback address (e.g. a LAN IP), anyone who can
  * reach the port can open the editor UI — unlike loopback, where reaching
  * the port already implies running code on the same machine (which can read
  * `documentRoot` directly, making a token pointless). This mints a
@@ -40,7 +40,7 @@ export async function createAgentAuth(
 	host: string,
 	configDir: string,
 ): Promise<AgentAuth> {
-	if (LOOPBACK_HOSTS.has(host)) {
+	if (isLoopbackHost(host)) {
 		return {
 			required: false,
 			token: null,

@@ -5,6 +5,8 @@ import path from 'node:path';
 
 import { resolveConfig } from '@burger-editor/file-io';
 
+import { assertConnectableHost } from '../helpers/host.js';
+
 export interface UserConfigResult {
 	readonly config: LocalServerConfig;
 	/**
@@ -24,6 +26,7 @@ export interface UserConfigResult {
  * configPath }` rather than the bare config because the Agent Hub needs the
  * config's directory as a stable place to persist its per-launch token — and
  * a caller that only wants the config picks `config` out of it in one step.
+ * @throws {import('../helpers/host.js').WildcardHostError} when `host` is `0.0.0.0` / `::` — see `helpers/host.ts` for why
  * @param options forwarded to `resolveConfig` — `configPath` names the config file directly (otherwise `BGE_CONFIG`, then a search from `process.cwd()`)
  * @example
  * ```ts
@@ -41,6 +44,7 @@ export async function getUserConfig(
 	options?: ResolveConfigOptions,
 ): Promise<UserConfigResult> {
 	const { config, configPath } = await resolveConfig(undefined, options);
+	assertConnectableHost(config.host);
 	const configDir = configPath ? path.dirname(configPath) : process.cwd();
 	return { config, configDir, configPath };
 }

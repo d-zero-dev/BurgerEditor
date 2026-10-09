@@ -67,40 +67,41 @@ describe('hostGuard', () => {
 	});
 });
 
-describe('hostGuard — wildcard bind (0.0.0.0 / ::)', () => {
-	// A wildcard bind is reachable under every interface address, and no
-	// client ever sends the wildcard itself as Host — allow-listing the
-	// literal would 403 every real LAN client. Access is gated by the agent
-	// token in that mode; the guard only has to keep Origin honest.
-	test.each(['0.0.0.0', '::', '[::]'])(
-		'%s accepts a request addressed to any interface address',
-		async (bind) => {
-			const app = buildApp(bind);
-			const res = await app.request('/api/agent/status', {
-				headers: { host: '192.0.2.20:5255' },
-			});
-			expect(res.status).toBe(200);
-		},
-	);
-
-	test('accepts when Origin names the same host the request was addressed to', async () => {
-		const app = buildApp('0.0.0.0');
+describe('hostGuard — an IPv6 configured host (regression: #1001)', () => {
+	// Browsers send an IPv6 Host/Origin bracketed (`[2001:db8::1]:5255`), and
+	// URL#hostname keeps the brackets — the bare configured value alone
+	// would 403 every legitimate request.
+	test('accepts Host and Origin addressed to the bracketed configured address', async () => {
+		const app = buildApp('2001:db8::1');
 		const res = await app.request('/api/agent/status', {
-			headers: { host: '192.0.2.20:5255', origin: 'http://192.0.2.20:5255' },
+			headers: {
+				host: '[2001:db8::1]:5255',
+				origin: 'http://[2001:db8::1]:5255',
+			},
 		});
 		expect(res.status).toBe(200);
 	});
 
-	test('still rejects an Origin that differs from Host (DNS rebinding page)', async () => {
-		const app = buildApp('0.0.0.0');
+	test('matches however the config spells the address (uppercase, long form)', async () => {
+		const app = buildApp('2001:DB8:0:0::1');
 		const res = await app.request('/api/agent/status', {
-			headers: { host: '192.0.2.20:5255', origin: 'http://evil.example.com' },
+			headers: { host: '[2001:db8::1]:5255' },
+		});
+		expect(res.status).toBe(200);
+	});
+
+	test('still rejects a different IPv6 address', async () => {
+		const app = buildApp('2001:db8::1');
+		const res = await app.request('/api/agent/status', {
+			headers: { host: '[2001:db8::2]:5255' },
 		});
 		expect(res.status).toBe(403);
 	});
+});
 
-	test('still rejects a missing Host header', async () => {
-		const guard = hostGuard('0.0.0.0');
+describe('hostGuard — missing Host header', () => {
+	test('rejects a request without a Host header', async () => {
+		const guard = hostGuard('192.0.2.50');
 		const fakeContext = {
 			req: { header: () => {} },
 			text: (body: string, status: number) => new Response(body, { status }),
