@@ -88,9 +88,17 @@ export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 		const body = doc.body;
 		const win = doc.defaultView;
 
+		// 解除はスタックの逆順（observer → リスナー → rAF）。rAFの取り消しを
+		// 最後に置くのは、先に止めたイベント源が新しいrAFを積めないようにするため
+		const stack = new DisposableStack();
+		const listeners = new AbortController();
+		const { signal } = listeners;
+
 		let mouseX = 0;
 		let mouseY = 0;
 		let raf = 0;
+		stack.defer(() => cancelAnimationFrame(raf));
+		stack.defer(() => listeners.abort());
 
 		const updatePosition = () => {
 			const selected = getBlockAtPosition(doc, mouseX, mouseY);
@@ -141,6 +149,12 @@ export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 		};
 
 		const scheduleUpdate = () => {
+			// 画像の読み込み待ちはsignalで外さないため（下記）、アンマウント後に
+			// 読み込みが終わってもここで止める。止めないと破棄済みのメニューが
+			// engineの選択中ブロックを書き換える
+			if (signal.aborted) {
+				return;
+			}
 			cancelAnimationFrame(raf);
 
 			if (engine.isProcessed) {
@@ -161,20 +175,28 @@ export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 
 		const onHideEvent = () => hide();
 
-		body.addEventListener('mousemove', onMouseMove);
-		body.addEventListener('mouseleave', onHideEvent);
-		doc.addEventListener('mouseleave', onHideEvent);
-		win?.addEventListener('mouseleave', onHideEvent);
-		globalThis.addEventListener('resize', onHideEvent);
-		engine.el.addEventListener('bge:saved', scheduleUpdate);
+		body.addEventListener('mousemove', onMouseMove, { signal });
+		body.addEventListener('mouseleave', onHideEvent, { signal });
+		doc.addEventListener('mouseleave', onHideEvent, { signal });
+		win?.addEventListener('mouseleave', onHideEvent, { signal });
+		globalThis.addEventListener('resize', onHideEvent, { signal });
+		engine.el.addEventListener('bge:saved', scheduleUpdate, { signal });
 
+		// 画像の読み込み待ちにはsignalを渡さない。signalは登録ごとに解除手順を
+		// 抱え、onceで外れた後も手放さないため、削除済みのimgまでeffectの
+		// 寿命いっぱい解放されなくなる
 		const observer = new MutationObserver((mutations) => {
 			for (const mutation of mutations) {
 				for (const node of mutation.addedNodes) {
-					if (!(node instanceof HTMLElement)) {
+					// iframe文書のノードは別realmなのでinstanceof HTMLElementは
+					// 常に偽になる。nodeTypeで判定する
+					if (node.nodeType !== Node.ELEMENT_NODE) {
 						continue;
 					}
-					const images = node.querySelectorAll('img');
+					const element = node as Element;
+					const images = element.matches('img')
+						? [element]
+						: element.querySelectorAll('img');
 					for (const img of images) {
 						img.addEventListener('load', scheduleUpdate, { once: true });
 						img.addEventListener('error', scheduleUpdate, { once: true });
@@ -184,17 +206,9 @@ export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 			}
 		});
 		observer.observe(doc, { childList: true, subtree: true });
+		stack.defer(() => observer.disconnect());
 
-		return () => {
-			body.removeEventListener('mousemove', onMouseMove);
-			body.removeEventListener('mouseleave', onHideEvent);
-			doc.removeEventListener('mouseleave', onHideEvent);
-			win?.removeEventListener('mouseleave', onHideEvent);
-			globalThis.removeEventListener('resize', onHideEvent);
-			engine.el.removeEventListener('bge:saved', scheduleUpdate);
-			observer.disconnect();
-			cancelAnimationFrame(raf);
-		};
+		return () => stack.dispose();
 	}, [engine, container, hide]);
 
 	const isMutable = currentBlock?.isMutable() ?? false;

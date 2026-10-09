@@ -245,3 +245,105 @@ test('processingによる非表示で選択中ブロックがクリアされる'
 	});
 	expect(engine.clearCurrentBlock).toHaveBeenCalled();
 });
+
+/**
+ * MutationObserverの通知（マイクロタスク）とrAFを1回ずつ消化する
+ */
+async function flushObserverAndFrame() {
+	await act(async () => {
+		await Promise.resolve();
+		await new Promise((resolve) => requestAnimationFrame(resolve));
+	});
+}
+
+/**
+ * 本番と同じくiframe文書のbodyをコンテナにする。iframe文書のノードは
+ * 親ウィンドウとは別realmなので、`instanceof HTMLElement`が偽になる条件まで再現できる
+ */
+function createFrameContainer() {
+	const iframe = document.createElement('iframe');
+	document.body.append(iframe);
+	const frameDoc = iframe.contentDocument!;
+	frameDoc.open();
+	frameDoc.write('<!doctype html><html><head></head><body></body></html>');
+	frameDoc.close();
+	return frameDoc.body;
+}
+
+/**
+ * `<div>`で包んだimg（ブロック追加時の形）を作る
+ * @param img
+ */
+function wrapInDiv(img: HTMLImageElement) {
+	const wrapper = img.ownerDocument.createElement('div');
+	wrapper.append(img);
+	return wrapper;
+}
+
+/**
+ * コンテナの文書でimgを作って追加し、MutationObserverに拾わせる
+ * @param container
+ * @param toAddedNode - imgから実際に追加するノードを作る
+ */
+async function appendImage(
+	container: HTMLElement,
+	toAddedNode: (img: HTMLImageElement) => Node,
+) {
+	const img = container.ownerDocument.createElement('img');
+	container.append(toAddedNode(img));
+	await flushObserverAndFrame();
+	return img;
+}
+
+test('アンマウント後はマウス移動・bge:savedで位置更新が走らない', async () => {
+	const engine = createMockEngine();
+	const container = document.createElement('div');
+	document.body.append(container);
+	vi.mocked(getBlockAtPosition).mockReturnValue(null);
+
+	const { unmount } = renderWithEngine(engine, <BlockMenu container={container} />);
+	unmount();
+
+	dispatchMouseMove(document.body, 10, 10);
+	engine.el.dispatchEvent(new CustomEvent('bge:saved'));
+	await flushObserverAndFrame();
+
+	expect(getBlockAtPosition).not.toHaveBeenCalled();
+	expect(engine.clearCurrentBlock).not.toHaveBeenCalled();
+});
+
+test.each([
+	{ label: '要素に包まれた画像', toAddedNode: wrapInDiv },
+	{ label: '画像要素そのもの', toAddedNode: (img: HTMLImageElement) => img },
+])(
+	'iframe文書に追加された$labelの読み込み完了で位置が更新される',
+	async ({ toAddedNode }) => {
+		const engine = createMockEngine();
+		const container = createFrameContainer();
+		vi.mocked(getBlockAtPosition).mockReturnValue(null);
+
+		renderWithEngine(engine, <BlockMenu container={container} />);
+		const img = await appendImage(container, toAddedNode);
+
+		img.dispatchEvent(new Event('load'));
+		await flushObserverAndFrame();
+
+		expect(getBlockAtPosition).toHaveBeenCalledTimes(1);
+	},
+);
+
+test('アンマウント後に画像の読み込みが終わっても位置更新が走らない', async () => {
+	const engine = createMockEngine();
+	const container = createFrameContainer();
+	vi.mocked(getBlockAtPosition).mockReturnValue(null);
+
+	const { unmount } = renderWithEngine(engine, <BlockMenu container={container} />);
+	const img = await appendImage(container, wrapInDiv);
+
+	unmount();
+	img.dispatchEvent(new Event('load'));
+	await flushObserverAndFrame();
+
+	expect(getBlockAtPosition).not.toHaveBeenCalled();
+	expect(engine.clearCurrentBlock).not.toHaveBeenCalled();
+});
