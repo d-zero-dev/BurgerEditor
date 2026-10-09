@@ -130,6 +130,25 @@ describe('bootLocalServer — successful boot', () => {
 		expect(res.status).toBe(200);
 	});
 
+	test('installs SIGINT/SIGTERM handlers while booted and removes them on dispose', async () => {
+		const sigintBefore = process.listenerCount('SIGINT');
+		const sigtermBefore = process.listenerCount('SIGTERM');
+		{
+			await using _handle = await bootLocalServer(
+				makeLocalServerConfig({
+					documentRoot: roots.documentRoot,
+					host: '127.0.0.1',
+					agent: { enabled: false },
+				}),
+				roots.path,
+			);
+			expect(process.listenerCount('SIGINT')).toBe(sigintBefore + 1);
+			expect(process.listenerCount('SIGTERM')).toBe(sigtermBefore + 1);
+		}
+		expect(process.listenerCount('SIGINT')).toBe(sigintBefore);
+		expect(process.listenerCount('SIGTERM')).toBe(sigtermBefore);
+	});
+
 	test('a non-loopback bind with agent.enabled: false still requires the token for pages and /api/content', async () => {
 		await using handle = await bootLocalServer(
 			makeLocalServerConfig({

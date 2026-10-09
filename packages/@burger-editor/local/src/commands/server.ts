@@ -37,6 +37,12 @@ export interface LocalServerHandle extends AsyncDisposable {
  * owns those side effects — so this is the seam a test drives directly to
  * exercise the boot sequence (including the exit-before-bind failure path)
  * without spawning a subprocess.
+ *
+ * On a successful boot it installs a process-global SIGINT/SIGTERM handler
+ * that disposes every boot resource (HTTP/WS server, fs watcher, Agent Hub,
+ * token file) and then calls `process.exit(0)`. Disposing the returned handle
+ * removes that handler, so a test must dispose it (`await using`) to avoid
+ * leaving the handler installed in the test worker.
  * @param config
  * @param configDir Directory the agent token file is persisted under (`getUserConfig()`'s `configDir`).
  * @example
