@@ -70,7 +70,7 @@
 		"hono": "4.13.7",
 		"open": "11.0.4",
 		"prettier": "3.9.9",
-		"ws": "8.21.3",
+		"ws": "8.22.0",
 		"zod": "4.4.3"
 	},
 	"devDependencies": {
@@ -80,7 +80,7 @@
 		"@types/node": "26.5.1",
 		"@types/react": "19.3.0",
 		"@types/react-dom": "19.3.0",
-		"@types/ws": "8.18.1",
+		"@types/ws": "8.18.2",
 		"dotenv": "17.4.2",
 		"react": "19.3.0",
 		"react-dom": "19.3.0",
