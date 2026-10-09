@@ -25,7 +25,7 @@ BurgerEditor v4 を新しく導入する、AI クライアントを接続する�
 ```
 
 - 既定モードは `--mode auto`: 呼び出しごとにローカル開発サーバー（`bge`）への到達を確認し、届けば `local`（ブラウザ連携）、届かなければ `disk`（ファイル直接操作）に自動フォールバックする。`--mode local` / `--mode disk` で固定もできる
-- `bge` が非ループバック（LAN IP や `0.0.0.0`）で bind されているときだけ、`BGE_AGENT_TOKEN` 環境変数、または `bge` 起動時に自動生成される `<configDir>/.burgereditor/agent-token` が必要になる。`localhost` / `127.0.0.1` / `::1` に bind している通常の開発フローでは認証不要
+- `bge` が非ループバック（LAN IP）で bind されているときだけ、`BGE_AGENT_TOKEN` 環境変数、または `bge` 起動時に自動生成される `<configDir>/.burgereditor/agent-token` が必要になる。`localhost` / `127.0.0.1` / `::1` に bind している通常の開発フローでは認証不要
 - `.burgereditor/` ディレクトリ（起動ごとのトークンファイル置き場）は必ず `.gitignore` に追加する
 
 ## `burgereditor.config.{js,mjs,ts,cjs,json}` の主要キー
