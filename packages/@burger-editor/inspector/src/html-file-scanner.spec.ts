@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-import { test, expect, describe, beforeAll, afterAll } from 'vitest';
+import { test, expect, describe, beforeAll, afterAll, afterEach, vi } from 'vitest';
 
 import { scanHtmlFiles, scanHtmlFilesWithMultipleQueries } from './html-file-scanner.js';
 
@@ -60,15 +60,29 @@ describe('html-file-scanner', () => {
 		await fs.rm(documentRoot, { recursive: true, force: true });
 	});
 
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
 	/**
-	 * 結果をdocumentRoot相対パスの`path:line`に正規化し、readdirの順序に
-	 * 依存せず比較できるようソートして返す
+	 * 結果の並びを保ったまま、documentRoot相対パスの`path:line`に正規化して返す
 	 * @param matches
 	 */
 	function locations(matches: readonly { filePath: string; lineNumber: number }[]) {
-		return matches
-			.map((m) => `${path.relative(documentRoot, m.filePath)}:${m.lineNumber}`)
-			.toSorted();
+		return matches.map(
+			(m) => `${path.relative(documentRoot, m.filePath)}:${m.lineNumber}`,
+		);
+	}
+
+	/**
+	 * `fs.readdir` の返却順を逆順にして、ファイルシステム依存の順序を再現する
+	 */
+	function reverseReaddirOrder() {
+		const original = fs.readdir.bind(fs) as (...args: unknown[]) => Promise<unknown[]>;
+		vi.spyOn(fs, 'readdir').mockImplementation((async (...args: unknown[]) => {
+			const entries = await original(...args);
+			return entries.toReversed();
+		}) as unknown as typeof fs.readdir);
 	}
 
 	describe('scanHtmlFiles', () => {
@@ -127,6 +141,18 @@ describe('html-file-scanner', () => {
 			);
 		});
 
+		test('readdirの返却順に依存せず、ファイルパス→文書内の出現順で返す', async () => {
+			reverseReaddirOrder();
+
+			const matches = await scanHtmlFiles(documentRoot, query('margin', ['*']));
+
+			expect(locations(matches)).toEqual([
+				'index.html:4',
+				'index.html:5',
+				path.join('sub', 'page.html') + ':1',
+			]);
+		});
+
 		test('存在しないdocumentRootは例外を投げる', async () => {
 			await expect(
 				scanHtmlFiles(path.join(documentRoot, 'missing'), query('margin', ['none'])),
@@ -163,6 +189,21 @@ describe('html-file-scanner', () => {
 			]);
 
 			expect(matches).toEqual([]);
+		});
+
+		test('readdirの返却順に依存せず、ファイルパス→文書内の出現順で返す', async () => {
+			reverseReaddirOrder();
+
+			const matches = await scanHtmlFilesWithMultipleQueries(documentRoot, [
+				query('margin', ['*']),
+				query('margin', ['none', 'large']),
+			]);
+
+			expect(locations(matches)).toEqual([
+				'index.html:4',
+				'index.html:5',
+				path.join('sub', 'page.html') + ':1',
+			]);
 		});
 
 		test('条件が空配列なら空配列を返す', async () => {
