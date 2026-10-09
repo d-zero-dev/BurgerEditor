@@ -1,13 +1,10 @@
 import type { McpMode, RouterOptions } from './router.js';
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
-import { registerAgentTools } from './register-agent-tools.js';
-import server from './server.js';
-import createBlockV3 from './tools/create-block-v3.js';
-import getBlockDataParamsV3 from './tools/get-block-data-params-v3.js';
-import getBlockType from './tools/get-block-type.js';
+import { startServer } from './start-server.js';
+
+export { registerTools } from './register-tools.js';
 
 const MODES: readonly McpMode[] = ['auto', 'local', 'disk'];
 const DEFAULT_LOCAL_URL = 'http://localhost:5255';
@@ -58,18 +55,6 @@ export function parseRouterOptions(argv: readonly string[]): RouterOptions {
 }
 
 /**
- *
- * @param server
- * @param options
- */
-export function registerTools(server: McpServer, options: RouterOptions) {
-	getBlockType(server);
-	getBlockDataParamsV3(server);
-	createBlockV3(server);
-	registerAgentTools(server, options);
-}
-
-/**
  * Boot the MCP server over stdio.
  *
  * stdout is the MCP protocol channel — never write to it from here.
@@ -80,10 +65,25 @@ export function registerTools(server: McpServer, options: RouterOptions) {
  *
  * Any error during registration or transport connect is logged to stderr
  * with context (which phase failed) and re-thrown so the parent process
- * sees a non-zero exit. The previous bare `await run()` would still exit
- * non-zero on throw, but with no breadcrumb identifying WHICH stage broke.
+ * sees a non-zero exit. A bare throw would exit non-zero too, but with no
+ * breadcrumb identifying WHICH stage broke.
+ *
+ * Disposing the returned handle closes the server and its stdio transport,
+ * which removes the transport's stdin listeners (stdin is paused only when
+ * no other `data` listener remains, so an embedder's own stdin reader keeps
+ * the process alive). In-flight tool calls are not awaited — see
+ * `startServer`. No SIGINT/SIGTERM handler is installed: stdin is the only
+ * resource held and nothing is buffered for flushing, so Node's default
+ * signal exit loses nothing, whereas a handler would have to call
+ * `process.exit` itself and own the exit code.
+ * @example
+ * ```ts
+ * const handle = await run();
+ * // ...when the embedding process wants the server gone:
+ * await handle[Symbol.asyncDispose]();
+ * ```
  */
-export async function run() {
+export async function run(): Promise<AsyncDisposable> {
 	const startedAt = process.hrtime.bigint();
 	try {
 		const options = parseRouterOptions(process.argv.slice(2));
@@ -91,14 +91,13 @@ export async function run() {
 		process.stderr.write(
 			`[burger-editor mcp] starting (pid ${process.pid}, mode=${options.mode}, url=${options.localUrl}${configLabel})\n`,
 		);
-		registerTools(server, options);
-		const transport = new StdioServerTransport();
-		await server.connect(transport);
+		const handle = await startServer(options, new StdioServerTransport());
 		const ms = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
 		process.stderr.write(
 			`[burger-editor mcp] ready on stdio (boot ${ms.toFixed(0)}ms) — ` +
 				`v3 + agent tools registered\n`,
 		);
+		return handle;
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 		const stack = error instanceof Error && error.stack ? `\n${error.stack}` : '';

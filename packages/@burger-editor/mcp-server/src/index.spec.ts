@@ -19,7 +19,7 @@ import {
 
 import { __resetV4ContextCache } from './context.js';
 
-import { parseRouterOptions, registerTools } from './index.js';
+import { parseRouterOptions, registerTools, run } from './index.js';
 
 // Spelled out rather than derived from `agentTools` so that a tool
 // accidentally dropped from (or renamed in) cli's registry fails here
@@ -262,5 +262,30 @@ describe('parseRouterOptions', () => {
 		expect(() => parseRouterOptions(['--config', '--mode', 'local'])).toThrow(
 			'--config requires a path to a config file.',
 		);
+	});
+});
+
+describe('run', () => {
+	const originalArgv = process.argv;
+
+	beforeEach(() => {
+		process.argv = ['node', 'bge-mcp-server', '--mode', 'disk'];
+		// Startup breadcrumbs go to stderr; keep them out of the test output.
+		vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+	});
+
+	afterEach(() => {
+		process.argv = originalArgv;
+		vi.restoreAllMocks();
+	});
+
+	test('serves on stdin and returns a handle whose disposal removes the stdin listeners (regression: #870)', async () => {
+		const before = process.stdin.listenerCount('data');
+
+		const handle = await run();
+		expect(process.stdin.listenerCount('data')).toBe(before + 1);
+
+		await handle[Symbol.asyncDispose]();
+		expect(process.stdin.listenerCount('data')).toBe(before);
 	});
 });
