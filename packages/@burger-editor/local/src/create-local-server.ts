@@ -31,8 +31,7 @@ export interface CreateLocalServerOptions {
  * `WebSocketServer` for `/ws/editor`, and resolve once the socket is
  * listening. The returned handle is `AsyncDisposable`: disposing terminates
  * open WebSocket clients, drops keep-alive HTTP connections, and awaits
- * `server.close()` — this is the shutdown path `runServerCommand` used to
- * discard entirely (issue #869).
+ * `server.close()`.
  * @param options
  * @example
  * await using local = await createLocalServer({ app, hostname: '127.0.0.1', port: 0 });
