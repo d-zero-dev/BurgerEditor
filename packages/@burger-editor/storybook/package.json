@@ -21,7 +21,7 @@
 		"@burger-editor/custom-element": "4.0.0-alpha.76",
 		"@burger-editor/local": "4.0.0-alpha.76",
 		"@storybook/react-vite": "10.6.1",
-		"@tabler/icons-react": "3.46.0",
+		"@tabler/icons-react": "3.48.0",
 		"react": "19.3.0",
 		"react-dom": "19.3.0",
 		"storybook": "10.6.1",

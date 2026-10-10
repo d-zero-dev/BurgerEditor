@@ -581,7 +581,7 @@ __metadata:
     "@burger-editor/migrator": "npm:4.0.0-alpha.76"
     "@burger-editor/utils": "npm:4.0.0-alpha.76"
     "@rolldown/plugin-babel": "npm:0.2.4"
-    "@tabler/icons-react": "npm:3.46.0"
+    "@tabler/icons-react": "npm:3.48.0"
     "@testing-library/dom": "npm:10.4.2"
     "@testing-library/react": "npm:16.3.3"
     "@types/babel__core": "npm:7.20.5"
@@ -642,7 +642,7 @@ __metadata:
   resolution: "@burger-editor/custom-element@workspace:packages/@burger-editor/custom-element"
   dependencies:
     "@burger-editor/utils": "npm:4.0.0-alpha.76"
-    "@tabler/icons": "npm:3.46.0"
+    "@tabler/icons": "npm:3.48.0"
     "@tiptap/core": "npm:3.31.4"
     "@tiptap/extension-image": "npm:3.31.4"
     "@tiptap/extension-paragraph": "npm:3.31.4"
@@ -792,7 +792,7 @@ __metadata:
     "@burger-editor/custom-element": "npm:4.0.0-alpha.76"
     "@burger-editor/local": "npm:4.0.0-alpha.76"
     "@storybook/react-vite": "npm:10.6.1"
-    "@tabler/icons-react": "npm:3.46.0"
+    "@tabler/icons-react": "npm:3.48.0"
     "@testing-library/dom": "npm:10.4.2"
     "@testing-library/react": "npm:16.3.3"
     "@types/react": "npm:19.3.0"
@@ -5201,21 +5201,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tabler/icons-react@npm:3.46.0":
-  version: 3.46.0
-  resolution: "@tabler/icons-react@npm:3.46.0"
+"@tabler/icons-react@npm:3.48.0":
+  version: 3.48.0
+  resolution: "@tabler/icons-react@npm:3.48.0"
   dependencies:
-    "@tabler/icons": "npm:3.46.0"
+    "@tabler/icons": "npm:3.48.0"
   peerDependencies:
     react: ">= 16"
-  checksum: 10c0/8fab7d3a9ec6b62724a1628b8bad68a7b503979e4418f97d057c442adc5257b227a08185a884d452d171983648e36fa92cd7bfe9457f693e9b67bbf4ecf8ec24
+  checksum: 10c0/49c314159da3d19cbb4e4791928a4edd78a02805ac262702b0a177fccbf2b8f3b7ace1ca81e1df873237ef86266dce5bf5547758803e83d24d5887af99716240
   languageName: node
   linkType: hard
 
-"@tabler/icons@npm:3.46.0":
-  version: 3.46.0
-  resolution: "@tabler/icons@npm:3.46.0"
-  checksum: 10c0/c9671449c2f53fa7e329c487162f89a28417cdd5ce96cfa290fe21388724da303dd2297af3b39a88a74b02c36ce55598bc3cf6537dbddf548881da2c05f35f5e
+"@tabler/icons@npm:3.48.0":
+  version: 3.48.0
+  resolution: "@tabler/icons@npm:3.48.0"
+  checksum: 10c0/52c4e582dede13508c6cf34b73c23f80449dde042ee487cb2ef082e92b50cb644f61072871a95f6a0ebb11b117d7f10581455906bb74ed0fa0a9924170876e80
   languageName: node
   linkType: hard
 
