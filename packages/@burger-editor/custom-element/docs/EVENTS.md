@@ -1,52 +1,60 @@
 # Custom Events
 
-`<bge-wysiwyg-editor>`の内部にある`<bge-wysiwyg>`要素は、以下のカスタムイベントを発火します。
+`<bge-wysiwyg-editor>`の内部にある`<bge-wysiwyg>`要素は、以下のカスタムイベントを発火します。どちらも`bubbles: true` / `composed: true`のため、`<bge-wysiwyg-editor>`やその祖先でも受け取れます。
 
 ## `transaction`イベント
 
-エディタの状態が変更されるたびに発火します。
+TipTapのトランザクションごとに発火します。
 
 ### 発火タイミング
 
 - テキスト入力時
 - フォーマット変更時（太字、斜体など）
-- コンテンツの追加・削除時
-- その他のエディタ状態変更時
+- カーソル位置・選択範囲の変更時
+- コンテンツの追加・削除・置き換え時（HTMLモードからデザインモードへ戻ったときの内容反映を含む）
 
 ### 用途
 
-- マークアップボタン（太字、斜体など）の状態を更新
-- エディタの現在の状態を取得
+- マークアップボタン（太字、斜体など）の押下状態・有効/無効を更新
 
 ### イベント詳細
 
-- `event.detail.state`: TipTapのエディタ状態が含まれる
+- `event.detail.state`: ツールバー向けの状態。ノード/マークごとの`{ active: boolean; disabled: boolean }`を持つオブジェクト（`Record<EditorNode, NodeState>`）です。TipTap/ProseMirrorの`EditorState`ではありません
+
+キーは`bold` / `italic` / `underline` / `strike` / `subscript` / `superscript` / `code` / `link` / `buttonLikeLink` / `blockquote` / `bulletList` / `orderedList` / `note` / `h1`〜`h6` / `flexBox` / `image` / `alignStart` / `alignCenter` / `alignEnd`です。これ以外の拡張の状態は`wysiwygElement.isActive(name)`で取得します。
 
 ### 使用例
 
 ```typescript
 const wysiwygElement = editor.querySelector('bge-wysiwyg');
 wysiwygElement.addEventListener('transaction', (event) => {
-	console.log('Editor state changed:', event.detail.state);
-	// マークアップボタンの状態を更新する処理
+	const { active, disabled } = event.detail.state.bold;
+	boldButton.ariaPressed = String(active);
+	boldButton.disabled = disabled;
 });
 ```
 
 ## `bge:structure-change`イベント
 
-構造変更やモード切り替えが発生したときに発火します。
+`hasStructureChange`（HTMLモードの内容にデザインモードで表示できない構造が含まれるか）の値が変化したときに発火します。値が変わらなければ、モードを切り替えても発火しません。
 
 ### 発火タイミング
 
-- HTMLモード（`'html'`）に切り替わった時
-- HTMLモードからデザインモード（`'wysiwyg'`）への切り替えが構造変更により防止された時
-- 構造変更状態が変化した時（`hasStructureChange`の値が変わった時）
+- 初期値にデザインモードで表示できない構造があり、HTMLモードで開いた時（`false` → `true`）
+- 内容が空のデザインモードのエディタに、デザインモードで表示できない構造を`value`（または親の`innerHTML`）で代入し、HTMLモードへ切り替わった時（`false` → `true`）。接続後でも起きる
+- HTMLモードで入力・フォーカスアウトした結果、構造変更の有無が変わった時
+- HTMLモードからデザインモード（`'wysiwyg'`）への切り替えが構造変更により拒否された時（それまで`false`だった場合）
+- HTMLモードへ切り替えた時点で構造変更の有無が変わった時
+- デザインモードへ戻り、構造変更状態が解除された時（`true` → `false`）
+
+HTMLモード中に`value`へ代入しても構造変更の有無は再計算されず、発火しません（再計算は入力・フォーカスアウト・モード切り替えのとき）。
 
 ### 用途
 
-- マークアップボタンの無効化（HTMLモード時）
-- モード切り替えUIの同期（セレクトボックスやHTMLモードボタン）
-- デザインモード（`'wysiwyg'`）オプションの有効/無効化
+- デザインモード（`'wysiwyg'`）への切り替えUIの有効/無効化
+- HTMLモード中の構造変更状態の変化に合わせたマークアップボタン・モード切り替えUIの同期
+
+モードの変化そのものを検知する用途には使えません。組み込みUIは、モード切り替えUIの操作（HTMLモードボタンの`command`、セレクトボックスの`change`）の直後に`mode`を読み直して同期しています（[Customization](./CUSTOMIZATION.md#ui要素とイベントのマッピング)）。
 
 ### イベント詳細
 
@@ -63,55 +71,14 @@ wysiwygElement.addEventListener('bge:structure-change', (event) => {
 });
 ```
 
-## イベント監視のベストプラクティス
+## イベント監視のパターン
 
-### 複数のイベントを監視する
+どのUI要素がどのイベントを監視すべきか、リスナーの登録順序と解除方法は[Customization](./CUSTOMIZATION.md)を参照してください。
 
-多くのUI要素は複数のイベントを監視する必要があります。
-
-```typescript
-const wysiwygElement = editor.querySelector('bge-wysiwyg');
-
-// transactionイベント: エディタ状態の変更を監視
-wysiwygElement.addEventListener('transaction', (event) => {
-	updateButtonState(button, event.detail.state, this);
-});
-
-// structure-changeイベント: モード切り替えを監視
-wysiwygElement.addEventListener('bge:structure-change', () => {
-	const currentState = getCurrentEditorState(wysiwygElement);
-	updateButtonState(button, currentState, this);
-});
-```
-
-### イベントリスナー登録のタイミング
-
-イベントリスナーは、UI要素の初期化**前**に登録してください。
-
-```typescript
-// ✅ 正しい順序
-// 1. イベントリスナーを登録
-wysiwygElement.addEventListener('bge:structure-change', (event) => {
-	modeSelector.value = wysiwygElement.mode;
-});
-
-// 2. 初期状態を設定（イベントリスナー登録後）
-modeSelector.value = wysiwygElement.mode;
-```
-
-```typescript
-// ❌ 間違った順序
-// 1. 初期状態を設定（イベントリスナー登録前）
-modeSelector.value = wysiwygElement.mode;
-
-// 2. イベントリスナーを登録
-wysiwygElement.addEventListener('bge:structure-change', (event) => {
-	modeSelector.value = wysiwygElement.mode;
-});
-// → 初期化時点とイベント発火時の状態が不整合になる可能性
-```
+- [UI要素とイベントのマッピング](./CUSTOMIZATION.md#ui要素とイベントのマッピング)
+- [初期化パターン](./CUSTOMIZATION.md#初期化パターン)
 
 ## 関連ドキュメント
 
-- [Architecture](./ARCHITECTURE.md) - イベント駆動設計の詳細
 - [Customization](./CUSTOMIZATION.md) - UI拡張時のイベント監視パターン
+- [API](./API.md) - API仕様

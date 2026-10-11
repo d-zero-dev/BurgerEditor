@@ -15,6 +15,11 @@ import { TextOnlyModeController } from './text-only-mode.js';
 
 declare global {
 	interface HTMLElementEventMap {
+		/**
+		 * TipTapのトランザクションごとに `<bge-wysiwyg>` が発火する（bubbles / composed）。
+		 * `detail.state` はTipTap/ProseMirrorの `EditorState` ではなく、
+		 * ツールバー向けに要約したノード/マークごとの `{ active, disabled }`
+		 */
 		transaction: CustomEvent<Transaction>;
 	}
 }

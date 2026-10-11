@@ -336,6 +336,23 @@ test('HTML mode button should be enabled when structure change is resolved', () 
 	}
 });
 
+test('空のエディタに表示できない構造を代入して子がHTMLモードへ切り替わると、HTMLモードボタンが押下状態になる', () => {
+	document.body.innerHTML = '<bge-wysiwyg-editor></bge-wysiwyg-editor>';
+	const editor = document.querySelector('bge-wysiwyg-editor') as BgeWysiwygEditorElement;
+	const htmlModeButton = editor.querySelector(
+		'[data-bge-toolbar-button="html-mode"]',
+	) as HTMLButtonElement;
+	const wysiwygElement = editor.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	expect(htmlModeButton.ariaPressed).toBe('false');
+
+	wysiwygElement.value = '<p><span>test</span></p>';
+
+	expect(wysiwygElement.mode).toBe('html');
+	expect(wysiwygElement.hasStructureChange).toBe(true);
+	expect(htmlModeButton.ariaPressed).toBe('true');
+	expect(htmlModeButton.disabled).toBe(true);
+});
+
 // experimental.textOnlyMode = false のテスト
 test('default mode (experimental=false) renders HTML mode button only', () => {
 	document.body.innerHTML = '<bge-wysiwyg-editor><p>test</p></bge-wysiwyg-editor>';
