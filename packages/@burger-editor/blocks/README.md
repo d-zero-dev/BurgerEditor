@@ -69,7 +69,7 @@ import { items } from '@burger-editor/blocks/editor';
 
 ## デフォルトカタログ
 
-`defaultCatalog` は以下のカテゴリ構成。実装は `src/catalog/*` を参照。
+`defaultCatalog` は以下のカテゴリ構成。実装は `src/catalogs/*` を参照。
 
 ### 見出し
 
@@ -137,6 +137,121 @@ import { items } from '@burger-editor/blocks/editor';
 | `[data-bgc-flex-box]`                     | Wysiwyg 内の横並び Flexbox                                           |
 | `[data-bgc-align]`                        | Wysiwyg 内段落の左寄せ／中央寄せ／右寄せ                             |
 | `--bge-repeat-min-inline-size--{variant}` | グリッドの折り返し基準インラインサイズのプリセット（variant で切替） |
+
+## スタイルオプション（`--bge-options-*`）
+
+ブロックオプションダイアログの「ブロックのスタイル拡張」に並ぶプルダウンは、CSS カスタムプロパティから自動生成される。選択肢を増やす・減らす・値を変えるのはすべて CSS 側で行う。
+
+### 宣言の形
+
+```css
+[data-bge-container] {
+	--bge-options-margin--none: 0; /* 選択肢: --bge-options-{カテゴリ}--{値名} */
+	--bge-options-margin--normal: 3rem;
+	--bge-options-margin--large: 8rem;
+	--bge-options-margin: var(--bge-options-margin--normal); /* 既定値 */
+}
+
+:where([data-bge-container]) {
+	margin-block-end: var(--bge-options-margin); /* 実際に効かせる箇所 */
+}
+```
+
+- `--bge-options-{カテゴリ}--{値名}` が 1 つの選択肢になり、カテゴリごとに 1 つのプルダウンにまとまる（表示は `値名 (値)`）
+- `--bge-options-{カテゴリ}: var(--bge-options-{カテゴリ}--{値名})` が参照している値名が既定値になる。既定値を選んだブロックには何も書き込まれず、CSS の既定値に従う
+- 既定値以外を選ぶと、ブロックのコンテナ要素に `style="--bge-options-{カテゴリ}: var(--bge-options-{カテゴリ}--{値名})"` が書き込まれる。そのため **変数を宣言するだけでは見た目は変わらない**。`var(--bge-options-{カテゴリ})` を使うスタイルも書くこと
+- カテゴリ名・値名は英小文字とハイフンで構成する（数字などを含む名前は、保存した HTML を読み戻すときに選択状態として復元されない）
+
+### 標準で用意されているカテゴリ
+
+`general.css` は以下を宣言し、スタイルも実装済み。値は `src/general.css` を参照。
+
+| カテゴリ            | 値名（太字が既定値）                                         | 対象                         |
+| ------------------- | ------------------------------------------------------------ | ---------------------------- |
+| `max-width`         | **`normal`** / `small` / `large` / `full`                    | コンテナの最大インライン幅   |
+| `margin`            | **`normal`** / `none` / `small` / `large`                    | ブロック下の余白             |
+| `bg-color`          | **`transparent`** / `white` / `gray` / `blue` / `red`        | 背景色                       |
+| `padding-block`     | **`none`** / `small` / `medium` / `large`                    | 上下の内側余白               |
+| `padding-inline`    | **`default-gutter`** / `none` / `small` / `medium` / `large` | 左右の内側余白               |
+| `column-gap`        | **`normal`** / `none` / `small` / `large`                    | 列間                         |
+| `row-gap`           | **`normal`** / `none` / `small` / `large`                    | 行間                         |
+| `_grid_subgrid-gap` | **`normal`** / `none` / `small` / `large`                    | グリッド内サブグリッドの間隔 |
+
+### 独自の値・カテゴリを追加する
+
+エディタに読み込ませるプロジェクト CSS（設定の `stylesheets`）に同じ形で書く。`stylesheets` は既定で `general.css` より優先度の高いカスケードレイヤーに入るため、同名の変数を書けば値を上書きでき、新しい値名を書けば選択肢が増える。
+
+```css
+[data-bge-container] {
+	/* 既存カテゴリに値を追加 */
+	--bge-options-bg-color--brand: #eef;
+
+	/* 新しいカテゴリ */
+	--bge-options-shadow--none: none;
+	--bge-options-shadow--subtle: 0 1px 3px rgb(0 0 0 / 12%);
+	--bge-options-shadow: var(--bge-options-shadow--none);
+}
+
+:where([data-bge-container]) {
+	box-shadow: var(--bge-options-shadow);
+}
+```
+
+### 選択肢を消す（空値）
+
+値を空にした選択肢はプルダウンから除外される。標準の選択肢を隠したいときに使う。
+
+```css
+[data-bge-container] {
+	--bge-options-bg-color--red: ; /* コロンとセミコロンの間に半角スペースが必須 */
+}
+```
+
+`--bge-options-bg-color--red:;` のようにスペースを空けないと宣言自体がパースエラーで無視され、選択肢は消えない。
+
+### コンテナタイプ専用のカテゴリ
+
+カテゴリ名を `_grid_` / `_inline_` / `_float_` で始めると、そのコンテナタイプのブロックでだけ表示される（プルダウンのラベルには接頭辞を除いた名前が出る）。
+
+```css
+[data-bge-container] {
+	--bge-options-_grid_align-items--stretch: stretch;
+	--bge-options-_grid_align-items--center: center;
+	--bge-options-_grid_align-items: var(--bge-options-_grid_align-items--stretch);
+}
+
+:where([data-bge-container='grid'], [data-bge-container^='grid:'])
+	:where([data-bge-container-frame]) {
+	align-items: var(--bge-options-_grid_align-items);
+}
+```
+
+### エディタが検出する宣言・しない宣言
+
+エディタはページに読み込まれたスタイルシートを走査し、セレクタが `[data-bge-container]` そのものであるルールの宣言だけを拾う。
+
+- 検出する: `[data-bge-container] { … }`、CSS Nesting で親の中に書いた `.parent { [data-bge-container] { … } }`、`@layer` / `@scope` の中のルール、`@scope ([data-bge-container]) { :scope { … } }`
+- 検出しない: `.parent [data-bge-container]` や `:where([data-bge-container])` のように `[data-bge-container]` 以外を含むセレクタ、`@media` / `@supports` / `@container` の中のルール
+- 同じ変数が複数箇所にあるときは CSS のカスケードと同じく、上位のカスケードレイヤー → 後に書かれたものが勝つ。既定値の指定も同様で、親セレクタの中にネストした指定であっても上位レイヤーにあればそちらが既定値になる（同じレイヤーなら `[data-bge-container]` 直下の指定が優先）
+
+### 折り返し基準インラインサイズのプリセット
+
+グリッドの auto-fit / auto-fill で使う折り返し基準幅は、`--bge-options-*` とは別の `--bge-repeat-min-inline-size--{プリセット名}` で宣言する。標準は `small` / **`medium`** / `large`。検出の規則は上と同じだが、空値の選択肢は除外されない。
+
+プリセットを追加する場合、変数の宣言に加えて、選択結果（`data-bge-container` 属性値の `--{プリセット名}`）をグリッドに反映するセレクタも書く必要がある。`general.css` が持つのは `small` / `medium` / `large` の分だけ。
+
+```css
+[data-bge-container] {
+	--bge-repeat-min-inline-size--x-large: 800px;
+}
+
+:where([data-bge-container='grid'], [data-bge-container^='grid:']) {
+	&:where([data-bge-container$=':--x-large'], [data-bge-container*=':--x-large:'])
+		:where([data-bge-container-frame]) {
+		--bge-repeat-min-inline-size: var(--bge-repeat-min-inline-size--x-large);
+	}
+}
+```
 
 ## カスタムアイテム
 
