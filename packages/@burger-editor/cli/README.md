@@ -41,7 +41,7 @@ npx @burger-editor/cli config-resolve
 
 ## Installation / Usage
 
-bin はスコープ名 `@burger-editor/cli` で公開し、グローバル PATH を汚さない方針。**npx 経由で呼び出す**:
+bin は名前を付けずに公開している（グローバルにインストールすると、スコープを外した `cli` という汎用的なコマンド名になる）。**npx 経由で呼び出す**:
 
 ```sh
 npx @burger-editor/cli <subcommand> [args] [flags]
