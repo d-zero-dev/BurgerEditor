@@ -37,6 +37,8 @@
 
 		// Project specific
 		"bgeconfig",
+		// ARCHITECTURE.md mermaid node ID for mcp-server (hyphens stripped)
+		"mcpserver",
 
 		// Networking terminology (WebSocket ack/nack protocol)
 		"acked",

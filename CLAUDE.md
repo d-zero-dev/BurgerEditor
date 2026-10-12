@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 概要
 
-BurgerEditor v4 は、プラットフォーム非依存の HTML ブロックエディタ。Lerna + Yarn Workspaces のモノレポ（`packages/@burger-editor/*` に15パッケージ）で、headless な core と宣言的 UI を分離した構成を取る。React UI・TipTap ベースの Web Components・ローカル CMS・MCP サーバー・v3 互換レイヤーを同一リポジトリで提供する。
-
-Lerna は **fixed モード**で、全パッケージが同一バージョンで上がる。
+BurgerEditor v4 は、CMS に埋め込む HTML ブロックエディタ。Lerna + Yarn Workspaces のモノレポ（`packages/@burger-editor/*`）で、headless な core と React UI を分離し、TipTap の Web Components・ローカル CMS・CLI・MCP サーバー・v3 互換レイヤーを同じリポジトリで提供する。
 
 ## 実装把握の入口
 
-コードを読み始める前に **[ARCHITECTURE.md](./ARCHITECTURE.md)** を読むこと。パッケージ構成と依存グラフ、レイヤー分離の原則、機能配置の判断基準、実験的機能の設計、TipTap 拡張の追加手順が記載されている。実装詳細の正は各ソースの JSDoc。
+コードを読み始める前に **[ARCHITECTURE.md](./ARCHITECTURE.md)** を読むこと。全体地図・境界と所有権・依存の向き・不変条件と、変更の種類ごとに読む場所が書いてある。実装詳細の正は各ソースの JSDoc、パッケージの使い方の正は各パッケージの README。
+
+特定のパッケージにだけ関係する規約は `.claude/rules/` にあり、該当ファイルを触ると自動で読み込まれる。
 
 ## プロジェクト構成
 
@@ -19,7 +19,7 @@ Lerna は **fixed モード**で、全パッケージが同一バージョンで
 - `package.json` — scripts、`volta`（Node / Yarn バージョン）、`packageManager`
 - `lerna.json` — バージョン管理モード（fixed）、対象パッケージ
 - `tsconfig.json` — TypeScript 設定
-- `vitest.config.ts` — テストプロジェクト定義（`default` / `blocks` / `client` / `core` / `local` / `vr` 等）
+- `vitest.config.ts` — テストプロジェクト定義
 - `.yarnrc.yml` — Yarn の挙動（後述のサプライチェーン設定を含む）
 
 ## コマンド
@@ -29,12 +29,12 @@ yarn start                    # ローカル CMS サーバー起動
 yarn build                    # 全パッケージビルド（lerna run build）
 yarn dev                      # 全パッケージを watch（並列）
 yarn clean                    # ビルド成果物削除
-yarn test                     # 全テスト（VR 含む）を Docker 内で実行
-yarn test:unit                # 同じテストをホストで実行（Docker を経由しない）
-yarn test:vr                  # VR のみ（ホスト）
+yarn test                     # テストを Docker 内で実行（--project で絞る）
+yarn test:unit                # 同じテストをホストで実行（VR は CI と一致しない）
 yarn test:vr:docker           # VR のみ（Docker）
 yarn test:vr:docker:update    # VR ベースラインを更新
-yarn test:no-compiler         # React Compiler無効化状態でclient/blocks/blocks-editorのみ実行
+yarn test:no-compiler         # React Compiler を無効にして client / blocks / blocks-editor を実行
+yarn verify:*                 # CI と同じ構造検査（architecture-graph / react-compiler / blocks-boundary / packed-install。後の 2 つは build 後）
 yarn lint                     # eslint / stylelint / markuplint / prettier / textlint / cspell
 yarn commit                   # Commitizen（cz）でコミット
 ```
@@ -47,25 +47,23 @@ yarn commit                   # Commitizen（cz）でコミット
 - **パッケージディレクトリに cd しない**: 常にリポジトリルートから実行する。個別パッケージを対象にする場合は `yarn workspace <package-name> <command>` を使う
 - **コマンドの連続実行禁止**: `&&`、`;`、改行によるコマンド連結をしない。1回の Bash 呼び出しで1コマンドのみ実行する。連結されたコマンドは settings.json の permissions でパターンマッチできず、毎回ユーザーの手動承認が必要になる
 - **main / dev ブランチでの作業・コミット禁止**: 作業開始前に `git branch --show-current` で現ブランチを確認し、`main` / `dev` にいる場合は `git switch -c <topic>` でトピックブランチを作ってから作業する
-- **git worktree からのビルドは `NX_WORKSPACE_ROOT_PATH` 必須**: リポジトリ内部にネストした worktree（`.claude/worktrees/*` 等）から素の `yarn build` を実行すると、Nx がワークスペースルートをメインチェックアウトに誤解決し、**成功表示のまま成果物がメイン側に書かれる**（worktree の `lib/` は生成されない）。`NX_WORKSPACE_ROOT_PATH=<worktree絶対パス> yarn build` でルートを明示すること
+- **git worktree からのビルドは `NX_WORKSPACE_ROOT_PATH` 必須**: リポジトリ内部にネストした worktree（`.claude/worktrees/*` 等）から素の `yarn build` を実行すると、Nx がワークスペースルートをメインチェックアウトに誤解決し、**成功表示のまま成果物がメイン側に書かれる**（worktree の `dist/` は生成されない）。`NX_WORKSPACE_ROOT_PATH=<worktree絶対パス> yarn build` でルートを明示すること
 
 ## テスト
 
-`yarn test` は `scripts/docker-yarn.sh` 経由で **linux/amd64 の Docker コンテナ（`bge-vr` イメージ）** 内でテストを実行する。VR（Visual Regression）のスクリーンショットが CI と pixel 単位で一致するようにするため。
+`yarn test` は `scripts/docker-yarn.sh` 経由で **linux/amd64 の Docker コンテナ** 内でテストを実行する。VR（Visual Regression）のスクリーンショットを CI と画素単位で一致させるため。初回はイメージのビルドが走る（Apple Silicon では遅い）。イメージの Node は `package.json` の `volta.node` に追従する。
 
-- **初回はイメージビルドが走る**（Apple Silicon では QEMU エミュレーションのため遅い）。2回目以降は `node_modules` と Yarn キャッシュの named volume を再利用する
-- **イメージの Node バージョンは `package.json` の `volta.node` から読まれる**。Node を上げるときは `volta.node` を更新すれば追従する（Dockerfile 側の書き換えは不要）
-- `/.dockerenv` / `CI` / `SKIP_DOCKER` のいずれかがあると Docker ラッパーを飛ばして直接実行する。CI は自前の Playwright コンテナ内で動くため、入れ子の Docker にならない
-- **ローカル検証は関連プロジェクトのみ**: 変更したパッケージのテストを含むプロジェクトを `yarn test --project <name>`（複数可）で実行する。依存先パッケージを変更した場合は、利用側パッケージのプロジェクトも含める。引数なしの `yarn test`（全プロジェクト）は CI とリリース前（`prerelease`）が担い、作業中のローカル検証では使わない
-- VR を含まないプロジェクトを Docker を経由せず素早く回したいときは `yarn test:unit --project <name>`（ホスト実行）を使う
-- **UI に関わる変更では `yarn test:vr:docker` も実行する**（VR は Docker 内でしか CI と一致しない）
-- **`yarn test` / `yarn test:unit` はプロジェクトをグループごとに別プロセスで順に実行する**（`scripts/run-vitest-groups.mjs`。理由と引数の扱いは同ファイルと `scripts/vitest-project-groups.js` を参照）。`vitest.config.ts` にプロジェクトを追加したら `scripts/vitest-project-groups.js` にも登録する（未登録だと設定の読み込みで失敗する）
-- **UI を意図的に変更したら `yarn test:vr:docker:update` でベースラインを再生成する**
-- **`BGE_NO_COMPILER=1` で React Compiler を無効化できる**（`client/vite.config.ts` / `blocks/rollup.config.js` / `vitest.config.ts` が共通で見る環境変数、`scripts/react-compiler-babel.js` で一元管理）。CI は `test`（有効）と `test-no-compiler`（無効）の両方を回す。コンパイルの有無で挙動が変わる不具合を疑うときは `BGE_NO_COMPILER=1 yarn test:unit` で切り分ける
+- **ローカル検証は関連プロジェクトのみ**: 変更したパッケージのテストを含むプロジェクトを `yarn test --project <name>`（複数可）で実行する。依存先パッケージを変更した場合は、利用側パッケージのプロジェクトも含める。引数なしの `yarn test`（全プロジェクト）は CI とリリース前（`prerelease`）が担う
+- VR を含まないプロジェクトを素早く回すときは `yarn test:unit --project <name>`（ホスト実行）を使う
+- **UI に関わる変更では `yarn test:vr:docker` も実行する**。UI を意図的に変えたら `yarn test:vr:docker:update` でベースラインを再生成してコミットに含める
+- **Vitest は型チェックしない**。テストが通っても型エラーは `yarn build` でしか出ない
+- `vitest.config.ts` にプロジェクトを追加したら `scripts/vitest-project-groups.js` にも登録する（未登録だと設定の読み込みで失敗する）
+- React Compiler の有無で挙動が変わる不具合を疑うときは `BGE_NO_COMPILER=1 yarn test:unit` で切り分ける（CI は有効・無効の両方を回す）
 
 ## 依存関係の追加
 
 - バージョンは固定で追加する（`yarn add foo@1.2.3`）。`^` / `~` を付けない（`.yarnrc.yml` の `defaultSemverRangePrefix: ''` で既定化されている）
+- **モノレポ内のパッケージ間に依存を足したら、ARCHITECTURE.md の依存グラフも同じ変更で直す**（`yarn verify:architecture-graph` が CI で食い違いを落とす）。足してよい向きかは ARCHITECTURE.md の「依存の向き」で判断する
 - **追加したら `.github/renovate.json` の `packageRules` を確認する**。そのパッケージが既存の `groupName` グループに入るべきか、新しいグループを作るべきかを判断する
   - `config:recommended` は `group:monorepos` を含むため、**同一 monorepo から公開されるパッケージ群（`@vitest/*`、`@tiptap/*`、`playwright` 系など）は設定なしで自動的に束ねられる**。手で書く必要はない
   - 手当てが必要なのは Renovate が推測できない**ベンダー横断の結合**:
@@ -83,14 +81,17 @@ yarn commit                   # Commitizen（cz）でコミット
 
 - **JSDoc = 公開 API（export）の API ユーザー向け文書**: IDE ホバーで実装を読まない読者に届くため、WHAT / HOW / WHY を適切に書き、`@example` を必須とする。メインの公開 API は README にも載せる
 - **非公開 API の JSDoc は必須にしない**: ただし複雑な内部モジュールの設計 WHY / Why not はファイルレベル JSDoc が推奨置き場
+- **README は利用者向けの使い方だけ**: 内部実装の解説やファイル一覧を書かない
+- **ARCHITECTURE.md は索引**: 全体地図・境界・依存の向き・不変条件・読み方に絞る。実装詳細の保存庫にしない
+- **手順は Skill にする**: 何段階もある作業手順は `.claude/skills/` に置き、ARCHITECTURE.md からは名前で指す
 - **計画相対概念の禁止**: 実装計画に由来する相対概念（Phase / Step 番号、「本 PR」「今回」「旧実装」「導入予定」）を JSDoc・テスト名・ドキュメントに書かない。現在の挙動と意図的な不在（Why not）として自己完結に書く。外部参照は issue / PR 番号のみ可
-- **ドキュメントと実装の矛盾**: 実装詳細の矛盾は実装が正としてドキュメントを直す。ARCHITECTURE.md のアーキテクチャ原則との矛盾は、実装が設計違反の可能性を先に調査する
+- **ドキュメントと実装の矛盾**: 実装詳細の矛盾は実装が正としてドキュメントを直す。ARCHITECTURE.md の依存の向き・不変条件との矛盾は、実装が設計違反の可能性を先に調査する
 
 ## 構造ルール
 
 - **`exports` を壊さない**: `package.json` の `exports` は差分追記のみ。既存の公開パスを削除しない。モノレポ内パッケージ間でも `exports` 経由でのみアクセスする
 - **公開 API は厳選する**: `exports` で一括公開しない
-- **レイヤーを跨いだ依存を作らない**: 依存方向は ARCHITECTURE.md の依存グラフに従う
+- **依存してよいのは ARCHITECTURE.md の依存グラフの矢印だけ**: 新しい矢印は「依存の向き」に反しないか確かめてから足す
 
 ## セキュリティ
 
@@ -113,22 +114,23 @@ yarn commit                   # Commitizen（cz）でコミット
 
 ## スキル
 
-| スキル          | パス                                                                 | 用途                                                                                                                                                                         |
-| --------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Grill me        | `.claude/skills/grill-me/SKILL.md`                                   | 計画・設計の前提を掘り下げて合意形成する                                                                                                                                     |
-| Impl            | `.claude/skills/impl/SKILL.md`                                       | 合意済み計画の実装・検証・PR 作成のオーケストレーション                                                                                                                      |
-| Git             | `.claude/skills/git/SKILL.md`                                        | コミット規約・コミット前コンテンツチェック                                                                                                                                   |
-| PR              | `.claude/skills/pr/SKILL.md`                                         | PR 作成フロー（base 追従・push はユーザー実行・CI 監視）                                                                                                                     |
-| npm publish     | `.claude/skills/npm-publish/SKILL.md`                                | リリース（dev→main マージ・バージョニング・publish 監視・検証）                                                                                                              |
-| Refactor        | `.claude/skills/refactor/SKILL.md`                                   | テストファーストのリファクタリング手順                                                                                                                                       |
-| Product Manager | `.claude/skills/product-manager/SKILL.md`                            | リポジトリ分析、ドキュメント整合チェック、PR レビュー                                                                                                                        |
-| QA Engineer     | `.claude/skills/qa-engineer/SKILL.md`                                | コードレビュー、テスト品質チェック                                                                                                                                           |
-| Hono            | `.claude/skills/hono/SKILL.md`（`.agents/skills/hono` への symlink） | Hono 公式 Agent Skill。ルーティング・middleware・JSX・testing・WebSocket 等の inline API リファレンス。`npx skills add https://github.com/honojs/skills --skill hono` で更新 |
+| スキル           | パス                                                                 | 用途                                                                                                                                                      |
+| ---------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Grill me         | `.claude/skills/grill-me/SKILL.md`                                   | 計画・設計の前提を掘り下げて合意形成する                                                                                                                  |
+| Impl             | `.claude/skills/impl/SKILL.md`                                       | 合意済み計画の実装・検証・PR 作成のオーケストレーション                                                                                                   |
+| Git              | `.claude/skills/git/SKILL.md`                                        | コミット規約・コミット前コンテンツチェック                                                                                                                |
+| PR               | `.claude/skills/pr/SKILL.md`                                         | PR 作成フロー（base 追従・push はユーザー実行・CI 監視）                                                                                                  |
+| npm publish      | `.claude/skills/npm-publish/SKILL.md`                                | リリース（dev→main マージ・バージョニング・publish 監視・検証）                                                                                           |
+| Refactor         | `.claude/skills/refactor/SKILL.md`                                   | テストファーストのリファクタリング手順                                                                                                                    |
+| Product Manager  | `.claude/skills/product-manager/SKILL.md`                            | リポジトリ分析、ドキュメント整合チェック、PR レビュー                                                                                                     |
+| QA Engineer      | `.claude/skills/qa-engineer/SKILL.md`                                | コードレビュー、テスト品質チェック                                                                                                                        |
+| TipTap extension | `.claude/skills/tiptap-extension/SKILL.md`                           | `custom-element` の Wysiwyg に TipTap 拡張・ツールバーボタンを組み込む手順                                                                                |
+| Hono             | `.claude/skills/hono/SKILL.md`（`.agents/skills/hono` への symlink） | Hono 公式 Agent Skill。ルーティング・middleware・JSX・testing・WebSocket 等の inline API リファレンス。更新はユーザーが手動で行う（`npx skills add ...`） |
 
-> `skills/burger-editor-v4/` （リポジトリルート）は**利用者に配布する** BurgerEditor 操作スキルであり、`.claude/skills/` の開発用スキルとは別物。混同しないこと。
+> リポジトリルートの `skills/`（`editing-burger-editor-pages/` / `building-burger-editor-projects/`）は**利用者に配布する** BurgerEditor 操作スキルであり、`.claude/skills/` の開発用スキルとは別物。混同しないこと。
 
 ## AI 操作プロトコル
 
 - **修正前にスキャンする**: 変更を始める前にパッケージ構造・依存関係・`exports` の現状を確認する
-- **アーキテクチャガード**: 変更後に構造ルールと ARCHITECTURE.md の依存方向・レイヤー分離に違反していないかセルフチェックする
+- **アーキテクチャガード**: 変更後に構造ルールと ARCHITECTURE.md の依存の向き・不変条件に違反していないかセルフチェックする
 - **実装を勝手に広げない**: 合意したスコープの外に手を出さない

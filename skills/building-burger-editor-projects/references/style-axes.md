@@ -2,10 +2,11 @@
 
 `editing-burger-editor-pages` スキルの `style_options_list` が読むのは、**`burgereditor.config.js` の `stylesheets` に列挙された CSS の中の `--bge-options-<軸>--<変種>` という命名規則の変数だけ**。新しい軸をエージェントから使えるようにするには、この規則に従って CSS に定義し、かつそのファイルを `stylesheets` に含める必要がある。
 
-## 定義パターン（`@burger-editor/blocks/src/general.css` の実例）
+## 定義パターン（`@burger-editor/blocks/src/general.css` から抜粋）
 
 ```css
-:root {
+/* 宣言: 選択肢と既定変種 */
+[data-bge-container] {
 	--bge-options-margin--normal: 3rem;
 	--bge-options-margin--none: 0;
 	--bge-options-margin--small: 1rem;
@@ -13,14 +14,21 @@
 	--bge-options-margin: var(--bge-options-margin--normal); /* 既定変種 */
 }
 
-[data-bge-container] {
-	margin-block-end: var(--bge-options-margin); /* 実際に使う箇所 */
+/* 適用: 実際に使う箇所 */
+:where([data-bge-container]) {
+	--_margin-block-end: var(--bge-options-margin);
+	margin-block-end: var(--_margin-block-end);
+
+	&:where(:last-child) {
+		--_margin-block-end: 0;
+	}
 }
 ```
 
-1. 各変種を `--bge-options-<軸>--<変種名>: <値>` で定義する
-2. 既定変種を指す `--bge-options-<軸>: var(--bge-options-<軸>--<既定変種>)` を必ず用意する（無いと `style_options_list` が軸自体を検出できない、またはブロックが未指定時に値を持てない）
-3. ブロック側の実際の CSS プロパティに `var(--bge-options-<軸>)` を割り当てる
+1. 各変種を `[data-bge-container]` のルールの中に `--bge-options-<軸>--<変種名>: <値>` で定義する。エディタの UI が選択肢として検出するのは `[data-bge-container]` で宣言した変数だけで、`:root` などに書くと `style_options_list` には出てもエディタの選択肢には出ない
+2. 既定変種を指す `--bge-options-<軸>: var(--bge-options-<軸>--<既定変種>)` を用意する。これが無いとブロックが未指定のときに値を持てず、エディタも既定の選択肢を決められない
+3. 実際の CSS プロパティに `var(--bge-options-<軸>)` を割り当てる。エディタは選択した値を変数としてブロックに書き込むだけなので、この割り当てが無いと見た目は変わらない。割り当ては宣言とは別の `:where([data-bge-container])` に書き、詳細度を 0 に保つ（`[data-bge-container]` に直接書くと、`:last-child` で余白を消すような上書きを打ち消してしまう）
+4. 軸名・変種名は英小文字とハイフンだけにする（数字を含む名前は保存後に選択状態が復元されない）
 
 エージェントが `block_insert` / `block_replace` の `spec.style` に書く値は `{ '--bge-options-<軸>': 'var(--bge-options-<軸>--<変種>)' }` の形になる。
 
