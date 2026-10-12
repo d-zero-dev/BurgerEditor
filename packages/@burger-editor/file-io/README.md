@@ -8,14 +8,14 @@ Node 側のファイル I/O 集約パッケージ。`@burger-editor/local`（ブ
 yarn add @burger-editor/file-io
 ```
 
-`@burger-editor/core` と `@burger-editor/blocks` を peer 依存。
+`@burger-editor/core` と `@burger-editor/blocks` は依存として一緒にインストールされる。
 
 ## Related Packages
 
 | パッケージ                                    | 関係                                                | 使い分け                                       |
 | --------------------------------------------- | --------------------------------------------------- | ---------------------------------------------- |
-| [`@burger-editor/core`](../core/)             | ブロック仕様の定義元（peer 依存）                   | file-io 単独不可                               |
-| [`@burger-editor/blocks`](../blocks/)         | 標準カタログ（peer 依存）                           | file-io 単独不可                               |
+| [`@burger-editor/core`](../core/)             | ブロック仕様の定義元（依存）                        | file-io 単独不可                               |
+| [`@burger-editor/blocks`](../blocks/)         | 標準カタログ（依存）                                | file-io 単独不可                               |
 | [`@burger-editor/local`](../local/)           | ブラウザ UI 付き CMS サーバー。file-io を利用       | 通常の編集はこちら経由（file-io は内包される） |
 | [`@burger-editor/cli`](../cli/)               | AI エージェント／スクリプト向け CLI。file-io を利用 | スクリプト経由のバッチ編集はこちら経由         |
 | [`@burger-editor/mcp-server`](../mcp-server/) | MCP プロトコル経由の操作。file-io を利用            | AI エージェント統合はこちら経由                |
