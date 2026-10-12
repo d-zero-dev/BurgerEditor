@@ -277,6 +277,29 @@ export class BurgerEditorEngine implements Disposable {
 		}
 		return currentBlock;
 	}
+	/**
+	 * List the block style options (`--bge-options-{category}--{key}`)
+	 * declared on `[data-bge-container]` in the stylesheets loaded into the
+	 * current editable area's document. This is what the block options
+	 * dialog renders as its style-option selects.
+	 *
+	 * The stylesheets are scanned on every call (no caching), so the result
+	 * reflects whatever is loaded at that moment. Detection rules (traversed
+	 * at-rules, layer priority, empty-value exclusion, default resolution)
+	 * are documented in
+	 * `dom-helpers/get-custom-properties.ts`.
+	 * @param containerType - Also include categories prefixed `_{containerType}_`
+	 * (e.g. `_grid_subgrid-gap` for `'grid'`); without it they are omitted
+	 * @returns Map keyed by category id; each category's `properties` maps
+	 * the key to its resolved `value` and whether it is the CSS default
+	 * @example
+	 * ```ts
+	 * for (const [id, category] of engine.getCustomProperties('grid')) {
+	 * 	const keys = [...category.properties.keys()];
+	 * 	console.log(id, category.name, keys); // '_grid_subgrid-gap' 'subgrid-gap' [...]
+	 * }
+	 * ```
+	 */
 	getCustomProperties(containerType?: ContainerType) {
 		return getCustomProperties(
 			this.#current.containerElement.ownerDocument,
@@ -332,6 +355,27 @@ export class BurgerEditorEngine implements Disposable {
 	getLiveBlocks(): readonly BurgerBlock[] {
 		return listLiveBlocks(this.#current);
 	}
+	/**
+	 * List the grid wrap-width presets (`--bge-repeat-min-inline-size--{key}`)
+	 * declared on `[data-bge-container]` in the current editable area's
+	 * document, used for the auto-fit / auto-fill "wrap width" select.
+	 *
+	 * Uses the same detection rules as {@link getCustomProperties}, except
+	 * that empty values are not filtered out. The default is the key
+	 * referenced by `--bge-repeat-min-inline-size: var(...)`. Each preset
+	 * also needs a selector rule in CSS that maps the container's
+	 * `--{key}` option to the variable; `general.css` ships it only for
+	 * `small` / `medium` / `large`.
+	 * @returns The preset category (id `'repeat-min-inline-size'`), or `null`
+	 * when no preset is declared
+	 * @example
+	 * ```ts
+	 * const presets = engine.getRepeatMinInlineSizeVariants();
+	 * const defaultKey = presets
+	 * 	? [...presets.properties].find(([, p]) => p.isDefault)?.[0]
+	 * 	: undefined; // 'medium' with the bundled general.css
+	 * ```
+	 */
 	getRepeatMinInlineSizeVariants() {
 		return getRepeatMinInlineSizeVariants(this.#current.containerElement.ownerDocument);
 	}

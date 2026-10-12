@@ -1985,6 +1985,28 @@ describe('Nested selector default priority', () => {
 		expect(resultObj.width.properties.b.isDefault).toBe(false);
 	});
 
+	test('nested compound `&[data-bge-container]` is read as a nested declaration', () => {
+		const style = document.createElement('style');
+		style.textContent = `
+			[data-bge-container] {
+				--bge-options-width--a: 100%;
+				--bge-options-width: var(--bge-options-width--a);
+			}
+			.parent {
+				&[data-bge-container] {
+					--bge-options-width--c: 300%;
+					--bge-options-width: var(--bge-options-width--c);
+				}
+			}
+		`;
+		document.head.append(style);
+		const result = getCustomProperties(document);
+		const resultObj = toObject(result);
+		expect(resultObj.width.properties.c.value).toBe('300%');
+		expect(resultObj.width.properties.a.isDefault).toBe(true);
+		expect(resultObj.width.properties.c.isDefault).toBe(false);
+	});
+
 	test('nested default is used as fallback when no direct default exists', () => {
 		const style = document.createElement('style');
 		style.textContent = `

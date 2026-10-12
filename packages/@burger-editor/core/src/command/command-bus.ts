@@ -55,7 +55,7 @@ export class CommandBus implements Disposable {
 	 * stay stable and readable across a test run or a debugging session.
 	 * Uniqueness holds only within one loaded copy of this module — the same
 	 * caveat as the `BurgerBlock`/`Item` module-level registries documented
-	 * in ARCHITECTURE.md § 不変条件と否定的知識 applies here too.
+	 * in ARCHITECTURE.md § 不変条件と負の知識 applies here too.
 	 */
 	readonly receiverId = `${COMMAND_BUS_ID}-${++receiverSequence}`;
 	readonly #detachers = new Map<HTMLElement, () => void>();
