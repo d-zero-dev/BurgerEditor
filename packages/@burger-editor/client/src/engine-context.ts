@@ -10,9 +10,9 @@ const EngineContext = createContext<BurgerEditorEngine | null>(null);
  * rendered under a `BurgerEditorRoot` / editable-area tree reads the engine
  * through {@link useEngine} instead of taking it as a prop — this is the
  * single dependency-injection point for the whole client UI.
- * @param root0
- * @param root0.engine
- * @param root0.children
+ * @param root0 - Provider props
+ * @param root0.engine - The engine instance to expose to the subtree
+ * @param root0.children - The subtree that reads the engine
  * @example
  * ```tsx
  * <EngineProvider engine={engine}>
@@ -41,9 +41,12 @@ export function EngineProvider({
  * @throws {Error} When called outside an `EngineProvider`
  * @example
  * ```tsx
- * function MyField() {
- * 	const engine = useEngine();
- * 	return <button onClick={() => engine.save()}>Save</button>;
+ * function SamplePreview() {
+ * 	const { config } = useEngine();
+ * 	if (!config.sampleImagePath) {
+ * 		return null;
+ * 	}
+ * 	return <img src={config.sampleImagePath} alt="" />;
  * }
  * ```
  */
