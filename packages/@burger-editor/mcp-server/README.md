@@ -235,15 +235,15 @@ Claude は自動的に `create_block_v3` を呼び出す。
 
 ### スキーマ参照
 
-| ツール                   | 説明                                                           | readToken |
-| ------------------------ | -------------------------------------------------------------- | :-------: |
-| `catalog_list`           | プロジェクトのブロックカタログ一覧                             |           |
-| `catalog_get`            | 個別カタログエントリ（そのまま spec に渡せる `template` 付き） |           |
-| `item_list`              | 標準アイテム名一覧                                             |           |
-| `item_schema`            | 個別アイテムの template + camelCase `dataKeys`                 |           |
-| `style_options_list`     | プロジェクト CSS から抽出した `--bge-options-*` 軸とバリアント |           |
-| `container_options_list` | grid / inline / float の静的オプション                         |           |
-| `config_resolve`         | 解決済み `config` の要約                                       |           |
+| ツール                   | 説明                                                                                                | readToken |
+| ------------------------ | --------------------------------------------------------------------------------------------------- | :-------: |
+| `catalog_list`           | プロジェクトのブロックカタログ一覧                                                                  |           |
+| `catalog_get`            | 個別カタログエントリ（そのまま spec に渡せる `template` 付き）                                      |           |
+| `item_list`              | 標準アイテム名一覧                                                                                  |           |
+| `item_schema`            | 個別アイテムの template + camelCase `dataKeys`                                                      |           |
+| `style_options_list`     | ブロックオプションダイアログが出す `--bge-options-*` 軸とバリアント（`containerType` で絞り込み可） |           |
+| `container_options_list` | grid / inline / float のオプション（grid の折り返し幅プリセットは CSS から読む）                    |           |
+| `config_resolve`         | 解決済み `config` の要約                                                                            |           |
 
 ### エディタ状態（`local` 連携）
 
