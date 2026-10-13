@@ -3,6 +3,47 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
+
+### Bug Fixes
+
+- **client:** track images in the editable-area iframe and dispose menu resources via a stack ([1ec699c](https://github.com/d-zero-dev/BurgerEditor/commit/1ec699c74b8c08ebfbb79ee31b819b360e947086)), closes [#873](https://github.com/d-zero-dev/BurgerEditor/issues/873)
+- **core:** restore style options whose names contain digits ([9a08fea](https://github.com/d-zero-dev/BurgerEditor/commit/9a08fea70447185ab0391eae5d95c6266ac12e02)), closes [#1016](https://github.com/d-zero-dev/BurgerEditor/issues/1016)
+- **custom-element:** make the h1 toolbar button apply a level 1 heading ([07c2c83](https://github.com/d-zero-dev/BurgerEditor/commit/07c2c831aa93dc0174cb37797ee0b462faa75ffb)), closes [#1012](https://github.com/d-zero-dev/BurgerEditor/issues/1012)
+- **custom-element:** sync html mode button aria-pressed on structure change ([1d77f44](https://github.com/d-zero-dev/BurgerEditor/commit/1d77f44f6415104d0d39b4ecebef9968e7cd56a1)), closes [#828](https://github.com/d-zero-dev/BurgerEditor/issues/828)
+- **inspector:** sort html-file-scanner results by file path ([213c6eb](https://github.com/d-zero-dev/BurgerEditor/commit/213c6eb8d837364405e3c3d39ff68056a5e4b563))
+- **local:** clean up after a failed boot and report failed shutdowns ([d99f8d0](https://github.com/d-zero-dev/BurgerEditor/commit/d99f8d0639c67d17d50c55786d6a220584cda2af)), closes [#1000](https://github.com/d-zero-dev/BurgerEditor/issues/1000)
+- **local:** keep route types nameable under zod 4.6 declaration emit ([d813b1d](https://github.com/d-zero-dev/BurgerEditor/commit/d813b1dd287d0fee72424dae61588daf2ab885ec))
+- **mcp-server:** declare blocks as a devDependency ([fa84b80](https://github.com/d-zero-dev/BurgerEditor/commit/fa84b804c463510ab6b9751cb51cdf2284ec086d)), closes [#1022](https://github.com/d-zero-dev/BurgerEditor/issues/1022)
+- **migrator:** drop the unused dependency on blocks ([5157278](https://github.com/d-zero-dev/BurgerEditor/commit/5157278dae92b57493bf9d65f46c09dfcff2a64a)), closes [#1013](https://github.com/d-zero-dev/BurgerEditor/issues/1013)
+
+- fix(cli)!: detect style options with the editor's rules ([94a76db](https://github.com/d-zero-dev/BurgerEditor/commit/94a76db66e5aee52b60be40a6c11c493ad5c9e6e)), closes [#1015](https://github.com/d-zero-dev/BurgerEditor/issues/1015) [#1018](https://github.com/d-zero-dev/BurgerEditor/issues/1018)
+- fix(core)!: split style option names in one place and share the editor stylesheet assembly ([e8693b9](https://github.com/d-zero-dev/BurgerEditor/commit/e8693b9fa16847117c295d9fe558fb299da5b28a)), closes [#1015](https://github.com/d-zero-dev/BurgerEditor/issues/1015) [#1018](https://github.com/d-zero-dev/BurgerEditor/issues/1018)
+- fix(local)!: reject wildcard hosts with an explanation and bracket IPv6 URLs ([615856c](https://github.com/d-zero-dev/BurgerEditor/commit/615856c36ee12cc83d3f064a92a6dd2908e0f2c2)), closes [#1001](https://github.com/d-zero-dev/BurgerEditor/issues/1001)
+
+### Features
+
+- **file-io:** add createStylesheetDocument for scanning CSS with core on Node ([24375d9](https://github.com/d-zero-dev/BurgerEditor/commit/24375d9ddbee86e39c22f6fb7e5bb483b85251ef)), closes [#1015](https://github.com/d-zero-dev/BurgerEditor/issues/1015)
+- **mcp-server:** return a disposable handle from run() ([6b2df3a](https://github.com/d-zero-dev/BurgerEditor/commit/6b2df3a6251fae0b61cc34c4c5da5174b8f93537)), closes [#870](https://github.com/d-zero-dev/BurgerEditor/issues/870)
+
+### BREAKING CHANGES
+
+- containerOptionsList() now takes the CLI context and returns a Promise.
+  gridOptions.repeatMinInlineSizeVariants lists preset names such as 'small' (read from CSS)
+  instead of the fixed '--small' / '--medium' / '--large'. styleOptionsList() now always includes
+  the built-in general.css axes.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+- names with more than one `--` after `--bge-options-`, and
+  `--bge-options-{category}--` with an empty key, are no longer offered as style options
+  (the latter is no longer read as the default declaration either).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+- host: '0.0.0.0' / '::' is now a config error. To open the
+  editor from other devices, set host to this machine's LAN IP instead.
+
 # [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
 
 ### Bug Fixes

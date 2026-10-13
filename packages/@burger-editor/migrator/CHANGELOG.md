@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
+
+### Bug Fixes
+
+- **migrator:** drop the unused dependency on blocks ([5157278](https://github.com/d-zero-dev/BurgerEditor/commit/5157278dae92b57493bf9d65f46c09dfcff2a64a)), closes [#1013](https://github.com/d-zero-dev/BurgerEditor/issues/1013)
+
 # [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
 
 **Note:** Version bump only for package @burger-editor/migrator

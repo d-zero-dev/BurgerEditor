@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/migrator",
-	"version": "4.0.0-alpha.76",
+	"version": "4.0.0-alpha.77",
 	"description": "BurgerEditor Content Migration Tool",
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)",
@@ -32,9 +32,9 @@
 		"clean": "tsc --build --clean"
 	},
 	"dependencies": {
-		"@burger-editor/core": "4.0.0-alpha.76",
-		"@burger-editor/legacy": "4.0.0-alpha.76",
-		"@burger-editor/utils": "4.0.0-alpha.76",
+		"@burger-editor/core": "4.0.0-alpha.77",
+		"@burger-editor/legacy": "4.0.0-alpha.77",
+		"@burger-editor/utils": "4.0.0-alpha.77",
 		"semver": "7.8.5"
 	}
 }

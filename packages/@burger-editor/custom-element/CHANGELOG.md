@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
+
+### Bug Fixes
+
+- **custom-element:** make the h1 toolbar button apply a level 1 heading ([07c2c83](https://github.com/d-zero-dev/BurgerEditor/commit/07c2c831aa93dc0174cb37797ee0b462faa75ffb)), closes [#1012](https://github.com/d-zero-dev/BurgerEditor/issues/1012)
+- **custom-element:** sync html mode button aria-pressed on structure change ([1d77f44](https://github.com/d-zero-dev/BurgerEditor/commit/1d77f44f6415104d0d39b4ecebef9968e7cd56a1)), closes [#828](https://github.com/d-zero-dev/BurgerEditor/issues/828)
+
 # [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
 
 ### Bug Fixes

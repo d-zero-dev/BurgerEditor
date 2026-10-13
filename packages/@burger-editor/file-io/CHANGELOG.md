@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
+
+### Features
+
+- **file-io:** add createStylesheetDocument for scanning CSS with core on Node ([24375d9](https://github.com/d-zero-dev/BurgerEditor/commit/24375d9ddbee86e39c22f6fb7e5bb483b85251ef)), closes [#1015](https://github.com/d-zero-dev/BurgerEditor/issues/1015)
+
 # [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
 
 **Note:** Version bump only for package @burger-editor/file-io

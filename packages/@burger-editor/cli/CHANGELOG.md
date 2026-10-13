@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
+
+- fix(cli)!: detect style options with the editor's rules ([94a76db](https://github.com/d-zero-dev/BurgerEditor/commit/94a76db66e5aee52b60be40a6c11c493ad5c9e6e)), closes [#1015](https://github.com/d-zero-dev/BurgerEditor/issues/1015) [#1018](https://github.com/d-zero-dev/BurgerEditor/issues/1018)
+
+### BREAKING CHANGES
+
+- containerOptionsList() now takes the CLI context and returns a Promise.
+  gridOptions.repeatMinInlineSizeVariants lists preset names such as 'small' (read from CSS)
+  instead of the fixed '--small' / '--medium' / '--large'. styleOptionsList() now always includes
+  the built-in general.css axes.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
 # [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
 
 ### Bug Fixes

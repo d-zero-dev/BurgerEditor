@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
+
+### Bug Fixes
+
+- **inspector:** sort html-file-scanner results by file path ([213c6eb](https://github.com/d-zero-dev/BurgerEditor/commit/213c6eb8d837364405e3c3d39ff68056a5e4b563))
+
 # [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
 
 **Note:** Version bump only for package @burger-editor/inspector

@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
+
+### Bug Fixes
+
+- **mcp-server:** declare blocks as a devDependency ([fa84b80](https://github.com/d-zero-dev/BurgerEditor/commit/fa84b804c463510ab6b9751cb51cdf2284ec086d)), closes [#1022](https://github.com/d-zero-dev/BurgerEditor/issues/1022)
+
+### Features
+
+- **mcp-server:** return a disposable handle from run() ([6b2df3a](https://github.com/d-zero-dev/BurgerEditor/commit/6b2df3a6251fae0b61cc34c4c5da5174b8f93537)), closes [#870](https://github.com/d-zero-dev/BurgerEditor/issues/870)
+
 # [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
 
 **Note:** Version bump only for package @burger-editor/mcp-server

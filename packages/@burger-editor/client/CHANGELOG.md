@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
+
+### Bug Fixes
+
+- **client:** track images in the editable-area iframe and dispose menu resources via a stack ([1ec699c](https://github.com/d-zero-dev/BurgerEditor/commit/1ec699c74b8c08ebfbb79ee31b819b360e947086)), closes [#873](https://github.com/d-zero-dev/BurgerEditor/issues/873)
+
 # [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
 
 ### Bug Fixes

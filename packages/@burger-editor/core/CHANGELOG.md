@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
+
+### Bug Fixes
+
+- **core:** restore style options whose names contain digits ([9a08fea](https://github.com/d-zero-dev/BurgerEditor/commit/9a08fea70447185ab0391eae5d95c6266ac12e02)), closes [#1016](https://github.com/d-zero-dev/BurgerEditor/issues/1016)
+
+- fix(core)!: split style option names in one place and share the editor stylesheet assembly ([e8693b9](https://github.com/d-zero-dev/BurgerEditor/commit/e8693b9fa16847117c295d9fe558fb299da5b28a)), closes [#1015](https://github.com/d-zero-dev/BurgerEditor/issues/1015) [#1018](https://github.com/d-zero-dev/BurgerEditor/issues/1018)
+
+### BREAKING CHANGES
+
+- names with more than one `--` after `--bge-options-`, and
+  `--bge-options-{category}--` with an empty key, are no longer offered as style options
+  (the latter is no longer read as the default declaration either).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
 # [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
 
 **Note:** Version bump only for package @burger-editor/core

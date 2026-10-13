@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
+
+### Bug Fixes
+
+- **local:** clean up after a failed boot and report failed shutdowns ([d99f8d0](https://github.com/d-zero-dev/BurgerEditor/commit/d99f8d0639c67d17d50c55786d6a220584cda2af)), closes [#1000](https://github.com/d-zero-dev/BurgerEditor/issues/1000)
+- **local:** keep route types nameable under zod 4.6 declaration emit ([d813b1d](https://github.com/d-zero-dev/BurgerEditor/commit/d813b1dd287d0fee72424dae61588daf2ab885ec))
+
+- fix(local)!: reject wildcard hosts with an explanation and bracket IPv6 URLs ([615856c](https://github.com/d-zero-dev/BurgerEditor/commit/615856c36ee12cc83d3f064a92a6dd2908e0f2c2)), closes [#1001](https://github.com/d-zero-dev/BurgerEditor/issues/1001)
+
+### BREAKING CHANGES
+
+- host: '0.0.0.0' / '::' is now a config error. To open the
+  editor from other devices, set host to this machine's LAN IP instead.
+
 # [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
 
 ### Bug Fixes
