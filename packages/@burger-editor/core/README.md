@@ -264,7 +264,7 @@ export const CSS_LAYER = {
 | `BurgerEditorEngineOptions`   | 型     | エンジン初期化引数                             |
 | `createItem`                  | 関数   | アイテム定義のファクトリ                       |
 | `render`                      | 関数   | 編集なしでブロックデータを DOM へ変換          |
-| `exportStyleOptions`          | 関数   | エクスポート時のスタイル制御オプション組立     |
+| `exportStyleOptions`          | 関数   | コンテナの `style` からスタイル選択を復元      |
 | `NoEditableAreaError`         | クラス | 編集対象領域が見つからない場合の例外           |
 | block-ops 各種                | 関数群 | ブロック単位の移動・複製・削除等の操作         |
 | Front Matter ユーティリティ   | 関数群 | コンテンツ前後メタ情報のパース / シリアライズ  |
