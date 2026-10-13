@@ -88,6 +88,15 @@ function statusForCode(code: string): 400 | 404 | 409 | 504 {
 	return (status ?? 400) as 400 | 404 | 409 | 504;
 }
 
+/**
+ * Wire type of a tool's JSON Schema in `GET /tools`.
+ *
+ * Why not zod's own return type of `z.toJSONSchema`: it lives in
+ * `zod/v4/core/json-schema`, which zod's `exports` does not expose, so declaration
+ * emit of `createApp` fails with TS2742 (zod 4.6).
+ */
+type JsonSchemaObject = Record<string, unknown>;
+
 const invokeBodySchema = z.object({ tool: z.string(), args: z.unknown() });
 
 /**
@@ -123,8 +132,10 @@ export function createAgentRoutes(
 				tools: agentTools.map((tool) => ({
 					name: tool.name,
 					description: tool.description,
-					inputSchema: z.toJSONSchema(tool.input),
-					outputSchema: tool.output ? z.toJSONSchema(tool.output) : undefined,
+					inputSchema: z.toJSONSchema(tool.input) as JsonSchemaObject,
+					outputSchema: tool.output
+						? (z.toJSONSchema(tool.output) as JsonSchemaObject)
+						: undefined,
 					annotations: tool.annotations,
 				})),
 			});

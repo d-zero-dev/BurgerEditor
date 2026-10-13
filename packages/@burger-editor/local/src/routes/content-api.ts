@@ -23,6 +23,8 @@ import {
 	toDiskPath,
 } from '../model/virtual-path-resolver.js';
 
+import { rejectInvalid } from './reject-invalid.js';
+
 const LOGICAL_PATH_INVALID_MESSAGE =
 	'logical path must not contain "." or ".." segments or NUL bytes';
 
@@ -95,7 +97,7 @@ export function createContentApi(ctx: AppContext) {
 	const pathKey = config.virtualTree.pathKey;
 
 	return new Hono()
-		.post('/content', zValidator('json', apiSchema), async (c) => {
+		.post('/content', zValidator('json', apiSchema, rejectInvalid), async (c) => {
 			const data = c.req.valid('json');
 			const normalizedPath = normalizeLogicalPath(data.path, config.indexFileName);
 
@@ -208,69 +210,76 @@ export function createContentApi(ctx: AppContext) {
 				});
 			});
 		})
-		.post('/content/create', zValidator('json', createApiSchema), async (c) => {
-			const data = c.req.valid('json');
-			if (!virtualTreeEnabled) {
-				return c.json(
-					{ error: 'virtualTree mode is disabled; this endpoint is unavailable' },
-					400,
-				);
-			}
-
-			return store.withStateLock(async () => {
-				const resolverState = store.getResolverState();
-				if (!resolverState) {
-					return c.json({ error: 'virtualTree resolver state is not initialized' }, 500);
-				}
-				const diskFile = data.id.endsWith('.html') ? data.id : `${data.id}.html`;
-				const targetFilePath = path.join(config.documentRoot, diskFile);
-				// Defense in depth: even if the id schema misses something, refuse
-				// any resolved path that escapes documentRoot.
-				const resolvedRoot = path.resolve(config.documentRoot);
-				const resolvedTarget = path.resolve(targetFilePath);
-				if (
-					resolvedTarget !== resolvedRoot &&
-					!resolvedTarget.startsWith(resolvedRoot + path.sep)
-				) {
+		.post(
+			'/content/create',
+			zValidator('json', createApiSchema, rejectInvalid),
+			async (c) => {
+				const data = c.req.valid('json');
+				if (!virtualTreeEnabled) {
 					return c.json(
-						{ error: `Resolved path escapes documentRoot: ${diskFile}` },
+						{ error: 'virtualTree mode is disabled; this endpoint is unavailable' },
 						400,
 					);
 				}
 
-				let nextResolverState: ResolverState;
-				try {
-					nextResolverState = registerEntry(resolverState, diskFile, data.path);
-				} catch (error) {
+				return store.withStateLock(async () => {
+					const resolverState = store.getResolverState();
+					if (!resolverState) {
+						return c.json(
+							{ error: 'virtualTree resolver state is not initialized' },
+							500,
+						);
+					}
+					const diskFile = data.id.endsWith('.html') ? data.id : `${data.id}.html`;
+					const targetFilePath = path.join(config.documentRoot, diskFile);
+					// Defense in depth: even if the id schema misses something, refuse
+					// any resolved path that escapes documentRoot.
+					const resolvedRoot = path.resolve(config.documentRoot);
+					const resolvedTarget = path.resolve(targetFilePath);
 					if (
-						error instanceof PathConflictError ||
-						error instanceof IdAlreadyExistsError
+						resolvedTarget !== resolvedRoot &&
+						!resolvedTarget.startsWith(resolvedRoot + path.sep)
 					) {
-						return c.json({ error: error.message }, 409);
+						return c.json(
+							{ error: `Resolved path escapes documentRoot: ${diskFile}` },
+							400,
+						);
 					}
-					if (error instanceof EmptyLogicalPathError) {
-						return c.json({ error: error.message }, 400);
+
+					let nextResolverState: ResolverState;
+					try {
+						nextResolverState = registerEntry(resolverState, diskFile, data.path);
+					} catch (error) {
+						if (
+							error instanceof PathConflictError ||
+							error instanceof IdAlreadyExistsError
+						) {
+							return c.json({ error: error.message }, 409);
+						}
+						if (error instanceof EmptyLogicalPathError) {
+							return c.json({ error: error.message }, 400);
+						}
+						throw error;
 					}
-					throw error;
-				}
 
-				const frontMatter = { ...data.frontMatter, [pathKey]: data.path };
-				const initialContent = data.content ?? config.newFileContent;
-				// New files bypass editableArea: saveContent's editableArea path reads the
-				// existing file first, which would ENOENT for a fresh create.
-				await saveContent(targetFilePath, initialContent, null, frontMatter);
+					const frontMatter = { ...data.frontMatter, [pathKey]: data.path };
+					const initialContent = data.content ?? config.newFileContent;
+					// New files bypass editableArea: saveContent's editableArea path reads the
+					// existing file first, which would ENOENT for a fresh create.
+					await saveContent(targetFilePath, initialContent, null, frontMatter);
 
-				// 2-phase commit: only advance resolverState after the file write succeeds.
-				store.setResolverState(nextResolverState);
+					// 2-phase commit: only advance resolverState after the file write succeeds.
+					store.setResolverState(nextResolverState);
 
-				log('Created: %s -> %s', diskFile, data.path);
-				return c.json({
-					created: true,
-					id: diskFile,
-					path: data.path,
+					log('Created: %s -> %s', diskFile, data.path);
+					return c.json({
+						created: true,
+						id: diskFile,
+						path: data.path,
+					});
 				});
-			});
-		})
+			},
+		)
 		.get('/tree', async (c) => {
 			const resolverState = store.getResolverState();
 			if (virtualTreeEnabled && resolverState) {
