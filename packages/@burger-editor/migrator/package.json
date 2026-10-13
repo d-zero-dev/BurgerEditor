@@ -32,7 +32,6 @@
 		"clean": "tsc --build --clean"
 	},
 	"dependencies": {
-		"@burger-editor/blocks": "4.0.0-alpha.76",
 		"@burger-editor/core": "4.0.0-alpha.76",
 		"@burger-editor/legacy": "4.0.0-alpha.76",
 		"@burger-editor/utils": "4.0.0-alpha.76",

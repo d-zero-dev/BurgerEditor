@@ -40,7 +40,6 @@ graph TD
     blocks --> client
     blocks --> core
     blocks --> utils
-    migrator --> blocks
     migrator --> core
     migrator --> legacy
     migrator --> utils
@@ -114,7 +113,6 @@ graph TD
 - **Node 側のコードは `blocks` のルートエントリだけを import する。** `file-io` / `cli` / `mcp-server` とユーザーの `burgereditor.config.js` が対象。`blocks/editor` や `client/ui` を読むと `react` が必要になり、React を入れていない環境で起動時に落ちる。モノレポ内ではルートに React があるため、普通のテストでは再現しない。`blocks` 側は、ルートエントリが React に届かないことを ESLint の `no-restricted-imports` と `yarn verify:blocks-boundary` で守っている。Node 側のパッケージが `blocks/editor` などを import していないかは ESLint では検査しておらず、build 後の `yarn verify:packed-install` と `cli` の `bin.spec.ts` で検出する。
 - **`local` のブラウザ側コードは `cli` を `@burger-editor/cli/block-op` からしか import しない。** メインエントリは `node:fs` などを引き込み、ブラウザ向けのビルドを壊す。
 - **`runtime` と `legacy` はどのパッケージにも依存しない。** `runtime` は公開ページで単独で読み込まれるため。
-- **既知の例外:** `blocks → client → migrator → blocks` が循環している。`migrator` の `blocks` への依存は package.json に書かれているだけで、コードでは使っていない。
 
 ## 不変条件と負の知識
 
