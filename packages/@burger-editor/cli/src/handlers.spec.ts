@@ -298,11 +298,38 @@ describe('config handler', () => {
 });
 
 describe('container options handler', () => {
-	test('containerOptionsList enumerates the static container layout vocabulary', () => {
-		const result = containerOptionsList();
+	test('containerOptionsList enumerates the container layout vocabulary', async () => {
+		const result = await containerOptionsList(ctx);
 		expect(result.types).toEqual(['grid', 'inline', 'float']);
 		expect(result.gridOptions.columns).toEqual([1, 2, 3, 4, 5]);
 		expect(result.inlineOptions.justify).toContain('center');
+	});
+
+	test('containerOptionsList lists the wrap-width presets as containerProps.repeatMinInlineSize values', async () => {
+		const result = await containerOptionsList(ctx);
+		expect(result.gridOptions.repeatMinInlineSizeVariants).toEqual([
+			'small',
+			'medium',
+			'large',
+		]);
+	});
+
+	test('containerOptionsList includes wrap-width presets added by a project stylesheet', async () => {
+		await fs.writeFile(
+			path.join(assetsRoot, 'presets.css'),
+			'[data-bge-container] { --bge-repeat-min-inline-size--xlarge: 800px; }',
+			'utf8',
+		);
+		const result = await containerOptionsList({
+			...ctx,
+			config: makeConfig(docRoot, assetsRoot, { stylesheets: ['/presets.css'] }),
+		});
+		expect(result.gridOptions.repeatMinInlineSizeVariants).toEqual([
+			'small',
+			'medium',
+			'large',
+			'xlarge',
+		]);
 	});
 });
 
@@ -877,50 +904,122 @@ describe('mutation dry-run', () => {
 });
 
 describe('style options handler', () => {
-	test('styleOptionsList extracts every --bge-options-<axis>--<variant> pair', async () => {
-		const css = `
-			:root {
-				--bge-options-margin--small: 1rem;
-				--bge-options-margin--large: 3rem;
-				--bge-options-bgcolor--blue: #00f;
-				--unrelated: 0;
-			}
-		`;
-		await fs.writeFile(path.join(assetsRoot, 'style.css'), css, 'utf8');
-		const ctxWithCss: CliContext = {
+	/**
+	 * Write `css` as the project's only stylesheet and return a context whose
+	 * `config.stylesheets` points at it.
+	 * @param css - Project stylesheet contents
+	 */
+	async function ctxWithProjectCss(css: string): Promise<CliContext> {
+		await fs.writeFile(path.join(assetsRoot, 'project.css'), css, 'utf8');
+		return {
 			...ctx,
-			config: makeConfig(docRoot, assetsRoot, { stylesheets: ['/style.css'] }),
+			config: makeConfig(docRoot, assetsRoot, { stylesheets: ['/project.css'] }),
 		};
-		const result = await styleOptionsList(ctxWithCss);
+	}
+
+	test('styleOptionsList lists the axes general.css declares without project stylesheets', async () => {
+		const result = await styleOptionsList(ctx);
 		expect(result.axes).toEqual({
-			margin: ['large', 'small'],
-			bgcolor: ['blue'],
+			'max-width': ['full', 'large', 'normal', 'small'],
+			margin: ['large', 'none', 'normal', 'small'],
+			'bg-color': ['blue', 'gray', 'red', 'transparent', 'white'],
+			'padding-block': ['large', 'medium', 'none', 'small'],
+			'padding-inline': ['default-gutter', 'large', 'medium', 'none', 'small'],
+			'column-gap': ['large', 'none', 'normal', 'small'],
+			'row-gap': ['large', 'none', 'normal', 'small'],
+			'_grid_subgrid-gap': ['large', 'none', 'normal', 'small'],
 		});
 	});
 
-	test('styleOptionsList returns an empty record when no stylesheets exist', async () => {
-		const result = await styleOptionsList(ctx);
-		expect(result.axes).toEqual({});
+	test('styleOptionsList adds the variants a project stylesheet declares on [data-bge-container]', async () => {
+		const result = await styleOptionsList(
+			await ctxWithProjectCss(`
+				[data-bge-container] {
+					--bge-options-margin--x-large: 12rem;
+					--bge-options-shadow--soft: 0 1px 2px #0003;
+				}
+			`),
+		);
+		expect(result.axes.margin).toEqual(['large', 'none', 'normal', 'small', 'x-large']);
+		expect(result.axes.shadow).toEqual(['soft']);
 	});
 
-	test('styleOptionsList skips axes that have hyphenated variant names with a stray --', async () => {
-		// Defensive case: the regex requires word-only segments separated by
-		// single hyphens, so `--bge-options-margin--x-large` parses as
-		// axis=margin variant=x-large but ambiguous patterns like
-		// `--bge-options-foo--bar--baz` (double `--` inside a variant) MUST NOT
-		// parse — we treat them as malformed and skip.
-		const css = `
-			:root {
-				--bge-options-margin--x-large: 5rem;
-				--bge-options-foo--bar--baz: nope;
-			}
-		`;
-		await fs.writeFile(path.join(assetsRoot, 'odd.css'), css, 'utf8');
-		const ctxWithCss: CliContext = {
-			...ctx,
-			config: makeConfig(docRoot, assetsRoot, { stylesheets: ['/odd.css'] }),
-		};
-		const result = await styleOptionsList(ctxWithCss);
-		expect(result.axes).toEqual({ margin: ['x-large'] });
+	test('styleOptionsList drops a built-in variant the project stylesheet hides with an empty value', async () => {
+		const result = await styleOptionsList(
+			await ctxWithProjectCss(`
+				[data-bge-container] {
+					--bge-options-margin--none: ;
+					--bge-options-margin--large:
+						;
+				}
+			`),
+		);
+		expect(result.axes.margin).toEqual(['normal', 'small']);
+	});
+
+	test('styleOptionsList drops an axis whose every variant is hidden', async () => {
+		const result = await styleOptionsList(
+			await ctxWithProjectCss(`
+				[data-bge-container] {
+					--bge-options-_grid_subgrid-gap--normal: ;
+					--bge-options-_grid_subgrid-gap--none: ;
+					--bge-options-_grid_subgrid-gap--small: ;
+					--bge-options-_grid_subgrid-gap--large: ;
+				}
+			`),
+		);
+		expect(result.axes).not.toHaveProperty('_grid_subgrid-gap');
+	});
+
+	test('styleOptionsList ignores declarations the editor does not read', async () => {
+		const result = await styleOptionsList(
+			await ctxWithProjectCss(`
+				:root {
+					--bge-options-root-only--a: 1px;
+				}
+				.section [data-bge-container] {
+					--bge-options-compound--a: 1px;
+				}
+				@media (width >= 1px) {
+					[data-bge-container] {
+						--bge-options-media--a: 1px;
+					}
+				}
+				[data-bge-container] {
+					--bge-options-foo--bar--baz: 1px;
+				}
+			`),
+		);
+		expect(result.axes).not.toHaveProperty('root-only');
+		expect(result.axes).not.toHaveProperty('compound');
+		expect(result.axes).not.toHaveProperty('media');
+		expect(result.axes).not.toHaveProperty('foo');
+	});
+
+	test('styleOptionsList lists names with non-ASCII characters and digits', async () => {
+		const result = await styleOptionsList(
+			await ctxWithProjectCss(`
+				[data-bge-container] {
+					--bge-options-見出し--大: 2rem;
+					--bge-options-h2-size--3x: 3rem;
+				}
+			`),
+		);
+		expect(result.axes['見出し']).toEqual(['大']);
+		expect(result.axes['h2-size']).toEqual(['3x']);
+	});
+
+	test('styleOptionsList returns container-type axes only for the matching containerType', async () => {
+		const result = await styleOptionsList(
+			await ctxWithProjectCss(`
+				[data-bge-container] {
+					--bge-options-_inline_align--top: start;
+				}
+			`),
+			'inline',
+		);
+		expect(result.axes['_inline_align']).toEqual(['top']);
+		expect(result.axes).not.toHaveProperty('_grid_subgrid-gap');
+		expect(result.axes.margin).toEqual(['large', 'none', 'normal', 'small']);
 	});
 });

@@ -61,17 +61,42 @@ describe('catalog / item / style tool wrappers', () => {
 		expect(result.dataKeys).toEqual(['titleH2']);
 	});
 
-	test('style_options_list returns an empty axes record when no stylesheets are configured', async () => {
+	test('style_options_list lists the general.css axes when no stylesheets are configured', async () => {
 		const result = (await styleOptionsListTool.run(fixture.ctx, {})) as {
 			axes: Record<string, string[]>;
 		};
-		expect(result.axes).toEqual({});
+		expect(result.axes.margin).toEqual(['large', 'none', 'normal', 'small']);
+		expect(result.axes['_grid_subgrid-gap']).toEqual([
+			'large',
+			'none',
+			'normal',
+			'small',
+		]);
 	});
 
-	test('container_options_list returns the static grid/inline/float vocabulary', async () => {
+	test('style_options_list passes containerType through to the handler', async () => {
+		const result = (await styleOptionsListTool.run(fixture.ctx, {
+			containerType: 'float',
+		})) as { axes: Record<string, string[]> };
+		expect(result.axes).not.toHaveProperty('_grid_subgrid-gap');
+	});
+
+	test('style_options_list rejects an unknown containerType', () => {
+		expect(styleOptionsListTool.input.safeParse({ containerType: 'flex' }).success).toBe(
+			false,
+		);
+	});
+
+	test('container_options_list returns the grid/inline/float vocabulary', async () => {
 		const result = (await containerOptionsListTool.run(fixture.ctx, {})) as {
 			types: string[];
+			gridOptions: { repeatMinInlineSizeVariants: string[] };
 		};
 		expect(result.types).toEqual(['grid', 'inline', 'float']);
+		expect(result.gridOptions.repeatMinInlineSizeVariants).toEqual([
+			'small',
+			'medium',
+			'large',
+		]);
 	});
 });
