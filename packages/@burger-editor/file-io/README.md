@@ -30,6 +30,7 @@ yarn add @burger-editor/file-io
 | 仮想（論理）パス ↔ 実ファイル名のリゾルバ（`virtualTree.enabled: true` 時）                                | `loadResolverState(documentRoot, pathKey)` 他、`registerEntry` / `setLogicalPath` / `toDiskPath` / `listEntries` |
 | ユーザー入力（実パス / 仮想パス / 末尾スラッシュ等）を documentRoot 配下の絶対パスに正規化                 | `resolvePathInput(input, config, resolverState)`                                                                 |
 | jsdom-backed DOM の **遅延** インストール（`@burger-editor/core` を Node から使えるようにする）            | side-effect import + `ensureDom()`                                                                               |
+| CSS 文字列を読み込んだ独立した jsdom 文書（`core` のスタイルオプション検出を Node で動かす）               | `createStylesheetDocument(cssTexts)`                                                                             |
 
 ## 使用例
 

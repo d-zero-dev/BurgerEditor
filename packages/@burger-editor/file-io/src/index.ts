@@ -37,3 +37,5 @@ export {
 } from './virtual-path-resolver.js';
 
 export { PathOutsideDocumentRootError, resolvePathInput } from './path-input.js';
+
+export { createStylesheetDocument } from './stylesheet-document.js';
