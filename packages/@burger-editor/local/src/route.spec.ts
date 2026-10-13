@@ -272,6 +272,29 @@ describe('POST /api/content/create (virtual mode)', () => {
 		expect(before).not.toContain('42.html');
 	});
 
+	test('answers a schema violation with 400 and the zod failure body', async () => {
+		const app = await buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: true });
+		const res = await app.request('/api/content/create', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ id: 42 }),
+		});
+		expect(res.status).toBe(400);
+		const body = (await res.json()) as {
+			success: boolean;
+			target: string;
+			data: unknown;
+			error: { name: string; message: string };
+		};
+		expect(body).toMatchObject({
+			success: false,
+			target: 'json',
+			data: { id: 42 },
+			error: { name: 'ZodError' },
+		});
+		expect(JSON.parse(body.error.message)).toHaveLength(2);
+	});
+
 	test('appends .html to the id when the caller omits the extension', async () => {
 		const app = await buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: true });
 		const res = await app.request('/api/content/create', {
