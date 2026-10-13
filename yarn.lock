@@ -534,7 +534,7 @@ __metadata:
     "@testing-library/dom": "npm:10.4.2"
     "@testing-library/react": "npm:16.3.3"
     "@types/babel__core": "npm:7.20.5"
-    "@types/google.maps": "npm:3.66.4"
+    "@types/google.maps": "npm:3.66.5"
     "@types/react": "npm:19.3.0"
     babel-plugin-react-compiler: "npm:1.0.0"
     react: "npm:19.3.0"
@@ -6002,10 +6002,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/google.maps@npm:3.66.4":
-  version: 3.66.4
-  resolution: "@types/google.maps@npm:3.66.4"
-  checksum: 10c0/2879fc55647d11026801ad58c688d9b9552dc8baea8ae357b7169e0fcd2f92ba1b70ddfcd6b749b887f1e009d7c9bc151740735f049144a9d2862344354f8f01
+"@types/google.maps@npm:3.66.5":
+  version: 3.66.5
+  resolution: "@types/google.maps@npm:3.66.5"
+  checksum: 10c0/41833acb26d1f4655409f74179a475e655891b4432f669060fe41ea2fd5b36d6491f0936ae0516d378eb16f64cc56a63dd226e67ce6a550df0f19a38811058f8
   languageName: node
   linkType: hard
 
