@@ -1,17 +1,20 @@
 import type { BlockSpec } from './block-builder.js';
 import type { CliContext } from './context.js';
-import type { ItemData, ListedBlock } from '@burger-editor/core';
+import type { ContainerType, ItemData, ListedBlock } from '@burger-editor/core';
 
 import { constants as fsConstants } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { items as defaultItems } from '@burger-editor/blocks';
+import { items as defaultItems, generalCSS } from '@burger-editor/blocks';
 import {
 	BurgerEditorEngine,
 	NoEditableAreaError,
 	deleteBlock,
 	duplicateBlock,
+	editorStylesheetTexts,
+	getCustomProperties,
+	getRepeatMinInlineSizeVariants,
 	insertBlock,
 	itemExport,
 	itemImport,
@@ -22,6 +25,7 @@ import {
 	stringifyWithFrontMatter,
 } from '@burger-editor/core';
 import {
+	createStylesheetDocument,
 	generateFileTree,
 	loadContent,
 	resolvePathInput,
@@ -1124,14 +1128,31 @@ function buildBlockSpecTemplate(definition: {
 // ----------------------------------------------- style / container options
 
 /**
- *
- * @param ctx
+ * Container types accepted by `style_options_list` / `style-options-list`
+ * and listed by `container_options_list`.
+ * @example
+ * ```ts
+ * const type = CONTAINER_TYPES.find((t) => t === input); // ContainerType | undefined
+ * ```
  */
-export async function styleOptionsList(ctx: CliContext) {
-	// Read every stylesheet referenced in config + project CSS files in
-	// assetsRoot, parse out `--bge-options-<axis>--<variant>` custom
-	// properties, and return them grouped by axis.
-	const collected = new Map<string, Set<string>>();
+export const CONTAINER_TYPES = [
+	'grid',
+	'inline',
+	'float',
+] as const satisfies readonly ContainerType[];
+
+/**
+ * Load the stylesheets the editor puts into an editable area — the
+ * standard items' CSS and `generalCSS`, then `config.stylesheets` — with
+ * the engine's own `editorStylesheetTexts()`, so the cascade matches the
+ * block options dialog, and run `scan` on them.
+ * @param ctx
+ * @param scan - Reads the document; the jsdom window is closed afterwards
+ */
+async function scanEditorStylesheets<T>(
+	ctx: CliContext,
+	scan: (doc: Document) => T,
+): Promise<T> {
 	const stylesheetUrls = ctx.config.stylesheets ?? [];
 	// Stylesheet reads are independent — fan out so 8 sheets cost the
 	// slowest read, not the sum.
@@ -1141,48 +1162,81 @@ export async function styleOptionsList(ctx: CliContext) {
 			return fs.readFile(filePath, 'utf8').catch(() => null);
 		}),
 	);
-	for (const css of cssContents) {
-		if (css === null) continue; // non-fatal: stylesheet may be served from elsewhere
-		extractBgeOptions(css, collected);
+	const stylesheets = cssContents
+		// non-fatal: stylesheet may be served from elsewhere
+		.filter((css) => css !== null)
+		.map((css) => ({ css }));
+	const doc = createStylesheetDocument(
+		editorStylesheetTexts(defaultItems, generalCSS, stylesheets),
+	);
+	try {
+		return scan(doc);
+	} finally {
+		doc.defaultView?.close();
 	}
+}
+
+/**
+ * List the style option axes (`--bge-options-<axis>--<variant>`) the block
+ * options dialog offers, detected by the editor's own rules
+ * (`getCustomProperties()` in `@burger-editor/core`).
+ * @param ctx
+ * @param containerType - Only return axes usable in this container type,
+ * as the dialog does. Axes prefixed `_{type}_` keep the prefix, because it
+ * is part of the name written to `spec.style`. Without it, axes for every
+ * container type are returned.
+ * @example
+ * ```ts
+ * const { axes } = await styleOptionsList(ctx, 'grid');
+ * // { margin: ['large', 'none', 'normal', 'small'], '_grid_subgrid-gap': [...], ... }
+ * ```
+ */
+export async function styleOptionsList(ctx: CliContext, containerType?: ContainerType) {
+	const collected = await scanEditorStylesheets(ctx, (doc) => {
+		const axes = new Map<string, Set<string>>();
+		// `getCustomProperties` returns `_{type}_` axes for one type at a time,
+		// so listing every type means one scan per type over the same document
+		// (a few milliseconds, against tens for building the jsdom document).
+		for (const type of containerType ? [containerType] : CONTAINER_TYPES) {
+			for (const [axis, category] of getCustomProperties(doc, type)) {
+				const variants = axes.get(axis) ?? new Set<string>();
+				for (const variant of category.properties.keys()) {
+					variants.add(variant);
+				}
+				axes.set(axis, variants);
+			}
+		}
+		return axes;
+	});
 	const result: Record<string, string[]> = {};
 	for (const [axis, variants] of collected) {
-		result[axis] = [...variants].toSorted();
+		if (variants.size > 0) {
+			result[axis] = [...variants].toSorted();
+		}
 	}
 	return { axes: result };
 }
 
 /**
- *
- * @param css
- * @param into
+ * List the container layout options. Everything is fixed by `core` except
+ * the grid wrap-width presets, which are read from the same stylesheets as
+ * `styleOptionsList` (`getRepeatMinInlineSizeVariants()`); each preset is
+ * a value for `containerProps.repeatMinInlineSize`.
+ * @param ctx
+ * @example
+ * ```ts
+ * const { gridOptions } = await containerOptionsList(ctx);
+ * gridOptions.repeatMinInlineSizeVariants; // ['small', 'medium', 'large']
+ * ```
  */
-function extractBgeOptions(css: string, into: Map<string, Set<string>>): void {
-	// Axis and variant are each a sequence of word groups joined by single
-	// hyphens; the `--` between them is the unambiguous separator. Writing
-	// both halves as `(?:\w+-)*\w+` eliminates the lazy-quantifier
-	// backtracking that triggers regexp/no-super-linear-backtracking.
-	const re = /--bge-options-((?:\w+-)*\w+)--((?:\w+-)*\w+)\s*:/g;
-	let m: RegExpExecArray | null;
-	while ((m = re.exec(css)) !== null) {
-		const axis = m[1]!;
-		const variant = m[2]!;
-		const set = into.get(axis) ?? new Set<string>();
-		set.add(variant);
-		into.set(axis, set);
-	}
-}
-
-/**
- *
- */
-export function containerOptionsList() {
+export async function containerOptionsList(ctx: CliContext) {
+	const presets = await scanEditorStylesheets(ctx, getRepeatMinInlineSizeVariants);
 	return {
-		types: ['grid', 'inline', 'float'],
+		types: [...CONTAINER_TYPES],
 		gridOptions: {
 			columns: [1, 2, 3, 4, 5],
 			autoRepeat: ['auto-fit', 'auto-fill'],
-			repeatMinInlineSizeVariants: ['--small', '--medium', '--large'],
+			repeatMinInlineSizeVariants: presets ? [...presets.properties.keys()] : [],
 		},
 		inlineOptions: {
 			justify: ['center', 'start', 'end', 'between', 'around', 'evenly'],

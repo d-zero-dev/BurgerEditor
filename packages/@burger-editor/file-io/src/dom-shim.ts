@@ -12,7 +12,7 @@
  *     property + symbol of `window` onto globalThis).
  *
  * This means lightweight CLI commands (catalog-list, item-list,
- * container-options-list, config-resolve) pay zero JSDOM cost; heavyweight
+ * config-resolve) pay zero JSDOM cost; heavyweight
  * commands (block-list, block-insert, page-create with initial blocks, …)
  * pay it once on the first DOM touch.
  *

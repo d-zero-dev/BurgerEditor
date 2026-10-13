@@ -6,6 +6,7 @@
 process.env.DOTENV_CONFIG_QUIET = 'true';
 
 import type { BlockSpec } from './block-builder.js';
+import type { ContainerType } from '@burger-editor/core';
 
 import { parseCli } from '@d-zero/roar';
 
@@ -46,6 +47,24 @@ function toConfigPath(value: string | undefined): string | undefined {
 		throw new Error('--config requires a path to a config file.');
 	}
 	return value;
+}
+
+/**
+ * Validate `--container-type`. roar has no enum flags, so an unknown value
+ * would otherwise reach `styleOptionsList` and silently match nothing.
+ * @param value the parsed `--container-type` flag
+ */
+function toContainerType(value: string | undefined): ContainerType | undefined {
+	if (value === undefined) {
+		return undefined;
+	}
+	const type = h.CONTAINER_TYPES.find((t) => t === value);
+	if (type) {
+		return type;
+	}
+	throw new Error(
+		`--container-type must be one of ${h.CONTAINER_TYPES.join(', ')} (got "${value}").`,
+	);
 }
 
 // Accepted by every command (roar `globalFlags`): each one loads a context,
@@ -162,9 +181,15 @@ const commands = {
 		desc: 'Get item editor template + camelCase dataKeys — usage: item-schema <name>',
 	},
 	'style-options-list': {
-		desc: 'List CSS bge-options custom property axes found in project stylesheets',
+		desc: 'List the style option axes the block options dialog offers',
+		flags: {
+			containerType: {
+				type: 'string',
+				desc: 'Only axes usable in this container type (grid | inline | float)',
+			},
+		},
 	},
-	'container-options-list': { desc: 'List container layout option values (static)' },
+	'container-options-list': { desc: 'List container layout option values' },
 	'config-resolve': { desc: 'Resolve and print the active burgereditor config summary' },
 } as const;
 
@@ -384,10 +409,11 @@ async function main() {
 			return h.itemSchema(result.args[0]!);
 		}
 		case 'style-options-list': {
-			return await h.styleOptionsList(ctx);
+			const flags = result.flags as { containerType?: string };
+			return await h.styleOptionsList(ctx, toContainerType(flags.containerType));
 		}
 		case 'container-options-list': {
-			return h.containerOptionsList();
+			return await h.containerOptionsList(ctx);
 		}
 		case 'config-resolve': {
 			return h.configResolve(ctx);

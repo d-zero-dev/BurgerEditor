@@ -50,20 +50,26 @@ export const itemSchemaTool = defineAgentTool({
 export const styleOptionsListTool = defineAgentTool({
 	name: 'style_options_list',
 	description:
-		'List CSS `--bge-options-<axis>--<variant>` axes discoverable in project stylesheets. Read-only.',
-	input: z.object({}),
+		'List the style option axes (`--bge-options-<axis>--<variant>`) that the block options ' +
+		'dialog offers for the project stylesheets, detected by the same rules as the editor. ' +
+		'Pass `containerType` to get only the axes usable in that container type; axes prefixed ' +
+		'`_<type>_` (e.g. `_grid_subgrid-gap`) keep the prefix in `spec.style`. Read-only.',
+	input: z.object({ containerType: z.enum(h.CONTAINER_TYPES).optional() }),
 	annotations: { readOnlyHint: true },
-	async run(ctx) {
-		return await h.styleOptionsList(ctx);
+	async run(ctx, args) {
+		return await h.styleOptionsList(ctx, args.containerType);
 	},
 });
 
 export const containerOptionsListTool = defineAgentTool({
 	name: 'container_options_list',
-	description: 'List static container layout options (grid/inline/float). Read-only.',
+	description:
+		'List container layout options (grid/inline/float). `gridOptions.repeatMinInlineSizeVariants` ' +
+		'comes from the project stylesheets and is the value for ' +
+		'`containerProps.repeatMinInlineSize`. Read-only.',
 	input: z.object({}),
 	annotations: { readOnlyHint: true },
-	run() {
-		return Promise.resolve(h.containerOptionsList());
+	async run(ctx) {
+		return await h.containerOptionsList(ctx);
 	},
 });

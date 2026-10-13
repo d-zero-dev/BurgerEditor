@@ -159,6 +159,31 @@ describe('bin.js without react installed', () => {
 		expect(result.stderr).not.toContain('Cannot find package');
 		expect(result.code).toBe(0);
 	}, 20_000);
+
+	test('スタイルオプションの検出（style-options-list）も React なしで動く', async () => {
+		const result = await run(['style-options-list'], undefined, BLOCK_REACT);
+		expect(result.stderr).not.toContain('Cannot find package');
+		expect(result.code).toBe(0);
+	}, 20_000);
+});
+
+describe('bin.js style-options-list', () => {
+	test('--container-type narrows the axes to that container type', async () => {
+		const result = await run(['style-options-list', '--container-type', 'inline']);
+		expect(result.code).toBe(0);
+		const payload = JSON.parse(result.stdout) as { axes: Record<string, string[]> };
+		expect(payload.axes.margin).toEqual(['large', 'none', 'normal', 'small']);
+		expect(payload.axes).not.toHaveProperty('_grid_subgrid-gap');
+	}, 20_000);
+
+	test('an unknown --container-type is rejected instead of matching nothing', async () => {
+		const result = await run(['style-options-list', '--container-type', 'flex']);
+		expect(result.code).toBe(1);
+		expect(result.stderr).toContain(
+			'--container-type must be one of grid, inline, float',
+		);
+		expect(result.stdout).toBe('');
+	}, 20_000);
 });
 
 describe('bin.js end-to-end', () => {

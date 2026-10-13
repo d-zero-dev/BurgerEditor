@@ -1,6 +1,6 @@
 # style-axes — CSS カスタムプロパティ軸の追加
 
-`editing-burger-editor-pages` スキルの `style_options_list` が読むのは、**`burgereditor.config.js` の `stylesheets` に列挙された CSS の中の `--bge-options-<軸>--<変種>` という命名規則の変数だけ**。新しい軸をエージェントから使えるようにするには、この規則に従って CSS に定義し、かつそのファイルを `stylesheets` に含める必要がある。
+`editing-burger-editor-pages` スキルの `style_options_list` が返すのは、**組み込みの CSS と `burgereditor.config.js` の `stylesheets` に列挙された CSS の中で、エディタのブロックオプションダイアログが選択肢として検出する `--bge-options-<軸>--<変種>` だけ**。新しい軸をエージェントから使えるようにするには、この規則に従って CSS に定義し、かつそのファイルを `stylesheets` に含める必要がある。
 
 ## 定義パターン（`@burger-editor/blocks/src/general.css` から抜粋）
 
@@ -25,12 +25,12 @@
 }
 ```
 
-1. 各変種を `[data-bge-container]` のルールの中に `--bge-options-<軸>--<変種名>: <値>` で定義する。エディタの UI が選択肢として検出するのは `[data-bge-container]` で宣言した変数だけで、`:root` などに書くと `style_options_list` には出てもエディタの選択肢には出ない
+1. 各変種を `[data-bge-container]` のルールの中に `--bge-options-<軸>--<変種名>: <値>` で定義する。エディタの UI が選択肢として検出するのは `[data-bge-container]` で宣言した変数だけで、`:root` や `@media` の中に書くとエディタの選択肢にも `style_options_list` にも出ない
 2. 既定変種を指す `--bge-options-<軸>: var(--bge-options-<軸>--<既定変種>)` を用意する。これが無いとブロックが未指定のときに値を持てず、エディタも既定の選択肢を決められない
 3. 実際の CSS プロパティに `var(--bge-options-<軸>)` を割り当てる。エディタは選択した値を変数としてブロックに書き込むだけなので、この割り当てが無いと見た目は変わらない。割り当ては宣言とは別の `:where([data-bge-container])` に書き、詳細度を 0 に保つ（`[data-bge-container]` に直接書くと、`:last-child` で余白を消すような上書きを打ち消してしまう）
-4. 軸名・変種名には `--` を含めず、軸名の末尾を `-` にしない（`--` で軸名と変種名を区切るため、区切り位置がずれて選択肢として正しく扱われない）
+4. 軸名・変種名には `--` を含めず、軸名の末尾を `-` にしない（`--` で軸名と変種名を区切るため、`--` を 2 つ以上含む名前はエディタの選択肢にも `style_options_list` にも出ない。軸名の末尾が `-` だと区切り位置がずれ、選んでも保存後に読み戻せない）
 
-エージェントが `block_insert` / `block_replace` の `spec.style` に書く値は `{ '--bge-options-<軸>': 'var(--bge-options-<軸>--<変種>)' }` の形になる。
+エージェントが `block_insert` / `block_replace` の `spec.style` に書く値は `{ '<軸>': '<変種>' }` の形になる。エディタがそれを `--bge-options-<軸>: var(--bge-options-<軸>--<変種>)` としてブロックに書き込む。
 
 ## `stylesheets` への追加を忘れない
 

@@ -32,15 +32,15 @@ BurgerEditor v4 を新しく導入する、AI クライアントを接続する�
 
 cosmiconfig が `package.json` を持つ祖先ディレクトリまで遡って探索する。必須は `documentRoot`（HTML の配置先）と `assetsRoot`（画像/CSS/JS の配置先）。
 
-| キー            | 役割                                                                                                                                  |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `editableArea`  | 編集可能領域を指すセレクタ。**これがヒットしないと `no-such-area` エラーになる**（下記「デバッグ」参照）                              |
-| `catalog`       | ブロックカタログ。カスタム定義は `references/custom-blocks.md`                                                                        |
-| `stylesheets`   | 編集領域にロードする CSS。**`style_options_list` はここに列挙された CSS しか読まない** — 新しい軸を追加したら必ずここにファイルを足す |
-| `classList`     | 編集領域ルートに付与するクラス。ブロック側の `classList` に許可リストとして参照されることがある                                       |
-| `virtualTree`   | `{ enabled, pathKey }`。有効にすると Front Matter の `pathKey` が論理パスとして扱われる                                               |
-| `indexFileName` | `/` で終わるパスに補完されるファイル名（既定 `index.html`）                                                                           |
-| `agent`         | `{ enabled }`（既定 `true`）。Agent Hub のエンドポイント自体を無効化するときに `false` にする                                         |
+| キー            | 役割                                                                                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `editableArea`  | 編集可能領域を指すセレクタ。**これがヒットしないと `no-such-area` エラーになる**（下記「デバッグ」参照）                                               |
+| `catalog`       | ブロックカタログ。カスタム定義は `references/custom-blocks.md`                                                                                         |
+| `stylesheets`   | 編集領域にロードする CSS。**`style_options_list` は組み込みの CSS とここに列挙された CSS しか読まない** — 新しい軸を追加したら必ずここにファイルを足す |
+| `classList`     | 編集領域ルートに付与するクラス。ブロック側の `classList` に許可リストとして参照されることがある                                                        |
+| `virtualTree`   | `{ enabled, pathKey }`。有効にすると Front Matter の `pathKey` が論理パスとして扱われる                                                                |
+| `indexFileName` | `/` で終わるパスに補完されるファイル名（既定 `index.html`）                                                                                            |
+| `agent`         | `{ enabled }`（既定 `true`）。Agent Hub のエンドポイント自体を無効化するときに `false` にする                                                          |
 
 ## `no-such-area` のデバッグ
 

@@ -147,6 +147,41 @@ describe('BurgerEditorEngine.new', () => {
 		revokeSpy.mockRestore();
 	});
 
+	test('stylesheetのfetchが1つ失敗した後に残りのfetchが完了しても、dispose済みのengineにblob URLを作らない', async () => {
+		let resolveSlow!: (response: Response) => void;
+		const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((input) =>
+			String(input) === '/broken.css'
+				? Promise.reject(new Error('network error'))
+				: new Promise<Response>((resolve) => {
+						resolveSlow = resolve;
+					}),
+		);
+		const createSpy = vi.spyOn(URL, 'createObjectURL');
+
+		await expect(
+			BurgerEditorEngine.new(
+				createOptions({
+					config: {
+						classList: [],
+						stylesheets: [{ path: '/slow.css' }, { path: '/broken.css' }],
+						sampleImagePath: '/img/sample.png',
+						sampleFilePath: '/pdf/sample.pdf',
+						googleMapsApiKey: null,
+					},
+				}),
+			),
+		).rejects.toThrow('network error');
+		const createdBeforeLateFetch = createSpy.mock.calls.length;
+
+		resolveSlow(new Response('.slow {}'));
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(createSpy).toHaveBeenCalledTimes(createdBeforeLateFetch);
+
+		fetchSpy.mockRestore();
+		createSpy.mockRestore();
+	});
+
 	test('main/draftのcreateAreaHostが並列に呼ばれる（順に await されない）', async () => {
 		const started: EditableAreaType[] = [];
 		const gates = new Map<EditableAreaType, { resolve: () => void }>();

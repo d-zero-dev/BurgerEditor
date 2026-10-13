@@ -182,15 +182,15 @@ npx @burger-editor/cli block-insert about.html 0 --dry-run --spec '{...}'
 
 ### スキーマ・参照
 
-| コマンド                 | 説明                                                                                   |
-| ------------------------ | -------------------------------------------------------------------------------------- |
-| `catalog-list`           | プロジェクト設定で使えるブロックカタログ一覧                                           |
-| `catalog-get <name>`     | 単一カタログ定義 + そのまま `block-insert --spec` に渡せる `template` 雛形             |
-| `item-list`              | 標準アイテム名一覧                                                                     |
-| `item-schema <name>`     | アイテムの template + データキー一覧（`fields` / テンプレート由来の `dataKeys`、後述） |
-| `style-options-list`     | プロジェクト CSS から抽出した `--bge-options-<軸>--<バリアント>` 一覧                  |
-| `container-options-list` | 静的なコンテナレイアウト選択肢（grid/inline/float）                                    |
-| `config-resolve`         | 解決済み config の要約                                                                 |
+| コマンド                 | 説明                                                                                                                                                                                                                    |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `catalog-list`           | プロジェクト設定で使えるブロックカタログ一覧                                                                                                                                                                            |
+| `catalog-get <name>`     | 単一カタログ定義 + そのまま `block-insert --spec` に渡せる `template` 雛形                                                                                                                                              |
+| `item-list`              | 標準アイテム名一覧                                                                                                                                                                                                      |
+| `item-schema <name>`     | アイテムの template + データキー一覧（`fields` / テンプレート由来の `dataKeys`、後述）                                                                                                                                  |
+| `style-options-list`     | ブロックオプションダイアログが出す `--bge-options-<軸>--<バリアント>` 一覧（組み込みの `generalCSS` と `stylesheets` から、エディタと同じ規則で検出）。`--container-type grid` などで、そのコンテナ種別で使える軸に絞る |
+| `container-options-list` | コンテナレイアウト選択肢（grid/inline/float）。grid の折り返し幅プリセット（`repeatMinInlineSize` の値）は CSS から読む                                                                                                 |
+| `config-resolve`         | 解決済み config の要約                                                                                                                                                                                                  |
 
 ### CLI サブコマンドを持たないツール
 

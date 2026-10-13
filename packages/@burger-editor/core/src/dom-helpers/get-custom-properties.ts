@@ -32,18 +32,27 @@
  * - **Empty values**: `getCustomProperties` drops keys whose value trims to
  *   `''` (`--x--key: ;`), so project CSS can hide built-in choices.
  *   `--x--key:;` (no space) is a parse error in current browsers and never
- *   reaches the CSSOM. `getCustomProperty` and
+ *   reaches the CSSOM. The value `EMPTY_CUSTOM_PROPERTY_VALUE` counts as
+ *   empty too: it stands in for `' '` in jsdom, which drops empty
+ *   declarations while parsing. `getCustomProperty` and
  *   `getRepeatMinInlineSizeVariants` do not filter empty values.
  * - **Container-type categories**: categories named `_{type}_...` are
  *   returned only when `containerType` matches; the `name` has the prefix
  *   stripped for display.
+ * - **Names**: split by `parseStyleOptionName()`, the same function that
+ *   reads saved choices back, so a name that cannot be read back (more
+ *   than one `--` after the prefix, an empty category or key) is never
+ *   offered. `--bge-options-{category}--` (empty key) is ignored too,
+ *   rather than read as the default declaration.
  * - Cross-origin stylesheets that throw `SecurityError` are skipped.
  */
 import type { ContainerType } from '../block/types.js';
 
+import { parseStyleOptionName } from '../block/parse-style-option-name.js';
 import {
 	BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX,
 	BLOCK_OPTION_SCOPE_SELECTOR,
+	EMPTY_CUSTOM_PROPERTY_VALUE,
 } from '../const.js';
 import { comparePriority } from '../utils/compare-priority.js';
 
@@ -80,9 +89,19 @@ interface LayerPriority {
 /**
  * Get all `--bge-options-*` custom properties from document, grouped by
  * category. See the file-level comment for the detection rules.
+ *
+ * Inside the editor, call `engine.getCustomProperties()` instead; this
+ * free function is for scanning a document the engine does not own, such
+ * as stylesheets loaded into a jsdom document on Node.
  * @param scope - Document to scan for CSS custom properties
  * @param containerType - Container type to filter container-scoped properties (prefixed with `_`)
  * @returns Categorized map of custom properties grouped by property name
+ * @example
+ * ```ts
+ * for (const [id, category] of getCustomProperties(document, 'grid')) {
+ * 	console.log(id, [...category.properties.keys()]); // 'margin' ['none', 'small', ...]
+ * }
+ * ```
  */
 export function getCustomProperties(
 	scope: Document,
@@ -93,16 +112,11 @@ export function getCustomProperties(
 	const nestedDefaultValues = new Map<string, CustomProperty>();
 
 	searchCustomProperty(scope, (cssProperty, value, layers, isNested) => {
-		if (!cssProperty.startsWith(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX)) {
+		const parsed = parseStyleOptionName(cssProperty);
+		if (!parsed) {
 			return;
 		}
-
-		const [propName, key] = cssProperty
-			.slice(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX.length)
-			.split('--');
-		if (!propName) {
-			return;
-		}
+		const { category: propName, key } = parsed;
 
 		if (propName.startsWith('_') && !propName.startsWith(`_${containerType}_`)) {
 			return;
@@ -161,7 +175,8 @@ export function getCustomProperties(
 	// @see https://github.com/w3c/csswg-drafts/issues/774
 	for (const propList of categories.values()) {
 		for (const [key, customProperty] of propList.properties.entries()) {
-			if (customProperty.value.trim() === '') {
+			const value = customProperty.value.trim();
+			if (value === '' || value === EMPTY_CUSTOM_PROPERTY_VALUE) {
 				propList.properties.delete(key);
 			}
 		}
@@ -432,11 +447,15 @@ function searchCustomProperty(
 				) {
 					// Detect nested selectors: `& [data-bge-container]` has a parent context
 					const isNested = rawSelector !== selector;
-					for (const cssProperty of cssRule.rule.style) {
+					// Indexed access: jsdom's CSSStyleDeclaration is not iterable, and
+					// the cli runs this detection on a jsdom document.
+					const declarations = cssRule.rule.style;
+					for (let i = 0; i < declarations.length; i++) {
+						const cssProperty = declarations.item(i);
 						if (!cssProperty.startsWith('--')) {
 							continue;
 						}
-						const value = cssRule.rule.style.getPropertyValue(cssProperty);
+						const value = declarations.getPropertyValue(cssProperty);
 						found(cssProperty, value, cssRule.layers, isNested);
 					}
 				}
@@ -451,9 +470,18 @@ function searchCustomProperty(
 }
 
 /**
- * Get repeat-min-inline-size variant definitions from document
+ * Get repeat-min-inline-size variant definitions from document. Uses the
+ * same detection rules as `getCustomProperties`, except that empty values
+ * are not filtered out.
+ *
+ * Inside the editor, call `engine.getRepeatMinInlineSizeVariants()` instead.
  * @param scope - Document to scan for `--bge-repeat-min-inline-size` variants
  * @returns Category containing variant properties, or `null` if no variants found
+ * @example
+ * ```ts
+ * const presets = getRepeatMinInlineSizeVariants(document);
+ * const keys = presets ? [...presets.properties.keys()] : []; // ['small', 'medium', 'large']
+ * ```
  */
 export function getRepeatMinInlineSizeVariants(
 	scope: Document,

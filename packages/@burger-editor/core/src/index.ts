@@ -36,6 +36,11 @@ export type {
 export * from './const.js';
 export * from './utils/find-value-pattern-from-array.js';
 export { exportStyleOptions } from './block/export-style-options.js';
+export {
+	getCustomProperties,
+	getRepeatMinInlineSizeVariants,
+} from './dom-helpers/get-custom-properties.js';
+export { editorStylesheetTexts } from './dom-helpers/editor-stylesheet-texts.js';
 export { getBlockAtPosition } from './get-block-at-position.js';
 export { parseHTMLToBlockData } from './block/parse-html-to-definition.js';
 export { createBgeEvent } from './event/create-bge-event.js';

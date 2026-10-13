@@ -18,10 +18,11 @@ import type {
 
 import { BurgerBlock } from '../block/block.js';
 import { CommandBus } from '../command/command-bus.js';
-import { CSS_LAYER } from '../const.js';
-import { createComponentStylesheet } from '../dom-helpers/create-component-stylesheet.js';
-import { createStylesheetFromUrl } from '../dom-helpers/create-stylesheet-from-url.js';
 import { createStylesheet } from '../dom-helpers/create-stylesheet.js';
+import {
+	editorBaseStylesheetTexts,
+	editorProjectStylesheetText,
+} from '../dom-helpers/editor-stylesheet-texts.js';
 import {
 	getCustomProperties,
 	getCustomProperty,
@@ -567,50 +568,42 @@ export class BurgerEditorEngine implements Disposable {
 		engine: BurgerEditorEngine,
 		options: BurgerEditorEngineOptions,
 	) {
-		const layers = createStylesheet(
-			`@layer ${CSS_LAYER.base}, ${CSS_LAYER.components}, ${CSS_LAYER.ui};`,
-		);
-		engine.#disposables.defer(() => {
-			URL.revokeObjectURL(layers);
-		});
+		const createDisposableStylesheet = (css: string, id: string) => {
+			const path = createStylesheet(css);
+			engine.#disposables.defer(() => {
+				URL.revokeObjectURL(path);
+			});
+			return { path, id };
+		};
 
-		const baseStylesheet = createComponentStylesheet(
+		// Same texts as `editorStylesheetTexts()`; the base ones are created
+		// first so they are already owned by the engine if a fetch below fails.
+		const [layerOrderCss, baseCss] = editorBaseStylesheetTexts(
 			options.items,
 			options.generalCSS,
-			CSS_LAYER.base,
 		);
-		engine.#disposables.defer(() => {
-			URL.revokeObjectURL(baseStylesheet);
-		});
+		const baseStylesheets = [
+			createDisposableStylesheet(layerOrderCss, 'layers'),
+			createDisposableStylesheet(baseCss, 'base-stylesheet'),
+		];
 
-		const componentStylesheets = await Promise.all(
+		// Fetch every text before creating any blob URL: if one fetch fails,
+		// the engine is disposed while the others may still be in flight, and
+		// they must not register blobs on the disposed stack afterwards.
+		const cssContents = await Promise.all(
 			options.config.stylesheets.map(async (stylesheet) => {
-				return createStylesheetFromUrl(
-					stylesheet.path,
-					stylesheet.layer ?? CSS_LAYER.components,
-				);
+				const response = await fetch(stylesheet.path);
+				return response.text();
 			}),
 		);
-		for (const { blob } of componentStylesheets) {
-			engine.#disposables.defer(() => {
-				URL.revokeObjectURL(blob);
-			});
-		}
+		const componentStylesheets = options.config.stylesheets.map((stylesheet, index) =>
+			createDisposableStylesheet(
+				editorProjectStylesheetText(cssContents[index]!, stylesheet.layer),
+				stylesheet.path,
+			),
+		);
 
-		const stylesheets = [
-			{
-				path: layers,
-				id: 'layers',
-			},
-			{
-				path: baseStylesheet,
-				id: 'base-stylesheet',
-			},
-			...componentStylesheets.map(({ blob, originalUrl }) => ({
-				path: blob,
-				id: originalUrl,
-			})),
-		];
+		const stylesheets = [...baseStylesheets, ...componentStylesheets];
 
 		const mainInitialContent =
 			typeof options.initialContents === 'string'
