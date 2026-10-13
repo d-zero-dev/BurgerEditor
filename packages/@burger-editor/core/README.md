@@ -258,17 +258,20 @@ export const CSS_LAYER = {
 
 ### 主な API 一覧
 
-| 名前                          | 種別   | 役割                                           |
-| ----------------------------- | ------ | ---------------------------------------------- |
-| `BurgerEditorEngine`          | クラス | 編集エンジン本体。プラットフォーム非依存の中核 |
-| `BurgerEditorEngineOptions`   | 型     | エンジン初期化引数                             |
-| `createItem`                  | 関数   | アイテム定義のファクトリ                       |
-| `render`                      | 関数   | 編集なしでブロックデータを DOM へ変換          |
-| `exportStyleOptions`          | 関数   | コンテナの `style` からスタイル選択を復元      |
-| `NoEditableAreaError`         | クラス | 編集対象領域が見つからない場合の例外           |
-| block-ops 各種                | 関数群 | ブロック単位の移動・複製・削除等の操作         |
-| Front Matter ユーティリティ   | 関数群 | コンテンツ前後メタ情報のパース / シリアライズ  |
-| HTML detection ユーティリティ | 関数群 | コンテンツ文字列の判定 / 正規化                |
+| 名前                             | 種別   | 役割                                                                |
+| -------------------------------- | ------ | ------------------------------------------------------------------- |
+| `BurgerEditorEngine`             | クラス | 編集エンジン本体。プラットフォーム非依存の中核                      |
+| `BurgerEditorEngineOptions`      | 型     | エンジン初期化引数                                                  |
+| `createItem`                     | 関数   | アイテム定義のファクトリ                                            |
+| `render`                         | 関数   | 編集なしでブロックデータを DOM へ変換                               |
+| `exportStyleOptions`             | 関数   | コンテナの `style` からスタイル選択を復元                           |
+| `getCustomProperties`            | 関数   | 文書の CSS からスタイルオプションの選択肢を検出                     |
+| `getRepeatMinInlineSizeVariants` | 関数   | 文書の CSS から grid の折り返し幅プリセットを検出                   |
+| `editorStylesheetTexts`          | 関数   | エンジンが編集領域に読み込む CSS を同じ順・同じレイヤーで組み立てる |
+| `NoEditableAreaError`            | クラス | 編集対象領域が見つからない場合の例外                                |
+| block-ops 各種                   | 関数群 | ブロック単位の移動・複製・削除等の操作                              |
+| Front Matter ユーティリティ      | 関数群 | コンテンツ前後メタ情報のパース / シリアライズ                       |
+| HTML detection ユーティリティ    | 関数群 | コンテンツ文字列の判定 / 正規化                                     |
 
 シグネチャ詳細は型定義（`.d.ts`）を IDE 補完で参照。
 

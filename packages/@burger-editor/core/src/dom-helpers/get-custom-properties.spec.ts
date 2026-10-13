@@ -1,5 +1,7 @@
 import { test, expect, describe, beforeEach } from 'vitest';
 
+import { EMPTY_CUSTOM_PROPERTY_VALUE } from '../const.js';
+
 import {
 	getCustomProperties,
 	getCustomProperty,
@@ -753,6 +755,55 @@ describe('Empty category handling', () => {
 		const result = getCustomProperties(document);
 		const resultObj = toObject(result);
 		expect(resultObj).not.toHaveProperty('empty');
+	});
+});
+
+describe('EMPTY_CUSTOM_PROPERTY_VALUE', () => {
+	test('is excluded like an empty value and still overrides a lower-priority declaration', () => {
+		const style = document.createElement('style');
+		style.textContent = `
+			@layer base {
+				[data-bge-container] {
+					--bge-options-margin--none: 0;
+					--bge-options-margin--small: 1rem;
+				}
+			}
+			[data-bge-container] {
+				--bge-options-margin--none: ${EMPTY_CUSTOM_PROPERTY_VALUE};
+			}
+		`;
+		document.head.append(style);
+		const resultObj = toObject(getCustomProperties(document));
+		expect(Object.keys(resultObj.margin!.properties)).toEqual(['small']);
+	});
+});
+
+describe('Name splitting', () => {
+	test('names that exportStyleOptions cannot read back are not offered', () => {
+		const style = document.createElement('style');
+		style.textContent = `
+			[data-bge-container] {
+				--bge-options-gap--2x: 2rem;
+				--bge-options-gap--x--y: 3rem;
+				--bge-options-size--: 1rem;
+			}
+		`;
+		document.head.append(style);
+		const resultObj = toObject(getCustomProperties(document));
+		expect(Object.keys(resultObj)).toEqual(['gap']);
+		expect(Object.keys(resultObj.gap!.properties)).toEqual(['2x']);
+	});
+
+	test('non-ASCII category and key names are offered', () => {
+		const style = document.createElement('style');
+		style.textContent = `
+			[data-bge-container] {
+				--bge-options-見出し--大: 2rem;
+			}
+		`;
+		document.head.append(style);
+		const resultObj = toObject(getCustomProperties(document));
+		expect(Object.keys(resultObj['見出し']!.properties)).toEqual(['大']);
 	});
 });
 
