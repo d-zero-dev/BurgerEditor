@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
+
+### Bug Fixes
+
+- **frozen-patty:** drop attributes invalid for the converted picture child ([5f44a53](https://github.com/d-zero-dev/BurgerEditor/commit/5f44a5394fe134f63f9d878e8962952e40385be3))
+
+# [4.0.0-alpha.75](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.74...v4.0.0-alpha.75) (2026-10-02)
+
+**Note:** Version bump only for package @burger-editor/frozen-patty
+
+# [4.0.0-alpha.74](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.73...v4.0.0-alpha.74) (2026-10-01)
+
+**Note:** Version bump only for package @burger-editor/frozen-patty
+
+# [4.0.0-alpha.73](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.72...v4.0.0-alpha.73) (2026-09-18)
+
+### Bug Fixes
+
+- **frozen-patty:** use the trailing element as the picture list template ([819dce9](https://github.com/d-zero-dev/BurgerEditor/commit/819dce9c5d24932ba00d5e69cc1fcb407e3af6bc))
+
+# [4.0.0-alpha.72](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.71...v4.0.0-alpha.72) (2026-09-02)
+
+**Note:** Version bump only for package @burger-editor/frozen-patty
+
 # [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
 
 ### Features

@@ -60,9 +60,22 @@
 			"matchPackageNames": ["react", "react-dom", "@types/react", "@types/react-dom"]
 		},
 		{
-			"description": "vite-plugin-dts follows vite compatibility, keep aligned with vite bumps",
+			"description": "vite-plugin-dts follows vite's peer dependency range, keep aligned with vite bumps",
 			"groupName": "vite",
 			"matchPackageNames": ["vite", "vite-plugin-dts"]
+		},
+		{
+			"description": "React Compiler's babel plugin, its two bundler integrations (@rolldown/plugin-babel for client, @rollup/plugin-babel for blocks), @vitejs/plugin-react (source of reactCompilerPreset), and their shared babel/typescript-parsing peers must build and type-check together",
+			"groupName": "react-compiler",
+			"matchPackageNames": [
+				"babel-plugin-react-compiler",
+				"@rolldown/plugin-babel",
+				"@rollup/plugin-babel",
+				"@vitejs/plugin-react",
+				"@babel/core",
+				"@babel/preset-typescript",
+				"@types/babel__core"
+			]
 		},
 		{
 			"groupName": "typescript",
@@ -94,12 +107,25 @@
 			"matchPackageNames": ["jsdom", "@types/jsdom"]
 		},
 		{
+			"groupName": "use-sync-external-store",
+			"matchPackageNames": ["use-sync-external-store", "@types/use-sync-external-store"]
+		},
+		{
 			"groupName": "semver",
 			"matchPackageNames": ["semver", "@types/semver"]
 		},
 		{
 			"groupName": "turndown",
 			"matchPackageNames": ["turndown", "@types/turndown"]
+		},
+		{
+			"description": "@types/node is DefinitelyTyped, keep aligned with the volta.node/setup-node bump",
+			"groupName": "node",
+			"matchPackageNames": ["node", "@types/node"]
+		},
+		{
+			"groupName": "ws",
+			"matchPackageNames": ["ws", "@types/ws"]
 		}
 	]
 }

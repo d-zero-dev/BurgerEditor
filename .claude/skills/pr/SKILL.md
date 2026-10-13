@@ -6,8 +6,8 @@ description: プルリクエストの作成とプッシュ（プリフライト�
 1. `dev` や `main` ではないトピックブランチにいることを確認する。
 2. **base 追従（コンフリクト予防）**: `git fetch origin dev` を実行し、`git log HEAD..origin/dev --oneline` で base が進んでいないか確認する。進んでいれば push 前に `git rebase origin/dev` する。ドキュメント系のコンフリクトは機械的に解決せず、base 側で追加された内容を方針（JSDoc 配置・ARCHITECTURE.md の依存グラフ）に沿って取り込むこと。
 3. **プリフライトチェック（必須 — 省略不可）:**
-   - `yarn lint`、`yarn build`、`yarn test` がこのセッション内でまだ実行・成功していない場合、続行する前に**今すぐ実行**する。rebase を行った場合は rebase 後に再実行する。
-   - `yarn test` は Docker 経由で VR まで走るため時間がかかる。初回はイメージビルドも入る。時間を理由に省略しないこと。
+   - `yarn lint`、`yarn build`、変更に関連する Vitest プロジェクトの `yarn test --project <name>`（UI に関わる変更では `yarn test:vr:docker` も）がこのセッション内でまだ実行・成功していない場合、続行する前に**今すぐ実行**する。rebase を行った場合は rebase 後に再実行する。
+   - 全プロジェクトの実行は CI に任せる（CLAUDE.md の「テスト」節）。ステップ 8 の CI 監視で全体の結果を確認する。
    - 全てがパスしなければならない。失敗があれば続行前に修正する。
    - **`yarn lint` が prettier で意図しない再整形を出した場合は要注意**: コミット済みの整形と食い違う差分は prettier のバージョン差異による drift の可能性がある。自分の変更と無関係な再整形は取り込まず、ユーザーに報告する。
 4. 適切な `git` コマンドを使って現在のトピックブランチの変更をレビューする。

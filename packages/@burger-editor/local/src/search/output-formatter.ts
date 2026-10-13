@@ -3,6 +3,8 @@ import type { SearchMatch } from '@burger-editor/inspector';
 
 import path from 'node:path';
 
+import { toUrlHost } from '../helpers/host.js';
+
 export interface OutputOptions {
 	readonly showUrl: boolean;
 	readonly config: LocalServerConfig;
@@ -30,7 +32,7 @@ export function formatOutput(match: SearchMatch, options: OutputOptions): string
 		const relativePath = path.relative(config.documentRoot, filePath);
 		// Normalize path separators for URLs (Windows compatibility)
 		const normalizedPath = relativePath.replaceAll('\\', '/');
-		const url = `http://${config.host}:${config.port}/${normalizedPath}`;
+		const url = `http://${toUrlHost(config.host)}:${config.port}/${normalizedPath}`;
 		return `${url}:${lineNumber}`;
 	}
 

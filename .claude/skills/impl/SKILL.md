@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 1. 実装スコープ・アプローチ・トレードオフの合意が会話文脈で成立しているか確認する。未成立なら `/grill-me` を起動し、合意してから次へ
 2. **ブランチ確認**: 現在のブランチを確認し、`dev` / `main` / エピックの base branch 上にいる場合は `git switch -c` でサブブランチを切ってから進む。git worktree かどうかの確認は行わない（エージェントは worktree 起動が前提のため、あえてチェックしない）
-3. **アーキテクチャ確認**: ARCHITECTURE.md の依存グラフ・レイヤー分離・機能配置の判断基準を確認し、変更対象がどのレイヤーに属するかを決めてから実装に入る
+3. **アーキテクチャ確認**: ARCHITECTURE.md の境界と所有権・依存の向き・変更の種類ごとの読み方を確認し、変更をどのパッケージのどのシンボルに置くかを決めてから実装に入る
 4. 合意した計画の通りに実装する
 5. **`/code-review medium`（ユーザー実行が必須）**: `/code-review` は `disable-model-invocation` のため Claude からは起動できない。以下を提示してユーザーに実行を依頼し、**結果が返るまでここで待つ**。返ってきた指摘を fix all
 
@@ -21,7 +21,7 @@ disable-model-invocation: true
 6. `/qa-engineer` を実行し、指摘を fix all
 7. `/product-manager` を実行し、指摘を fix all（ドキュメント整合 — JSDoc・コメント原則・ARCHITECTURE.md と実装の一致 — のチェックを含む）
 8. `yarn lint` を実行し、エラーを修正
-9. `yarn test` を実行し、失敗を修正（Docker 経由で VR まで走るため時間がかかるが省略しない）
+9. 変更に関連する Vitest プロジェクトを `yarn test --project <name>` で実行し、失敗を修正する。UI に関わる変更では `yarn test:vr:docker` も実行する。全プロジェクトの実行は CI に任せる（CLAUDE.md の「テスト」節）
 10. `/git` の手順でコミット
 11. `/pr` の手順で PR 作成
 

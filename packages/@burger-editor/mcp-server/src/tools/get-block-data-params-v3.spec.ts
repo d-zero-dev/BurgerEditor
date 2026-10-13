@@ -2,11 +2,12 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { describe, it, expect } from 'vitest';
 
-import server from '../server.js';
+import { createServer } from '../server.js';
 
 import getBlockDataParamsV3 from './get-block-data-params-v3.js';
 
 describe('get-block-data-params-v3', async () => {
+	const server = createServer();
 	getBlockDataParamsV3(server);
 
 	const client = new Client({

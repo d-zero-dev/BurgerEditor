@@ -2,10 +2,10 @@ import { test, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { animateInsertion } from './animate-insertion.js';
 
-// jsdomはWeb Animations API未実装（Element.prototype.animateが無い）。
-// core側で実ブラウザテストしていた挙動（reduced-motionでのduration分岐、
-// キャンセル時もresolveすること）を検証するため、finishedを外部から
-// 操作できる最小のAnimationスタブを差し込む
+// 実際のWeb Animations APIでは終了タイミングを外部から制御できないため、
+// 検証したい挙動（reduced-motionでのduration分岐、キャンセル時も
+// resolveすること）に必要な分だけ、finishedを外部操作できる最小の
+// Animationスタブを差し込む
 class FakeAnimation {
 	finished: Promise<void>;
 	#reject!: (reason?: unknown) => void;

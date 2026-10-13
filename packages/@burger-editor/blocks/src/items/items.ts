@@ -1,16 +1,19 @@
-import button from './button/index.js';
-import details from './details/index.js';
-import downloadFile from './download-file/index.js';
-import googleMaps from './google-maps/index.js';
-import hr from './hr/index.js';
-import image from './image/index.js';
-import importItem from './import/index.js';
-import table from './table/index.js';
-import titleH2 from './title-h2/index.js';
-import titleH3 from './title-h3/index.js';
-import wysiwyg from './wysiwyg/index.js';
-import youtube from './youtube/index.js';
+import button from './button/definition.js';
+import details from './details/definition.js';
+import downloadFile from './download-file/definition.js';
+import googleMaps from './google-maps/definition.js';
+import hr from './hr/definition.js';
+import image from './image/definition.js';
+import importItem from './import/definition.js';
+import table from './table/definition.js';
+import titleH2 from './title-h2/definition.js';
+import titleH3 from './title-h3/definition.js';
+import wysiwyg from './wysiwyg/definition.js';
+import youtube from './youtube/definition.js';
 
+// 公開APIとしての説明は types.d.ts。ここはNode.jsから読まれるため、
+// React・`@burger-editor/client` に依存するモジュールをimportしてはならない
+// （ESLintの`no-restricted-imports`と`yarn verify:blocks-boundary`で検査する）
 export const items = {
 	button,
 	details,

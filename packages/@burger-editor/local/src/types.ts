@@ -31,7 +31,8 @@ type LocalKeys =
 	| 'enableImportBlock'
 	| 'healthCheck'
 	| 'experimental'
-	| 'virtualTree';
+	| 'virtualTree'
+	| 'agent';
 
 export type LocalServerConfig = Pick<BurgerEditorConfig, LocalKeys>;
 export type LocalServerConfigUserSettings = BurgerEditorConfigUserSettings;

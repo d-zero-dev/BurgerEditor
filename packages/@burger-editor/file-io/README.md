@@ -8,28 +8,29 @@ Node 側のファイル I/O 集約パッケージ。`@burger-editor/local`（ブ
 yarn add @burger-editor/file-io
 ```
 
-`@burger-editor/core` と `@burger-editor/blocks` を peer 依存。
+`@burger-editor/core` と `@burger-editor/blocks` は依存として一緒にインストールされる。
 
 ## Related Packages
 
 | パッケージ                                    | 関係                                                | 使い分け                                       |
 | --------------------------------------------- | --------------------------------------------------- | ---------------------------------------------- |
-| [`@burger-editor/core`](../core/)             | ブロック仕様の定義元（peer 依存）                   | file-io 単独不可                               |
-| [`@burger-editor/blocks`](../blocks/)         | 標準カタログ（peer 依存）                           | file-io 単独不可                               |
+| [`@burger-editor/core`](../core/)             | ブロック仕様の定義元（依存）                        | file-io 単独不可                               |
+| [`@burger-editor/blocks`](../blocks/)         | 標準カタログ（依存）                                | file-io 単独不可                               |
 | [`@burger-editor/local`](../local/)           | ブラウザ UI 付き CMS サーバー。file-io を利用       | 通常の編集はこちら経由（file-io は内包される） |
 | [`@burger-editor/cli`](../cli/)               | AI エージェント／スクリプト向け CLI。file-io を利用 | スクリプト経由のバッチ編集はこちら経由         |
 | [`@burger-editor/mcp-server`](../mcp-server/) | MCP プロトコル経由の操作。file-io を利用            | AI エージェント統合はこちら経由                |
 
 ## 提供する機能
 
-| 機能                                                                                            | エントリ                                                                                                         |
-| ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `burgereditor.config.*` ローダー（cosmiconfig ラッパー、親ディレクトリへ walk-up）              | `resolveConfig(searchFrom?)` / `clearConfigCache()`                                                              |
-| ページ HTML の読み書き（Front Matter + editableArea + prettier）                                | `loadContent(...)` / `saveContent(...)` / `FileNotFoundError` / `NoEditableAreaError`                            |
-| ディスク上のディレクトリツリーから HTML ファイルツリーを構築                                    | `generateFileTree(dir)` / `buildFileTreeFromLogicalPaths(input)`                                                 |
-| 仮想（論理）パス ↔ 実ファイル名のリゾルバ（`virtualTree.enabled: true` 時）                     | `loadResolverState(documentRoot, pathKey)` 他、`registerEntry` / `setLogicalPath` / `toDiskPath` / `listEntries` |
-| ユーザー入力（実パス / 仮想パス / 末尾スラッシュ等）を documentRoot 配下の絶対パスに正規化      | `resolvePathInput(input, config, resolverState)`                                                                 |
-| jsdom-backed DOM の **遅延** インストール（`@burger-editor/core` を Node から使えるようにする） | side-effect import + `ensureDom()`                                                                               |
+| 機能                                                                                                       | エントリ                                                                                                         |
+| ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `burgereditor.config.*` ローダー（cosmiconfig ラッパー、親ディレクトリへ walk-up。ファイルの直接指定も可） | `resolveConfig(searchFrom?, { configPath? })` / `clearConfigCache()`                                             |
+| ページ HTML の読み書き（Front Matter + editableArea + prettier）                                           | `loadContent(...)` / `saveContent(...)` / `FileNotFoundError` / `NoEditableAreaError`                            |
+| ディスク上のディレクトリツリーから HTML ファイルツリーを構築                                               | `generateFileTree(dir)` / `buildFileTreeFromLogicalPaths(input)`                                                 |
+| 仮想（論理）パス ↔ 実ファイル名のリゾルバ（`virtualTree.enabled: true` 時）                                | `loadResolverState(documentRoot, pathKey)` 他、`registerEntry` / `setLogicalPath` / `toDiskPath` / `listEntries` |
+| ユーザー入力（実パス / 仮想パス / 末尾スラッシュ等）を documentRoot 配下の絶対パスに正規化                 | `resolvePathInput(input, config, resolverState)`                                                                 |
+| jsdom-backed DOM の **遅延** インストール（`@burger-editor/core` を Node から使えるようにする）            | side-effect import + `ensureDom()`                                                                               |
+| CSS 文字列を読み込んだ独立した jsdom 文書（`core` のスタイルオプション検出を Node で動かす）               | `createStylesheetDocument(cssTexts)`                                                                             |
 
 ## 使用例
 
@@ -40,7 +41,7 @@ import { resolveConfig } from '@burger-editor/file-io';
 
 const { config, configPath } = await resolveConfig();
 // config: BurgerEditorConfig（documentRoot, editableArea, catalog, virtualTree, ...）
-// configPath: 解決された burgereditor.config.{js,mjs,ts,cjs,json} の絶対パス、なければ null
+// configPath: 解決された burgereditor.config.{js,mjs,ts,cjs} の絶対パス、なければ null
 ```
 
 ### ページの読み書き
@@ -129,14 +130,21 @@ fs を触る全パッケージの共通フロントエンド。**同じ config /
 
 サブディレクトリから CLI / MCP を起動しても、プロジェクトルートの設定が見つかる（cosmiconfig v9+ の挙動）。
 
+### 設定ファイルの直接指定（`configPath` / `BGE_CONFIG`）
+
+1 つのリポジトリに本体サイトと子サイトの設定が並ぶケースのために、探索をせずに設定ファイルを直接読める（使い方と優先順位は `resolveConfig` の JSDoc を参照）。
+
+- `BGE_CONFIG` は各エントリポイントではなく `resolveConfig` 自身が読む。local / cli / mcp-server のどれから起動しても同じ設定ファイルに解決される
+- 指定したファイルが存在しない場合は reject する。探索で見つからない場合のように既定値へは落とさない（既定値だと `documentRoot` がカレントディレクトリになり、指定した意図と食い違うため）
+
 ### Leading `/` は documentRoot 直下
 
 `resolvePathInput('/about.html', ...)` は OS ルートではなく documentRoot 直下を返す。AI エージェントが `/about.html` と書いたとき「about ページ」を意図することがほぼ確実なため。
 
 ### `loadContent` / `saveContent` の挙動
 
-- `loadContent` はファイル不在時 `newFileContent` で新規作成する。自動生成が望ましくないケース（例: `pageConcat` の source path）では呼び出し前に `fs.access` で確認する
-- `saveContent` は外部削除を `FileNotFoundError` で検知（race）
+- `loadContent` はファイル不在時 `newFileContent` で新規作成する。表示するだけでファイルを作りたくない場合（例: `local` でページを開いたとき）は `{ createMissingFile: false }` を渡す。不在を作成ではなくエラーとして扱いたいケース（例: `pageConcat` の source path）では呼び出し前に `fs.access` で確認する
+- `saveContent` は外部削除を `FileNotFoundError` で検知（race）。`{ newFileContent }` を渡すと、不在のファイルをそのテンプレートから作成して保存する（例: `local` で開いたページの初回保存）
 - editableArea セレクタ不一致時は `NoEditableAreaError`。**フルドキュメント / fragment 共通の挙動**
 
 ## メンテナンス責任

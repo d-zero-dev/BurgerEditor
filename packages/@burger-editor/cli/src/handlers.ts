@@ -1,17 +1,23 @@
 import type { BlockSpec } from './block-builder.js';
 import type { CliContext } from './context.js';
-import type { ItemData } from '@burger-editor/core';
+import type { ContainerType, ItemData, ListedBlock } from '@burger-editor/core';
 
+import { constants as fsConstants } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { items as defaultItems } from '@burger-editor/blocks';
+import { items as defaultItems, generalCSS } from '@burger-editor/blocks';
 import {
+	BurgerEditorEngine,
 	NoEditableAreaError,
 	deleteBlock,
-	getBlock,
+	duplicateBlock,
+	editorStylesheetTexts,
+	getCustomProperties,
+	getRepeatMinInlineSizeVariants,
 	insertBlock,
 	itemExport,
+	itemImport,
 	listBlocks,
 	moveBlock,
 	parseFrontMatter,
@@ -19,6 +25,7 @@ import {
 	stringifyWithFrontMatter,
 } from '@burger-editor/core';
 import {
+	createStylesheetDocument,
 	generateFileTree,
 	loadContent,
 	resolvePathInput,
@@ -35,6 +42,20 @@ import { renderBlockHtml } from './block-builder.js';
  */
 function expectPath(input: string, ctx: CliContext): string {
 	return resolvePathInput(input, ctx.config, ctx.resolverState);
+}
+
+/**
+ * Thrown when a page-creating operation's destination already exists on
+ * disk. A distinct error class (rather than a generic `Error` with a
+ * matching message) lets `cli/src/agent-tools` map this to HTTP 409 `exists`
+ * by type instead of pattern-matching on message text.
+ */
+export class PageAlreadyExistsError extends Error {
+	readonly pathInput: string;
+	constructor(pathInput: string) {
+		super(`Page already exists: ${pathInput}`);
+		this.pathInput = pathInput;
+	}
 }
 
 // ---------------------------------------------------------------- pages ----
@@ -102,7 +123,7 @@ export async function pageCreate(
 		await fs.writeFile(filePath, template, { encoding: 'utf8', flag: 'wx' });
 	} catch (error: unknown) {
 		if (error instanceof Error && 'code' in error && error.code === 'EEXIST') {
-			throw new Error(`Page already exists: ${filePath}`);
+			throw new PageAlreadyExistsError(pathInput);
 		}
 		throw error;
 	}
@@ -144,6 +165,56 @@ export async function pageDelete(ctx: CliContext, pathInput: string) {
 }
 
 /**
+ * Reject when `to` already exists on disk. `pageRename` / `pageCopy` never
+ * clobber an existing destination — an agent that wants to overwrite must
+ * `page_delete` first, making the intent explicit in a separate call.
+ * @param to
+ * @param toInput
+ */
+async function ensureDestinationAbsent(to: string, toInput: string): Promise<void> {
+	const exists = await fs
+		.access(to)
+		.then(() => true)
+		.catch(() => false);
+	if (exists) {
+		throw new PageAlreadyExistsError(toInput);
+	}
+}
+
+/**
+ * Rename `from` to `to` without clobbering an existing `to`, atomically when
+ * possible. `fs.link` creates `to` only if it doesn't already exist (EEXIST
+ * otherwise) — the same no-clobber guarantee `pageCopy` gets from
+ * `COPYFILE_EXCL` — then `from` is removed to complete the rename. A plain
+ * `fs.access` check followed by `fs.rename` (the original approach) leaves a
+ * check-then-act race window where two concurrent renames to the same `to` can both pass
+ * the check and one silently overwrites the other. Cross-device moves
+ * (EXDEV — a hard link can't span filesystems any more than a rename can)
+ * fall back to check-then-rename, the same residual race `fs.rename` alone
+ * would have had, but only reachable when `from`/`to` live on different
+ * filesystems.
+ * @param from
+ * @param to
+ * @param toInput
+ */
+async function renameNoClobber(from: string, to: string, toInput: string): Promise<void> {
+	try {
+		await fs.link(from, to);
+	} catch (error) {
+		if (error instanceof Error && 'code' in error && error.code === 'EEXIST') {
+			throw new PageAlreadyExistsError(toInput);
+		}
+		if (error instanceof Error && 'code' in error && error.code === 'EXDEV') {
+			await ensureDestinationAbsent(to, toInput);
+			await fs.rename(from, to);
+			return;
+		}
+		throw error;
+	}
+	await fs.unlink(from);
+}
+
+/**
  *
  * @param ctx
  * @param fromInput
@@ -158,7 +229,7 @@ export async function pageRename(ctx: CliContext, fromInput: string, toInput: st
 	// rename fails with EXDEV on a cross-device move).
 	const createdDirs = await mkdirpReportCreated(targetDir);
 	try {
-		await fs.rename(from, to);
+		await renameNoClobber(from, to, toInput);
 	} catch (error) {
 		// Undo dir creation in reverse order; stop at the first non-empty dir.
 		// Only swallow the two expected outcomes — ENOTEMPTY (sibling content
@@ -226,13 +297,24 @@ export async function pageCopy(ctx: CliContext, fromInput: string, toInput: stri
 	const from = expectPath(fromInput, ctx);
 	const to = expectPath(toInput, ctx);
 	await fs.mkdir(path.dirname(to), { recursive: true });
-	await fs.copyFile(from, to);
+	// COPYFILE_EXCL makes the exists-check atomic (unlike rename, copyFile
+	// has a flag for it) — no separate fs.access race window.
+	try {
+		await fs.copyFile(from, to, fsConstants.COPYFILE_EXCL);
+	} catch (error: unknown) {
+		if (error instanceof Error && 'code' in error && error.code === 'EEXIST') {
+			throw new PageAlreadyExistsError(toInput);
+		}
+		throw error;
+	}
 	return { from: fromInput, to: toInput, copied: true };
 }
 
 /**
- * Append the editable content of each source page onto the target page (which
- * must already exist). Front Matter of sources is dropped.
+ * Append the editable content of each source page onto the target page. The
+ * target is created from the project template when it does not exist yet
+ * (via `loadContent`'s existing auto-create behaviour), matching `page_concat`'s
+ * "create-if-absent" contract for `to`. Front Matter of sources is dropped.
  * @param ctx
  * @param targetInput
  * @param sourceInputs
@@ -248,7 +330,14 @@ export async function pageConcat(
 		);
 	}
 	const target = expectPath(targetInput, ctx);
-	const targetResult = await loadContent(target, ctx.config.editableArea, '');
+	// Use the project's real template (not '') so a `to` that doesn't exist
+	// yet is created with an actual editable area — an empty string has none,
+	// which turned "create to on demand" into a guaranteed NoEditableAreaError.
+	const targetResult = await loadContent(
+		target,
+		ctx.config.editableArea,
+		ctx.config.newFileContent,
+	);
 	if (targetResult instanceof NoEditableAreaError) {
 		throw targetResult;
 	}
@@ -333,12 +422,27 @@ export async function frontMatterSet(
 // ---------------------------------------------------------------- blocks ----
 
 /**
- *
+ * A block target as used by every block-scoped tool: either the block's
+ * position in the page (`index`, unstable across insert/delete) or its
+ * stable `id` (see `blockEnsureId` for blocks that don't have one yet).
+ */
+export interface BlockTarget {
+	readonly index?: number;
+	readonly id?: string;
+}
+
+/**
+ * Read-only counterpart of `writeEditable`'s load. `loadContent` silently
+ * CREATES a missing file, which is right for the write path but wrong here:
+ * a read of a non-existent page must fail with ENOENT (mapped to `not-found`)
+ * so the caller can tell "no such page" from "empty page", and must leave no
+ * stray file under documentRoot.
  * @param ctx
  * @param pathInput
  */
 async function readEditable(ctx: CliContext, pathInput: string) {
 	const filePath = expectPath(pathInput, ctx);
+	await fs.access(filePath);
 	const result = await loadContent(filePath, ctx.config.editableArea, '');
 	if (result instanceof NoEditableAreaError) {
 		throw result;
@@ -347,31 +451,90 @@ async function readEditable(ctx: CliContext, pathInput: string) {
 }
 
 /**
- *
+ * Read a page's editable area and parse it into blocks, or throw.
  * @param ctx
  * @param pathInput
  */
-export async function blockList(ctx: CliContext, pathInput: string) {
+export async function readBlocks(
+	ctx: CliContext,
+	pathInput: string,
+): Promise<readonly ListedBlock[]> {
 	const { result } = await readEditable(ctx, pathInput);
 	const blocks = listBlocks(result.editableContent, null);
 	if (blocks instanceof NoEditableAreaError) {
 		throw blocks;
 	}
-	return { path: pathInput, blocks };
+	return blocks;
+}
+
+/**
+ * Resolve a `{ index } | { id }` block target against an already-parsed
+ * block list. `id` wins when both are supplied.
+ * @param blocks
+ * @param target
+ * @param pathInput
+ */
+export function resolveIndexInBlocks(
+	blocks: readonly ListedBlock[],
+	target: BlockTarget,
+	pathInput: string,
+): number {
+	if (target.id !== undefined) {
+		const found = blocks.find((b) => toFullBlockId(b.data.id) === target.id);
+		if (!found) {
+			throw new RangeError(`No block with id "${target.id}" found in ${pathInput}`);
+		}
+		return found.index;
+	}
+	if (target.index !== undefined) {
+		// Bounds-check here so every caller (blockGet, blockReplace,
+		// blockDelete, blockMove's `target`, blockDuplicate, blockEnsureId,
+		// itemUpdate) gets a clear RangeError for an out-of-range index
+		// instead of `blocks[index]` silently yielding `undefined` past a
+		// `!`-asserted access further down the call stack. `Number.isInteger`
+		// first: the CLI passes `Number(argv)`, so a missing or non-numeric
+		// argument arrives as NaN, which slips through both `<`/`>=`
+		// comparisons and would otherwise produce a "successful" result with
+		// `block: undefined`.
+		if (
+			!Number.isInteger(target.index) ||
+			target.index < 0 ||
+			target.index >= blocks.length
+		) {
+			throw new RangeError(
+				`Block index ${target.index} out of range (length=${blocks.length}) in ${pathInput}`,
+			);
+		}
+		return target.index;
+	}
+	throw new TypeError('Block target must specify either "index" or "id".');
+}
+
+/**
+ * The full DOM id a block would carry in the browser
+ * (`BurgerEditorEngine.BLOCK_ID_PREFIX` + the block's own id suffix).
+ * `BlockData.id` (as parsed by `parseHTMLToBlockData`) has that prefix
+ * already stripped — see `core/src/block/export-options.ts` — so every
+ * place that hands an id to, or receives one from, an agent (`target.id`,
+ * `block_ensure_id`'s result, `page_blocks`' summaries) must go through
+ * this conversion rather than use `BlockData.id` raw, or ids silently lose
+ * their `bge-` prefix on the way out and stop round-tripping.
+ * @param dataId
+ */
+export function toFullBlockId(dataId: string | null | undefined): string | null {
+	return dataId ? `${BurgerEditorEngine.BLOCK_ID_PREFIX}${dataId}` : null;
 }
 
 /**
  *
  * @param ctx
  * @param pathInput
- * @param index
+ * @param target
  */
-export async function blockGet(ctx: CliContext, pathInput: string, index: number) {
-	const { result } = await readEditable(ctx, pathInput);
-	const block = getBlock(result.editableContent, null, index);
-	if (block instanceof NoEditableAreaError) {
-		throw block;
-	}
+export async function blockGet(ctx: CliContext, pathInput: string, target: BlockTarget) {
+	const blocks = await readBlocks(ctx, pathInput);
+	const index = resolveIndexInBlocks(blocks, target, pathInput);
+	const block = blocks[index]!;
 	return { path: pathInput, block };
 }
 
@@ -482,14 +645,14 @@ export async function blockInsert(
  *
  * @param ctx
  * @param pathInput
- * @param index
+ * @param target
  * @param spec
  * @param options
  */
 export async function blockReplace(
 	ctx: CliContext,
 	pathInput: string,
-	index: number,
+	target: BlockTarget,
 	spec: BlockSpec,
 	options: MutationOptions = {},
 ) {
@@ -497,12 +660,17 @@ export async function blockReplace(
 	const write = await writeEditable(
 		ctx,
 		pathInput,
-		(html) => replaceBlock(html, null, index, blockHtml),
+		(html) => {
+			const blocks = listBlocks(html, null);
+			if (blocks instanceof NoEditableAreaError) return blocks;
+			const index = resolveIndexInBlocks(blocks, target, pathInput);
+			return replaceBlock(html, null, index, blockHtml);
+		},
 		options,
 	);
 	return {
 		path: pathInput,
-		index,
+		target,
 		dryRun: write.dryRun,
 		...(write.dryRun && { previewContent: write.previewContent }),
 	};
@@ -512,19 +680,24 @@ export async function blockReplace(
  *
  * @param ctx
  * @param pathInput
- * @param index
+ * @param target
  * @param options
  */
 export async function blockDelete(
 	ctx: CliContext,
 	pathInput: string,
-	index: number,
+	target: BlockTarget,
 	options: MutationOptions = {},
 ) {
 	const write = await writeEditable(
 		ctx,
 		pathInput,
-		(html) => deleteBlock(html, null, index),
+		(html) => {
+			const blocks = listBlocks(html, null);
+			if (blocks instanceof NoEditableAreaError) return blocks;
+			const index = resolveIndexInBlocks(blocks, target, pathInput);
+			return deleteBlock(html, null, index);
+		},
 		options,
 	);
 	// No `deleted: bool` field — the operation was always "delete by index";
@@ -533,7 +706,7 @@ export async function blockDelete(
 	// dry-run preview succeeded).
 	return {
 		path: pathInput,
-		index,
+		target,
 		dryRun: write.dryRun,
 		...(write.dryRun && { previewContent: write.previewContent }),
 	};
@@ -543,29 +716,238 @@ export async function blockDelete(
  *
  * @param ctx
  * @param pathInput
- * @param from
+ * @param target
  * @param to
  * @param options
  */
 export async function blockMove(
 	ctx: CliContext,
 	pathInput: string,
-	from: number,
+	target: BlockTarget,
 	to: number,
 	options: MutationOptions = {},
 ) {
 	const write = await writeEditable(
 		ctx,
 		pathInput,
-		(html) => moveBlock(html, null, from, to),
+		(html) => {
+			const blocks = listBlocks(html, null);
+			if (blocks instanceof NoEditableAreaError) return blocks;
+			const from = resolveIndexInBlocks(blocks, target, pathInput);
+			// `to` is the destination in the FINAL list (splice convention) —
+			// see block-ops.ts moveBlock for the pinned example.
+			return moveBlock(html, null, from, to);
+		},
 		options,
 	);
 	// No `moved: bool` — see the note on blockDelete. Non-throwing return is
 	// success; dryRun carries the rest.
 	return {
 		path: pathInput,
-		from,
+		target,
 		to,
+		dryRun: write.dryRun,
+		...(write.dryRun && { previewContent: write.previewContent }),
+	};
+}
+
+/**
+ *
+ * @param ctx
+ * @param pathInput
+ * @param target
+ * @param options
+ */
+export async function blockDuplicate(
+	ctx: CliContext,
+	pathInput: string,
+	target: BlockTarget,
+	options: MutationOptions = {},
+) {
+	const write = await writeEditable(
+		ctx,
+		pathInput,
+		(html) => {
+			const blocks = listBlocks(html, null);
+			if (blocks instanceof NoEditableAreaError) return blocks;
+			const index = resolveIndexInBlocks(blocks, target, pathInput);
+			// duplicateBlock (core) already strips id from the clone, so the
+			// duplicate never collides with the original's id.
+			return duplicateBlock(html, null, index);
+		},
+		options,
+	);
+	return {
+		path: pathInput,
+		target,
+		dryRun: write.dryRun,
+		...(write.dryRun && { previewContent: write.previewContent }),
+	};
+}
+
+/**
+ * Pick the lowest-numbered `bge-<n>` id not already used by any block on the
+ * page, matching the browser engine's own id vocabulary
+ * (`BurgerEditorEngine.BLOCK_ID_PREFIX`).
+ * @param blocks
+ */
+function generateBlockId(blocks: readonly ListedBlock[]): string {
+	// `BlockData.id` already has the `bge-` prefix stripped (see
+	// `toFullBlockId`'s JSDoc) — compare against the bare suffix, not a
+	// re-prefixed one, or this loop never finds a collision and always
+	// returns `bge-1`.
+	const used = new Set(blocks.map((b) => b.data.id).filter(Boolean));
+	let n = 1;
+	while (used.has(String(n))) {
+		n++;
+	}
+	return `${BurgerEditorEngine.BLOCK_ID_PREFIX}${n}`;
+}
+
+/**
+ * Set the `id` attribute on a block's root element, returning the updated
+ * outerHTML.
+ * @param blockHtml
+ * @param id
+ */
+function setRootElementId(blockHtml: string, id: string): string {
+	const doc = new DOMParser().parseFromString(
+		`<html><body>${blockHtml}</body></html>`,
+		'text/html',
+	);
+	const el = doc.body.firstElementChild as HTMLElement | null;
+	if (!el) {
+		throw new Error('Block HTML has no root element.');
+	}
+	el.id = id;
+	return el.outerHTML;
+}
+
+/**
+ * Assign a stable `bge-<n>` id to a block that doesn't have one yet.
+ * Idempotent: calling it again on a block that already has an id returns
+ * that id unchanged instead of reassigning.
+ *
+ * Target resolution AND the id-bearing HTML are both computed from the same
+ * fresh `html` `writeEditable` loads at write time — not from an earlier
+ * `readBlocks()` snapshot. Building `withId` off a separate, older read
+ * would let a change to the page between that read and the write get
+ * silently discarded: the write would replace the (now stale) target index
+ * with the old snapshot's content, plus the new id, clobbering whatever
+ * changed it in between.
+ * @param ctx
+ * @param pathInput
+ * @param target
+ */
+export async function blockEnsureId(
+	ctx: CliContext,
+	pathInput: string,
+	target: BlockTarget,
+) {
+	let outcome!: { index: number; id: string; created: boolean };
+	await writeEditable(ctx, pathInput, (html) => {
+		const blocks = listBlocks(html, null);
+		if (blocks instanceof NoEditableAreaError) return blocks;
+		const index = resolveIndexInBlocks(blocks, target, pathInput);
+		const block = blocks[index]!;
+		const existingId = toFullBlockId(block.data.id);
+		if (existingId) {
+			outcome = { index, id: existingId, created: false };
+			return html;
+		}
+		const id = generateBlockId(blocks);
+		const withId = setRootElementId(block.html, id);
+		outcome = { index, id, created: true };
+		return replaceBlock(html, null, index, withId);
+	});
+	return { path: pathInput, ...outcome };
+}
+
+/**
+ * Collect a block's item wrapper elements (`[data-bgi]`) in DOM order —
+ * `[data-bge-group]` then `[data-bge-item]` — matching the flat `itemIndex`
+ * convention used by `page_blocks` / `item_update`. One entry per
+ * `[data-bge-item]`, including a `null` for an item with no `[data-bgi]`
+ * wrapper — NOT filtered down to only wrapped items. Filtering here would
+ * knock this function's `itemIndex` out of sync with the item count
+ * `parseHTMLToBlockData` (core's `parse-html-to-definition.ts`) reports for
+ * the same block — the same count `page_blocks`/`block_get` expose as
+ * `itemNames` — so an agent addressing item N by that index would silently
+ * hit item N+1 (or later) here once any earlier item lacked a wrapper.
+ * @param blockEl
+ */
+export function getItemWrapperElements(
+	blockEl: HTMLElement,
+): ReadonlyArray<HTMLElement | null> {
+	const groups = [...blockEl.querySelectorAll<HTMLElement>('[data-bge-group]')];
+	const itemEls = groups.flatMap((g) => [
+		...g.querySelectorAll<HTMLElement>('[data-bge-item]'),
+	]);
+	return itemEls.map((itemEl) => itemEl.querySelector<HTMLElement>('[data-bgi]'));
+}
+
+/**
+ * Update one item's data within a block — the disk-side equivalent of the
+ * browser's `Item.import(data)`: current data is read back from the item's
+ * template HTML, shallow-merged with `data`, and re-rendered.
+ * @param ctx
+ * @param pathInput
+ * @param target
+ * @param itemIndex
+ * @param data
+ * @param options
+ */
+export async function itemUpdate(
+	ctx: CliContext,
+	pathInput: string,
+	target: BlockTarget,
+	itemIndex: number,
+	// Arbitrary JSON from an agent call — not narrowed to ItemPrimitiveData at
+	// this boundary. Merged with the item's real current data (parsed from its
+	// own template) below, which is what actually gets rendered.
+	data: Record<string, unknown>,
+	options: MutationOptions = {},
+) {
+	const write = await writeEditable(
+		ctx,
+		pathInput,
+		(html) => {
+			const blocks = listBlocks(html, null);
+			if (blocks instanceof NoEditableAreaError) return blocks;
+			const index = resolveIndexInBlocks(blocks, target, pathInput);
+			const block = blocks[index]!;
+			const doc = new DOMParser().parseFromString(
+				`<html><body>${block.html}</body></html>`,
+				'text/html',
+			);
+			const blockEl = doc.body.firstElementChild as HTMLElement;
+			const wrappers = getItemWrapperElements(blockEl);
+			if (itemIndex < 0 || itemIndex >= wrappers.length) {
+				throw new RangeError(
+					`Item index ${itemIndex} out of range (length=${wrappers.length})`,
+				);
+			}
+			const wrapper = wrappers[itemIndex];
+			if (!wrapper) {
+				// In range, but this particular item has no [data-bgi] wrapper
+				// (a defensive fallback core renders as name:'wysiwyg' when
+				// reading — see parse-html-to-definition.ts). There's no
+				// template HTML here to merge item_update's `data` into.
+				throw new Error(
+					`Item ${itemIndex} in this block has no data-bgi wrapper and cannot be updated via item_update.`,
+				);
+			}
+			const currentData = itemExport(wrapper.innerHTML);
+			const merged: ItemData = { ...currentData, ...data } as ItemData;
+			wrapper.innerHTML = itemImport(wrapper.innerHTML, merged);
+			return replaceBlock(html, null, index, blockEl.outerHTML);
+		},
+		options,
+	);
+	return {
+		path: pathInput,
+		target,
+		itemIndex,
 		dryRun: write.dryRun,
 		...(write.dryRun && { previewContent: write.previewContent }),
 	};
@@ -603,7 +985,7 @@ export function catalogGet(ctx: CliContext, name: string) {
 				// Build a ready-to-insert spec template alongside the raw
 				// definition. The raw `definition.items` only carries item
 				// NAMES (e.g. [["title-h2"]]); agents previously had to know
-				// to wrap each entry as `{name, data: {...}}` with the right
+				// to wrap each entry as `{name, data}` with the right
 				// camelCased data keys. The template does that expansion for
 				// them so `block-insert --spec '<template>'` works as-is.
 				return {
@@ -746,14 +1128,31 @@ function buildBlockSpecTemplate(definition: {
 // ----------------------------------------------- style / container options
 
 /**
- *
- * @param ctx
+ * Container types accepted by `style_options_list` / `style-options-list`
+ * and listed by `container_options_list`.
+ * @example
+ * ```ts
+ * const type = CONTAINER_TYPES.find((t) => t === input); // ContainerType | undefined
+ * ```
  */
-export async function styleOptionsList(ctx: CliContext) {
-	// Read every stylesheet referenced in config + project CSS files in
-	// assetsRoot, parse out `--bge-options-<axis>--<variant>` custom
-	// properties, and return them grouped by axis.
-	const collected = new Map<string, Set<string>>();
+export const CONTAINER_TYPES = [
+	'grid',
+	'inline',
+	'float',
+] as const satisfies readonly ContainerType[];
+
+/**
+ * Load the stylesheets the editor puts into an editable area — the
+ * standard items' CSS and `generalCSS`, then `config.stylesheets` — with
+ * the engine's own `editorStylesheetTexts()`, so the cascade matches the
+ * block options dialog, and run `scan` on them.
+ * @param ctx
+ * @param scan - Reads the document; the jsdom window is closed afterwards
+ */
+async function scanEditorStylesheets<T>(
+	ctx: CliContext,
+	scan: (doc: Document) => T,
+): Promise<T> {
 	const stylesheetUrls = ctx.config.stylesheets ?? [];
 	// Stylesheet reads are independent — fan out so 8 sheets cost the
 	// slowest read, not the sum.
@@ -763,48 +1162,81 @@ export async function styleOptionsList(ctx: CliContext) {
 			return fs.readFile(filePath, 'utf8').catch(() => null);
 		}),
 	);
-	for (const css of cssContents) {
-		if (css === null) continue; // non-fatal: stylesheet may be served from elsewhere
-		extractBgeOptions(css, collected);
+	const stylesheets = cssContents
+		// non-fatal: stylesheet may be served from elsewhere
+		.filter((css) => css !== null)
+		.map((css) => ({ css }));
+	const doc = createStylesheetDocument(
+		editorStylesheetTexts(defaultItems, generalCSS, stylesheets),
+	);
+	try {
+		return scan(doc);
+	} finally {
+		doc.defaultView?.close();
 	}
+}
+
+/**
+ * List the style option axes (`--bge-options-<axis>--<variant>`) the block
+ * options dialog offers, detected by the editor's own rules
+ * (`getCustomProperties()` in `@burger-editor/core`).
+ * @param ctx
+ * @param containerType - Only return axes usable in this container type,
+ * as the dialog does. Axes prefixed `_{type}_` keep the prefix, because it
+ * is part of the name written to `spec.style`. Without it, axes for every
+ * container type are returned.
+ * @example
+ * ```ts
+ * const { axes } = await styleOptionsList(ctx, 'grid');
+ * // { margin: ['large', 'none', 'normal', 'small'], '_grid_subgrid-gap': [...], ... }
+ * ```
+ */
+export async function styleOptionsList(ctx: CliContext, containerType?: ContainerType) {
+	const collected = await scanEditorStylesheets(ctx, (doc) => {
+		const axes = new Map<string, Set<string>>();
+		// `getCustomProperties` returns `_{type}_` axes for one type at a time,
+		// so listing every type means one scan per type over the same document
+		// (a few milliseconds, against tens for building the jsdom document).
+		for (const type of containerType ? [containerType] : CONTAINER_TYPES) {
+			for (const [axis, category] of getCustomProperties(doc, type)) {
+				const variants = axes.get(axis) ?? new Set<string>();
+				for (const variant of category.properties.keys()) {
+					variants.add(variant);
+				}
+				axes.set(axis, variants);
+			}
+		}
+		return axes;
+	});
 	const result: Record<string, string[]> = {};
 	for (const [axis, variants] of collected) {
-		result[axis] = [...variants].toSorted();
+		if (variants.size > 0) {
+			result[axis] = [...variants].toSorted();
+		}
 	}
 	return { axes: result };
 }
 
 /**
- *
- * @param css
- * @param into
+ * List the container layout options. Everything is fixed by `core` except
+ * the grid wrap-width presets, which are read from the same stylesheets as
+ * `styleOptionsList` (`getRepeatMinInlineSizeVariants()`); each preset is
+ * a value for `containerProps.repeatMinInlineSize`.
+ * @param ctx
+ * @example
+ * ```ts
+ * const { gridOptions } = await containerOptionsList(ctx);
+ * gridOptions.repeatMinInlineSizeVariants; // ['small', 'medium', 'large']
+ * ```
  */
-function extractBgeOptions(css: string, into: Map<string, Set<string>>): void {
-	// Axis and variant are each a sequence of word groups joined by single
-	// hyphens; the `--` between them is the unambiguous separator. Writing
-	// both halves as `(?:\w+-)*\w+` eliminates the lazy-quantifier
-	// backtracking that triggers regexp/no-super-linear-backtracking.
-	const re = /--bge-options-((?:\w+-)*\w+)--((?:\w+-)*\w+)\s*:/g;
-	let m: RegExpExecArray | null;
-	while ((m = re.exec(css)) !== null) {
-		const axis = m[1]!;
-		const variant = m[2]!;
-		const set = into.get(axis) ?? new Set<string>();
-		set.add(variant);
-		into.set(axis, set);
-	}
-}
-
-/**
- *
- */
-export function containerOptionsList() {
+export async function containerOptionsList(ctx: CliContext) {
+	const presets = await scanEditorStylesheets(ctx, getRepeatMinInlineSizeVariants);
 	return {
-		types: ['grid', 'inline', 'float'],
+		types: [...CONTAINER_TYPES],
 		gridOptions: {
 			columns: [1, 2, 3, 4, 5],
 			autoRepeat: ['auto-fit', 'auto-fill'],
-			repeatMinInlineSizeVariants: ['--small', '--medium', '--large'],
+			repeatMinInlineSizeVariants: presets ? [...presets.properties.keys()] : [],
 		},
 		inlineOptions: {
 			justify: ['center', 'start', 'end', 'between', 'around', 'evenly'],

@@ -28,11 +28,14 @@ BurgerEditorは、プラットフォーム非依存のブロックエディタ�
 
 ### 🤖 AI エージェント / スクリプトから操作したい方向け
 
-Claude Code 等の AI エージェント、または非対話なスクリプトからページ・ブロックを編集したい方は次の 3 つを参照してください：
+Claude Code 等の AI エージェント、または非対話なスクリプトからページ・ブロックを編集したい方は次を参照してください：
 
 - [@burger-editor/cli](./packages/@burger-editor/cli/) — JSON-only な CLI（`npx @burger-editor/cli <subcommand>`）
 - [@burger-editor/mcp-server](./packages/@burger-editor/mcp-server/) — Model Context Protocol サーバー。v3 / v4 両対応
-- [skills/burger-editor-v4/](./skills/burger-editor-v4/) — `npx skills add d-zero-dev/BurgerEditor` で配布される AI エージェント向け SKILL
+- [skills/editing-burger-editor-pages/](./skills/editing-burger-editor-pages/) — 既存ページのブロック編集向け SKILL
+- [skills/building-burger-editor-projects/](./skills/building-burger-editor-projects/) — プロジェクト構築・カスタムブロック向け SKILL
+
+`npx skills add d-zero-dev/BurgerEditor --skill editing-burger-editor-pages` のように `--skill` で個別に導入できます（省略すると両方が導入対象になります）。
 
 **主な内容:**
 
@@ -42,13 +45,10 @@ Claude Code 等の AI エージェント、または非対話なスクリプト�
 
 ### 👨‍💻 Contributor向け
 
-BurgerEditorの開発に貢献したい開発者の方は、以下の情報をご覧ください。
+BurgerEditor は Lerna + Yarn Workspaces のモノレポです。
 
-#### モノレポ構成
-
-BurgerEditorはLernaを使用したモノレポ構成を採用しています。各パッケージは明確な責任を持ち、再利用性とプラットフォーム非依存性を重視した設計になっています。
-
-詳細なアーキテクチャについては [ARCHITECTURE.md](./ARCHITECTURE.md) を参照してください。
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — パッケージの全体地図・境界・依存の向き・変更の種類ごとに読む場所
+- [CLAUDE.md](./CLAUDE.md) — コマンド・ブランチ・テスト・依存追加のルール（AI エージェントと共通）
 
 #### パッケージ一覧
 
@@ -70,42 +70,20 @@ BurgerEditorはLernaを使用したモノレポ構成を採用しています。
 | [@burger-editor/runtime](./packages/@burger-editor/runtime/)               | [![npm version](https://badge.fury.io/js/@burger-editor%2Fruntime.svg)](https://badge.fury.io/js/@burger-editor%2Fruntime)               | ブラウザ用ランタイムライブラリ            |
 | [@burger-editor/utils](./packages/@burger-editor/utils/)                   | [![npm version](https://badge.fury.io/js/@burger-editor%2Futils.svg)](https://badge.fury.io/js/@burger-editor%2Futils)                   | 共通ユーティリティ関数                    |
 
-#### 開発環境のセットアップ
+#### 開発
 
 ```bash
-# リポジトリのクローン
 git clone https://github.com/d-zero-dev/BurgerEditor.git
 cd BurgerEditor
-
-# 依存関係のインストール
 yarn install
-
-# すべてのパッケージをビルド
 yarn build
-```
-
-#### ビルドとテスト
-
-```bash
-# すべてのパッケージをビルド
-yarn build
-
-# テストの実行
-yarn test
-
-# Lintの実行
+yarn test       # Docker 内で実行する（VR のスクリーンショットを CI と一致させるため）
 yarn lint
-
-# 管理画面UIコンポーネントカタログ（Storybook）の起動
-yarn storybook
+yarn storybook  # 管理画面 UI のカタログ
 ```
 
-#### コントリビューションガイドライン
-
-- プルリクエストを作成する前に、すべてのテストが通ることを確認してください
-- コミットメッセージは [Conventional Commits](https://www.conventionalcommits.org/) の形式に従ってください
-- コード変更時は適切なテストを追加してください
-- Cursor Rulesとプロジェクトのコーディング規約に従ってください
+- コミットメッセージは [Conventional Commits](https://www.conventionalcommits.org/) の形式に従ってください（`yarn commit`）
+- PR は `dev` ブランチへ向けてください
 
 ## License
 

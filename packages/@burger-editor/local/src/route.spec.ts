@@ -1,14 +1,15 @@
-import type { LocalServerConfig } from './types.js';
-
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { mkdtempDisposable } from '@d-zero/shared/mkdtemp-disposable';
-import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { loadResolverState } from './model/virtual-path-resolver.js';
-import { setRoute } from './route.js';
+import {
+	createTestApp,
+	makeLocalServerConfig,
+	makeTmpRoots,
+	type TestApp,
+	type TmpRoots,
+} from './__tests__/fixtures.js';
 
 /**
  * Spin up a fresh tmp documentRoot + assetsRoot pair. Each test gets its own
@@ -19,14 +20,10 @@ import { setRoute } from './route.js';
 async function makeTmpDocumentRoot(): Promise<{
 	documentRoot: string;
 	assetsRoot: string;
-	tmp: { path: string } & AsyncDisposable;
+	tmp: TmpRoots;
 }> {
-	const tmp = await mkdtempDisposable('bge-route-');
-	const documentRoot = path.join(tmp.path, 'docs');
-	const assetsRoot = path.join(tmp.path, 'assets');
-	await fs.mkdir(documentRoot);
-	await fs.mkdir(assetsRoot);
-	return { documentRoot, assetsRoot, tmp };
+	const tmp = await makeTmpRoots('bge-route-');
+	return { documentRoot: tmp.documentRoot, assetsRoot: tmp.assetsRoot, tmp };
 }
 
 type ConfigOverrides = {
@@ -36,50 +33,11 @@ type ConfigOverrides = {
 };
 
 /**
- *
- * @param documentRoot
- * @param assetsRoot
- * @param overrides
- */
-function makeConfig(
-	documentRoot: string,
-	assetsRoot: string,
-	overrides: ConfigOverrides,
-): LocalServerConfig {
-	const { virtualTreeEnabled, pathKey = 'path', editableArea = null } = overrides;
-	return {
-		version: '0.0.0-test',
-		port: 0,
-		host: 'localhost',
-		documentRoot,
-		assetsRoot,
-		lang: 'en',
-		stylesheets: [],
-		classList: [],
-		editableArea,
-		indexFileName: 'index.html',
-		filesDir: {
-			image: { serverPath: assetsRoot, clientPath: '/files' },
-			pdf: { serverPath: assetsRoot, clientPath: '/files' },
-			video: { serverPath: assetsRoot, clientPath: '/files' },
-			audio: { serverPath: assetsRoot, clientPath: '/files' },
-			other: { serverPath: assetsRoot, clientPath: '/files' },
-		},
-		sampleImagePath: '/files/sample.png',
-		sampleFilePath: '/files/sample.pdf',
-		googleMapsApiKey: null,
-		open: false,
-		newFileContent: '<!doctype html><html><body></body></html>',
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		catalog: {} as any,
-		enableImportBlock: false,
-		healthCheck: { enabled: false, interval: 10_000, retryCount: 3 },
-		virtualTree: { enabled: virtualTreeEnabled, pathKey },
-	};
-}
-
-/**
- *
+ * Mirrors production boot (`loadResolverStateOrExit` → strict mode): the
+ * local server boots in strict mode, so tests must too — otherwise a
+ * regression that breaks the strict-throw path slips through under
+ * `createTestApp`'s lenient-by-default counterpart. A documentRoot with
+ * malformed Front Matter makes this REJECT (see the regression test below).
  * @param documentRoot
  * @param assetsRoot
  * @param overrides
@@ -88,23 +46,20 @@ async function buildApp(
 	documentRoot: string,
 	assetsRoot: string,
 	overrides: ConfigOverrides,
-): Promise<Hono> {
-	const app = new Hono();
-	const userConfig = makeConfig(documentRoot, assetsRoot, overrides);
-	let resolverState = null;
-	if (userConfig.virtualTree.enabled) {
-		// Mirror production (loadResolverStateOrExit): the local server boots
-		// in strict mode, so tests must too — otherwise a regression that
-		// breaks the strict-throw path slips through under the lenient default.
-		const loaded = await loadResolverState(
-			userConfig.documentRoot,
-			userConfig.virtualTree.pathKey,
-			{ strict: true },
-		);
-		resolverState = loaded.state;
-	}
-	setRoute(app, userConfig, resolverState);
-	return app;
+): Promise<Pick<TestApp, 'request'>> {
+	const { virtualTreeEnabled, pathKey = 'path', editableArea = null } = overrides;
+	const t = await createTestApp({
+		config: makeLocalServerConfig({
+			documentRoot,
+			assetsRoot,
+			editableArea,
+			virtualTree: { enabled: virtualTreeEnabled, pathKey },
+			agent: { enabled: false },
+		}),
+	});
+	// `request` injects the `Host` header a real HTTP client always sends; the
+	// app-wide `hostGuard` answers 403 to a request that has none.
+	return { request: t.request };
 }
 
 describe('GET /api/tree', () => {
@@ -315,6 +270,29 @@ describe('POST /api/content/create (virtual mode)', () => {
 		const before = await fs.readdir(documentRoot);
 		// And no disk file was created for the rejected entry.
 		expect(before).not.toContain('42.html');
+	});
+
+	test('answers a schema violation with 400 and the zod failure body', async () => {
+		const app = await buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: true });
+		const res = await app.request('/api/content/create', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ id: 42 }),
+		});
+		expect(res.status).toBe(400);
+		const body = (await res.json()) as {
+			success: boolean;
+			target: string;
+			data: unknown;
+			error: { name: string; message: string };
+		};
+		expect(body).toMatchObject({
+			success: false,
+			target: 'json',
+			data: { id: 42 },
+			error: { name: 'ZodError' },
+		});
+		expect(JSON.parse(body.error.message)).toHaveLength(2);
 	});
 
 	test('appends .html to the id when the caller omits the extension', async () => {
@@ -830,7 +808,7 @@ describe('POST /api/content (non-virtual passthrough)', () => {
 		expect(after.toSorted()).toEqual(before.toSorted());
 	});
 
-	test('returns 404 with a JSON error when the target file does not exist yet', async () => {
+	test('returns 404 with a JSON error when the target file does not exist and createIfMissing is not set', async () => {
 		const app = await buildApp(documentRoot, assetsRoot, {
 			virtualTreeEnabled: false,
 			editableArea: 'body',
@@ -847,6 +825,58 @@ describe('POST /api/content (non-virtual passthrough)', () => {
 		expect(res.status).toBe(404);
 		const body = (await res.json()) as { error: string };
 		expect(body.error).toBe(`File not found: ${path.join(documentRoot, 'missing.html')}`);
+		await expect(
+			fs.access(path.join(documentRoot, 'missing.html')),
+		).rejects.toMatchObject({ code: 'ENOENT' });
+	});
+
+	test('creates the target file from newFileContent when it does not exist and createIfMissing is true', async () => {
+		const app = await buildApp(documentRoot, assetsRoot, {
+			virtualTreeEnabled: false,
+			editableArea: 'body',
+		});
+
+		const res = await app.request('/api/content', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({
+				path: 'missing.html',
+				content: '<p>new</p>',
+				createIfMissing: true,
+			}),
+		});
+		expect(res.status).toBe(200);
+		const written = await fs.readFile(path.join(documentRoot, 'missing.html'), 'utf8');
+		expect(written).toBe(
+			'<!DOCTYPE html>\n<html>\n  <head></head>\n  <body>\n    <p>new</p>\n  </body>\n</html>\n',
+		);
+	});
+
+	test('createIfMissing does not apply newFileContent to a file that already exists', async () => {
+		await fs.writeFile(
+			path.join(documentRoot, 'existing.html'),
+			'<html><head><title>Kept</title></head><body><p>old</p></body></html>',
+			'utf8',
+		);
+		const app = await buildApp(documentRoot, assetsRoot, {
+			virtualTreeEnabled: false,
+			editableArea: 'body',
+		});
+
+		const res = await app.request('/api/content', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({
+				path: 'existing.html',
+				content: '<p>new</p>',
+				createIfMissing: true,
+			}),
+		});
+		expect(res.status).toBe(200);
+		const written = await fs.readFile(path.join(documentRoot, 'existing.html'), 'utf8');
+		expect(written).toBe(
+			'<html>\n  <head>\n    <title>Kept</title>\n  </head>\n  <body>\n    <p>new</p>\n  </body>\n</html>\n',
+		);
 	});
 
 	test('writes file at the requested disk path when virtualTree is disabled', async () => {
@@ -936,7 +966,7 @@ describe('GET / (site root)', () => {
 		await tmp?.[Symbol.asyncDispose]();
 	});
 
-	test('creates and serves index.html on first visit when virtualTree is disabled', async () => {
+	test('serves index.html from newFileContent without creating it when virtualTree is disabled (issue #966)', async () => {
 		const app = await buildApp(documentRoot, assetsRoot, {
 			virtualTreeEnabled: false,
 			editableArea: 'body',
@@ -944,12 +974,33 @@ describe('GET / (site root)', () => {
 
 		const res = await app.request('/');
 		expect(res.status).toBe(200);
+		expect(await res.text()).toContain(
+			'<input type="hidden" id="is-new-file" value="true"/>',
+		);
 
-		const written = await fs.readFile(path.join(documentRoot, 'index.html'), 'utf8');
-		expect(written).toBe('<!doctype html><html><body></body></html>');
+		await expect(fs.access(path.join(documentRoot, 'index.html'))).rejects.toMatchObject({
+			code: 'ENOENT',
+		});
 	});
 
-	test('allows saving the site root after it has been visited once (regression: FileNotFoundError)', async () => {
+	test('does not mark an existing page as new', async () => {
+		await fs.writeFile(
+			path.join(documentRoot, 'index.html'),
+			'<!doctype html><html><body><h1>Home</h1></body></html>',
+			'utf8',
+		);
+		const app = await buildApp(documentRoot, assetsRoot, {
+			virtualTreeEnabled: false,
+			editableArea: 'body',
+		});
+
+		const res = await app.request('/');
+		expect(await res.text()).toContain(
+			'<input type="hidden" id="is-new-file" value="false"/>',
+		);
+	});
+
+	test('creates index.html from newFileContent on the first save of the site root', async () => {
 		const app = await buildApp(documentRoot, assetsRoot, {
 			virtualTreeEnabled: false,
 			editableArea: 'body',
@@ -963,6 +1014,7 @@ describe('GET / (site root)', () => {
 			body: JSON.stringify({
 				path: '/',
 				content: '<h1>Home</h1>',
+				createIfMissing: true,
 			}),
 		});
 		expect(res.status).toBe(200);

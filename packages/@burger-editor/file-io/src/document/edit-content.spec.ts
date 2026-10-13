@@ -217,6 +217,37 @@ title: 'Null Area Test'
 			expect(exists).toBe(true);
 		});
 
+		test('builds the content from newFileContent without writing when createMissingFile is false', async () => {
+			const nonExistentPath = path.join(TEST_DIR, 'not-created.html');
+
+			const result = await loadContent(
+				nonExistentPath,
+				'.content',
+				'---\ntitle: New\n---\n<main class="content"><p>template</p></main>',
+				{ createMissingFile: false },
+			);
+			const loadResult = result as LoadContentResult;
+
+			expect(loadResult.editableContent).toBe('<p>template</p>');
+			expect(loadResult.frontMatter).toEqual({ title: 'New' });
+			await expect(fs.access(nonExistentPath)).rejects.toMatchObject({
+				code: 'ENOENT',
+			});
+		});
+
+		test('saveContent creates a missing file from newFileContent', async () => {
+			const filePath = path.join(TEST_DIR, 'nested', 'created-on-save.html');
+
+			await saveContent(filePath, '<p>saved</p>', '.content', undefined, undefined, {
+				newFileContent: '<header>head</header><main class="content"></main>',
+			});
+
+			const savedContent = await fs.readFile(filePath, 'utf8');
+			expect(savedContent).toBe(
+				'<header>head</header>\n<main class="content"><p>saved</p></main>\n',
+			);
+		});
+
 		test('saveContent throws NoEditableAreaError on a full HTML document when the selector misses', async () => {
 			// Used to silently fall back to <body> and destroy header / nav /
 			// scripts. updateFullDocument now mirrors updateFragment's

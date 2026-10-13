@@ -5,6 +5,9 @@
 	},
 	"references": [
 		{
+			"path": "../frozen-patty"
+		},
+		{
 			"path": "../utils"
 		}
 	],

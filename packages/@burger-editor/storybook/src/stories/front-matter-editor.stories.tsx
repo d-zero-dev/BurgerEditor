@@ -1,15 +1,31 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { FrontMatterEditorView } from '@burger-editor/client/ui';
-import { fn } from 'storybook/test';
+import { FrontMatterEditorView, FrontMatterStore } from '@burger-editor/client/ui';
+import { useState } from 'react';
+
+/**
+ * `FrontMatterEditorView` reads its fields from a `FrontMatterStore`
+ * instead of an `initialData`/`onDataChange` prop pair; this story-only
+ * wrapper keeps the `{initialData}` args shape the stories below use.
+ * @param root0
+ * @param root0.initialData
+ */
+function FrontMatterEditorStory({
+	initialData,
+}: {
+	readonly initialData: Record<string, unknown>;
+}) {
+	const [store] = useState(() => new FrontMatterStore(initialData));
+	return <FrontMatterEditorView store={store} />;
+}
 
 const meta = {
 	title: 'Client/Components/FrontMatterEditor',
-	component: FrontMatterEditorView,
+	component: FrontMatterEditorStory,
 	// localのページ本文（app.tsx）に直接配置され、独自CSS
 	// （local/style/app.cssの.fm-editor*）で完結するためラップしない
 	parameters: { wrapper: 'none' },
-} satisfies Meta<typeof FrontMatterEditorView>;
+} satisfies Meta<typeof FrontMatterEditorStory>;
 
 export default meta;
 
@@ -22,14 +38,12 @@ export const Default: Story = {
 			description: 'ページの説明文です。',
 			publishedAt: '2026-08-01',
 		},
-		onDataChange: fn(),
 	},
 };
 
 export const Empty: Story = {
 	args: {
 		initialData: {},
-		onDataChange: fn(),
 	},
 };
 
@@ -42,6 +56,5 @@ export const MixedFieldTypes: Story = {
 			publishedAt: '2026-08-01',
 			tags: ['news', 'release'],
 		},
-		onDataChange: fn(),
 	},
 };

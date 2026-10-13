@@ -3,7 +3,7 @@ import {
 	IconRowInsertBottom,
 	IconTrash,
 } from '@tabler/icons-react';
-import { useId } from 'react';
+import { useId, useState } from 'react';
 
 import { useCommand } from '../use-command.js';
 
@@ -42,22 +42,35 @@ export function TableEditor({
 }) {
 	const rootId = useId();
 
-	const rows: readonly [th: string, td: string][] = value.th.map((th, i) => [
-		th,
-		value.td[i] ?? '',
-	]);
+	// 行の安定した識別子。配列indexをkeyにすると、並べ替え・削除のたびに
+	// 「同じ画面位置」のDOM要素が別の行の内容へ再利用され、編集中の
+	// textareaのフォーカス・キャレット位置が行の中身ではなく位置に
+	// 取り残される。id付きの行として管理し、commitのたびに一緒に
+	// スプライスすることでReactの差分更新が行の中身を正しく追従できる
+	const [rowIds, setRowIds] = useState<readonly string[]>(() =>
+		value.th.map(() => crypto.randomUUID()),
+	);
 
-	const commit = (next: readonly [string, string][]) => {
+	const rows: readonly { id: string; th: string; td: string }[] = value.th.map(
+		(th, i) => ({
+			id: rowIds[i] ?? String(i),
+			th,
+			td: value.td[i] ?? '',
+		}),
+	);
+
+	const commit = (next: readonly { id: string; th: string; td: string }[]) => {
+		setRowIds(next.map((row) => row.id));
 		onChange({
-			th: next.map(([th]) => th),
-			td: next.map(([, td]) => td),
+			th: next.map((row) => row.th),
+			td: next.map((row) => row.td),
 		});
 	};
 
 	const rootRef = useCommand<HTMLDivElement>({
 		'--add-row': (e) => {
 			const index = Number((e.source as HTMLButtonElement | null)?.value);
-			commit(rows.toSpliced(index + 1, 0, ['', '']));
+			commit(rows.toSpliced(index + 1, 0, { id: crypto.randomUUID(), th: '', td: '' }));
 		},
 		'--remove-row': (e) => {
 			const index = Number((e.source as HTMLButtonElement | null)?.value);
@@ -77,15 +90,15 @@ export function TableEditor({
 
 	return (
 		<div className={styles['table']} ref={rootRef} id={rootId}>
-			{rows.map(([th, td], i) => (
-				<div className={styles['row']} key={i}>
+			{rows.map(({ id, th, td }, i) => (
+				<div className={styles['row']} key={id}>
 					<div className={styles['th']}>
 						<textarea
 							aria-label={`${i}行目の見出しセル`}
 							name={`bge-th-${i}`}
 							value={th}
 							onChange={(e) => {
-								commit(rows.with(i, [e.currentTarget.value, td]));
+								commit(rows.with(i, { id, th: e.currentTarget.value, td }));
 							}}></textarea>
 					</div>
 					<div className={styles['td']}>
@@ -94,7 +107,7 @@ export function TableEditor({
 							name={`bge-td-${i}`}
 							value={td}
 							onChange={(e) => {
-								commit(rows.with(i, [th, e.currentTarget.value]));
+								commit(rows.with(i, { id, th, td: e.currentTarget.value }));
 							}}></textarea>
 					</div>
 					<div className={styles['btn']}>

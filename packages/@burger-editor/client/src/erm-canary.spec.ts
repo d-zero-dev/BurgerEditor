@@ -1,6 +1,6 @@
 import { test, expect } from 'vitest';
 
-test('using宣言でDisposableのdisposeがスコープ脱出時に呼ばれる（client project / jsdom）', () => {
+test('using宣言でDisposableのdisposeがスコープ脱出時に呼ばれる（client project）', () => {
 	const calls: string[] = [];
 	{
 		using _a = { [Symbol.dispose]: () => calls.push('a') };

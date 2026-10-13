@@ -147,19 +147,39 @@ describe('BurgerEditorEngine.new', () => {
 		revokeSpy.mockRestore();
 	});
 
-	test('[Symbol.dispose]()はcomponentObserverのリスナーも解除する（windowリスナーリーク回帰）', async () => {
-		const engine = await BurgerEditorEngine.new(createOptions());
-		const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
-
-		engine[Symbol.dispose]();
-
-		const removedEventNames = removeEventListenerSpy.mock.calls.map(
-			([eventName]) => eventName,
+	test('stylesheetのfetchが1つ失敗した後に残りのfetchが完了しても、dispose済みのengineにblob URLを作らない', async () => {
+		let resolveSlow!: (response: Response) => void;
+		const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((input) =>
+			String(input) === '/broken.css'
+				? Promise.reject(new Error('network error'))
+				: new Promise<Response>((resolve) => {
+						resolveSlow = resolve;
+					}),
 		);
-		expect(removedEventNames.some((name) => String(name).endsWith(':select-block'))).toBe(
-			true,
-		);
-		removeEventListenerSpy.mockRestore();
+		const createSpy = vi.spyOn(URL, 'createObjectURL');
+
+		await expect(
+			BurgerEditorEngine.new(
+				createOptions({
+					config: {
+						classList: [],
+						stylesheets: [{ path: '/slow.css' }, { path: '/broken.css' }],
+						sampleImagePath: '/img/sample.png',
+						sampleFilePath: '/pdf/sample.pdf',
+						googleMapsApiKey: null,
+					},
+				}),
+			),
+		).rejects.toThrow('network error');
+		const createdBeforeLateFetch = createSpy.mock.calls.length;
+
+		resolveSlow(new Response('.slow {}'));
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(createSpy).toHaveBeenCalledTimes(createdBeforeLateFetch);
+
+		fetchSpy.mockRestore();
+		createSpy.mockRestore();
 	});
 
 	test('main/draftのcreateAreaHostが並列に呼ばれる（順に await されない）', async () => {

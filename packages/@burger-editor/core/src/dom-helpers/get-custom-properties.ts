@@ -1,8 +1,58 @@
+/**
+ * Static detection of block-option custom properties from the CSSOM.
+ *
+ * The browser does not expose "which values could this custom property
+ * take", so the editor reconstructs the option list by walking every
+ * stylesheet in the document and re-implementing the slice of the cascade
+ * it needs. `get-custom-properties.spec.ts` is the source of truth for the
+ * exact behavior; the rules are:
+ *
+ * - **Selector**: only rules whose selector is exactly `[data-bge-container]`
+ *   (or `& [data-bge-container]` produced by CSS nesting, or `:scope` inside
+ *   `@scope ([data-bge-container])`) are read. Compound/list selectors and
+ *   `:where(...)` wrappers are ignored on purpose: they are where the CSS
+ *   applies options, not where it declares them. One exception: a
+ *   leading `&` is stripped before comparing, so the nested compound
+ *   `&[data-bge-container]` (no space) is read as a nested declaration too.
+ * - **Traversed**: CSS nesting (any depth), `@layer`, `@scope` (also with a
+ *   limit). `@scope` is skipped silently when `CSSScopeRule` is unavailable.
+ * - **Not traversed**: `@media`, `@supports`, `@container`, and anything
+ *   nested inside them. Their applicability depends on runtime conditions,
+ *   so a single static option list cannot represent them.
+ * - **Priority**: unlayered beats layered; between layers the declaration
+ *   order wins (later = higher), resolved globally across all stylesheets as
+ *   in CSS Cascade 5; nested sub-layers compare parent first. On equal
+ *   priority the later declaration wins. `@scope` does not affect priority.
+ * - **Default (`getCustomProperties`)**: the key referenced by
+ *   `--bge-options-{category}: var(--bge-options-{category}--{key})` gets
+ *   `isDefault: true`. Defaults from nested selectors compete with direct
+ *   ones by layer priority — a higher-layer nested default wins, and on a
+ *   tie the direct selector wins. A nested default is also used when no
+ *   direct default exists.
+ * - **Empty values**: `getCustomProperties` drops keys whose value trims to
+ *   `''` (`--x--key: ;`), so project CSS can hide built-in choices.
+ *   `--x--key:;` (no space) is a parse error in current browsers and never
+ *   reaches the CSSOM. The value `EMPTY_CUSTOM_PROPERTY_VALUE` counts as
+ *   empty too: it stands in for `' '` in jsdom, which drops empty
+ *   declarations while parsing. `getCustomProperty` and
+ *   `getRepeatMinInlineSizeVariants` do not filter empty values.
+ * - **Container-type categories**: categories named `_{type}_...` are
+ *   returned only when `containerType` matches; the `name` has the prefix
+ *   stripped for display.
+ * - **Names**: split by `parseStyleOptionName()`, the same function that
+ *   reads saved choices back, so a name that cannot be read back (more
+ *   than one `--` after the prefix, an empty category or key) is never
+ *   offered. `--bge-options-{category}--` (empty key) is ignored too,
+ *   rather than read as the default declaration.
+ * - Cross-origin stylesheets that throw `SecurityError` are skipped.
+ */
 import type { ContainerType } from '../block/types.js';
 
+import { parseStyleOptionName } from '../block/parse-style-option-name.js';
 import {
 	BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX,
 	BLOCK_OPTION_SCOPE_SELECTOR,
+	EMPTY_CUSTOM_PROPERTY_VALUE,
 } from '../const.js';
 import { comparePriority } from '../utils/compare-priority.js';
 
@@ -37,10 +87,21 @@ interface LayerPriority {
 }
 
 /**
- * Get all custom properties from document
+ * Get all `--bge-options-*` custom properties from document, grouped by
+ * category. See the file-level comment for the detection rules.
+ *
+ * Inside the editor, call `engine.getCustomProperties()` instead; this
+ * free function is for scanning a document the engine does not own, such
+ * as stylesheets loaded into a jsdom document on Node.
  * @param scope - Document to scan for CSS custom properties
  * @param containerType - Container type to filter container-scoped properties (prefixed with `_`)
  * @returns Categorized map of custom properties grouped by property name
+ * @example
+ * ```ts
+ * for (const [id, category] of getCustomProperties(document, 'grid')) {
+ * 	console.log(id, [...category.properties.keys()]); // 'margin' ['none', 'small', ...]
+ * }
+ * ```
  */
 export function getCustomProperties(
 	scope: Document,
@@ -51,16 +112,11 @@ export function getCustomProperties(
 	const nestedDefaultValues = new Map<string, CustomProperty>();
 
 	searchCustomProperty(scope, (cssProperty, value, layers, isNested) => {
-		if (!cssProperty.startsWith(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX)) {
+		const parsed = parseStyleOptionName(cssProperty);
+		if (!parsed) {
 			return;
 		}
-
-		const [propName, key] = cssProperty
-			.slice(BLOCK_OPTION_CSS_CUSTOM_PROPERTY_PREFIX.length)
-			.split('--');
-		if (!propName) {
-			return;
-		}
+		const { category: propName, key } = parsed;
 
 		if (propName.startsWith('_') && !propName.startsWith(`_${containerType}_`)) {
 			return;
@@ -96,9 +152,10 @@ export function getCustomProperties(
 				priority: layers.map((layer) => layer.priority),
 			};
 
-			// Direct selectors take precedence over nested selectors for default.
-			// Nested selectors (e.g. `.parent [data-bge-container]`) are context-specific
-			// overrides; they are used as fallback when no direct selector defines a default.
+			// Keep direct and nested defaults apart so the merge below can let a
+			// direct selector win ties: nested selectors (e.g. `.parent { [data-bge-container] {} }`)
+			// are context-specific, so on equal layer priority they should not
+			// override the context-free default. A higher-layer nested default still wins.
 			const targetMap = isNested ? nestedDefaultValues : defaultValues;
 			const currentDefaultValue = targetMap.get(propName);
 
@@ -118,7 +175,8 @@ export function getCustomProperties(
 	// @see https://github.com/w3c/csswg-drafts/issues/774
 	for (const propList of categories.values()) {
 		for (const [key, customProperty] of propList.properties.entries()) {
-			if (customProperty.value.trim() === '') {
+			const value = customProperty.value.trim();
+			if (value === '' || value === EMPTY_CUSTOM_PROPERTY_VALUE) {
 				propList.properties.delete(key);
 			}
 		}
@@ -389,11 +447,15 @@ function searchCustomProperty(
 				) {
 					// Detect nested selectors: `& [data-bge-container]` has a parent context
 					const isNested = rawSelector !== selector;
-					for (const cssProperty of cssRule.rule.style) {
+					// Indexed access: jsdom's CSSStyleDeclaration is not iterable, and
+					// the cli runs this detection on a jsdom document.
+					const declarations = cssRule.rule.style;
+					for (let i = 0; i < declarations.length; i++) {
+						const cssProperty = declarations.item(i);
 						if (!cssProperty.startsWith('--')) {
 							continue;
 						}
-						const value = cssRule.rule.style.getPropertyValue(cssProperty);
+						const value = declarations.getPropertyValue(cssProperty);
 						found(cssProperty, value, cssRule.layers, isNested);
 					}
 				}
@@ -408,9 +470,18 @@ function searchCustomProperty(
 }
 
 /**
- * Get repeat-min-inline-size variant definitions from document
+ * Get repeat-min-inline-size variant definitions from document. Uses the
+ * same detection rules as `getCustomProperties`, except that empty values
+ * are not filtered out.
+ *
+ * Inside the editor, call `engine.getRepeatMinInlineSizeVariants()` instead.
  * @param scope - Document to scan for `--bge-repeat-min-inline-size` variants
  * @returns Category containing variant properties, or `null` if no variants found
+ * @example
+ * ```ts
+ * const presets = getRepeatMinInlineSizeVariants(document);
+ * const keys = presets ? [...presets.properties.keys()] : []; // ['small', 'medium', 'large']
+ * ```
  */
 export function getRepeatMinInlineSizeVariants(
 	scope: Document,

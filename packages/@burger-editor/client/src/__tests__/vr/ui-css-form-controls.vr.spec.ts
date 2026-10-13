@@ -1,15 +1,11 @@
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
 import { commands, page } from 'vitest/browser';
 
-import { cleanUp, injectCSS, renderDialog, waitForRender } from './vr-helper.js';
+import { injectCSS, renderDialog, waitForRender } from './vr-helper.js';
 
 describe('Form Controls', () => {
 	beforeEach(() => {
 		injectCSS();
-	});
-
-	afterEach(() => {
-		cleanUp();
 	});
 
 	test('label + text input', async () => {

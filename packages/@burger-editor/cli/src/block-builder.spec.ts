@@ -69,6 +69,7 @@ function makeConfig(catalog: BlockCatalog): BurgerEditorConfig {
 		enableImportBlock: false,
 		healthCheck: { enabled: false, interval: 0, retryCount: 0 },
 		virtualTree: { enabled: false, pathKey: 'path' },
+		agent: { enabled: true },
 	};
 }
 

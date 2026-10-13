@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
 import { commands, page } from 'vitest/browser';
 
-import { cleanUp, injectCSS, renderDialog, waitForRender } from './vr-helper.js';
+import { injectCSS, renderDialog, waitForRender } from './vr-helper.js';
 
 // 各アイテムのエディタ（React版）が描画するマークアップと同等のフィクスチャ
 
@@ -54,7 +54,7 @@ const imageHtml = `<div data-bge-dialog="2col">
 			</div>
 		</div>
 		<div>
-			<fieldset id="bge-image-size-fieldset">
+			<fieldset>
 				<legend>画像のサイズ</legend>
 				<div role="radiogroup"><div>基準</div>
 					<label><input type="radio" name="bge-scale-type" value="container" />基準</label>
@@ -108,10 +108,6 @@ describe('Dialog Layout', () => {
 		injectCSS();
 	});
 
-	afterEach(() => {
-		cleanUp();
-	});
-
 	test('dialog normal — hr (select)', async () => {
 		const dialog = renderDialog(hrHtml);
 		await waitForRender();
@@ -163,6 +159,17 @@ describe('Dialog Layout', () => {
 		const result = await commands.matchScreenshot(
 			base64,
 			'__snapshots__/dialog/wide-table.png',
+		);
+		expect(result.pass, result.message).toBe(true);
+	});
+
+	test('dialog normal — 決定失敗時のエラー表示（role="alert"）', async () => {
+		const dialog = renderDialog(hrHtml, { error: '保存に失敗しました' });
+		await waitForRender();
+		const base64 = await page.screenshot({ element: dialog, save: false });
+		const result = await commands.matchScreenshot(
+			base64,
+			'__snapshots__/dialog/normal-error.png',
 		);
 		expect(result.pass, result.message).toBe(true);
 	});

@@ -73,32 +73,45 @@ editor.editor.chain().focus().toggleBold().run(); // TipTap への直接アク�
 
 ### `bge:structure-change`
 
-エディタ内のブロック構造（段落・リスト・見出しレベル・リンク状態など）が変化したときに発火する CustomEvent。ツールバーの押下状態同期に使う。
+HTMLモードの内容がデザインモードで表示できない構造を含むかどうか（`hasStructureChange`）が変化したときに発火する CustomEvent。デザインモードへの切り替え UI の有効/無効を同期するのに使う。
 
 ```ts
-editor.addEventListener('bge:structure-change', (event) => {
-	const { detail } = event;
-	// detail: {
-	//   active: Record<string, boolean>;   // 例: { bold: true, italic: false, 'heading-3': false, ... }
-	//   canExecute: Record<string, boolean>; // 各コマンドが現在のカーソル位置で実行可能か
-	// }
+wysiwyg.addEventListener('bge:structure-change', (event) => {
+	// detail: { hasStructureChange: boolean }
+	designModeButton.disabled = event.detail.hasStructureChange;
 });
 ```
 
-`active` のキーは `commands` 属性で指定する値と同じ命名規則。`canExecute` は無効化状態のボタン UI を作るときに使う。
+発火タイミングの詳細は [`docs/EVENTS.md`](./docs/EVENTS.md) を参照。
 
 ### `transaction`
 
-TipTap のトランザクション単位で発火する低レベルイベント。`bge:structure-change` で間に合わないユースケース（IME 中の入力ステップを観測したい等）でのみ使用。
+TipTap のトランザクション単位で発火するイベント。`event.detail.state` にはノード/マークごとの `{ active, disabled }`（ツールバー向けの状態。TipTap の `EditorState` ではない）が入り、マークアップボタン（太字・斜体など）の押下状態の同期に使う。
+
+## スタイル
+
+HTMLモードの内容にデザインモードで表示できない構造が含まれるとき、`<bge-wysiwyg>` は textarea の下に補足メッセージを表示する。これはエラーではなく状態の説明なので、既定ではグレー系の中立色で表示する。色は次の CSS カスタムプロパティで変更できる。
+
+| プロパティ                      | 既定値                             |
+| ------------------------------- | ---------------------------------- |
+| `--bge-notice-background-color` | `#f4f5f7`                          |
+| `--bge-notice-border-color`     | `var(--bge-border-color, #d6d8de)` |
+| `--bge-notice-text-color`       | `#4a4f5c`                          |
+
+```css
+bge-wysiwyg {
+	--bge-notice-background-color: #fffbe6;
+}
+```
 
 ## ドキュメント
 
-設計詳細・API リファレンス・カスタマイズ手順は `docs/` 配下を参照。
+API リファレンス・イベント仕様・カスタマイズ手順は `docs/` 配下を参照。
 
 - [`docs/API.md`](./docs/API.md) — プロパティ、メソッド、属性の詳細仕様
 - [`docs/EVENTS.md`](./docs/EVENTS.md) — `transaction` / `bge:structure-change` イベントの仕様
-- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — 内部構造、設計思想、データフロー
-- [`docs/CUSTOMIZATION.md`](./docs/CUSTOMIZATION.md) — UI 拡張方法とよくある間違い
+- [`docs/CUSTOMIZATION.md`](./docs/CUSTOMIZATION.md) — UI 拡張方法（UI 要素とイベントの対応、初期化パターン）とよくある間違い
+- [`.claude/skills/tiptap-extension/SKILL.md`](https://github.com/d-zero-dev/BurgerEditor/blob/dev/.claude/skills/tiptap-extension/SKILL.md) — 組み込みの TipTap 拡張・ツールバーボタンを本パッケージに追加するコントリビュータ向け手順
 
 ## 実験的機能
 

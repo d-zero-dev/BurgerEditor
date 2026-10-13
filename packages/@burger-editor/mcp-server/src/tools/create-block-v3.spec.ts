@@ -2,11 +2,12 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { describe, it, expect } from 'vitest';
 
-import server from '../server.js';
+import { createServer } from '../server.js';
 
 import createBlockV3 from './create-block-v3.js';
 
 describe('create-block-v3', async () => {
+	const server = createServer();
 	createBlockV3(server);
 
 	const client = new Client({

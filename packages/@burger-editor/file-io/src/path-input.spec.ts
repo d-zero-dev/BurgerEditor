@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { describe, expect, test } from 'vitest';
 
-import { resolvePathInput } from './path-input.js';
+import { PathOutsideDocumentRootError, resolvePathInput } from './path-input.js';
 import { createEmptyState, registerEntry } from './virtual-path-resolver.js';
 
 const DOC_ROOT = '/abs/docroot';
@@ -125,5 +125,50 @@ describe('resolvePathInput', () => {
 		const state = registerEntry(createEmptyState(), '42.html', 'about.html');
 		const out = resolvePathInput('about.html', config, state);
 		expect(out).toBe(path.join(DOC_ROOT, 'about.html'));
+	});
+});
+
+describe('resolvePathInput — documentRoot containment', () => {
+	// `path.join` collapses `..`, so these would otherwise silently resolve to
+	// files the project does not own. Every CLI / MCP / local agent page-path
+	// argument funnels through here, making it the one check that matters.
+	test.each(['../../.env', '/../../.env', 'foo/../../.env', '../docroot-sibling/x.html'])(
+		'rejects %s, which resolves outside documentRoot',
+		(input) => {
+			expect(() => resolvePathInput(input, makeConfig(), null)).toThrow(
+				PathOutsideDocumentRootError,
+			);
+		},
+	);
+
+	test('rejects a NUL byte anywhere in the path', () => {
+		expect(() => resolvePathInput('about.html\0.png', makeConfig(), null)).toThrow(
+			PathOutsideDocumentRootError,
+		);
+	});
+
+	test('rejects documentRoot itself — a page path must name a file below it', () => {
+		expect(() => resolvePathInput('foo/..', makeConfig(), null)).toThrow(
+			PathOutsideDocumentRootError,
+		);
+	});
+
+	test('still accepts a `..` that stays inside documentRoot after normalization', () => {
+		const out = resolvePathInput('foo/../bar.html', makeConfig(), null);
+		expect(out).toBe(path.join(DOC_ROOT, 'bar.html'));
+	});
+
+	test('checks the RESOLVED disk path, so a virtual-tree entry registered with a traversing disk file is rejected too', () => {
+		const config = makeConfig({ virtualTree: { enabled: true, pathKey: 'path' } });
+		const state = registerEntry(createEmptyState(), '../../evil.html', 'about.html');
+		expect(() => resolvePathInput('about.html', config, state)).toThrow(
+			PathOutsideDocumentRootError,
+		);
+	});
+
+	test('the error names the offending input', () => {
+		expect(() => resolvePathInput('../../.env', makeConfig(), null)).toThrow(
+			/"\.\.\/\.\.\/\.env" resolves outside documentRoot/,
+		);
 	});
 });

@@ -3,6 +3,47 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
+
+### Bug Fixes
+
+- **cli:** fail page-blocks with not-found on a page that does not exist ([f8768b5](https://github.com/d-zero-dev/BurgerEditor/commit/f8768b5b1e67cc0ae556e50164dc848fd5c80cc4)), closes [#903](https://github.com/d-zero-dev/BurgerEditor/issues/903)
+
+# [4.0.0-alpha.75](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.74...v4.0.0-alpha.75) (2026-10-02)
+
+**Note:** Version bump only for package @burger-editor/cli
+
+# [4.0.0-alpha.74](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.73...v4.0.0-alpha.74) (2026-10-01)
+
+### Features
+
+- **cli:** add --config option to every subcommand ([a646e91](https://github.com/d-zero-dev/BurgerEditor/commit/a646e9192de3811ac4c64ca4918bfa788e88529c))
+- **cli:** define --config with roar's globalFlags ([54324ea](https://github.com/d-zero-dev/BurgerEditor/commit/54324ea9c680bb5d1c2d257215b4c6f4c553be88)), closes [d-zero-dev/tools#966](https://github.com/d-zero-dev/tools/issues/966)
+- **cli:** forward config file options through loadContext ([ecf0232](https://github.com/d-zero-dev/BurgerEditor/commit/ecf02326789839d546beff39097015a9c8352163))
+
+# [4.0.0-alpha.73](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.72...v4.0.0-alpha.73) (2026-09-18)
+
+**Note:** Version bump only for package @burger-editor/cli
+
+# [4.0.0-alpha.72](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.71...v4.0.0-alpha.72) (2026-09-02)
+
+### Bug Fixes
+
+- **cli:** reject a NaN or non-integer block index instead of resolving to nothing ([f4a0a36](https://github.com/d-zero-dev/BurgerEditor/commit/f4a0a3667d21e29b9cdef39376eeb6adb107a37e))
+- **cli:** reject traversing page paths at the schema edge and map the resolver error ([55a30d9](https://github.com/d-zero-dev/BurgerEditor/commit/55a30d9b95275956fd15c6c14c5030bb54c7685f))
+- **cli:** report the real final index of a block moved past the end ([a7faa79](https://github.com/d-zero-dev/BurgerEditor/commit/a7faa79ea7da8603f4741a51b7f36c0b1f309048))
+- **cli:** teach agents to recover from user-editing instead of failing ([1cff53d](https://github.com/d-zero-dev/BurgerEditor/commit/1cff53d04782123abbb1dfdb007cd2f0149f86c7))
+- **cli:** tell the agent to read the catalog/item schema before composing a block spec ([0074bbd](https://github.com/d-zero-dev/BurgerEditor/commit/0074bbdd3328509bd235fa2f89c9d0b371ca45b5))
+
+- feat(cli)!: add agent-tools framework for AI-agent page/block mutations ([b75ee87](https://github.com/d-zero-dev/BurgerEditor/commit/b75ee87798248a9683fbaba6a19ef844701dd3cb))
+
+### BREAKING CHANGES
+
+- v4 tool names, argument shapes, and response shapes
+  changed (block_list removed, block_* targets are {index}|{id} instead
+  of a bare index, mutations require readToken). No compatibility
+  guaranteed pre-1.0; v3 compat tools are untouched.
+
 # [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
 
 ### Bug Fixes

@@ -3,6 +3,7 @@ import type { LocalServerConfig } from './types.js';
 import { HealthMonitor } from '@burger-editor/core/health';
 
 import { HEALTH_CHECK_END_POINT } from './constants.js';
+import { toUrlHost } from './helpers/host.js';
 
 /**
  * Creates a HealthMonitor instance configured for the local server
@@ -12,14 +13,14 @@ import { HEALTH_CHECK_END_POINT } from './constants.js';
  * ```typescript
  * import { getUserConfig, createHealthChecker } from '@burger-editor/local';
  *
- * const config = await getUserConfig();
+ * const { config } = await getUserConfig();
  * const healthMonitor = createHealthChecker(config);
  * healthMonitor.start();
  * ```
  */
 export function createHealthChecker(config: LocalServerConfig): HealthMonitor {
 	// プロトコル省略でブラウザがhttp/httpsフォールバックを処理
-	const baseUrl = `//${config.host}:${config.port}`;
+	const baseUrl = `//${toUrlHost(config.host)}:${config.port}`;
 
 	return new HealthMonitor({
 		...config.healthCheck,

@@ -6,6 +6,18 @@ import { test, expect, beforeAll, vi, beforeEach, afterEach } from 'vitest';
 
 import { defineBgeWysiwygElement } from './index.js';
 
+const STRUCTURE_CHANGE_MESSAGE =
+	'デザインモードで表示できないHTML構造が含まれているため、デザインモードに切り替えはできません。';
+
+/**
+ * 構造変更メッセージの表示中の文言を返す（非表示時は空文字）
+ * @param element
+ */
+function getStructureChangeMessage(element: BgeWysiwygElement) {
+	return element.shadowRoot?.querySelector('[data-bge-structure-change-message]')
+		?.textContent;
+}
+
 beforeAll(() => {
 	globalThis.document.execCommand = vi.fn();
 
@@ -218,9 +230,7 @@ test('mode setter should prevent switching when structure changes', () => {
 		expect(eventDetail).toEqual({ hasStructureChange: true });
 
 		// 注釈が表示されていることを確認
-		const messageElement = element.shadowRoot?.querySelector('[role="alert"]');
-		expect(messageElement).toBeTruthy();
-		expect(messageElement?.style.display).toBe('block');
+		expect(getStructureChangeMessage(element)).toBe(STRUCTURE_CHANGE_MESSAGE);
 	}
 });
 
@@ -245,8 +255,7 @@ test('mode setter should allow switching when structure does not change', () => 
 	expect(element.hasStructureChange).toBe(false);
 
 	// 注釈が非表示であることを確認
-	const messageElement = element.shadowRoot?.querySelector('[role="alert"]');
-	expect(messageElement?.style.display).toBe('none');
+	expect(getStructureChangeMessage(element)).toBe('');
 });
 
 test('blur event should check structure change in HTML mode', () => {
@@ -294,9 +303,7 @@ test('blur event should check structure change in HTML mode', () => {
 		expect(eventDetail).toEqual({ hasStructureChange: true });
 
 		// 注釈が表示されていることを確認
-		const messageElement = element.shadowRoot?.querySelector('[role="alert"]');
-		expect(messageElement).toBeTruthy();
-		expect(messageElement?.style.display).toBe('block');
+		expect(getStructureChangeMessage(element)).toBe(STRUCTURE_CHANGE_MESSAGE);
 	}
 });
 
@@ -374,8 +381,7 @@ test('input event should check structure change', () => {
 		expect(element.hasStructureChange).toBe(false);
 
 		// 注釈が非表示であることを確認
-		const messageElement = element.shadowRoot?.querySelector('[role="alert"]');
-		expect(messageElement?.style.display).toBe('none');
+		expect(getStructureChangeMessage(element)).toBe('');
 	}
 });
 
@@ -398,14 +404,63 @@ test('should start in HTML mode when initial value has structure change', () => 
 		expect(element.hasStructureChange).toBe(true);
 
 		// 注釈が表示されていることを確認
-		const messageElement = element.shadowRoot?.querySelector('[role="alert"]');
-		expect(messageElement).toBeTruthy();
-		expect(messageElement?.style.display).toBe('block');
+		expect(getStructureChangeMessage(element)).toBe(STRUCTURE_CHANGE_MESSAGE);
 
 		// textareaに初期値が設定されていることを確認
 		const textarea = element.shadowRoot?.querySelector('textarea');
 		expect(textarea?.value).toBe(initialHTML);
 	}
+});
+
+test('structure change message is a polite status that describes the textarea while shown', () => {
+	document.body.innerHTML = '<bge-wysiwyg><p><span>test</span></p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const messageElement = element.shadowRoot?.querySelector(
+		'[data-bge-structure-change-message]',
+	);
+	const textarea = element.shadowRoot?.querySelector('textarea');
+
+	expect(element.hasStructureChange).toBe(true);
+	expect(messageElement?.getAttribute('role')).toBe('status');
+	expect(getStructureChangeMessage(element)).toBe(STRUCTURE_CHANGE_MESSAGE);
+	expect(textarea?.getAttribute('aria-describedby')).toBe(messageElement?.id);
+});
+
+test('structure change message and aria-describedby follow the textarea input in HTML mode', () => {
+	document.body.innerHTML = '<bge-wysiwyg><p>test</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const textarea = element.shadowRoot!.querySelector('textarea')!;
+	const messageElement = element.shadowRoot!.querySelector(
+		'[data-bge-structure-change-message]',
+	)!;
+	const descriptor = Object.getOwnPropertyDescriptor(
+		HTMLTextAreaElement.prototype,
+		'value',
+	)!;
+
+	element.mode = 'html';
+
+	descriptor.set!.call(textarea, '<p><span>test</span></p>');
+	textarea.dispatchEvent(new Event('input'));
+	expect(getStructureChangeMessage(element)).toBe(STRUCTURE_CHANGE_MESSAGE);
+	expect(textarea.getAttribute('aria-describedby')).toBe(messageElement.id);
+
+	descriptor.set!.call(textarea, '<p>test</p>');
+	textarea.dispatchEvent(new Event('input'));
+	expect(getStructureChangeMessage(element)).toBe('');
+	expect(textarea.hasAttribute('aria-describedby')).toBe(false);
+});
+
+test('textarea is not described by the structure change message while it is hidden', () => {
+	document.body.innerHTML = '<bge-wysiwyg><p>test</p></bge-wysiwyg>';
+	const element = document.querySelector('bge-wysiwyg') as BgeWysiwygElement;
+	const textarea = element.shadowRoot?.querySelector('textarea');
+
+	element.mode = 'html';
+
+	expect(element.hasStructureChange).toBe(false);
+	expect(getStructureChangeMessage(element)).toBe('');
+	expect(textarea?.hasAttribute('aria-describedby')).toBe(false);
 });
 
 test('should start in Wysiwyg mode when initial value has no structure change', () => {
@@ -421,8 +476,7 @@ test('should start in Wysiwyg mode when initial value has no structure change', 
 	expect(element.hasStructureChange).toBe(false);
 
 	// 注釈が非表示であることを確認
-	const messageElement = element.shadowRoot?.querySelector('[role="alert"]');
-	expect(messageElement?.style.display).toBe('none');
+	expect(getStructureChangeMessage(element)).toBe('');
 
 	// エディタに初期値が設定されていることを確認
 	expect(element.editor.getHTML()).toBe(initialHTML);
@@ -440,8 +494,7 @@ test('should start in Wysiwyg mode when initial value is empty', () => {
 	expect(element.hasStructureChange).toBe(false);
 
 	// 注釈が非表示であることを確認
-	const messageElement = element.shadowRoot?.querySelector('[role="alert"]');
-	expect(messageElement?.style.display).toBe('none');
+	expect(getStructureChangeMessage(element)).toBe('');
 });
 
 test('should start in HTML mode when initial value contains span tags that will be removed', () => {
@@ -493,9 +546,7 @@ test('should start in HTML mode when initial value contains span tags that will 
 		expect(element.hasStructureChange).toBe(true);
 
 		// 注釈が表示されていることを確認
-		const messageElement = element.shadowRoot?.querySelector('[role="alert"]');
-		expect(messageElement).toBeTruthy();
-		expect(messageElement?.style.display).toBe('block');
+		expect(getStructureChangeMessage(element)).toBe(STRUCTURE_CHANGE_MESSAGE);
 
 		// textareaに初期値が設定されていることを確認
 		const textarea = element.shadowRoot?.querySelector('textarea');

@@ -1,11 +1,13 @@
 import type { MenuGeometry, ItemOverlayRect } from './block-menu-view.js';
-import type { BurgerBlock, BurgerEditorEngine, ItemData } from '@burger-editor/core';
+import type { ItemData } from '@burger-editor/core';
 import type { RefObject } from 'react';
 
 import { Item, getBlockAtPosition } from '@burger-editor/core';
 import { useId, useEffect, useRef, useState, useCallback } from 'react';
 
+import { useEngine } from '../engine-context.js';
 import { useCommand } from '../use-command.js';
+import { useUIState } from '../use-engine.js';
 
 import { BlockMenuView } from './block-menu-view.js';
 
@@ -24,22 +26,16 @@ import { BlockMenuView } from './block-menu-view.js';
  * `BurgerBlock` の実インスタンスなしに見た目だけ確認できるため、
  * Storybook 等では `BlockMenuView` を直接使う。
  * @param root0
- * @param root0.engine
  * @param root0.container
  * @example
  * ```tsx
- * <BlockMenu engine={engine} container={frameBody} />
+ * <BlockMenu container={frameBody} />
  * ```
  */
-export function BlockMenu({
-	engine,
-	container,
-}: {
-	readonly engine: BurgerEditorEngine;
-	readonly container: HTMLElement;
-}) {
+export function BlockMenu({ container }: { readonly container: HTMLElement }) {
+	const engine = useEngine();
 	const menuId = useId();
-	const [currentBlock, setCurrentBlock] = useState<BurgerBlock | null>(null);
+	const currentBlock = useUIState((s) => s.currentBlock);
 	const [visible, setVisible] = useState(false);
 	const [itemRects, setItemRects] = useState<readonly ItemOverlayRect[]>([]);
 	const itemsRef: RefObject<readonly Item<ItemData, {}>[]> = useRef([]);
@@ -70,7 +66,9 @@ export function BlockMenu({
 
 	const hide = useCallback(() => {
 		setVisible(false);
-		setCurrentBlock(null);
+		// engine.uiState.currentBlock もここでnullになる — clearCurrentBlock()
+		// が内部でuiState.setCurrentBlock(null)を呼ぶため、ローカルstateの
+		// 二重管理は不要（store一本が真実の源）
 		engine.clearCurrentBlock();
 	}, [engine]);
 
@@ -86,23 +84,21 @@ export function BlockMenu({
 	}, [engine, hide]);
 
 	useEffect(() => {
-		const onBlockChange = (e: CustomEvent<{ readonly block: BurgerBlock }>) => {
-			setCurrentBlock(e.detail.block);
-		};
-		engine.el.addEventListener('bge:block-change', onBlockChange);
-		return () => {
-			engine.el.removeEventListener('bge:block-change', onBlockChange);
-		};
-	}, [engine]);
-
-	useEffect(() => {
 		const doc = container.ownerDocument;
 		const body = doc.body;
 		const win = doc.defaultView;
 
+		// 解除はスタックの逆順（observer → リスナー → rAF）。rAFの取り消しを
+		// 最後に置くのは、先に止めたイベント源が新しいrAFを積めないようにするため
+		const stack = new DisposableStack();
+		const listeners = new AbortController();
+		const { signal } = listeners;
+
 		let mouseX = 0;
 		let mouseY = 0;
 		let raf = 0;
+		stack.defer(() => cancelAnimationFrame(raf));
+		stack.defer(() => listeners.abort());
 
 		const updatePosition = () => {
 			const selected = getBlockAtPosition(doc, mouseX, mouseY);
@@ -115,7 +111,8 @@ export function BlockMenu({
 			setVisible(true);
 
 			const { block, rect, marginBlockEnd } = selected;
-			setCurrentBlock(block);
+			// currentBlockはここでは書かない。下のengine.setCurrentBlock()が
+			// uiState（唯一の真実の源）経由でこのコンポーネントへ戻ってくる
 			setGeometry({
 				width: rect.width,
 				height: rect.height,
@@ -148,17 +145,16 @@ export function BlockMenu({
 				}),
 			);
 
-			engine.componentObserver.notify('select-block', {
-				block,
-				width: rect.width,
-				height: rect.height,
-				x: rect.left,
-				y: rect.top,
-				marginBlockEnd,
-			});
+			engine.setCurrentBlock(block);
 		};
 
 		const scheduleUpdate = () => {
+			// 画像の読み込み待ちはsignalで外さないため（下記）、アンマウント後に
+			// 読み込みが終わってもここで止める。止めないと破棄済みのメニューが
+			// engineの選択中ブロックを書き換える
+			if (signal.aborted) {
+				return;
+			}
 			cancelAnimationFrame(raf);
 
 			if (engine.isProcessed) {
@@ -179,20 +175,28 @@ export function BlockMenu({
 
 		const onHideEvent = () => hide();
 
-		body.addEventListener('mousemove', onMouseMove);
-		body.addEventListener('mouseleave', onHideEvent);
-		doc.addEventListener('mouseleave', onHideEvent);
-		win?.addEventListener('mouseleave', onHideEvent);
-		globalThis.addEventListener('resize', onHideEvent);
-		engine.el.addEventListener('bge:saved', scheduleUpdate);
+		body.addEventListener('mousemove', onMouseMove, { signal });
+		body.addEventListener('mouseleave', onHideEvent, { signal });
+		doc.addEventListener('mouseleave', onHideEvent, { signal });
+		win?.addEventListener('mouseleave', onHideEvent, { signal });
+		globalThis.addEventListener('resize', onHideEvent, { signal });
+		engine.el.addEventListener('bge:saved', scheduleUpdate, { signal });
 
+		// 画像の読み込み待ちにはsignalを渡さない。signalは登録ごとに解除手順を
+		// 抱え、onceで外れた後も手放さないため、削除済みのimgまでeffectの
+		// 寿命いっぱい解放されなくなる
 		const observer = new MutationObserver((mutations) => {
 			for (const mutation of mutations) {
 				for (const node of mutation.addedNodes) {
-					if (!(node instanceof HTMLElement)) {
+					// iframe文書のノードは別realmなのでinstanceof HTMLElementは
+					// 常に偽になる。nodeTypeで判定する
+					if (node.nodeType !== Node.ELEMENT_NODE) {
 						continue;
 					}
-					const images = node.querySelectorAll('img');
+					const element = node as Element;
+					const images = element.matches('img')
+						? [element]
+						: element.querySelectorAll('img');
 					for (const img of images) {
 						img.addEventListener('load', scheduleUpdate, { once: true });
 						img.addEventListener('error', scheduleUpdate, { once: true });
@@ -202,17 +206,9 @@ export function BlockMenu({
 			}
 		});
 		observer.observe(doc, { childList: true, subtree: true });
+		stack.defer(() => observer.disconnect());
 
-		return () => {
-			body.removeEventListener('mousemove', onMouseMove);
-			body.removeEventListener('mouseleave', onHideEvent);
-			doc.removeEventListener('mouseleave', onHideEvent);
-			win?.removeEventListener('mouseleave', onHideEvent);
-			globalThis.removeEventListener('resize', onHideEvent);
-			engine.el.removeEventListener('bge:saved', scheduleUpdate);
-			observer.disconnect();
-			cancelAnimationFrame(raf);
-		};
+		return () => stack.dispose();
 	}, [engine, container, hide]);
 
 	const isMutable = currentBlock?.isMutable() ?? false;
@@ -221,6 +217,7 @@ export function BlockMenu({
 		<BlockMenuView
 			rootRef={rootRef}
 			menuId={menuId}
+			commandBusId={engine.commandBus.receiverId}
 			visible={visible}
 			geometry={geometry}
 			itemRects={itemRects}

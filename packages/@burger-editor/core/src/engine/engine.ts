@@ -1,5 +1,9 @@
 import type { ConfirmCallback } from './copy-editable-area.js';
-import type { ContainerType } from '../block/types.js';
+import type {
+	ApplyLiveBlockOpOptions,
+	ApplyLiveBlockOpResult,
+} from './live-block-ops.js';
+import type { BlockOp, ContainerType } from '../block/types.js';
 import type { ItemSeed } from '../item/types.js';
 import type {
 	BurgerEditorEngineOptions,
@@ -14,11 +18,11 @@ import type {
 
 import { BurgerBlock } from '../block/block.js';
 import { CommandBus } from '../command/command-bus.js';
-import { ComponentObserver } from '../component-observer.js';
-import { CSS_LAYER } from '../const.js';
-import { createComponentStylesheet } from '../dom-helpers/create-component-stylesheet.js';
-import { createStylesheetFromUrl } from '../dom-helpers/create-stylesheet-from-url.js';
 import { createStylesheet } from '../dom-helpers/create-stylesheet.js';
+import {
+	editorBaseStylesheetTexts,
+	editorProjectStylesheetText,
+} from '../dom-helpers/editor-stylesheet-texts.js';
 import {
 	getCustomProperties,
 	getCustomProperty,
@@ -32,12 +36,12 @@ import { Item } from '../item/item.js';
 
 import { copyEditableArea } from './copy-editable-area.js';
 import { createDefaultView } from './default-view.js';
+import { applyLiveBlockOp, getLiveBlockIndex, listLiveBlocks } from './live-block-ops.js';
 import { UIStateStore } from './ui-state.js';
 
 export class BurgerEditorEngine implements Disposable {
 	readonly catalog: BlockCatalog;
 	readonly commandBus = new CommandBus();
-	readonly componentObserver = new ComponentObserver();
 	readonly config: Config;
 	readonly css: {
 		readonly stylesheets: readonly {
@@ -55,9 +59,8 @@ export class BurgerEditorEngine implements Disposable {
 	};
 	readonly uiState = new UIStateStore();
 	readonly viewArea: HTMLElement;
-	#contentStylesheetCache: string | null = null;
+	#contentStylesheetCache: Promise<string> | null = null;
 	#current!: EditableContent<EditableAreaType>;
-	#currentBlock: BurgerBlock | null = null;
 	readonly #disposables = new DisposableStack();
 
 	#draft!: EditableContent<'draft'> | null;
@@ -103,7 +106,6 @@ export class BurgerEditorEngine implements Disposable {
 		});
 		this.#disposables.use(this.#healthMonitor);
 		this.#disposables.use(this.commandBus);
-		this.#disposables.use(this.componentObserver);
 
 		this.css = {
 			stylesheets: options.config.stylesheets ?? [],
@@ -111,6 +113,10 @@ export class BurgerEditorEngine implements Disposable {
 			generalCSS: options.generalCSS,
 		};
 
+		// URLプレフィックスでdocument単位の重複注入を防ぐ。同一documentに
+		// 複数エンジンが共存する場合、scriptタグは先勝ちで最初の
+		// googleMapsApiKeyが全エンジンに適用される（Google Maps JS APIの
+		// 性質上、キーごとに複数ロードすることはできない）
 		if (
 			this.config.googleMapsApiKey &&
 			!document.querySelector('script[src^="https://maps.googleapis.com/maps/api/js"]')
@@ -138,10 +144,6 @@ export class BurgerEditorEngine implements Disposable {
 			const { main, draft } = e.detail;
 			void options.onUpdated?.(main, draft);
 		});
-
-		this.componentObserver.on('select-block', ({ block }) => {
-			this.setCurrentBlock(block);
-		});
 	}
 
 	[Symbol.dispose](): void {
@@ -159,6 +161,26 @@ export class BurgerEditorEngine implements Disposable {
 	}
 
 	/**
+	 * Apply one `BlockOp` to the current editable area through the same
+	 * code path a manual edit takes (`InsertionPoint`, `BurgerBlock`,
+	 * `Item`), so animation, instance identity and open dialogs behave
+	 * exactly as for a human. This is the entry point a remote driver (the
+	 * Agent Hub WebSocket link) should use — see {@link getLiveBlocks} for
+	 * why it must be a method and not an imported function.
+	 * @param op
+	 * @param options
+	 * @example
+	 * ```ts
+	 * await engine.applyLiveBlockOp({ op: 'delete', index: 2 });
+	 * ```
+	 */
+	applyLiveBlockOp(
+		op: BlockOp,
+		options?: ApplyLiveBlockOpOptions,
+	): Promise<ApplyLiveBlockOpResult> {
+		return applyLiveBlockOp(this, this.#current, op, options);
+	}
+	/**
 	 * Clean up resources and stop monitoring.
 	 * @deprecated Use a `using` declaration instead — this now only
 	 * forwards to `[Symbol.dispose]`.
@@ -168,7 +190,27 @@ export class BurgerEditorEngine implements Disposable {
 	}
 
 	clearCurrentBlock() {
-		this.#currentBlock = null;
+		this.uiState.setCurrentBlock(null);
+	}
+	/**
+	 * Replace an editable area's content with hand-edited HTML source and
+	 * save. Used when leaving HTML-source editing mode, or whenever the UI
+	 * layer wants to commit an in-progress edit (e.g. the source textarea
+	 * losing focus). A no-op when the area doesn't exist (e.g. no draft).
+	 * @param type - The editable area to commit into
+	 * @param html - The HTML source to replace the area's content with
+	 * @example
+	 * ```ts
+	 * await engine.commitSourceEdit('main', textarea.value);
+	 * ```
+	 */
+	async commitSourceEdit(type: EditableAreaType, html: string): Promise<void> {
+		const content = this.getEditableContent(type);
+		if (!content) {
+			return;
+		}
+		await content.replaceContents(html);
+		this.save();
 	}
 	/**
 	 * ブロックマーカーを持たない生HTMLを、1つのwysiwygアイテムとして
@@ -197,32 +239,68 @@ export class BurgerEditorEngine implements Disposable {
 	/**
 	 * Resolve the CSS applied to the content (generalCSS plus non-layered
 	 * stylesheets), for injection into rich-text editors.
+	 *
+	 * Caches the in-flight promise itself, not just the resolved value —
+	 * concurrent callers (e.g. more than one `WysiwygField` mounted at
+	 * once) that call this before the first fetch settles share the same
+	 * promise instead of each issuing their own `fetch` calls.
 	 * @returns The concatenated stylesheet text
 	 */
 	async getContentStylesheet(): Promise<string> {
 		if (this.#contentStylesheetCache) {
 			return this.#contentStylesheetCache;
 		}
-		const css = await Promise.all(
-			this.css.stylesheets
-				.filter((sheet) => sheet.layer == null)
-				.map(async (sheet) => {
-					const res = await fetch(sheet.path);
-					return res.text();
-				}),
-		);
-		// generalCSSを含める
-		const stylesheets = [this.css.generalCSS, ...css];
-		this.#contentStylesheetCache = stylesheets.join('\n');
-		return this.#contentStylesheetCache;
+		const promise = (async () => {
+			const css = await Promise.all(
+				this.css.stylesheets
+					.filter((sheet) => sheet.layer == null)
+					.map(async (sheet) => {
+						const res = await fetch(sheet.path);
+						return res.text();
+					}),
+			);
+			// generalCSSを含める
+			return [this.css.generalCSS, ...css].join('\n');
+		})();
+		// 失敗したフェッチをキャッシュに残さず、次回呼び出しで再試行できる
+		// ようにする
+		promise.catch(() => {
+			this.#contentStylesheetCache = null;
+		});
+		this.#contentStylesheetCache = promise;
+		return promise;
 	}
 	getCurrentBlock() {
-		if (!this.#currentBlock) {
+		const currentBlock = this.uiState.getSnapshot().currentBlock;
+		if (!currentBlock) {
 			// eslint-disable-next-line no-console
 			console.warn('block is unselected.');
 		}
-		return this.#currentBlock;
+		return currentBlock;
 	}
+	/**
+	 * List the block style options (`--bge-options-{category}--{key}`)
+	 * declared on `[data-bge-container]` in the stylesheets loaded into the
+	 * current editable area's document. This is what the block options
+	 * dialog renders as its style-option selects.
+	 *
+	 * The stylesheets are scanned on every call (no caching), so the result
+	 * reflects whatever is loaded at that moment. Detection rules (traversed
+	 * at-rules, layer priority, empty-value exclusion, default resolution)
+	 * are documented in
+	 * `dom-helpers/get-custom-properties.ts`.
+	 * @param containerType - Also include categories prefixed `_{containerType}_`
+	 * (e.g. `_grid_subgrid-gap` for `'grid'`); without it they are omitted
+	 * @returns Map keyed by category id; each category's `properties` maps
+	 * the key to its resolved `value` and whether it is the CSS default
+	 * @example
+	 * ```ts
+	 * for (const [id, category] of engine.getCustomProperties('grid')) {
+	 * 	const keys = [...category.properties.keys()];
+	 * 	console.log(id, category.name, keys); // '_grid_subgrid-gap' 'subgrid-gap' [...]
+	 * }
+	 * ```
+	 */
 	getCustomProperties(containerType?: ContainerType) {
 		return getCustomProperties(
 			this.#current.containerElement.ownerDocument,
@@ -244,6 +322,61 @@ export class BurgerEditorEngine implements Disposable {
 	getEditableContent(type: EditableAreaType): EditableContent<EditableAreaType> | null {
 		return type === 'main' ? this.#main : this.#draft;
 	}
+
+	/**
+	 * Index of `block` within {@link getLiveBlocks}, or `-1` when it's not
+	 * in the current editable area.
+	 * @param block
+	 * @example
+	 * ```ts
+	 * const index = engine.getLiveBlockIndex(engine.getCurrentBlock());
+	 * ```
+	 */
+	getLiveBlockIndex(block: BurgerBlock): number {
+		return getLiveBlockIndex(this.#current, block);
+	}
+	/**
+	 * The live blocks of the current editable area, in DOM order — the same
+	 * ordering every `BlockOp.index` addresses.
+	 *
+	 * Exposed as a METHOD rather than only as the free function in
+	 * `live-block-ops.ts` on purpose: `BurgerBlock`/`Item` instances are
+	 * looked up through `static` WeakMaps, i.e. module-level state. A host
+	 * app that ends up with two copies of `@burger-editor/core` in its bundle
+	 * (one inlined into a UI package, one imported directly) gets two
+	 * independent maps, and a free function imported from the "other" copy
+	 * finds nothing the engine registered. Calling through the engine
+	 * instance keeps the lookup inside the copy that created the blocks.
+	 * @example
+	 * ```ts
+	 * const blocks = engine.getLiveBlocks();
+	 * blocks[0]?.highlight();
+	 * ```
+	 */
+	getLiveBlocks(): readonly BurgerBlock[] {
+		return listLiveBlocks(this.#current);
+	}
+	/**
+	 * List the grid wrap-width presets (`--bge-repeat-min-inline-size--{key}`)
+	 * declared on `[data-bge-container]` in the current editable area's
+	 * document, used for the auto-fit / auto-fill "wrap width" select.
+	 *
+	 * Uses the same detection rules as {@link getCustomProperties}, except
+	 * that empty values are not filtered out. The default is the key
+	 * referenced by `--bge-repeat-min-inline-size: var(...)`. Each preset
+	 * also needs a selector rule in CSS that maps the container's
+	 * `--{key}` option to the variable; `general.css` ships it only for
+	 * `small` / `medium` / `large`.
+	 * @returns The preset category (id `'repeat-min-inline-size'`), or `null`
+	 * when no preset is declared
+	 * @example
+	 * ```ts
+	 * const presets = engine.getRepeatMinInlineSizeVariants();
+	 * const defaultKey = presets
+	 * 	? [...presets.properties].find(([, p]) => p.isDefault)?.[0]
+	 * 	: undefined; // 'medium' with the bundled general.css
+	 * ```
+	 */
 	getRepeatMinInlineSizeVariants() {
 		return getRepeatMinInlineSizeVariants(this.#current.containerElement.ownerDocument);
 	}
@@ -251,7 +384,7 @@ export class BurgerEditorEngine implements Disposable {
 		return !!this.#draft;
 	}
 	isSetBlock() {
-		return !!this.#currentBlock;
+		return !!this.uiState.getSnapshot().currentBlock;
 	}
 	async mainToDraft(confirm?: ConfirmCallback) {
 		if (!this.#draft) {
@@ -329,11 +462,9 @@ export class BurgerEditorEngine implements Disposable {
 	}
 
 	setCurrentBlock(block: BurgerBlock) {
-		let isChanged = true;
-		if (this.#currentBlock) {
-			isChanged = !this.#currentBlock.is(block);
-		}
-		this.#currentBlock = block;
+		const previous = this.uiState.getSnapshot().currentBlock;
+		const isChanged = !previous || !previous.is(block);
+		this.uiState.setCurrentBlock(block);
 		if (isChanged) {
 			this.el.dispatchEvent(
 				createBgeEvent('bge:block-change', {
@@ -405,6 +536,7 @@ export class BurgerEditorEngine implements Disposable {
 		}
 		this.#current = to;
 		this.migrationCheck(to.containerElement);
+		this.uiState.setActiveArea(this.#current.type);
 		// 各エリアの表示・非表示はUI層がこのイベントを購読して宣言的に
 		// 描画する。エンジンはUI要素の属性を書き換えない
 		this.el.dispatchEvent(
@@ -436,50 +568,42 @@ export class BurgerEditorEngine implements Disposable {
 		engine: BurgerEditorEngine,
 		options: BurgerEditorEngineOptions,
 	) {
-		const layers = createStylesheet(
-			`@layer ${CSS_LAYER.base}, ${CSS_LAYER.components}, ${CSS_LAYER.ui};`,
-		);
-		engine.#disposables.defer(() => {
-			URL.revokeObjectURL(layers);
-		});
+		const createDisposableStylesheet = (css: string, id: string) => {
+			const path = createStylesheet(css);
+			engine.#disposables.defer(() => {
+				URL.revokeObjectURL(path);
+			});
+			return { path, id };
+		};
 
-		const baseStylesheet = createComponentStylesheet(
+		// Same texts as `editorStylesheetTexts()`; the base ones are created
+		// first so they are already owned by the engine if a fetch below fails.
+		const [layerOrderCss, baseCss] = editorBaseStylesheetTexts(
 			options.items,
 			options.generalCSS,
-			CSS_LAYER.base,
 		);
-		engine.#disposables.defer(() => {
-			URL.revokeObjectURL(baseStylesheet);
-		});
+		const baseStylesheets = [
+			createDisposableStylesheet(layerOrderCss, 'layers'),
+			createDisposableStylesheet(baseCss, 'base-stylesheet'),
+		];
 
-		const componentStylesheets = await Promise.all(
+		// Fetch every text before creating any blob URL: if one fetch fails,
+		// the engine is disposed while the others may still be in flight, and
+		// they must not register blobs on the disposed stack afterwards.
+		const cssContents = await Promise.all(
 			options.config.stylesheets.map(async (stylesheet) => {
-				return createStylesheetFromUrl(
-					stylesheet.path,
-					stylesheet.layer ?? CSS_LAYER.components,
-				);
+				const response = await fetch(stylesheet.path);
+				return response.text();
 			}),
 		);
-		for (const { blob } of componentStylesheets) {
-			engine.#disposables.defer(() => {
-				URL.revokeObjectURL(blob);
-			});
-		}
+		const componentStylesheets = options.config.stylesheets.map((stylesheet, index) =>
+			createDisposableStylesheet(
+				editorProjectStylesheetText(cssContents[index]!, stylesheet.layer),
+				stylesheet.path,
+			),
+		);
 
-		const stylesheets = [
-			{
-				path: layers,
-				id: 'layers',
-			},
-			{
-				path: baseStylesheet,
-				id: 'base-stylesheet',
-			},
-			...componentStylesheets.map(({ blob, originalUrl }) => ({
-				path: blob,
-				id: originalUrl,
-			})),
-		];
+		const stylesheets = [...baseStylesheets, ...componentStylesheets];
 
 		const mainInitialContent =
 			typeof options.initialContents === 'string'

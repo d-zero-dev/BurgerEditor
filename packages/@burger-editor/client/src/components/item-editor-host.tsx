@@ -1,15 +1,10 @@
-import type {
-	BurgerEditorEngine,
-	Item,
-	ItemData,
-	ItemEditorProps,
-} from '@burger-editor/core';
-import type { BgeWysiwygEditorElement } from '@burger-editor/custom-element';
+import type { Item, ItemData, ItemEditorProps } from '@burger-editor/core';
 import type { ComponentType, RefObject } from 'react';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 
 import { EditorDialog } from '../editor-dialog.js';
+import { useEngine } from '../engine-context.js';
 
 type AnyItem = Item<ItemData, {}>;
 type SubmitRef = RefObject<(() => Promise<void>) | null>;
@@ -17,43 +12,50 @@ type SubmitRef = RefObject<(() => Promise<void>) | null>;
 /**
  * Declarative item editor dialog. Renders the item's `Editor` component
  * with editor state derived via `toEditorState`; on submit the state is
- * converted back with `toItemData` and imported into the item.
+ * converted back with `toItemData` and imported into the item. Reads the
+ * engine via {@link useEngine}.
  * @param root0
- * @param root0.engine
  * @param root0.item
+ * @param root0.containerType
  * @example
  * ```tsx
  * <ItemEditorHost
- * 	engine={engine}
  * 	item={open?.type === 'item-editor' ? open.item : null}
+ * 	containerType={open?.type === 'item-editor' ? open.containerType : undefined}
  * />
  * ```
  */
 export function ItemEditorHost({
-	engine,
 	item,
+	containerType,
 }: {
-	readonly engine: BurgerEditorEngine;
 	readonly item: AnyItem | null;
+	readonly containerType?: string;
 }) {
+	const engine = useEngine();
 	const submitRef: SubmitRef = useRef(null);
+
+	const closeAndSave = () => {
+		engine.uiState.closeDialog();
+		engine.save();
+	};
 
 	return (
 		<EditorDialog
 			name="item-editor"
 			open={!!item}
 			buttons={{ close: 'キャンセル', complete: '決定' }}
-			onClose={() => {
-				engine.uiState.closeDialog();
-				engine.save();
-			}}
-			onComplete={() => {
-				void (async () => {
-					await submitRef.current?.();
-					engine.uiState.closeDialog();
-				})();
+			onClose={closeAndSave}
+			action={async () => {
+				// submitRef.current()がthrowした場合はEditorDialogの
+				// useActionStateがcatchしrole="alert"で表示する。ここでは
+				// 早期returnせず、以降のclose/saveを実行させない
+				await submitRef.current?.();
+				closeAndSave();
 			}}>
-			{item ? <ItemEditorBody engine={engine} item={item} submitRef={submitRef} /> : null}
+			{item ? (
+				<ItemEditorBody item={item} containerType={containerType} submitRef={submitRef} />
+			) : null}
 		</EditorDialog>
 	);
 }
@@ -62,19 +64,20 @@ export function ItemEditorHost({
  * The editor form body. Owns the editor state for the currently edited
  * item.
  * @param root0
- * @param root0.engine
  * @param root0.item
+ * @param root0.containerType
  * @param root0.submitRef
  */
 function ItemEditorBody({
-	engine,
 	item,
+	containerType,
 	submitRef,
 }: {
-	readonly engine: BurgerEditorEngine;
 	readonly item: AnyItem;
+	readonly containerType: string | undefined;
 	readonly submitRef: SubmitRef;
 }) {
+	const engine = useEngine();
 	const seed = item.seed;
 
 	const [state, setState] = useState<ItemData>(() => {
@@ -82,47 +85,22 @@ function ItemEditorBody({
 		return seed.toEditorState ? seed.toEditorState(data, engine.config) : data;
 	});
 
-	const stateRef = useRef(state);
-	useEffect(() => {
-		stateRef.current = state;
+	// 最新のstateでtoItemDataを呼ぶ。useEffectEventなのでeffect自体は
+	// item/seed/engineが変わったとき（＝アイテム切替時）だけ作り直され、
+	// キー入力のたびのstate更新では作り直されない
+	const resolveSubmitData = useEffectEvent(async () => {
+		return seed.toItemData ? await seed.toItemData(state, engine.config) : state;
 	});
 
 	useEffect(() => {
 		submitRef.current = async () => {
-			const data = seed.toItemData
-				? await seed.toItemData(stateRef.current, engine.config)
-				: stateRef.current;
+			const data = await resolveSubmitData();
 			await item.import(data);
 		};
 		return () => {
 			submitRef.current = null;
 		};
-	}, [engine, item, seed, submitRef]);
-
-	// wysiwygエディタへコンテンツ用スタイルシートを注入する
-	const wrapperRef = useRef<HTMLDivElement>(null);
-	useEffect(() => {
-		const wysiwyg =
-			wrapperRef.current?.querySelector<BgeWysiwygEditorElement>('bge-wysiwyg-editor');
-		if (!wysiwyg) {
-			return;
-		}
-		// ダイアログが即座に閉じられ要素が破棄された場合、setStyle呼び出しが
-		// ReferenceErrorをthrowし未処理rejectionになるのを防ぐ
-		let cancelled = false;
-		void engine.getContentStylesheet().then((css) => {
-			if (cancelled) {
-				return;
-			}
-			wysiwyg.setStyle(css);
-		});
-		return () => {
-			cancelled = true;
-		};
-	}, [engine, item]);
-
-	const containerType =
-		item.el.closest<HTMLDivElement>('[data-bge-container]')?.dataset['bgeContainer'];
+	}, [item, submitRef]);
 
 	const Editor = seed.Editor as ComponentType<ItemEditorProps> | undefined;
 
@@ -133,14 +111,8 @@ function ItemEditorBody({
 	}
 
 	return (
-		<div ref={wrapperRef} data-bge-container={containerType}>
-			<Editor
-				state={state}
-				setState={setState}
-				config={engine.config}
-				engine={engine}
-				item={item}
-			/>
+		<div data-bge-container={containerType}>
+			<Editor state={state} setState={setState} item={item} />
 		</div>
 	);
 }

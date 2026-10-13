@@ -1,9 +1,12 @@
 import type { BurgerBlock } from '@burger-editor/core';
 
 import { getBlockAtPosition, UIStateStore } from '@burger-editor/core';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
 import { act } from 'react';
 import { test, expect, afterEach, vi } from 'vitest';
+
+import { createMockEngine as createBaseMockEngine } from '../testing/create-mock-engine.js';
+import { renderWithEngine } from '../testing/render-with-engine.js';
 
 import { BlockMenu } from './block-menu.js';
 
@@ -16,24 +19,15 @@ vi.mock('@burger-editor/core', async (importOriginal) => {
 	};
 });
 
-// jsdom doesn't implement the CSSOM `CSS` global (no CSS.escape), which
-// BlockMenuButton uses to build an anchor name. Minimal polyfill scoped to
-// this test file only; it isn't exercised in production (real browsers).
-if (globalThis.CSS === undefined) {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	(globalThis as any).CSS = {
-		escape: (value: string) => String(value).replaceAll(/[^\w-]/g, (ch) => `\\${ch}`),
-	};
-}
-
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
 });
 
 /**
- * jsdom does not compute `pageX`/`pageY` from `clientX`/`clientY`, so set
- * them directly to make the coordinates the component reads deterministic.
+ * `pageX`/`pageY` depend on the document's scroll offset, which is
+ * environment-dependent. Setting them directly keeps the coordinates the
+ * component reads deterministic regardless of scroll position.
  * @param target
  * @param pageX
  * @param pageY
@@ -47,31 +41,35 @@ function dispatchMouseMove(target: EventTarget, pageX: number, pageY: number) {
 
 /**
  * 実際のUIStateStoreを持つengineモック。isProcessedは本物のengineと
- * 同じくストアのprocessingへ委譲する
+ * 同じくストアのprocessingへ委譲する。setCurrentBlockも本物のengine
+ * （engine.ts）と同じくuiState.setCurrentBlock()へ委譲する — そうしないと
+ * block-menu.tsxが`useUIState((s) => s.currentBlock)`で読むcurrentBlockが
+ * 常にnullのままになり、isMutableに応じた分岐がどのテストからも
+ * 到達できなくなる
  */
 function createMockEngine() {
-	const el = document.createElement('div');
 	const uiState = new UIStateStore();
-	return {
-		el,
+	return createBaseMockEngine({
 		uiState,
 		get isProcessed() {
 			return uiState.getSnapshot().processing;
 		},
 		clearCurrentBlock: vi.fn(),
-		componentObserver: { notify: vi.fn() },
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} as any;
+		setCurrentBlock: vi.fn((block: BurgerBlock) => {
+			uiState.setCurrentBlock(block);
+		}),
+		commandBus: { receiverId: 'bge-command-bus-test' },
+	});
 }
 
 /**
- *
+ * @param isMutable - `currentBlock?.isMutable()`が返す値
  */
-function createMockBlock(): BurgerBlock {
+function createMockBlock(isMutable = false): BurgerBlock {
 	const el = document.createElement('div');
 	const block = {
 		el,
-		isMutable: () => false,
+		isMutable: () => isMutable,
 		is: (other: unknown) => other === block,
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} as any;
@@ -108,8 +106,9 @@ test('uiState.processing中はメニューが隠れ、解除後の再ホバー�
 		marginBlockEnd: 0,
 	});
 
-	const { container: renderedRoot } = render(
-		<BlockMenu engine={engine} container={container} />,
+	const { container: renderedRoot } = renderWithEngine(
+		engine,
+		<BlockMenu container={container} />,
 	);
 	const menuEl = renderedRoot.firstElementChild as HTMLElement;
 
@@ -138,6 +137,86 @@ test('uiState.processing中はメニューが隠れ、解除後の再ホバー�
 	expect(menuEl.hidden).toBe(false);
 });
 
+test('メニューのボタンのcommandforはengine.commandBus.receiverIdを指す（配線漏れの検出）', async () => {
+	const engine = createMockEngine();
+	Object.defineProperty(engine, 'commandBus', {
+		value: { receiverId: 'bge-command-bus-from-engine' },
+	});
+	const container = document.createElement('div');
+	document.body.append(container);
+	const block = createMockBlock();
+
+	vi.mocked(getBlockAtPosition).mockReturnValue({
+		block,
+		rect: {
+			left: 0,
+			top: 0,
+			right: 100,
+			bottom: 100,
+			width: 100,
+			height: 100,
+		} as DOMRect,
+		marginBlockEnd: 0,
+	});
+
+	const { getByLabelText } = renderWithEngine(
+		engine,
+		<BlockMenu container={container} />,
+	);
+	await hover(document.body);
+
+	expect(getByLabelText('ブロックを削除').getAttribute('commandfor')).toBe(
+		'bge-command-bus-from-engine',
+	);
+});
+
+test('currentBlock.isMutable()がtrueのときだけグリッド追加・削除ボタンが表示される（配線漏れの検出）', async () => {
+	const engine = createMockEngine();
+	const container = document.createElement('div');
+	document.body.append(container);
+	const mutableBlock = createMockBlock(true);
+
+	vi.mocked(getBlockAtPosition).mockReturnValue({
+		block: mutableBlock,
+		rect: {
+			left: 0,
+			top: 0,
+			right: 100,
+			bottom: 100,
+			width: 100,
+			height: 100,
+		} as DOMRect,
+		marginBlockEnd: 0,
+	});
+
+	const { getByLabelText, queryByLabelText } = renderWithEngine(
+		engine,
+		<BlockMenu container={container} />,
+	);
+	await hover(document.body);
+
+	expect(getByLabelText('ブロック内に要素を追加')).toBeTruthy();
+	expect(getByLabelText('ブロック内の要素を削除')).toBeTruthy();
+
+	const immutableBlock = createMockBlock(false);
+	vi.mocked(getBlockAtPosition).mockReturnValue({
+		block: immutableBlock,
+		rect: {
+			left: 100,
+			top: 100,
+			right: 200,
+			bottom: 200,
+			width: 100,
+			height: 100,
+		} as DOMRect,
+		marginBlockEnd: 0,
+	});
+	await hover(document.body);
+
+	expect(queryByLabelText('ブロック内に要素を追加')).toBeNull();
+	expect(queryByLabelText('ブロック内の要素を削除')).toBeNull();
+});
+
 test('processingによる非表示で選択中ブロックがクリアされる', async () => {
 	const engine = createMockEngine();
 	const container = document.createElement('div');
@@ -157,7 +236,7 @@ test('processingによる非表示で選択中ブロックがクリアされる'
 		marginBlockEnd: 0,
 	});
 
-	render(<BlockMenu engine={engine} container={container} />);
+	renderWithEngine(engine, <BlockMenu container={container} />);
 
 	await hover(document.body);
 
@@ -165,4 +244,106 @@ test('processingによる非表示で選択中ブロックがクリアされる'
 		engine.uiState.setProcessing(true);
 	});
 	expect(engine.clearCurrentBlock).toHaveBeenCalled();
+});
+
+/**
+ * MutationObserverの通知（マイクロタスク）とrAFを1回ずつ消化する
+ */
+async function flushObserverAndFrame() {
+	await act(async () => {
+		await Promise.resolve();
+		await new Promise((resolve) => requestAnimationFrame(resolve));
+	});
+}
+
+/**
+ * 本番と同じくiframe文書のbodyをコンテナにする。iframe文書のノードは
+ * 親ウィンドウとは別realmなので、`instanceof HTMLElement`が偽になる条件まで再現できる
+ */
+function createFrameContainer() {
+	const iframe = document.createElement('iframe');
+	document.body.append(iframe);
+	const frameDoc = iframe.contentDocument!;
+	frameDoc.open();
+	frameDoc.write('<!doctype html><html><head></head><body></body></html>');
+	frameDoc.close();
+	return frameDoc.body;
+}
+
+/**
+ * `<div>`で包んだimg（ブロック追加時の形）を作る
+ * @param img
+ */
+function wrapInDiv(img: HTMLImageElement) {
+	const wrapper = img.ownerDocument.createElement('div');
+	wrapper.append(img);
+	return wrapper;
+}
+
+/**
+ * コンテナの文書でimgを作って追加し、MutationObserverに拾わせる
+ * @param container
+ * @param toAddedNode - imgから実際に追加するノードを作る
+ */
+async function appendImage(
+	container: HTMLElement,
+	toAddedNode: (img: HTMLImageElement) => Node,
+) {
+	const img = container.ownerDocument.createElement('img');
+	container.append(toAddedNode(img));
+	await flushObserverAndFrame();
+	return img;
+}
+
+test('アンマウント後はマウス移動・bge:savedで位置更新が走らない', async () => {
+	const engine = createMockEngine();
+	const container = document.createElement('div');
+	document.body.append(container);
+	vi.mocked(getBlockAtPosition).mockReturnValue(null);
+
+	const { unmount } = renderWithEngine(engine, <BlockMenu container={container} />);
+	unmount();
+
+	dispatchMouseMove(document.body, 10, 10);
+	engine.el.dispatchEvent(new CustomEvent('bge:saved'));
+	await flushObserverAndFrame();
+
+	expect(getBlockAtPosition).not.toHaveBeenCalled();
+	expect(engine.clearCurrentBlock).not.toHaveBeenCalled();
+});
+
+test.each([
+	{ label: '要素に包まれた画像', toAddedNode: wrapInDiv },
+	{ label: '画像要素そのもの', toAddedNode: (img: HTMLImageElement) => img },
+])(
+	'iframe文書に追加された$labelの読み込み完了で位置が更新される',
+	async ({ toAddedNode }) => {
+		const engine = createMockEngine();
+		const container = createFrameContainer();
+		vi.mocked(getBlockAtPosition).mockReturnValue(null);
+
+		renderWithEngine(engine, <BlockMenu container={container} />);
+		const img = await appendImage(container, toAddedNode);
+
+		img.dispatchEvent(new Event('load'));
+		await flushObserverAndFrame();
+
+		expect(getBlockAtPosition).toHaveBeenCalledTimes(1);
+	},
+);
+
+test('アンマウント後に画像の読み込みが終わっても位置更新が走らない', async () => {
+	const engine = createMockEngine();
+	const container = createFrameContainer();
+	vi.mocked(getBlockAtPosition).mockReturnValue(null);
+
+	const { unmount } = renderWithEngine(engine, <BlockMenu container={container} />);
+	const img = await appendImage(container, wrapInDiv);
+
+	unmount();
+	img.dispatchEvent(new Event('load'));
+	await flushObserverAndFrame();
+
+	expect(getBlockAtPosition).not.toHaveBeenCalled();
+	expect(engine.clearCurrentBlock).not.toHaveBeenCalled();
 });

@@ -2,13 +2,15 @@
 
 [![npm version](https://badge.fury.io/js/@burger-editor%2Fclient.svg)](https://badge.fury.io/js/@burger-editor%2Fclient)
 
-BurgerEditor をブラウザ上の DOM に組み込むための UI レイヤー。React 製の編集 UI（ブロックメニュー・各種ダイアログ・アイテムエディタ）を内部で組み立て、`@burger-editor/core` の編集エンジンに差し込んだ状態でひとつのファクトリ関数として提供する。アイテムエディタ用のフォーム部品とフック群は `@burger-editor/client/ui` として公開される。
+BurgerEditor をブラウザ上の DOM に組み込むための UI レイヤー。React 製の編集 UI（ブロックメニュー・各種ダイアログ・アイテムエディタ）を内部で組み立て、`@burger-editor/core` の編集エンジンに差し込んだ状態でひとつのファクトリ関数として提供する。エンジンは props ドリルではなく `useEngine()`（`EngineContext`）で配布される — item `Editor` を含む配下のコンポーネントはすべてこのフックでエンジンを読む。アイテムエディタ用のフォーム部品とフック群は `@burger-editor/client/ui` として公開される。
 
 ## Installation
 
 ```sh
-yarn add @burger-editor/client @burger-editor/core @burger-editor/blocks
+yarn add @burger-editor/client @burger-editor/core @burger-editor/blocks react@19.3.0 react-dom@19.3.0
 ```
+
+`react` と `react-dom` は peerDependencies のため、利用側でインストールする（client は React を同梱しない）。アプリのバンドルには React が 1 つだけ含まれるようにする。標準アイテムを使う場合、`items` は `@burger-editor/blocks/editor` から import する（`@burger-editor/blocks` のルートは `Editor` を含まない）。
 
 ## Related Packages
 
@@ -46,14 +48,14 @@ const { engine } = await createBurgerEditorClient({
 
 ### 必須プロパティ
 
-| キー              | 型                                           | 説明                                       |
-| ----------------- | -------------------------------------------- | ------------------------------------------ |
-| `root`            | `string`                                     | エディタをマウントするルート要素のセレクタ |
-| `config`          | `Config`                                     | エディタ設定（後述）                       |
-| `items`           | `Record<string, ItemSeed>`                   | 使用するアイテムの定義                     |
-| `catalog`         | `BlockCatalog`                               | ブロックカタログの定義                     |
-| `generalCSS`      | `string`                                     | 一般 CSS 文字列                            |
-| `initialContents` | `string \| { main: string; draft?: string }` | 初期コンテンツの HTML                      |
+| キー              | 型                                           | 説明                                                 |
+| ----------------- | -------------------------------------------- | ---------------------------------------------------- |
+| `root`            | `string \| HTMLElement`                      | エディタをマウントするルート要素、またはそのセレクタ |
+| `config`          | `Config`                                     | エディタ設定（後述）                                 |
+| `items`           | `Record<string, ItemSeed>`                   | 使用するアイテムの定義                               |
+| `catalog`         | `BlockCatalog`                               | ブロックカタログの定義                               |
+| `generalCSS`      | `string`                                     | 一般 CSS 文字列                                      |
+| `initialContents` | `string \| { main: string; draft?: string }` | 初期コンテンツの HTML                                |
 
 ### 任意プロパティ
 
@@ -148,6 +150,19 @@ await createBurgerEditorClient({
 	},
 });
 ```
+
+デフォルトのまま複数のエディタを共存させると、クリップボードは共有される（片方でコピーしたブロックをもう片方に貼り付けられる）。分離したい場合のみ `storageKey.blockClipboard` をエンジンごとに別値にする。
+
+## 複数エディタの共存
+
+同一 document に `createBurgerEditorClient` を複数回呼んでも動作する。各呼び出しの `root` には同じセレクタで両方が同じ要素に解決されないよう、別々の要素（または別々のセレクタ）を渡す。
+
+```ts
+const editorA = await createBurgerEditorClient({ root: document.querySelector('#editor-a')!, ... });
+const editorB = await createBurgerEditorClient({ root: document.querySelector('#editor-b')!, ... });
+```
+
+`attachDraftSwitcher(engine)` はエンジンごとに個別に呼ぶ。コマンドバス（`commandfor` の配送先）はエンジンごとに一意な ID を持つため、片方のツールバー操作がもう片方のエンジンに誤って作用することはない。WYSIWYG（`bge-wysiwyg-editor`）の `classList` / `experimental.itemOptions.wysiwyg.enableTextOnlyMode` は document 単位で共有される（詳細は `@burger-editor/custom-element` の `defineBgeWysiwygEditorElement` の JSDoc を参照）。
 
 ## License
 

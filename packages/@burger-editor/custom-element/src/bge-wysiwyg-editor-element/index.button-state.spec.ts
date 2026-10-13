@@ -14,7 +14,7 @@ describe('Button state management - comprehensive coverage', () => {
 	});
 
 	describe('All button types existence and initial state', () => {
-		test('All 24 button types are rendered when all commands are provided', () => {
+		test('All 23 button types are rendered when all commands are provided', () => {
 			const allCommands = [
 				'bold',
 				'italic',
@@ -149,7 +149,7 @@ describe('Button state management - comprehensive coverage', () => {
 			expect(flexBoxButton).toBeTruthy();
 		});
 
-		test('All heading buttons (h1-h6) work correctly', () => {
+		test('All heading buttons (h1-h6) are rendered and enabled', () => {
 			document.body.innerHTML =
 				'<bge-wysiwyg-editor commands="h1,h2,h3,h4,h5,h6"><p>test</p></bge-wysiwyg-editor>';
 			const editor = document.querySelector(
@@ -189,6 +189,42 @@ describe('Button state management - comprehensive coverage', () => {
 			expect(alignStartButton.disabled).toBe(false);
 			expect(alignCenterButton.disabled).toBe(false);
 			expect(alignEndButton.disabled).toBe(false);
+		});
+	});
+
+	describe('Pressing heading buttons', () => {
+		test.each([
+			['h1', '<p>test</p>', '<h1>test</h1>'],
+			['h2', '<p>test</p>', '<h2>test</h2>'],
+			['h3', '<p>test</p>', '<h3>test</h3>'],
+			['h4', '<p>test</p>', '<h4>test</h4>'],
+			['h5', '<p>test</p>', '<h5>test</h5>'],
+			['h6', '<p>test</p>', '<h6>test</h6>'],
+			['h1', '<h1>test</h1>', '<p>test</p>'],
+			['h2', '<h2>test</h2>', '<p>test</p>'],
+			['h3', '<h3>test</h3>', '<p>test</p>'],
+			['h4', '<h4>test</h4>', '<p>test</p>'],
+			['h5', '<h5>test</h5>', '<p>test</p>'],
+			['h6', '<h6>test</h6>', '<p>test</p>'],
+			['h1', '<h2>test</h2>', '<h1>test</h1>'],
+			['h2', '<h1>test</h1>', '<h2>test</h2>'],
+			['h3', '<h1>test</h1>', '<h3>test</h3>'],
+			['h4', '<h1>test</h1>', '<h4>test</h4>'],
+			['h5', '<h1>test</h1>', '<h5>test</h5>'],
+			['h6', '<h1>test</h1>', '<h6>test</h6>'],
+		])('pressing the %s button turns %s into %s', (command, initial, expected) => {
+			document.body.innerHTML = `<bge-wysiwyg-editor commands="h1,h2,h3,h4,h5,h6">${initial}</bge-wysiwyg-editor>`;
+			const editor = document.querySelector(
+				'bge-wysiwyg-editor',
+			) as BgeWysiwygEditorElement;
+			const button = editor.querySelector(
+				`[data-bge-toolbar-button="${command}"]`,
+			) as HTMLButtonElement;
+
+			// Goes through the Invoker Commands API (`command` / `commandfor`)
+			button.click();
+
+			expect(editor.value).toBe(expected);
 		});
 	});
 
@@ -346,7 +382,7 @@ describe('Button state management - comprehensive coverage', () => {
 			expect(button.disabled).toBe(false);
 		});
 
-		test('heading buttons use correct level parameters', () => {
+		test('only the heading button matching the current level is pressed', () => {
 			document.body.innerHTML =
 				'<bge-wysiwyg-editor commands="h1,h2,h3,h4,h5,h6"><h3>test</h3></bge-wysiwyg-editor>';
 			const editor = document.querySelector(
@@ -363,13 +399,10 @@ describe('Button state management - comprehensive coverage', () => {
 				'[data-bge-toolbar-button="h3"]',
 			) as HTMLButtonElement;
 
-			// All heading buttons should exist and have ariaPressed defined
-			expect(h1Button).toBeTruthy();
-			expect(h2Button).toBeTruthy();
-			expect(h3Button).toBeTruthy();
-			expect(h1Button.ariaPressed).toBeDefined();
-			expect(h2Button.ariaPressed).toBeDefined();
-			expect(h3Button.ariaPressed).toBeDefined();
+			// Only the button whose level matches the current heading is pressed
+			expect(h1Button.ariaPressed).toBe('false');
+			expect(h2Button.ariaPressed).toBe('false');
+			expect(h3Button.ariaPressed).toBe('true');
 		});
 
 		test('alignment buttons use custom data-bgc-align attribute check', () => {
@@ -397,9 +430,7 @@ describe('Button state management - comprehensive coverage', () => {
 	});
 
 	describe('Comprehensive mode switching test', () => {
-		test('All 22 formatting buttons are disabled in HTML mode (excluding h1)', () => {
-			// NOTE: h1 button is excluded because updateButtonState() does not have a case for 'h1'
-			// This is an existing bug that should be fixed in a separate PR
+		test('All 23 formatting buttons are disabled in HTML mode', () => {
 			const allButtons = [
 				'bold',
 				'italic',
@@ -414,7 +445,7 @@ describe('Button state management - comprehensive coverage', () => {
 				'bullet-list',
 				'ordered-list',
 				'note',
-				// 'h1', // BUG: No case in updateButtonState()
+				'h1',
 				'h2',
 				'h3',
 				'h4',
@@ -452,9 +483,7 @@ describe('Button state management - comprehensive coverage', () => {
 			}
 		});
 
-		test('All 22 formatting buttons are disabled in text-only mode (excluding h1)', () => {
-			// NOTE: h1 button is excluded because updateButtonState() does not have a case for 'h1'
-			// This is an existing bug that should be fixed in a separate PR
+		test('All 23 formatting buttons are disabled in text-only mode', () => {
 			const allButtons = [
 				'bold',
 				'italic',
@@ -469,7 +498,7 @@ describe('Button state management - comprehensive coverage', () => {
 				'bullet-list',
 				'ordered-list',
 				'note',
-				// 'h1', // BUG: No case in updateButtonState()
+				'h1',
 				'h2',
 				'h3',
 				'h4',
@@ -507,9 +536,7 @@ describe('Button state management - comprehensive coverage', () => {
 			}
 		});
 
-		test('All buttons are re-enabled when switching back to WYSIWYG mode (excluding h1)', () => {
-			// NOTE: h1 button is excluded because updateButtonState() does not have a case for 'h1'
-			// This is an existing bug that should be fixed in a separate PR
+		test('All buttons are re-enabled when switching back to WYSIWYG mode', () => {
 			const allButtons = [
 				'bold',
 				'italic',
@@ -524,7 +551,7 @@ describe('Button state management - comprehensive coverage', () => {
 				'bullet-list',
 				'ordered-list',
 				'note',
-				// 'h1', // BUG: No case in updateButtonState()
+				'h1',
 				'h2',
 				'h3',
 				'h4',

@@ -6,9 +6,11 @@
 process.env.DOTENV_CONFIG_QUIET = 'true';
 
 import type { BlockSpec } from './block-builder.js';
+import type { ContainerType } from '@burger-editor/core';
 
 import { parseCli } from '@d-zero/roar';
 
+import { pageBlocksTool } from './agent-tools/tools/page-blocks.js';
 import { loadContext } from './context.js';
 import * as h from './handlers.js';
 import { writeErrorJson } from './output.js';
@@ -24,11 +26,55 @@ const realStdoutWrite = process.stdout.write.bind(process.stdout);
 
 /**
  *
+ * @param configPath the `--config` value; `undefined` falls back to `BGE_CONFIG`, then the search
  */
-async function loadContextWithSilencedStdout(): ReturnType<typeof loadContext> {
+async function loadContextWithSilencedStdout(
+	configPath: string | undefined,
+): ReturnType<typeof loadContext> {
 	using _ = silenceStdout();
-	return await loadContext();
+	return await loadContext(undefined, { configPath });
 }
+
+/**
+ * Reject a `--config` given without a path. roar passes a bare `--config` (or
+ * `--config=`, or one followed by another flag) through as `''` and leaves
+ * rejecting it to the caller; `resolveConfig` would read `''` as "not named"
+ * and silently fall back to the search.
+ * @param value the parsed `--config` flag
+ */
+function toConfigPath(value: string | undefined): string | undefined {
+	if (value === '') {
+		throw new Error('--config requires a path to a config file.');
+	}
+	return value;
+}
+
+/**
+ * Validate `--container-type`. roar has no enum flags, so an unknown value
+ * would otherwise reach `styleOptionsList` and silently match nothing.
+ * @param value the parsed `--container-type` flag
+ */
+function toContainerType(value: string | undefined): ContainerType | undefined {
+	if (value === undefined) {
+		return undefined;
+	}
+	const type = h.CONTAINER_TYPES.find((t) => t === value);
+	if (type) {
+		return type;
+	}
+	throw new Error(
+		`--container-type must be one of ${h.CONTAINER_TYPES.join(', ')} (got "${value}").`,
+	);
+}
+
+// Accepted by every command (roar `globalFlags`): each one loads a context,
+// so each one needs to know which config file to load.
+const globalFlags = {
+	config: {
+		type: 'string',
+		desc: 'Config file to use instead of searching for burgereditor.config.* (or set BGE_CONFIG)',
+	},
+} as const;
 
 // IMPORTANT — flag keys MUST be camelCase. roar derives the user-facing
 // `--kebab-case` form automatically; if you define `'spec-file'` literally
@@ -72,7 +118,9 @@ const commands = {
 			},
 		},
 	},
-	'block-list': { desc: 'List blocks in a page — usage: block-list <path>' },
+	'page-blocks': {
+		desc: 'List every block in a page (id/text/headings summary) — usage: page-blocks <path>',
+	},
 	'block-get': { desc: 'Get a single block by index — usage: block-get <path> <index>' },
 	'block-insert': {
 		desc: 'Insert a block at index — usage: block-insert <path> <atIndex>',
@@ -105,6 +153,23 @@ const commands = {
 			dryRun: { type: 'boolean', desc: 'Compute the would-be HTML but do not write' },
 		},
 	},
+	'block-duplicate': {
+		desc: 'Duplicate a block right after itself — usage: block-duplicate <path> <index>',
+		flags: {
+			dryRun: { type: 'boolean', desc: 'Compute the would-be HTML but do not write' },
+		},
+	},
+	'block-ensure-id': {
+		desc: 'Assign a stable bge-<n> id to a block that has none (idempotent) — usage: block-ensure-id <path> <index>',
+	},
+	'item-update': {
+		desc: 'Merge new data into one item within a block — usage: item-update <path> <blockIndex> <itemIndex>',
+		flags: {
+			spec: { type: 'string', desc: 'Inline JSON data patch' },
+			specFile: { type: 'string', desc: 'Path to JSON data patch' },
+			dryRun: { type: 'boolean', desc: 'Compute the would-be HTML but do not write' },
+		},
+	},
 	'catalog-list': {
 		desc: 'List catalog block definitions available in this project',
 	},
@@ -116,9 +181,15 @@ const commands = {
 		desc: 'Get item editor template + camelCase dataKeys — usage: item-schema <name>',
 	},
 	'style-options-list': {
-		desc: 'List CSS bge-options custom property axes found in project stylesheets',
+		desc: 'List the style option axes the block options dialog offers',
+		flags: {
+			containerType: {
+				type: 'string',
+				desc: 'Only axes usable in this container type (grid | inline | float)',
+			},
+		},
 	},
-	'container-options-list': { desc: 'List container layout option values (static)' },
+	'container-options-list': { desc: 'List container layout option values' },
 	'config-resolve': { desc: 'Resolve and print the active burgereditor config summary' },
 } as const;
 
@@ -178,10 +249,11 @@ async function resolveSpecForCommand(
 async function main() {
 	const result = parseCli({
 		name: '@burger-editor/cli',
+		globalFlags,
 		commands,
 		onError: () => true,
 	});
-	const ctx = await loadContextWithSilencedStdout();
+	const ctx = await loadContextWithSilencedStdout(toConfigPath(result.flags.config));
 
 	switch (result.command) {
 		case 'page-list': {
@@ -228,11 +300,21 @@ async function main() {
 			const patch = raw as Record<string, unknown>;
 			return await h.frontMatterSet(ctx, result.args[0]!, patch, !flags.replace);
 		}
-		case 'block-list': {
-			return await h.blockList(ctx, result.args[0]!);
+		case 'page-blocks': {
+			// page_blocks is a two-call protocol (see its JSDoc) — the CLI's
+			// interactive/scripting use case wants "just give me the blocks",
+			// so drive both calls here rather than surfacing the readToken
+			// round trip to a human at the terminal.
+			const first = (await pageBlocksTool.run(ctx, { path: result.args[0]! })) as {
+				readToken: string;
+			};
+			return await pageBlocksTool.run(ctx, {
+				path: result.args[0]!,
+				readToken: first.readToken,
+			});
 		}
 		case 'block-get': {
-			return await h.blockGet(ctx, result.args[0]!, Number(result.args[1]));
+			return await h.blockGet(ctx, result.args[0]!, { index: Number(result.args[1]) });
 		}
 		case 'block-insert': {
 			const flags = result.flags as {
@@ -252,23 +334,65 @@ async function main() {
 				dryRun?: boolean;
 			};
 			const spec = expectBlockSpec(await resolveSpecForCommand('block-replace', flags));
-			return await h.blockReplace(ctx, result.args[0]!, Number(result.args[1]), spec, {
-				dryRun: Boolean(flags.dryRun),
-			});
+			return await h.blockReplace(
+				ctx,
+				result.args[0]!,
+				{ index: Number(result.args[1]) },
+				spec,
+				{ dryRun: Boolean(flags.dryRun) },
+			);
 		}
 		case 'block-delete': {
 			const flags = result.flags as { dryRun?: boolean };
-			return await h.blockDelete(ctx, result.args[0]!, Number(result.args[1]), {
-				dryRun: Boolean(flags.dryRun),
-			});
+			return await h.blockDelete(
+				ctx,
+				result.args[0]!,
+				{ index: Number(result.args[1]) },
+				{ dryRun: Boolean(flags.dryRun) },
+			);
 		}
 		case 'block-move': {
 			const flags = result.flags as { dryRun?: boolean };
 			return await h.blockMove(
 				ctx,
 				result.args[0]!,
-				Number(result.args[1]),
+				{ index: Number(result.args[1]) },
 				Number(result.args[2]),
+				{ dryRun: Boolean(flags.dryRun) },
+			);
+		}
+		case 'block-duplicate': {
+			const flags = result.flags as { dryRun?: boolean };
+			return await h.blockDuplicate(
+				ctx,
+				result.args[0]!,
+				{ index: Number(result.args[1]) },
+				{ dryRun: Boolean(flags.dryRun) },
+			);
+		}
+		case 'block-ensure-id': {
+			return await h.blockEnsureId(ctx, result.args[0]!, {
+				index: Number(result.args[1]),
+			});
+		}
+		case 'item-update': {
+			const flags = result.flags as {
+				spec?: string;
+				specFile?: string;
+				dryRun?: boolean;
+			};
+			const raw = await resolveSpecForCommand('item-update', flags);
+			if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+				throw new Error(
+					`item-update spec must be a JSON object (got ${Array.isArray(raw) ? 'array' : raw === null ? 'null' : typeof raw}).`,
+				);
+			}
+			return await h.itemUpdate(
+				ctx,
+				result.args[0]!,
+				{ index: Number(result.args[1]) },
+				Number(result.args[2]),
+				raw as Record<string, unknown>,
 				{ dryRun: Boolean(flags.dryRun) },
 			);
 		}
@@ -285,10 +409,11 @@ async function main() {
 			return h.itemSchema(result.args[0]!);
 		}
 		case 'style-options-list': {
-			return await h.styleOptionsList(ctx);
+			const flags = result.flags as { containerType?: string };
+			return await h.styleOptionsList(ctx, toContainerType(flags.containerType));
 		}
 		case 'container-options-list': {
-			return h.containerOptionsList();
+			return await h.containerOptionsList(ctx);
 		}
 		case 'config-resolve': {
 			return h.configResolve(ctx);

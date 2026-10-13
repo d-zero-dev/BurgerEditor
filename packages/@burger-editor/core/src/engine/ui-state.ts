@@ -1,6 +1,9 @@
 import type { BurgerBlock } from '../block/block.js';
 import type { Item } from '../item/item.js';
 import type { ItemData } from '../item/types.js';
+import type { EditableAreaType } from '../types.js';
+
+import { BLOCK_OPTION_SCOPE_SELECTOR } from '../const.js';
 
 /**
  * The dialog currently presented by the editor UI, or `null` when no
@@ -20,6 +23,14 @@ export type OpenDialogState =
 	| {
 			readonly type: 'item-editor';
 			readonly item: Item<ItemData, {}>;
+			/**
+			 * The item's container type at the moment the dialog opened,
+			 * snapshotted here instead of read from the DOM during React
+			 * render (`item.el.closest(...)` is a render-purity violation
+			 * — the item can also get rebound to a different container
+			 * while the dialog is open).
+			 */
+			readonly containerType: string | undefined;
 	  }
 	| null;
 
@@ -45,6 +56,23 @@ export interface UIState {
 		readonly main: boolean;
 		readonly draft: boolean;
 	};
+
+	/**
+	 * 現在表示中の編集エリア。`engine.showMain()` / `engine.showDraft()`
+	 * で切り替わる。`engine`は同じタイミングで`bge:switch-content`
+	 * イベントも発火するが（DOM購読の非Reactコンシューマ向け）、React側は
+	 * このスナップショットを直接読み、イベント購読を経由しない
+	 */
+	readonly activeArea: EditableAreaType;
+
+	/**
+	 * ホバー選択中のブロック。`engine.setCurrentBlock()` /
+	 * `engine.clearCurrentBlock()` と同期する。`engine`は同じタイミングで
+	 * `bge:block-change`イベントも発火するが（DOM購読の非Reactコンシューマ
+	 * 向け）、React側はこのスナップショットを直接読み、イベント購読を
+	 * 経由しない
+	 */
+	readonly currentBlock: BurgerBlock | null;
 }
 
 type Listener = () => void;
@@ -55,12 +83,17 @@ type Listener = () => void;
  * returns an immutable state object that is replaced on every change.
  *
  * The engine owns the store and performs all transitions; the UI layer
- * only subscribes and renders.
+ * only subscribes and renders. `subscribe` / `getSnapshot` are arrow
+ * class fields (not prototype methods) so each instance's copy has a
+ * stable identity across calls — the UI layer can pass
+ * `engine.uiState.subscribe` directly to `useSyncExternalStore` without
+ * wrapping it in a new closure every render (which would otherwise
+ * unsubscribe and resubscribe on every render for no reason).
  * @example
  * ```ts
  * const state = useSyncExternalStore(
- * 	(cb) => engine.uiState.subscribe(cb),
- * 	() => engine.uiState.getSnapshot(),
+ * 	engine.uiState.subscribe,
+ * 	engine.uiState.getSnapshot,
  * );
  * if (state.openDialog?.type === 'item-editor') {
  * 	// render the item editor for state.openDialog.item
@@ -68,11 +101,28 @@ type Listener = () => void;
  * ```
  */
 export class UIStateStore {
+	/**
+	 * @returns The current immutable UI state
+	 */
+	getSnapshot: () => UIState = () => this.#state;
+	/**
+	 * Register a change listener.
+	 * @param listener - Invoked after every state transition
+	 * @returns A function that removes the listener
+	 */
+	subscribe: (listener: Listener) => () => void = (listener) => {
+		this.#listeners.add(listener);
+		return () => {
+			this.#listeners.delete(listener);
+		};
+	};
 	#listeners = new Set<Listener>();
 	#state: UIState = {
 		openDialog: null,
 		processing: false,
 		sourceMode: { main: false, draft: false },
+		activeArea: 'main',
+		currentBlock: null,
 	};
 
 	/**
@@ -83,13 +133,6 @@ export class UIStateStore {
 			return;
 		}
 		this.#set({ openDialog: null });
-	}
-
-	/**
-	 * @returns The current immutable UI state
-	 */
-	getSnapshot(): UIState {
-		return this.#state;
 	}
 
 	/**
@@ -112,9 +155,38 @@ export class UIStateStore {
 	 * @param item - The content item being edited
 	 */
 	openItemEditor(item: Item<ItemData, {}>) {
-		this.#set({ openDialog: { type: 'item-editor', item } });
+		const containerType = item.el.closest<HTMLDivElement>(BLOCK_OPTION_SCOPE_SELECTOR)
+			?.dataset['bgeContainer'];
+		this.#set({ openDialog: { type: 'item-editor', item, containerType } });
 	}
 
+	/**
+	 * Record which editable area is currently shown. Called by
+	 * `engine.showMain()` / `engine.showDraft()` — not part of the public
+	 * UI-facing API (there is no reason for UI code to switch areas
+	 * without going through the engine).
+	 * @param area - The area now on screen
+	 */
+	setActiveArea(area: EditableAreaType) {
+		if (this.#state.activeArea === area) {
+			return;
+		}
+		this.#set({ activeArea: area });
+	}
+	/**
+	 * Record the hover-selected block, or clear it. Called by
+	 * `engine.setCurrentBlock()` / `engine.clearCurrentBlock()`.
+	 * @param block - The newly selected block, or `null` to clear
+	 */
+	setCurrentBlock(block: BurgerBlock | null) {
+		if (this.#state.currentBlock === block) {
+			return;
+		}
+		if (this.#state.currentBlock && block && this.#state.currentBlock.is(block)) {
+			return;
+		}
+		this.#set({ currentBlock: block });
+	}
 	/**
 	 * Mark an engine mutation (block insertion, move, etc.) as in
 	 * progress or finished.
@@ -138,18 +210,6 @@ export class UIStateStore {
 			return;
 		}
 		this.#set({ sourceMode: { ...this.#state.sourceMode, [type]: sourceMode } });
-	}
-
-	/**
-	 * Register a change listener.
-	 * @param listener - Invoked after every state transition
-	 * @returns A function that removes the listener
-	 */
-	subscribe(listener: Listener): () => void {
-		this.#listeners.add(listener);
-		return () => {
-			this.#listeners.delete(listener);
-		};
 	}
 
 	/**

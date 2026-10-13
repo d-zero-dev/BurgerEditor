@@ -11,7 +11,6 @@ export { applyBlockOptions } from './block/apply-block-options.js';
 export { dataToHtml as itemImport } from './item/data-to-html.js';
 export { dataFromHtml as itemExport } from './item/data-from-html.js';
 export { render } from './render.js';
-export { ComponentObserver } from './component-observer.js';
 export { CommandBus, COMMAND_BUS_ID } from './command/command-bus.js';
 export { BGE_COMMAND } from './command/commands.js';
 export type { BgeCommand } from './command/commands.js';
@@ -21,11 +20,31 @@ export { UIStateStore } from './engine/ui-state.js';
 export type { UIState, OpenDialogState } from './engine/ui-state.js';
 export { beginProcessing } from './engine/processing-scope.js';
 export type { ProcessingHost } from './engine/processing-scope.js';
+export type { EditableContent } from './editable-content.js';
+export { highlightElement } from './block/highlight.js';
+export type { HighlightOptions } from './block/highlight.js';
+export {
+	applyLiveBlockOp,
+	DisabledBlockError,
+	getLiveBlockIndex,
+	listLiveBlocks,
+} from './engine/live-block-ops.js';
+export type {
+	ApplyLiveBlockOpOptions,
+	ApplyLiveBlockOpResult,
+} from './engine/live-block-ops.js';
 export * from './const.js';
 export * from './utils/find-value-pattern-from-array.js';
 export { exportStyleOptions } from './block/export-style-options.js';
+export {
+	getCustomProperties,
+	getRepeatMinInlineSizeVariants,
+} from './dom-helpers/get-custom-properties.js';
+export { editorStylesheetTexts } from './dom-helpers/editor-stylesheet-texts.js';
 export { getBlockAtPosition } from './get-block-at-position.js';
 export { parseHTMLToBlockData } from './block/parse-html-to-definition.js';
+export { createBgeEvent } from './event/create-bge-event.js';
+export type { BurgerEditorEvent } from './event/create-bge-event.js';
 
 // Document helpers (Front Matter / editable area extraction)
 export { NoEditableAreaError } from './document/no-editable-area-error.js';

@@ -1,12 +1,19 @@
 {
 	"import": ["@d-zero/cspell-config"],
-	"ignorePaths": [".vscode", ".claude", "**/CODEOWNERS", "**/storybook-static/**"],
+	"ignorePaths": [
+		".vscode",
+		".claude",
+		".agents",
+		"**/CODEOWNERS",
+		"**/storybook-static/**"
+	],
 	"words": [
 		// CSS terminology
 		"CSSWG",
 		"unlayered",
 
 		// Lowercased
+		"attributionsrc",
 		"closedby",
 		"nocheck",
 		"vbscript",
@@ -17,9 +24,11 @@
 
 		// English vocabulary missing from the base dictionary
 		"unrepresentable",
+		"uncompiled",
 
 		// Dependencies
 		"hono",
+		"honojs",
 		"pixelmatch",
 		"pngjs",
 		"jaco",
@@ -27,6 +36,23 @@
 		"trix",
 
 		// Project specific
-		"bgeconfig"
+		"bgeconfig",
+		// ARCHITECTURE.md mermaid node ID for mcp-server (hyphens stripped)
+		"mcpserver",
+
+		// Networking terminology (WebSocket ack/nack protocol)
+		"acked",
+		"acking",
+		"acks",
+		"nack",
+		"nacked",
+		"nacking",
+		"nacks",
+
+		// Vitest API (vi.unstubAllGlobals)
+		"unstub",
+
+		// GitHub Security Advisory IDs (e.g. GHSA-4v47-5hm4-93xf)
+		"GHSA"
 	]
 }

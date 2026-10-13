@@ -1,25 +1,8 @@
-import { WysiwygField } from '@burger-editor/client/ui';
+import type { WysiwygData } from './definition.js';
+
 import { createItem } from '@burger-editor/core';
 
-import style from './style.css';
-import template from './template.html';
+import { wysiwygDefinition } from './definition.js';
+import { WysiwygEditor } from './editor.js';
 
-export type WysiwygData = {
-	wysiwyg: string;
-};
-
-export default createItem<WysiwygData>({
-	version: __VERSION__,
-	name: 'wysiwyg',
-	template,
-	style,
-	Editor({ state, setState }) {
-		return (
-			<WysiwygField
-				itemName="wysiwyg"
-				value={state.wysiwyg ?? ''}
-				onChange={(wysiwyg) => setState({ ...state, wysiwyg })}
-			/>
-		);
-	},
-});
+export default createItem<WysiwygData>({ ...wysiwygDefinition, Editor: WysiwygEditor });

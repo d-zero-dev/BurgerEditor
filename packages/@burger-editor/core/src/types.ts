@@ -6,7 +6,13 @@ import type { ItemData, ItemSeed } from './item/types.js';
 import type { Mergeable } from '@burger-editor/utils';
 
 export interface BurgerEditorEngineOptions {
-	readonly root: string;
+	/**
+	 * The element the engine mounts into, or a CSS selector for it
+	 * (`document.querySelector`, first match wins). To place two engines in
+	 * the same document, pass each its own element rather than a selector —
+	 * a shared selector resolves both to the same node.
+	 */
+	readonly root: string | HTMLElement;
 	readonly config: Config;
 	readonly viewAreaClassList?: readonly string[];
 	readonly initialContents:
@@ -129,6 +135,27 @@ export interface Config {
 	readonly sampleImagePath: string;
 	readonly sampleFilePath: string;
 	readonly googleMapsApiKey: string | null;
+	/**
+	 * Opt-in features whose API is not settled yet. Every option here is off
+	 * when omitted, and leaving it off must keep the editor's behavior
+	 * exactly as if the option did not exist. Shapes may change or be removed
+	 * in any release; a mature option is promoted out of `experimental`.
+	 *
+	 * Options are grouped by the item they affect (`itemOptions.<itemName>`).
+	 * The engine only carries them: `wysiwyg` is forwarded to the custom
+	 * element through `defineCustomElement`, and `button` is read by the
+	 * button item's editor via `useEngine().config`.
+	 * @example
+	 * ```ts
+	 * const config: Partial<Config> = {
+	 * 	experimental: {
+	 * 		itemOptions: {
+	 * 			wysiwyg: { enableTextOnlyMode: true },
+	 * 		},
+	 * 	},
+	 * };
+	 * ```
+	 */
 	readonly experimental?: {
 		readonly itemOptions?: {
 			readonly wysiwyg?: {
@@ -140,40 +167,6 @@ export interface Config {
 				readonly afterIcons?: readonly Mergeable<SelectableValue>[];
 			};
 		};
-	};
-}
-
-export interface Actions {
-	'file-listup': {
-		readonly fileType: FileType;
-		readonly data: readonly FileListItem[];
-	};
-	'file-select': {
-		readonly path: string;
-		readonly fileSize: number;
-		readonly isEmpty: boolean;
-		readonly isMounted?: boolean;
-	};
-	'file-upload-progress': {
-		readonly blob: string;
-		readonly uploaded: number;
-		readonly total: number;
-	};
-	'file-upload-complete': {
-		readonly uploaded: FileListItem;
-		readonly data: readonly FileListItem[];
-	};
-	'select-block': {
-		readonly block: BurgerBlock;
-		readonly width: number;
-		readonly height: number;
-		readonly x: number;
-		readonly y: number;
-		readonly marginBlockEnd: number;
-	};
-	// Use on test
-	'update-css-width': {
-		readonly cssWidth: string;
 	};
 }
 
@@ -267,6 +260,13 @@ export interface BurgerEditorEventMap {
 	'bge:block-change': { readonly block: BurgerBlock };
 	'bge:server-online': { timestamp: number };
 	'bge:server-offline': { timestamp: number };
+	/**
+	 * A React error boundary (or `createRoot`'s `onUncaughtError` /
+	 * `onCaughtError`) caught an error rendering the client UI. This is a
+	 * diagnostics signal only — `core` never reads it, it exists for
+	 * platform layers (e.g. `local`) to log or surface the failure.
+	 */
+	'bge:error': { readonly error: unknown; readonly componentStack?: string };
 }
 
 declare global {
@@ -276,5 +276,6 @@ declare global {
 		'bge:block-change': CustomEvent<BurgerEditorEventMap['bge:block-change']>;
 		'bge:server-online': CustomEvent<BurgerEditorEventMap['bge:server-online']>;
 		'bge:server-offline': CustomEvent<BurgerEditorEventMap['bge:server-offline']>;
+		'bge:error': CustomEvent<BurgerEditorEventMap['bge:error']>;
 	}
 }

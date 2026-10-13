@@ -1,24 +1,8 @@
-import { TextField } from '@burger-editor/client/ui';
+import type { ImportData } from './definition.js';
+
 import { createItem } from '@burger-editor/core';
 
-import style from './style.css';
-import template from './template.html';
+import { importDefinition } from './definition.js';
+import { ImportEditor } from './editor.js';
 
-export default createItem<{
-	src: string;
-}>({
-	version: __VERSION__,
-	name: 'import',
-	template,
-	style,
-	Editor({ state, setState }) {
-		return (
-			<TextField
-				label="読み込むHTMLファイルのパス"
-				name="bge-src"
-				value={state.src ?? ''}
-				onChange={(src) => setState({ ...state, src })}
-			/>
-		);
-	},
-});
+export default createItem<ImportData>({ ...importDefinition, Editor: ImportEditor });

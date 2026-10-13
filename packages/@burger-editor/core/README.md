@@ -133,6 +133,8 @@ CSS カスタムプロパティ `--bge-repeat-min-inline-size--<variant>` で折
 | `data-bge="f1:a1, f2:a2"` | 1 要素に複数バインド                           |
 | `data-bge-list` (親要素)  | 子要素を配列データの長さだけ複製               |
 
+`data-bge-list` を付けた `picture` は特別扱いされ、配列 index 0 が `img`、index 1 以降が `source` に変換される（詳細は `@burger-editor/frozen-patty` の README）。`source` には `alt` / `loading` 属性を持たせられないため、これらは常に `img`（index 0）にのみ適用される。
+
 `field:attr` の `attr` に指定できる特別な値:
 
 | 特別属性 | 効果                                       |
@@ -178,20 +180,20 @@ export default createItem<{
 });
 ```
 
-`Editor` は React コンポーネント（型付き props: `state` / `setState` / `config` / `engine` / `item`）。フォーム部品は `@burger-editor/client/ui` の `TextField` / `SelectField` / `Checkbox` などを利用できる。ボタンを置く場合は Invoker Commands API（`command`/`commandfor`）で宣言する — click ハンドラは禁止。
+`Editor` は React コンポーネント（型付き props: `state` / `setState` / `item`）。`engine` や `config` は props に含まれない — `@burger-editor/client/ui` の `useEngine()`（config は `useEngine().config`）で読む。フォーム部品は `@burger-editor/client/ui` の `TextField` / `SelectField` / `Checkbox` などを利用できる。ボタンを置く場合は Invoker Commands API（`command`/`commandfor`）で宣言する — click ハンドラは禁止。
 
 ### `createItem` の引数
 
-| プロパティ      | 型 / 役割                                                                          |
-| --------------- | ---------------------------------------------------------------------------------- |
-| `version`       | `string` — アイテムのバージョン                                                    |
-| `name`          | `string` — アイテムの一意な名前                                                    |
-| `template`      | `string` — 表示用 HTML テンプレート（`data-bge` バインディング）                   |
-| `style`         | `string` — アイテム専用 CSS（オプション）                                          |
-| `Editor`        | React コンポーネント — エディタ UI（controlled form）                              |
-| `toEditorState` | `(data, config) => E` — エディタを開く際に保存データをエディタ状態へ変換する純関数 |
-| `toItemData`    | `(state, config) => T` — 保存時にエディタ状態を保存データへ変換する純関数          |
-| `editorOptions` | オブジェクト — 非エディタ系フック（現在は `isDisable(item): string` のみ）         |
+| プロパティ      | 型 / 役割                                                                                                                            |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `version`       | `string` — アイテムのバージョン                                                                                                      |
+| `name`          | `string` — アイテムの一意な名前                                                                                                      |
+| `template`      | `string` — 表示用 HTML テンプレート（`data-bge` バインディング）                                                                     |
+| `style`         | `string` — アイテム専用 CSS（オプション）                                                                                            |
+| `Editor`        | React コンポーネント — エディタ UI（controlled form）。props は `{state, setState, item}` のみ（`engine`/`config` は `useEngine()`） |
+| `toEditorState` | `(data, config) => E` — エディタを開く際に保存データをエディタ状態へ変換する純関数                                                   |
+| `toItemData`    | `(state, config) => T` — 保存時にエディタ状態を保存データへ変換する純関数                                                            |
+| `editorOptions` | オブジェクト — 非エディタ系フック（現在は `isDisable(item): string` のみ）                                                           |
 
 ### アイテムのライフサイクル
 
@@ -225,7 +227,9 @@ export default createItem<{
 import { BurgerEditorEngine } from '@burger-editor/core';
 ```
 
-UI 抽象（`BurgerEditorEngineOptions.view` / `defineCustomElement`）を差し替え可能にして、プラットフォームごとに別の UI を載せられる設計（ブラウザ用は [`@burger-editor/client`](../client/)）。`view`（`BurgerEditorView`）はエンジンが UI に要求する唯一の注入点で、`createAreaHost()` が編集エリアごとのホスト UI を生成し、コンテンツを載せる `containerElement` だけをエンジンに返す。詳細は [ARCHITECTURE.md](../../ARCHITECTURE.md) の「headless core と宣言的 UI」を参照。
+UI 抽象（`BurgerEditorEngineOptions.view` / `defineCustomElement`）を差し替え可能にして、プラットフォームごとに別の UI を載せられる設計（ブラウザ用は [`@burger-editor/client`](../client/)）。`view`（`BurgerEditorView`）はエンジンが UI に要求する唯一の注入点で、`createAreaHost()` が編集エリアごとのホスト UI を生成し、コンテンツを載せる `containerElement` だけをエンジンに返す。詳細は [ARCHITECTURE.md](../../ARCHITECTURE.md) の「境界と所有権」を参照。
+
+`BurgerEditorEngineOptions.root` は CSS セレクタ（`document.querySelector` の先勝ち）または `HTMLElement` を受け付ける。同一 document に複数のエンジンを共存させる場合は、共有セレクタで両方を同じ要素に解決させないよう、それぞれに別の要素を渡す。
 
 ### `config`
 
@@ -254,17 +258,20 @@ export const CSS_LAYER = {
 
 ### 主な API 一覧
 
-| 名前                          | 種別   | 役割                                           |
-| ----------------------------- | ------ | ---------------------------------------------- |
-| `BurgerEditorEngine`          | クラス | 編集エンジン本体。プラットフォーム非依存の中核 |
-| `BurgerEditorEngineOptions`   | 型     | エンジン初期化引数                             |
-| `createItem`                  | 関数   | アイテム定義のファクトリ                       |
-| `render`                      | 関数   | 編集なしでブロックデータを DOM へ変換          |
-| `exportStyleOptions`          | 関数   | エクスポート時のスタイル制御オプション組立     |
-| `NoEditableAreaError`         | クラス | 編集対象領域が見つからない場合の例外           |
-| block-ops 各種                | 関数群 | ブロック単位の移動・複製・削除等の操作         |
-| Front Matter ユーティリティ   | 関数群 | コンテンツ前後メタ情報のパース / シリアライズ  |
-| HTML detection ユーティリティ | 関数群 | コンテンツ文字列の判定 / 正規化                |
+| 名前                             | 種別   | 役割                                                                |
+| -------------------------------- | ------ | ------------------------------------------------------------------- |
+| `BurgerEditorEngine`             | クラス | 編集エンジン本体。プラットフォーム非依存の中核                      |
+| `BurgerEditorEngineOptions`      | 型     | エンジン初期化引数                                                  |
+| `createItem`                     | 関数   | アイテム定義のファクトリ                                            |
+| `render`                         | 関数   | 編集なしでブロックデータを DOM へ変換                               |
+| `exportStyleOptions`             | 関数   | コンテナの `style` からスタイル選択を復元                           |
+| `getCustomProperties`            | 関数   | 文書の CSS からスタイルオプションの選択肢を検出                     |
+| `getRepeatMinInlineSizeVariants` | 関数   | 文書の CSS から grid の折り返し幅プリセットを検出                   |
+| `editorStylesheetTexts`          | 関数   | エンジンが編集領域に読み込む CSS を同じ順・同じレイヤーで組み立てる |
+| `NoEditableAreaError`            | クラス | 編集対象領域が見つからない場合の例外                                |
+| block-ops 各種                   | 関数群 | ブロック単位の移動・複製・削除等の操作                              |
+| Front Matter ユーティリティ      | 関数群 | コンテンツ前後メタ情報のパース / シリアライズ                       |
+| HTML detection ユーティリティ    | 関数群 | コンテンツ文字列の判定 / 正規化                                     |
 
 シグネチャ詳細は型定義（`.d.ts`）を IDE 補完で参照。
 

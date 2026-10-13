@@ -3,6 +3,26 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
+
+**Note:** Version bump only for package @burger-editor/utils
+
+# [4.0.0-alpha.75](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.74...v4.0.0-alpha.75) (2026-10-02)
+
+**Note:** Version bump only for package @burger-editor/utils
+
+# [4.0.0-alpha.74](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.73...v4.0.0-alpha.74) (2026-10-01)
+
+**Note:** Version bump only for package @burger-editor/utils
+
+# [4.0.0-alpha.73](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.72...v4.0.0-alpha.73) (2026-09-18)
+
+**Note:** Version bump only for package @burger-editor/utils
+
+# [4.0.0-alpha.72](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.71...v4.0.0-alpha.72) (2026-09-02)
+
+**Note:** Version bump only for package @burger-editor/utils
+
 # [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
 
 ### Features

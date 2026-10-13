@@ -3,6 +3,7 @@
 	"compilerOptions": {
 		"composite": true
 	},
+	// 依存のうち legacy は noEmit のため参照できない（TS6310）
 	"references": [
 		{
 			"path": "../core"

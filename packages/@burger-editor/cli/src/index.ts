@@ -7,3 +7,4 @@ export {
 export type { CliContext } from './context.js';
 export { loadContext } from './context.js';
 export * from './handlers.js';
+export * from './agent-tools/index.js';

@@ -4,9 +4,10 @@ import './dom-shim.js';
 
 export type * from './types.js';
 
-export type { ResolvedConfig } from './config/resolve.js';
+export type { ResolveConfigOptions, ResolvedConfig } from './config/resolve.js';
 export { clearConfigCache, resolveConfig } from './config/resolve.js';
 
+export type { LoadContentOptions, SaveContentOptions } from './document/edit-content.js';
 export { loadContent, saveContent, FileNotFoundError } from './document/edit-content.js';
 
 export type { DirInfo, FileInfo, LogicalEntry, Tree } from './file-tree.js';
@@ -35,4 +36,6 @@ export {
 	toLogicalPath,
 } from './virtual-path-resolver.js';
 
-export { resolvePathInput } from './path-input.js';
+export { PathOutsideDocumentRootError, resolvePathInput } from './path-input.js';
+
+export { createStylesheetDocument } from './stylesheet-document.js';

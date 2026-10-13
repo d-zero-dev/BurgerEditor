@@ -5,29 +5,25 @@ import type {
 } from '@burger-editor/core';
 
 import { UIStateStore } from '@burger-editor/core';
-import { cleanup, fireEvent, render } from '@testing-library/react';
+import { cleanup, fireEvent } from '@testing-library/react';
 import { act } from 'react';
 import { test, expect, afterEach, beforeEach, vi } from 'vitest';
 
+import { createMockEngine as createBaseMockEngine } from '../testing/create-mock-engine.js';
+import { renderWithEngine } from '../testing/render-with-engine.js';
+
 import { EditableAreaView } from './editable-area-view.js';
 
-// jsdom doesn't implement the CSSOM `CSS` global (no CSS.escape), which
-// BlockMenuButton uses to build an anchor name. Minimal polyfill scoped to
-// this test file only; it isn't exercised in production (real browsers).
-if (globalThis.CSS === undefined) {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	(globalThis as any).CSS = {
-		escape: (value: string) => String(value).replaceAll(/[^\w-]/g, (ch) => `\\${ch}`),
-	};
-}
+// 実際のResizeObserverでは発火タイミングを制御できないため、
+// observe/disconnectの配線そのものを検証するための最小スタブを差し込む
 
-// jsdomはResizeObserver未実装。observe/disconnectの配線を検証するため
-// 最小のスタブを差し込む
 class ResizeObserverStub {
 	disconnect = vi.fn();
 	observe = vi.fn();
 	unobserve = vi.fn();
-	constructor() {
+	readonly callback: ResizeObserverCallback;
+	constructor(callback: ResizeObserverCallback) {
+		this.callback = callback;
 		ResizeObserverStub.instances.push(this);
 	}
 	static instances: ResizeObserverStub[] = [];
@@ -45,34 +41,39 @@ afterEach(() => {
 
 /**
  * EditableAreaViewの描画に必要な最小のengineモック。uiStateは実物を使う。
- * `contents.save`はコンテンツの内部状態を書き換えないため、テスト側で
+ * `replaceContents`はコンテンツの内部状態を書き換えないため、テスト側で
  * `getContentsAsString`が返す値を差し替えて「保存後の正規化結果」を模す
  * @param contents - getEditableContentが返すコンテンツモック
  * @param contents.getContentsAsString
- * @param contents.save
+ * @param contents.replaceContents
  */
 function createMockEngine(contents?: {
 	getContentsAsString?: () => string;
-	save?: (content?: string) => void;
+	replaceContents?: (html: string) => Promise<void>;
 }) {
-	const el = document.createElement('div');
 	const uiState = new UIStateStore();
 	const content = {
 		getContentsAsString: contents?.getContentsAsString ?? (() => ''),
-		save: contents?.save ?? vi.fn(),
+		replaceContents:
+			contents?.replaceContents ?? vi.fn().mockImplementation(() => Promise.resolve()),
 	};
-	return {
-		el,
+	const save = vi.fn();
+	return createBaseMockEngine({
 		uiState,
+		save,
 		get isProcessed() {
 			return uiState.getSnapshot().processing;
 		},
 		clearCurrentBlock: vi.fn(),
-		componentObserver: { notify: vi.fn() },
-		commandBus: { createReceiver: vi.fn() },
+		commandBus: { createReceiver: vi.fn(), receiverId: 'bge-command-bus-test' },
 		getEditableContent: () => content,
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} as any as BurgerEditorEngine;
+		// 実物のengine.commitSourceEditと同じ挙動（replaceContents→save）を
+		// 最小限で再現する
+		commitSourceEdit: async (_type: unknown, html: string) => {
+			await content.replaceContents(html);
+			save();
+		},
+	});
 }
 
 /**
@@ -87,9 +88,9 @@ function renderView(
 	initialContent = '',
 ) {
 	let host: EditableAreaHost | null = null;
-	const utils = render(
+	const utils = renderWithEngine(
+		engine,
 		<EditableAreaView
-			engine={engine}
 			type={type}
 			initialContent={initialContent}
 			stylesheets={[]}
@@ -117,6 +118,24 @@ test('iframe文書内にコンテンツコンテナを構築してhostを解決�
 	expect(iframe?.contentDocument?.body.contains(host.containerElement)).toBe(true);
 	expect(engine.commandBus.createReceiver).toHaveBeenCalledWith(
 		iframe?.contentDocument?.body,
+	);
+});
+
+test('iframe文書に注入するblock-menuスタイルがcontaining blockを明示する', () => {
+	const engine = createMockEngine();
+	const { container } = renderView(engine, 'main', '<p>hello</p>');
+
+	const iframe = container.querySelector('iframe');
+	const styleText = [...(iframe?.contentDocument?.head.querySelectorAll('style') ?? [])]
+		.map((el) => el.textContent)
+		.join('\n');
+
+	// position: absoluteのみでinsetを指定しないと、DOMフロー上のstatic
+	// position（コンテンツ本体の直後＝ページ最下部）が基準点になり、
+	// BlockMenuViewの--x/--yオフセットがそこへ積み増しされてメニューが
+	// 大きく下にずれる
+	expect(styleText).toMatch(
+		/\[data-bge-component='block-menu'\]\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0;/,
 	);
 });
 
@@ -162,11 +181,11 @@ test('ソースモード切替でtextareaとiframeの表示が反転しモード
 	expect(textarea.value).toBe('<p>current</p>');
 });
 
-test('textareaのblurで編集内容がコンテンツにコミットされる', () => {
-	const save = vi.fn();
+test('ソースモードを抜けるとtextareaの内容がreplaceContentsでコミットされる', async () => {
+	const replaceContents = vi.fn().mockImplementation(() => Promise.resolve());
 	const engine = createMockEngine({
 		getContentsAsString: () => '<p>saved</p>',
-		save,
+		replaceContents,
 	});
 	const { container } = renderView(engine, 'main');
 
@@ -176,14 +195,47 @@ test('textareaのblurで編集内容がコンテンツにコミットされる',
 
 	const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
 	fireEvent.change(textarea, { target: { value: '<p>edited</p>' } });
-	fireEvent.blur(textarea);
 
-	expect(save).toHaveBeenCalledWith('<p>edited</p>');
+	act(() => {
+		engine.uiState.setSourceMode('main', false);
+	});
+	await act(async () => {
+		await Promise.resolve();
+	});
+
+	expect(replaceContents).toHaveBeenCalledWith('<p>edited</p>');
+	expect(engine.save).toHaveBeenCalled();
+	expect(textarea.value).toBe('<p>saved</p>');
+});
+
+test('textareaのblurで編集内容がコンテンツにコミットされる', async () => {
+	const replaceContents = vi.fn().mockImplementation(() => Promise.resolve());
+	const engine = createMockEngine({
+		getContentsAsString: () => '<p>saved</p>',
+		replaceContents,
+	});
+	const { container } = renderView(engine, 'main');
+
+	act(() => {
+		engine.uiState.setSourceMode('main', true);
+	});
+
+	const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+	fireEvent.change(textarea, { target: { value: '<p>edited</p>' } });
+	act(() => {
+		fireEvent.blur(textarea);
+	});
+	await act(async () => {
+		await Promise.resolve();
+	});
+
+	expect(replaceContents).toHaveBeenCalledWith('<p>edited</p>');
+	expect(engine.save).toHaveBeenCalled();
 	// コミット後はコンテンツ側で正規化された文字列に揃える
 	expect(textarea.value).toBe('<p>saved</p>');
 });
 
-test('bge:switch-contentで自エリアの表示・非表示が切り替わる', () => {
+test('uiState.activeAreaで自エリアの表示・非表示が切り替わる', () => {
 	const engine = createMockEngine();
 	const { container } = renderView(engine, 'draft');
 
@@ -192,16 +244,12 @@ test('bge:switch-contentで自エリアの表示・非表示が切り替わる',
 	expect(wrapper.hidden).toBe(true);
 
 	act(() => {
-		engine.el.dispatchEvent(
-			new CustomEvent('bge:switch-content', { detail: { content: 'draft' } }),
-		);
+		engine.uiState.setActiveArea('draft');
 	});
 	expect(wrapper.hidden).toBe(false);
 
 	act(() => {
-		engine.el.dispatchEvent(
-			new CustomEvent('bge:switch-content', { detail: { content: 'main' } }),
-		);
+		engine.uiState.setActiveArea('main');
 	});
 	expect(wrapper.hidden).toBe(true);
 });
@@ -215,6 +263,9 @@ test('初期挿入ボタンは空のときだけ表示されbge:savedで追従�
 		'[data-bge-component="initial-insertion"]',
 	) as HTMLElement;
 	expect(button.hidden).toBe(false);
+	expect(button.querySelector('button')?.getAttribute('commandfor')).toBe(
+		engine.commandBus.receiverId,
+	);
 
 	act(() => {
 		engine.el.dispatchEvent(
@@ -235,14 +286,15 @@ test('初期挿入ボタンは空のときだけ表示されbge:savedで追従�
 	expect(button.hidden).toBe(true);
 });
 
-test('ソース編集で空にしてビジュアルモードへ戻ると初期挿入ボタンが復活する（regression）', () => {
-	// content.save()自体はコンテンツの内部状態を変えないモックなので、
+test('ソース編集で空にしてビジュアルモードへ戻ると初期挿入ボタンが復活する（regression）', async () => {
+	// replaceContents自体はコンテンツの内部状態を変えないモックなので、
 	// 保存後の正規化結果をgetContentsAsStringの差し替えで模す
 	let currentContent = '<p>content</p>';
 	const engine = createMockEngine({
 		getContentsAsString: () => currentContent,
-		save: (value) => {
-			currentContent = value ?? '';
+		replaceContents: (value) => {
+			currentContent = value.trim();
+			return Promise.resolve();
 		},
 	});
 	const { container } = renderView(engine, 'main', currentContent);
@@ -257,6 +309,9 @@ test('ソース編集で空にしてビジュアルモードへ戻ると初期�
 	// isEmptyがコンテンツの実際の状態に揃うことを検証する）
 	act(() => {
 		engine.uiState.setSourceMode('main', false);
+	});
+	await act(async () => {
+		await Promise.resolve();
 	});
 
 	const iframe = container.querySelector('iframe') as HTMLIFrameElement;
@@ -298,4 +353,33 @@ test('アンマウントでResizeObserverが解除される', () => {
 	unmount();
 
 	expect(observer?.disconnect).toHaveBeenCalled();
+});
+
+test('サイズ変化の通知でiframeの高さがコンテンツに追従する', async () => {
+	const engine = createMockEngine();
+	const { host, container } = renderView(engine);
+	vi.spyOn(host.containerElement, 'getBoundingClientRect').mockReturnValue({
+		height: 300,
+	} as DOMRect);
+
+	const observer = ResizeObserverStub.instances.at(0)!;
+	await act(async () => {
+		observer.callback([], observer as unknown as ResizeObserver);
+		await new Promise((resolve) => requestAnimationFrame(resolve));
+	});
+
+	expect(container.querySelector('iframe')?.getAttribute('height')).toBe('320');
+});
+
+test('アンマウント前に積まれた高さ更新はアンマウントで取り消される', async () => {
+	const engine = createMockEngine();
+	const { host, unmount } = renderView(engine);
+	const measure = vi.spyOn(host.containerElement, 'getBoundingClientRect');
+
+	const observer = ResizeObserverStub.instances.at(0)!;
+	observer.callback([], observer as unknown as ResizeObserver);
+	unmount();
+	await new Promise((resolve) => requestAnimationFrame(resolve));
+
+	expect(measure).not.toHaveBeenCalled();
 });

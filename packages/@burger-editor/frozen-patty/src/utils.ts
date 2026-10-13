@@ -23,6 +23,22 @@ export const DANGEROUS_ELEMENTS = [
 ];
 
 /**
+ * `data-*-list` の子要素で、DOM 順と配列データの index が逆になる要素。
+ * `picture` は HTML 仕様上 `source` が先・`img` が最後だが、配列データでは
+ * `img` が index 0（元画像）に対応する。抽出（getComponent）と適用
+ * （setComponent）の両方でこの対応関係を共有する
+ */
+export const REVERSE_LIST_ELEMENTS: readonly string[] = ['picture'];
+
+/**
+ * 要素が逆順リスト（{@link REVERSE_LIST_ELEMENTS}）かどうかを判定する
+ * @param el
+ */
+export function isReverseListElement(el: Element): boolean {
+	return REVERSE_LIST_ELEMENTS.includes(el.localName);
+}
+
+/**
  *
  * @param kvs
  */

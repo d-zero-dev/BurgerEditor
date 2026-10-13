@@ -7,18 +7,25 @@
 		"url": "https://github.com/d-zero-dev/BurgerEditor.git"
 	},
 	"scripts": {
-		"start": "node ./packages/@burger-editor/local/server/index.js",
+		"start": "cd ./packages/@burger-editor/local && node ./server/index.js",
+		"bge": "yarn start",
 		"build": "lerna run build",
 		"clean": "lerna run clean",
 		"dev": "lerna run dev --parallel",
 		"storybook": "yarn workspace @burger-editor/storybook dev",
 		"build-storybook": "yarn workspace @burger-editor/storybook build",
 		"test": "bash scripts/docker-yarn.sh test:unit",
-		"test:unit": "vitest run",
+		"test:unit": "node scripts/run-vitest-groups.mjs",
+		"test:no-compiler": "bash scripts/docker-yarn.sh test:no-compiler:unit",
+		"test:no-compiler:unit": "node scripts/run-vitest-groups.mjs --project client --project blocks --project blocks-editor",
 		"test:vr": "vitest run --project vr",
 		"test:vr:update": "vitest run --project vr --update",
 		"test:vr:docker": "bash scripts/docker-yarn.sh test:vr",
 		"test:vr:docker:update": "bash scripts/docker-yarn.sh test:vr --update",
+		"verify:architecture-graph": "node scripts/check-architecture-graph.mjs",
+		"verify:react-compiler": "node scripts/check-react-compiler-coverage.mjs",
+		"verify:blocks-boundary": "node scripts/check-blocks-entry-boundary.mjs",
+		"verify:packed-install": "node scripts/verify-packed-install.mjs",
 		"lint": "run-s lint:eslint lint:stylelint lint:markuplint lint:prettier lint:textlint:fix lint:textlint:check lint:cspell",
 		"lint:cspell": "npx cspell --no-progress --show-suggestions \"{*,**/*}/\"",
 		"lint:eslint": "npx eslint --fix \"{*,**/*}.{js,cjs,mjs,jsx,ts,cts,mts,tsx}\"",
@@ -41,11 +48,11 @@
 		"packages/@burger-editor/*"
 	],
 	"resolutions": {
-		"@burger-editor/mcp-server/zod": "4.4.3",
+		"@burger-editor/mcp-server/zod": "4.6.5",
 		"css-tree": "3.2.1",
-		"prosemirror-model": "1.25.11",
-		"prosemirror-transform": "1.12.0",
-		"prosemirror-view": "1.42.2"
+		"prosemirror-model": "1.25.12",
+		"prosemirror-transform": "1.12.2",
+		"prosemirror-view": "1.42.6"
 	},
 	"config": {
 		"commitizen": {
@@ -67,8 +74,8 @@
 		"@d-zero/tsconfig": "2.0.0",
 		"@markuplint/jsx-parser": "4.18.3",
 		"@markuplint/react-spec": "4.18.0",
-		"@vitest/browser": "4.1.10",
-		"@vitest/browser-playwright": "4.1.10",
+		"@vitest/browser": "4.1.11",
+		"@vitest/browser-playwright": "4.1.11",
 		"eslint-plugin-react-hooks": "7.1.1",
 		"husky": "9.1.7",
 		"jsdom": "28.1.0",
@@ -76,14 +83,14 @@
 		"markuplint": "4.18.3",
 		"npm-run-all2": "8.0.4",
 		"pixelmatch": "7.2.0",
-		"playwright": "1.62.1",
+		"playwright": "1.63.0",
 		"pngjs": "7.0.0",
 		"typescript": "5.9.3",
-		"vitest": "4.1.10"
+		"vitest": "4.1.11"
 	},
-	"packageManager": "yarn@4.18.0",
+	"packageManager": "yarn@4.18.1",
 	"volta": {
-		"node": "26.7.0",
-		"yarn": "4.18.0"
+		"node": "26.10.0",
+		"yarn": "4.18.1"
 	}
 }

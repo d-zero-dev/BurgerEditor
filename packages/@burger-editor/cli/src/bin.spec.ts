@@ -4,6 +4,9 @@ import path from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
+import { AgentError } from './agent-tools/errors.js';
+import { writeErrorJson } from './output.js';
+
 // End-to-end smoke for the compiled bin. Spawns `node dist/bin.js` against a
 // fixture project and asserts on stdout JSON + exit code. Catches regressions
 // in the layered stack (parseCli → loadContext → cosmiconfig walk → handlers
@@ -63,10 +66,15 @@ interface RunResult {
  *
  * @param args
  * @param stdinPayload
+ * @param nodeArgs Node.js 本体へ渡す引数（`--import` など）。bin のサブコマンド引数の前に置かれる
  */
-function run(args: readonly string[], stdinPayload?: string): Promise<RunResult> {
+function run(
+	args: readonly string[],
+	stdinPayload?: string,
+	nodeArgs: readonly string[] = [],
+): Promise<RunResult> {
 	return new Promise((resolve, reject) => {
-		const child = spawn(process.execPath, [BIN_PATH, ...args], {
+		const child = spawn(process.execPath, [...nodeArgs, BIN_PATH, ...args], {
 			cwd: FIXTURE_ROOT,
 			env: { ...process.env, DOTENV_CONFIG_QUIET: 'true' },
 		});
@@ -88,6 +96,96 @@ function run(args: readonly string[], stdinPayload?: string): Promise<RunResult>
 	});
 }
 
+// react / react-dom を解決できない環境（peer 依存を自動導入しない
+// パッケージマネージャー）の再現。フィクスチャの設定は
+// `@burger-editor/blocks` のルートを import するため、blocks が React 系
+// モジュールを引き込めば起動時に ERR_MODULE_NOT_FOUND で落ちる
+const BLOCK_REACT = [
+	'--import',
+	path.resolve(import.meta.dirname, 'testing/block-react.mjs'),
+];
+
+describe('bin.js without react installed', () => {
+	test('フックは react の import を実際に拒否する（以降のテストが空振りでないことの対照）', async () => {
+		const result = await new Promise<RunResult>((resolve, reject) => {
+			const child = spawn(
+				process.execPath,
+				[...BLOCK_REACT, '--input-type=module', '-e', "await import('react')"],
+				{ cwd: FIXTURE_ROOT },
+			);
+			let stderr = '';
+			child.stderr.on('data', (chunk) => {
+				stderr += chunk;
+			});
+			child.on('error', reject);
+			child.on('close', (code) => resolve({ stdout: '', stderr, code }));
+		});
+		expect(result.code).not.toBe(0);
+		expect(result.stderr).toContain("Cannot find package 'react'");
+	}, 20_000);
+
+	test('config が @burger-editor/blocks のルートを import していても catalog-list が動く', async () => {
+		const result = await run(['catalog-list'], undefined, BLOCK_REACT);
+		expect(result.stderr).not.toContain('Cannot find package');
+		expect(result.code).toBe(0);
+		const payload = JSON.parse(result.stdout) as { catalogs: { name: string }[] };
+		expect(payload.catalogs.find((c) => c.name === 'h2')).toBeDefined();
+	}, 20_000);
+
+	test('標準アイテムの一覧が Editor なしの定義から返る', async () => {
+		const result = await run(['item-list'], undefined, BLOCK_REACT);
+		expect(result.stderr).not.toContain('Cannot find package');
+		expect(result.code).toBe(0);
+		expect(JSON.parse(result.stdout)).toEqual({
+			items: [
+				'button',
+				'details',
+				'download-file',
+				'google-maps',
+				'hr',
+				'image',
+				'import',
+				'table',
+				'title-h2',
+				'title-h3',
+				'wysiwyg',
+				'youtube',
+			],
+		});
+	}, 20_000);
+
+	test('ブロックのレンダリング（page-blocks）も React なしで動く', async () => {
+		const result = await run(['page-blocks', 'index.html'], undefined, BLOCK_REACT);
+		expect(result.stderr).not.toContain('Cannot find package');
+		expect(result.code).toBe(0);
+	}, 20_000);
+
+	test('スタイルオプションの検出（style-options-list）も React なしで動く', async () => {
+		const result = await run(['style-options-list'], undefined, BLOCK_REACT);
+		expect(result.stderr).not.toContain('Cannot find package');
+		expect(result.code).toBe(0);
+	}, 20_000);
+});
+
+describe('bin.js style-options-list', () => {
+	test('--container-type narrows the axes to that container type', async () => {
+		const result = await run(['style-options-list', '--container-type', 'inline']);
+		expect(result.code).toBe(0);
+		const payload = JSON.parse(result.stdout) as { axes: Record<string, string[]> };
+		expect(payload.axes.margin).toEqual(['large', 'none', 'normal', 'small']);
+		expect(payload.axes).not.toHaveProperty('_grid_subgrid-gap');
+	}, 20_000);
+
+	test('an unknown --container-type is rejected instead of matching nothing', async () => {
+		const result = await run(['style-options-list', '--container-type', 'flex']);
+		expect(result.code).toBe(1);
+		expect(result.stderr).toContain(
+			'--container-type must be one of grid, inline, float',
+		);
+		expect(result.stdout).toBe('');
+	}, 20_000);
+});
+
 describe('bin.js end-to-end', () => {
 	test('catalog-list prints catalogs as a single JSON document on stdout', async () => {
 		const result = await run(['catalog-list']);
@@ -104,14 +202,24 @@ describe('bin.js end-to-end', () => {
 		expect(payload.documentRoot).toBe(path.join(FIXTURE_ROOT, 'src'));
 	}, 20_000);
 
-	test('block-list runs the full layered stack end-to-end', async () => {
-		const result = await run(['block-list', 'index.html']);
+	test('page-blocks runs the full layered stack end-to-end', async () => {
+		const result = await run(['page-blocks', 'index.html']);
 		expect(result.code).toBe(0);
-		const payload = JSON.parse(result.stdout) as {
-			blocks: { data: { name: string; items: unknown[][] } }[];
-		};
+		const payload = JSON.parse(result.stdout) as { blocks: { name: string }[] };
 		expect(payload.blocks).toHaveLength(1);
-		expect(payload.blocks[0]!.data.name).toBe('h2');
+		expect(payload.blocks[0]!.name).toBe('h2');
+	}, 20_000);
+
+	test('page-blocks on a non-existent page fails with not-found and does not create the page', async () => {
+		const result = await run(['page-blocks', 'no-such-page.html']);
+		expect(result.code).toBe(1);
+		expect(JSON.parse(result.stderr)).toMatchObject({ error: 'not-found' });
+		expect(result.stdout).toBe('');
+		await expect(
+			fs.access(path.join(docRoot, 'no-such-page.html')),
+		).rejects.toMatchObject({
+			code: 'ENOENT',
+		});
 	}, 20_000);
 
 	test('block-insert accepts a spec via --spec inline JSON and persists the page', async () => {
@@ -122,13 +230,11 @@ describe('bin.js end-to-end', () => {
 		const insert = await run(['block-insert', 'index.html', '0', '--spec', spec]);
 		expect(insert.code).toBe(0);
 
-		const list = await run(['block-list', 'index.html']);
+		const list = await run(['page-blocks', 'index.html']);
 		expect(list.code).toBe(0);
-		const payload = JSON.parse(list.stdout) as {
-			blocks: { data: { items: { data: { titleH2?: string } }[][] } }[];
-		};
+		const payload = JSON.parse(list.stdout) as { blocks: { text: string }[] };
 		expect(payload.blocks).toHaveLength(2);
-		expect(payload.blocks[0]!.data.items[0]![0]!.data.titleH2).toBe('挿入された見出し');
+		expect(payload.blocks[0]!.text).toContain('挿入された見出し');
 	}, 30_000);
 
 	test('block-insert accepts a spec via stdin when no --spec flag is given', async () => {
@@ -146,12 +252,10 @@ describe('bin.js end-to-end', () => {
 		const insert = await run(['block-insert', 'stdin.html', '0'], spec);
 		expect(insert.code).toBe(0);
 
-		const list = await run(['block-list', 'stdin.html']);
-		const payload = JSON.parse(list.stdout) as {
-			blocks: { data: { items: { data: { titleH2?: string } }[][] } }[];
-		};
+		const list = await run(['page-blocks', 'stdin.html']);
+		const payload = JSON.parse(list.stdout) as { blocks: { text: string }[] };
 		expect(payload.blocks).toHaveLength(1);
-		expect(payload.blocks[0]!.data.items[0]![0]!.data.titleH2).toBe('stdin 見出し');
+		expect(payload.blocks[0]!.text).toContain('stdin 見出し');
 	}, 30_000);
 
 	test('block-insert accepts --spec-file AFTER positional args (roar camelCase flag contract)', async () => {
@@ -182,12 +286,10 @@ describe('bin.js end-to-end', () => {
 			specFile,
 		]);
 		expect(result.code).toBe(0);
-		const list = await run(['block-list', 'spec-file-target.html']);
-		const payload = JSON.parse(list.stdout) as {
-			blocks: { data: { items: { data: { titleH2?: string } }[][] } }[];
-		};
+		const list = await run(['page-blocks', 'spec-file-target.html']);
+		const payload = JSON.parse(list.stdout) as { blocks: { text: string }[] };
 		expect(payload.blocks).toHaveLength(1);
-		expect(payload.blocks[0]!.data.items[0]![0]!.data.titleH2).toBe('via spec-file');
+		expect(payload.blocks[0]!.text).toContain('via spec-file');
 	}, 30_000);
 
 	test('block-insert --dry-run returns previewContent and does not write the file', async () => {
@@ -262,11 +364,49 @@ describe('bin.js end-to-end', () => {
 		expect(result.stderr.toLowerCase()).toContain('array');
 	}, 20_000);
 
-	test('unknown command exits non-zero and prints an error to stderr', async () => {
+	test('unknown command exits non-zero and prints the command usage to stderr (the parser rejects it before any JSON error path)', async () => {
 		const result = await run(['this-command-does-not-exist']);
 		expect(result.code).not.toBe(0);
-		expect(result.stderr.length).toBeGreaterThan(0);
+		expect(result.stderr).toContain('Usage: @burger-editor/cli <command> [options]');
+		expect(result.stderr).toContain('page-blocks');
 	}, 20_000);
+
+	test('a handler failure is written to stderr as the flat agentErrorSchema payload, not a bare {name, message}', async () => {
+		const result = await run(['block-insert', 'about.html', '0', '--spec', '[1,2,3]']);
+		expect(result.code).not.toBe(0);
+		expect(JSON.parse(result.stderr)).toEqual({
+			error: 'invalid',
+			message: 'spec must be a JSON object describing a block (got array).',
+		});
+	}, 20_000);
+
+	test('writeErrorJson serialises a read-required failure with its recovery fields (readToken, next) intact', () => {
+		// No bin command surfaces `read-required` (page-blocks drives the
+		// two-call protocol itself), so the stderr writer is exercised
+		// directly with the same AgentError requireReadToken() throws.
+		const chunks: string[] = [];
+		const original = process.stderr.write;
+		process.stderr.write = ((chunk: string | Uint8Array) => {
+			chunks.push(String(chunk));
+			return true;
+		}) as typeof process.stderr.write;
+		try {
+			writeErrorJson(
+				new AgentError('read-required', 'Call page_blocks first.', {
+					readToken: 'fresh-token',
+					next: ['Retry with readToken: fresh-token.'],
+				}),
+			);
+		} finally {
+			process.stderr.write = original;
+		}
+		expect(JSON.parse(chunks.join(''))).toEqual({
+			error: 'read-required',
+			message: 'Call page_blocks first.',
+			next: ['Retry with readToken: fresh-token.'],
+			readToken: 'fresh-token',
+		});
+	});
 
 	test('after loadContext returns, stdout writes flow normally — the temporary redirect is restored', async () => {
 		// The bin scopes its stdout redirect to loadContext() via try/finally.
@@ -333,4 +473,103 @@ export default {
 		expect(stdout.includes('[dotenv')).toBe(false);
 		void stderr; // tolerate non-empty stderr (deps may warn).
 	}, 30_000);
+});
+
+describe('bin.js --config', () => {
+	// A second site's config under a name the cwd search never matches, next
+	// to the fixture's main `burgereditor.config.mjs` that the search finds.
+	let childConfigPath: string;
+	let childDocRoot: string;
+
+	beforeAll(async () => {
+		const childDir = path.join(FIXTURE_ROOT, 'child');
+		childDocRoot = path.join(childDir, 'src');
+		await fs.mkdir(childDocRoot, { recursive: true });
+		await fs.writeFile(
+			path.join(childDocRoot, 'index.html'),
+			`<div class="content"></div>`,
+			'utf8',
+		);
+		childConfigPath = path.join(childDir, 'burgereditor.child.config.mjs');
+		await fs.writeFile(
+			childConfigPath,
+			`export default { documentRoot: './src', editableArea: '.content' };\n`,
+			'utf8',
+		);
+	});
+
+	test('config-resolve --config reports the named file instead of the searched one', async () => {
+		const result = await run([
+			'config-resolve',
+			'--config',
+			'./child/burgereditor.child.config.mjs',
+		]);
+		expect(result.code).toBe(0);
+		expect(JSON.parse(result.stdout)).toMatchObject({
+			configPath: childConfigPath,
+			documentRoot: childDocRoot,
+		});
+	}, 20_000);
+
+	test('a command that defines no flags of its own (page-list) accepts --config too', async () => {
+		const result = await run(['page-list', '--config', childConfigPath]);
+		expect(result.code).toBe(0);
+		expect(JSON.parse(result.stdout)).toMatchObject({ documentRoot: childDocRoot });
+	}, 20_000);
+
+	test('page-list --help lists --config under the global options', async () => {
+		const result = await run(['page-list', '--help']);
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain('Global options:');
+		expect(result.stdout).toContain('--config');
+	}, 20_000);
+
+	test('a bare --config is rejected as a JSON error instead of silently searching', async () => {
+		const result = await run(['page-list', '--config']);
+		expect(result.code).toBe(1);
+		expect(JSON.parse(result.stderr)).toEqual({
+			error: 'invalid',
+			message: '--config requires a path to a config file.',
+		});
+	}, 20_000);
+
+	test('a flag right after --config is rejected instead of running against the searched config', async () => {
+		// Falling back to the search would create this page in the main site.
+		const created = path.join(docRoot, 'created-by-fallback.html');
+		const result = await run([
+			'page-create',
+			'created-by-fallback.html',
+			'--config',
+			'--spec',
+			'{}',
+		]);
+		expect(result.code).toBe(1);
+		expect(JSON.parse(result.stderr)).toEqual({
+			error: 'invalid',
+			message: '--config requires a path to a config file.',
+		});
+		await expect(fs.access(created)).rejects.toMatchObject({ code: 'ENOENT' });
+	}, 20_000);
+
+	test('a repeated --config keeps the last value, like local and most CLIs', async () => {
+		const result = await run([
+			'page-list',
+			'--config',
+			path.join(FIXTURE_ROOT, 'burgereditor.config.mjs'),
+			'--config',
+			childConfigPath,
+		]);
+		expect(result.code).toBe(0);
+		expect(JSON.parse(result.stdout)).toMatchObject({ documentRoot: childDocRoot });
+	}, 20_000);
+
+	test('--config naming a missing file fails instead of falling back to defaults', async () => {
+		const missing = path.join(FIXTURE_ROOT, 'no-such.config.mjs');
+		const result = await run(['page-list', '--config', missing]);
+		expect(result.code).toBe(1);
+		expect(JSON.parse(result.stderr)).toEqual({
+			error: 'invalid',
+			message: `Config file not found: ${missing}`,
+		});
+	}, 20_000);
 });

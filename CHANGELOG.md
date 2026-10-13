@@ -3,6 +3,499 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
+
+### Bug Fixes
+
+- **blocks:** clear the pending drag timer when GoogleMapsEditor unmounts ([644b721](https://github.com/d-zero-dev/BurgerEditor/commit/644b7217f56c5f6e2d7d5e154515cfb7d0bd5b37))
+- **client:** revoke the preview object URL when a file upload settles ([c04f185](https://github.com/d-zero-dev/BurgerEditor/commit/c04f185635f947b96d3511dc102a9bf83b49ff54)), closes [#868](https://github.com/d-zero-dev/BurgerEditor/issues/868)
+- **cli:** fail page-blocks with not-found on a page that does not exist ([f8768b5](https://github.com/d-zero-dev/BurgerEditor/commit/f8768b5b1e67cc0ae556e50164dc848fd5c80cc4)), closes [#903](https://github.com/d-zero-dev/BurgerEditor/issues/903)
+- **custom-element:** show the structure change message as a neutral notice, not an error ([5ca3134](https://github.com/d-zero-dev/BurgerEditor/commit/5ca313499d57388a6f56d5a7ca5b8ed9cfa241ac))
+- **deps:** align css and runtime blocks pins with the workspace version ([2157080](https://github.com/d-zero-dev/BurgerEditor/commit/21570809fbce972950028272c68720fa500cca54)), closes [#964](https://github.com/d-zero-dev/BurgerEditor/issues/964)
+- **frozen-patty:** drop attributes invalid for the converted picture child ([5f44a53](https://github.com/d-zero-dev/BurgerEditor/commit/5f44a5394fe134f63f9d878e8962952e40385be3))
+- **local:** apply hostGuard and the non-loopback auth gate to the whole app ([dcbb4f6](https://github.com/d-zero-dev/BurgerEditor/commit/dcbb4f6c4438c3012143ee00470673f32d793329)), closes [#968](https://github.com/d-zero-dev/BurgerEditor/issues/968)
+
+# [4.0.0-alpha.75](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.74...v4.0.0-alpha.75) (2026-10-02)
+
+### Bug Fixes
+
+- **local:** import the editor-bound items from the blocks editor entry ([83ad7b0](https://github.com/d-zero-dev/BurgerEditor/commit/83ad7b09b27891fd8a66935134c94d6cbb7a22dc))
+- **local:** stop creating and saving a page just by opening it ([c62be37](https://github.com/d-zero-dev/BurgerEditor/commit/c62be37994539a837637c048d40805618524a5ca)), closes [#966](https://github.com/d-zero-dev/BurgerEditor/issues/966)
+
+### Features
+
+- **blocks:** split the Node-safe root entry from a browser-only editor entry ([2fdf1df](https://github.com/d-zero-dev/BurgerEditor/commit/2fdf1df60f717510621d1a5f2c87902c43ff0e97)), closes [#963](https://github.com/d-zero-dev/BurgerEditor/issues/963)
+- **file-io:** let loadContent skip creating a missing file and saveContent create one ([7f61a66](https://github.com/d-zero-dev/BurgerEditor/commit/7f61a66a51011ca8d1f3c8636bf42a80860eea9a)), closes [#966](https://github.com/d-zero-dev/BurgerEditor/issues/966)
+
+# [4.0.0-alpha.74](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.73...v4.0.0-alpha.74) (2026-10-01)
+
+### Bug Fixes
+
+- **local:** reject a flag given right after --config ([b86e8c7](https://github.com/d-zero-dev/BurgerEditor/commit/b86e8c7f2ebad48e5bc83eacb123369b38c20257))
+- **mcp-server:** fail at startup when --config has no path ([0200164](https://github.com/d-zero-dev/BurgerEditor/commit/02001640dff2c2068bedce080435ad0cbccd8cce))
+
+### Features
+
+- **cli:** add --config option to every subcommand ([a646e91](https://github.com/d-zero-dev/BurgerEditor/commit/a646e9192de3811ac4c64ca4918bfa788e88529c))
+- **cli:** define --config with roar's globalFlags ([54324ea](https://github.com/d-zero-dev/BurgerEditor/commit/54324ea9c680bb5d1c2d257215b4c6f4c553be88)), closes [d-zero-dev/tools#966](https://github.com/d-zero-dev/tools/issues/966)
+- **cli:** forward config file options through loadContext ([ecf0232](https://github.com/d-zero-dev/BurgerEditor/commit/ecf02326789839d546beff39097015a9c8352163))
+- **file-io:** allow naming the config file via configPath or BGE_CONFIG ([19843f9](https://github.com/d-zero-dev/BurgerEditor/commit/19843f95c30bdfab6d037d28a045b842ca4e2a3a))
+- **local:** add --config option to bge and bge search ([5520249](https://github.com/d-zero-dev/BurgerEditor/commit/5520249a53afa03556982b05b4ecc3b85bdf9bc4))
+- **mcp-server:** add --config option ([27c9836](https://github.com/d-zero-dev/BurgerEditor/commit/27c9836a3ee413ea91b11975c4d00e81087d0841))
+
+# [4.0.0-alpha.73](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.72...v4.0.0-alpha.73) (2026-09-18)
+
+### Bug Fixes
+
+- **blocks:** fix cross-item FileBrowserStore residual-selection race ([ad59269](https://github.com/d-zero-dev/BurgerEditor/commit/ad59269ccebff337d7f9d137ad65aa0cc97ee9b0))
+- **blocks:** fix missing setState dep and adopt shared compiler/mount-effect helpers ([6a0e28d](https://github.com/d-zero-dev/BurgerEditor/commit/6a0e28d8c3ff656e21126e661632011b103f1098))
+- **blocks:** stop losing the 2nd image's alt/media in the image item ([f2cb87f](https://github.com/d-zero-dev/BurgerEditor/commit/f2cb87fae7df8d6cb84b129b7f12af2ca9f4c96f))
+- **client:** fix code-review findings for the single-root React refactor ([36e5d2c](https://github.com/d-zero-dev/BurgerEditor/commit/36e5d2cf965e1e4b91bacb1a6de4abe285a31119))
+- **client:** restore querySelector generic dropped by pre-commit eslint --fix ([2192995](https://github.com/d-zero-dev/BurgerEditor/commit/21929954230f6f50ce500fcf121a55c5b0d07a08))
+- **core:** dedupe currentBlock state and cache in-flight stylesheet fetch ([935470a](https://github.com/d-zero-dev/BurgerEditor/commit/935470a8ab95e9328e79c1b4e2a004dd6d1d9828))
+- **frozen-patty:** use the trailing element as the picture list template ([819dce9](https://github.com/d-zero-dev/BurgerEditor/commit/819dce9c5d24932ba00d5e69cc1fcb407e3af6bc))
+- **local:** avoid an embedded raw NUL byte in routes/static.ts ([c1daeac](https://github.com/d-zero-dev/BurgerEditor/commit/c1daeac47786d61dac54a2d2c1a10bdaa200abda))
+- **local:** bind and connect bootLocalServer's boot test via 127.0.0.1 ([8dfbdc8](https://github.com/d-zero-dev/BurgerEditor/commit/8dfbdc8f3cd56dedb93dda3142edbfc604ce7fd8))
+- **local:** debounce fs.watch callbacks per path to dedupe CI double-fires ([228d2ce](https://github.com/d-zero-dev/BurgerEditor/commit/228d2ce87d4f7007cdc61dcc3084614010459996)), closes [#948](https://github.com/d-zero-dev/BurgerEditor/issues/948)
+- **repo:** checkout before invoking the setup-yarn composite action ([a47eec3](https://github.com/d-zero-dev/BurgerEditor/commit/a47eec3840e87ba52e2bfb9aa57ae38d91d51c6e)), closes [#945](https://github.com/d-zero-dev/BurgerEditor/issues/945)
+
+- fix(client)!: fix useExternalFileSelection's stale-closure eslint suppression ([f90ecfb](https://github.com/d-zero-dev/BurgerEditor/commit/f90ecfb4bb883c3d84dd8df173125c59a8b11571))
+- feat(blocks)!: adopt React Compiler via @rollup/plugin-babel ([7448dc5](https://github.com/d-zero-dev/BurgerEditor/commit/7448dc5c8c1e953b7432ed4441d84cfaa0b6acb4))
+- feat(client)!: adopt React Compiler via @rolldown/plugin-babel ([570cb4a](https://github.com/d-zero-dev/BurgerEditor/commit/570cb4a1f32d34776a4205b9ffa7624f966f10f4))
+- refactor(core,client,blocks)!: fix remaining render-purity issues ([39dd23e](https://github.com/d-zero-dev/BurgerEditor/commit/39dd23e7d16cfb52a6252d8659000f83d4972283))
+- refactor(client)!: back FrontMatterEditor with a FrontMatterStore ([6875428](https://github.com/d-zero-dev/BurgerEditor/commit/68754285c7181c52a384b3145077381d8cc49f8e))
+- refactor(client)!: move EditorDialog submission to a form action ([9d3f3c7](https://github.com/d-zero-dev/BurgerEditor/commit/9d3f3c7625a3cc24727c86abfbc8c9b39584cde7)), closes [facebook/react#34038](https://github.com/facebook/react/issues/34038)
+- refactor(client)!: replace componentObserver with FileBrowserStore + use() ([adc7b3f](https://github.com/d-zero-dev/BurgerEditor/commit/adc7b3fe9578d0e6b400e87793cba37c60d40bad))
+- refactor(core)!: drop componentObserver indirection for select-block ([b60f956](https://github.com/d-zero-dev/BurgerEditor/commit/b60f956e7c94a22579b7746b6b697e1fa9fbd288))
+- refactor(client)!: rewrite useCommand as a ref callback, adopt useEffectEvent ([14975c6](https://github.com/d-zero-dev/BurgerEditor/commit/14975c6af4e0623d688aea8dc24ca7d6578c1782))
+- refactor(client)!: collapse to one React root per engine, add EngineContext ([820e4e6](https://github.com/d-zero-dev/BurgerEditor/commit/820e4e63f4610f64e984011653aadf0403481b01))
+- refactor(local)!: restructure Hono app assembly and drop @hono/node-ws ([294ad37](https://github.com/d-zero-dev/BurgerEditor/commit/294ad3760245708397bd0551cdc45bd3740f09a3)), closes [#869](https://github.com/d-zero-dev/BurgerEditor/issues/869)
+
+### Features
+
+- **blocks:** scope image editor field ids per instance ([9e949e7](https://github.com/d-zero-dev/BurgerEditor/commit/9e949e76f0fcbca18ff0615329180c290eeb4039))
+- **client:** add describedBy to TextField for aria-describedby ([46c387a](https://github.com/d-zero-dev/BurgerEditor/commit/46c387a2546d189fd32a0cea7b736e6bbe1ef9c9))
+- **client:** route command bus and dialog ids through the owning engine ([5261600](https://github.com/d-zero-dev/BurgerEditor/commit/5261600835f845fa8556827ec66bf7887bf1ce39))
+- **core:** scope command bus and root element per engine instance ([1f0543c](https://github.com/d-zero-dev/BurgerEditor/commit/1f0543cb66dca9736b3666fdab382b3da291cb9e))
+
+### BREAKING CHANGES
+
+- none to the public API; continues the prior React
+  Compiler commits' build-tooling-only breaking-change flag.
+- none to the public API; this is build-tooling only,
+  flagged for the same reason as the client commit (compiler is now
+  mandatory in the production build, opt out via BGE_NO_COMPILER=1).
+- none to the public API; this is build-tooling only.
+  Flagged as a breaking-adjacent commit because the compiler is now a
+  mandatory part of the production build pipeline (opt out entirely
+  via BGE_NO_COMPILER=1).
+- OpenDialogState's 'item-editor' variant gains a
+  required containerType: string | undefined field; ItemEditorHost gains
+  an optional containerType prop.
+
+Three unrelated render-purity fixes:
+
+google-maps item editor: dropped searchWordRef, a ref mirroring
+state.search on every render (`searchWordRef.current = state.search ??
+''` in the component body - a render-phase ref write, which
+react.dev's own "You Might Not Need an Effect" flags as unnecessary).
+The --search-address command handler is itself a fresh closure on every
+render (an inline function passed to useCommand), so it already closes
+over the current state.search directly - no ref needed. Left
+mapRef/markerRef/geocoderRef alone; those hold effect-created imperative
+Google Maps objects, a legitimate ref use, not a render-purity issue.
+
+item-editor-host.tsx: containerType was read from the DOM during render
+(`item.el.closest('[data-bge-container]')`), a genuine purity violation
+
+- it can also silently go stale if the item gets rebound to a different
+  container while its dialog is open. Moved the read into
+  UIStateStore.openItemEditor(), which already has the item and runs
+  outside React entirely, and threaded the snapshotted value down through
+  BurgerEditorRoot -> ItemEditorHost -> ItemEditorBody as a plain prop.
+
+table-editor.tsx: rows were keyed by array index. Reordering (--move-
+row-down) or deleting a row in the middle causes React to reuse the
+existing DOM node for a given screen position and hand it different
+row content - if a textarea was focused mid-edit, the focus and caret
+position stay at that screen position while the value underneath swaps
+out from under it. Rows now carry a crypto.randomUUID() id (tracked in
+local state, seeded once per mount and spliced/updated alongside every
+row operation) used as the key instead, so React's reconciliation
+follows the row's actual content instead of its position - verified
+directly in the local CMS (moved a row down mid-edit and the same
+textarea stayed focused with its own value, correctly relabeled to its
+new position).
+
+Reviewed but left unchanged: block-options.tsx's CSSOM scan
+(engine.getCustomProperties/getRepeatMinInlineSizeVariants) is already
+wrapped in useMemo, which is the correct place for an expensive-but-
+pure computation - moving it into engine-side caching wouldn't change
+its render-purity characteristics, just where the memoization lives.
+
+Verified: full-repo yarn build and yarn lint clean; yarn test:unit
+(host, Docker unavailable) 1526/1526 passing outside the VR project
+(same pre-existing 24 pixel-size VR failures). Added a new
+table-editor.spec.tsx (3 tests, including the exact regression this
+fix addresses: moving a focused row down keeps the same DOM element and
+its value attached to it) and two openItemEditor tests to
+ui-state.spec.ts covering the containerType snapshot. Also verified in
+the local CMS: opened the table item editor, focused row A's heading
+cell, moved it down, and confirmed the same textarea (same underlying
+element) kept focus and its "A" value while visibly moving to the
+second position.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+- FrontMatterEditorView's props change from
+  `{initialData, onDataChange}` to `{store: FrontMatterStore}`.
+  createFrontMatterEditor's own public options are unchanged.
+
+createFrontMatterEditor previously held a plain `let latest` closure
+variable, reassigned from inside the onDataChange callback passed to
+<FrontMatterEditorView>, so the handle's synchronous getData() had a
+value to read from outside React. That's the one spot in the client
+package where React state was read through a side channel instead of a
+proper subscription.
+
+FrontMatterStore (subscribe/getSnapshot/setFields, the same shape as
+the other stores from this pass) now owns the field list - the actual
+data, as opposed to the view's own UI-only state (collapsed, add-
+dialog-open, in-progress JSON drafts, which stay as plain useState).
+createFrontMatterEditor constructs the store, subscribes to it once to
+drive onUpdated, and the handle's getData()/getOriginalFrontMatter()
+read straight from it - no closure variable, no React-side callback
+needed to keep it current. FrontMatterEditorView reads the field list
+via useSyncExternalStore instead of owning it as useState, and every
+mutation (add/delete/edit a field) goes through store.setFields()
+instead of a local setState + onDataChange(data) pair.
+
+The existing front-matter-editor.spec.tsx (16 tests, covering
+rendering, focus-preservation across a field list change, editing every
+field type, add/delete, and the handle's getData/getOriginalFrontMatter)
+needed no changes at all - it only ever exercised createFrontMatterEditor's
+public contract, which is unchanged. That's the behavior-preservation
+signal for this refactor. Added three more tests directly against
+FrontMatterStore (getData reflects the constructor's initial data,
+setFields notifies subscribers and updates getData/getSnapshot, and
+unsubscribing stops only that one listener).
+
+The storybook story rendered FrontMatterEditorView directly with the
+old props, so it now constructs a FrontMatterStore from the story's
+initialData arg (a local useState so each story instance gets its own).
+
+Verified: full-repo yarn build and yarn lint clean; yarn test:unit
+(host, Docker unavailable) 1522/1522 passing outside the VR project
+(same pre-existing 24 pixel-size VR failures). Also verified in the
+local CMS: edited the page title and added a new "author" field through
+the real Front Matter panel, then confirmed via the Agent Hub
+(front_matter_get) that both changes persisted to the page file, with
+no new console errors.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+- EditorDialog's `onComplete(formData)` prop is replaced
+  by `action(formData)`. The form's `method="dialog"` attribute is gone -
+  submission goes through `<form action={fn}>` (useActionState) instead
+  of an onSubmit handler that called `e.preventDefault()` and forwarded
+  a FormData built from the current target.
+
+Why: `onComplete` never surfaced a failure - the only place item saves
+could throw (item.import(), a custom toItemData()) was ItemEditorHost's
+`void (async () => { await submitRef.current?.(); ... })()`, an
+unhandled-rejection waiting to happen. Wrapping the action in
+useActionState gives the dialog a place to catch that failure, show it
+via role="alert", and keep the dialog open with the user's edits intact
+(ItemEditorBody's fields are already fully controlled React state, so
+they're unaffected by React's form-action auto-reset of uncontrolled
+elements). The submit button is disabled and aria-busy while the action
+is pending, sourced directly from useActionState's own pending flag
+rather than a separate useFormStatus - the button lives in EditorDialog
+itself, so there's no need to cross a component boundary for it.
+
+Success is now the action's own responsibility: both call sites
+(BlockOptions in burger-editor-root.tsx, ItemEditorHost) call
+`engine.uiState.closeDialog()` + `engine.save()` directly at the end of
+their action, rather than relying on the previous indirect path (call
+closeDialog() -> open becomes false -> the effect calls dialog.close()
+-> the native close event fires -> onClose does the save). The cancel/
+Escape/backdrop path is untouched - it still goes through `onClose`,
+which still does the same closeDialog()+save(). The native close event
+handler now guards `e.target === e.currentTarget`, since React has a
+known issue where non-bubbling native events like `close` can appear to
+
+- removes core's ComponentObserver class and Actions
+  type entirely, along with BurgerEditorEngine.componentObserver and
+  client's useComponentEvent hook. File selection, upload progress and
+  list refresh - the only remaining consumers - now go through a new
+  per-engine FileBrowserStore (client/src/file-browser/store.ts),
+  reached via useFileBrowser().
+
+Why: componentObserver was a window CustomEvent bus for same-process,
+synchronous communication between sibling components (FileList,
+FileUploader, Preview, and the item's own Editor). It carried real
+async data (a paginated, filterable file list) as loosely-typed
+notify() payloads instead of being read as data, with no cache, no
+loading/error state, and an implicit "isMounted: false" contract for
+triggering the initial fetch.
+
+FileBrowserStore (React-independent, one instance per engine via a
+WeakMap):
+
+- read({fileType, page, filter}) returns a cached, stable Promise per
+  query - safe to pass straight to use() from render; FileList suspends
+  into EditorDialog's Suspense boundary (added in the previous commit)
+  while it loads, instead of owning loading state itself
+- select/getSnapshot/subscribe track the file currently selected per
+  FileType (path + byte size, replacing the old fileSize/isEmpty
+  fields) and in-flight upload progress, both read via
+  useSyncExternalStore
+- upload()/deleteFile() replace the old notify()-driven upload and
+  delete flows, invalidating cached pages so the next read() refetches
+
+FileList: reads its page through use(), merges in synthetic
+"uploading…" rows from the store's uploads (replacing the old
+notify('file-listup')-driven splice), and wraps pagination/deletion in
+startTransition so pending pages don't hide already-rendered content;
+search filtering goes through useDeferredValue instead of a manual
+300ms debounce.
+
+FileUploader: delegates to store.upload(), wrapped in startTransition
+(React 19's async-transition support keeps isPending true across the
+awaited upload).
+
+Preview: reads upload progress from the store instead of subscribing
+to componentObserver; the previewed path is still a prop from the
+item's own state, unchanged.
+
+ImageEditor/download-file: call store.select() instead of
+notify('file-select'), and react to externally-driven selection changes
+(a file picked in FileList) via useSyncExternalStore + an effect guarded
+against re-applying a selection the component itself just made (so the
+mount-time seed and a real external change don't double-fire).
+
+Also folds in two small, unrelated-but-adjacent cleanups already queued
+for this pass: BlockMenu now calls engine.setCurrentBlock(block)
+directly instead of round-tripping through componentObserver's
+'select-block' action (which only ever had the engine's own constructor
+listening on it), and the image editor's 'update-css-width' action -
+which had no consumer beyond its own spec file - is gone in favor of
+asserting state.cssWidth directly.
+
+Simplifications made deliberately, not discovered as gaps: the initial
+getFileList call no longer receives a `selected` hint for server-side
+pagination positioning (doing so purely would require writing to the
+external store synchronously during render, which is unsafe under
+StrictMode/concurrent rendering); an item's initial file selection is
+seeded via a mount effect instead, so the very first paint may highlight
+nothing until that effect runs. Upload blob URLs are still never
+revoked (matching the prior implementation - out of scope here).
+
+Verified: full-repo yarn build and yarn lint clean; yarn test:unit
+(host, Docker unavailable) 1496/1496 passing outside the VR project
+across three consecutive runs (same pre-existing 24 pixel-size VR
+failures; local's fs-watcher spec - real filesystem events, unrelated
+to this change - flaked under load on two runs and passed clean on a
+third).
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+- removes the 'select-block' and 'update-css-width'
+  entries from core's Actions type (and ComponentObserver can no longer
+  be subscribed to either).
+
+BlockMenu called engine.componentObserver.notify('select-block', ...)
+purely so the engine's own constructor-registered listener could turn
+around and call engine.setCurrentBlock(block) - an indirection through
+a window CustomEvent bus for something that was always a same-process,
+synchronous call. BlockMenu now calls engine.setCurrentBlock(block)
+directly; the constructor no longer registers that listener.
+
+'update-css-width' had no real consumer at all - it existed solely so
+image/editor.spec.tsx could observe the notify call. The image editor
+already threads the same value through React state
+(state.cssWidth via setState), so the test now asserts against that
+state directly instead of subscribing to the observer.
+
+component-observer.spec.ts exercised these two payload shapes purely
+as a generic stand-in for testing ComponentObserver's own on/notify/off
+mechanics (multiple listeners, disposal, instance isolation) - switched
+to 'file-select', an Action that still exists.
+
+Verified: full-repo yarn build and yarn lint clean; yarn test:unit
+(host, Docker unavailable) 1508/1508 passing outside the VR project
+across three consecutive runs (same pre-existing 24 pixel-size VR
+failures; a handful of unrelated timing-sensitive tests - cli bin.spec,
+mcp-server startup-log, local fs-watcher/ws - flaked once each under
+concurrent load and passed clean on rerun).
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+- useCommand now returns a RefCallback<T> instead of a
+  RefObject<T | null>. All call sites already did ref={rootRef} directly
+  (no .current access elsewhere), so this is a drop-in replacement at
+  every existing call site (Tabs, FileUploader, TableEditor, BlockMenu,
+  FileList, FrontMatterEditorView, google-maps's Editor) -
+  BlockMenuView's rootRef prop type moves from
+  RefObject<HTMLDivElement | null> to Ref<HTMLDivElement> to match.
+
+The previous implementation read ref.current once, inside a
+useEffect(..., []) - if the receiving element only appears later from
+a conditional render, the command listener would never attach. The
+ref callback attaches whenever the element (re)mounts. Handlers are
+read through useEffectEvent (stable in 19.2) instead of the old
+handlersRef plus a deps-less useEffect that copied handlers into it
+every render.
+
+Also converts the remaining "latest ref" idioms that are eligible
+(the ref is only ever read from a callback registered inside a
+useEffect, i.e. genuinely reacting to an external system) to
+useEffectEvent:
+
+- useComponentEvent (use-engine.ts): the componentObserver.on
+  subscription callback.
+- EditableAreaView: the source-mode exit effect's read of the
+  textarea's pending value (getPendingSourceText), replacing
+  sourceTextRef and its own sync effect.
+- WysiwygField: the custom element's transaction event listener.
+- ItemEditorHost/ItemEditorBody: the submit closure's read of the
+  latest editor state (resolveSubmitData), replacing stateRef.
+
+Left blocks/items/image/editor.tsx's stateRef as-is: fileSelect/
+selectTab are called both from a mount effect and from Tabs's
+onChange prop (a plain callback, not an effect subscription), so
+useEffectEvent - whose contract restricts calls to effects or other
+effect events - doesn't apply there without a larger restructuring.
+
+Verified: full-repo yarn build and yarn lint clean; yarn test:unit
+(host, Docker unavailable) 1507/1507 passing outside the VR project
+(same pre-existing 24 pixel-size VR failures, unrelated). Also
+manually verified in a real browser: opened the image item editor and
+switched tabs via the rewritten useCommand/Tabs, no console errors.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+- `ItemEditorProps` no longer includes `engine` or
+  `config` — item `Editor` components must use `useEngine()` /
+  `useEngine().config` instead. Updated the 4 built-in items that used
+  them (`image`, `download-file`, `google-maps` isDisable is unaffected,
+  `button`). `toEditorState`/`toItemData` keep their `config` parameter
+  (they run outside React). `DraftSwitcher` now takes no props (was
+  `{engine}`); `attachDraftSwitcher` wraps it in an `EngineProvider`
+  itself. `BlockCatalog`/`BlockOptions`/`ItemEditorHost` drop `engine`
+  from their prop types.
+
+Updated ARCHITECTURE.md §4/§6, core/README.md's createItem sample and
+argument table, client/README.md, all affected spec files (added a
+shared `renderWithEngine()` test helper), and storybook stories (each
+introduces a thin story-only wrapper component so existing `args`
+shapes and `play` functions keep working unchanged).
+
+Verified: full-repo `yarn build` and `yarn lint` clean; `yarn test:unit`
+(host, Docker unavailable in this environment) is 1503/1503 passing
+outside the VR project — the 24 VR failures are pixel-size mismatches
+from running Playwright screenshots on host macOS instead of the
+`bge-vr` Docker image the project requires for CI-identical rendering,
+not a regression (VR fixtures are hand-written HTML, decoupled from
+this change).
+
+- setRoute()/AgentRouteDeps (route.tsx) are removed;
+  callers use createApp()/AppType from app.ts and createLocalServer() from
+  create-local-server.ts. /ws/editor now rejects an unauthenticated or
+  untrusted-Host upgrade with HTTP 401/403 at the handshake instead of
+  accepting it and closing with code 1008. Neither symbol was published via
+  package.json exports, and @burger-editor/local is 4.0.0-alpha, so this
+  ships without a migration guide.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+# [4.0.0-alpha.72](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.71...v4.0.0-alpha.72) (2026-09-02)
+
+### Bug Fixes
+
+- **client:** fix item-editor-host.spec.ts CI build failure ([64904fc](https://github.com/d-zero-dev/BurgerEditor/commit/64904fc53353cdd0bafc765fa7b8f804d7fbb798))
+- **client:** fix this-binding in reactMount()'s deprecated cleanUp() alias ([800b97d](https://github.com/d-zero-dev/BurgerEditor/commit/800b97db2a0b2808a1c6854e5d01600e5e872fd3))
+- **client:** guard content-stylesheet injection against disposed wysiwyg ([fa2a835](https://github.com/d-zero-dev/BurgerEditor/commit/fa2a835a898ae46363d7261c79c49fa90316ba04))
+- **client:** pin block-menu layer to iframe viewport top-left ([13d7742](https://github.com/d-zero-dev/BurgerEditor/commit/13d7742ae14a01fcdda003c25636cbfe038bb410))
+- **client:** rebind blocks when leaving source mode ([7d2d84e](https://github.com/d-zero-dev/BurgerEditor/commit/7d2d84e4111df8bd018c5b95dae8771d784e3e2b)), closes [#901](https://github.com/d-zero-dev/BurgerEditor/issues/901)
+- **client:** restore EditableAreaView export dropped during commit split ([42b145b](https://github.com/d-zero-dev/BurgerEditor/commit/42b145b2c1be18c68eaefd2141bbbacc949c0fe7))
+- **client:** use mockImplementation for void promise mocks in tests ([0ab0d8e](https://github.com/d-zero-dev/BurgerEditor/commit/0ab0d8e5c169622c6d15f293e56d73e5653e0e5b))
+- **cli:** reject a NaN or non-integer block index instead of resolving to nothing ([f4a0a36](https://github.com/d-zero-dev/BurgerEditor/commit/f4a0a3667d21e29b9cdef39376eeb6adb107a37e))
+- **cli:** reject traversing page paths at the schema edge and map the resolver error ([55a30d9](https://github.com/d-zero-dev/BurgerEditor/commit/55a30d9b95275956fd15c6c14c5030bb54c7685f))
+- **cli:** report the real final index of a block moved past the end ([a7faa79](https://github.com/d-zero-dev/BurgerEditor/commit/a7faa79ea7da8603f4741a51b7f36c0b1f309048))
+- **cli:** teach agents to recover from user-editing instead of failing ([1cff53d](https://github.com/d-zero-dev/BurgerEditor/commit/1cff53d04782123abbb1dfdb007cd2f0149f86c7))
+- **cli:** tell the agent to read the catalog/item schema before composing a block spec ([0074bbd](https://github.com/d-zero-dev/BurgerEditor/commit/0074bbdd3328509bd235fa2f89c9d0b371ca45b5))
+- **core:** add replaceContents to rebind blocks after HTML replacement ([e42a178](https://github.com/d-zero-dev/BurgerEditor/commit/e42a178a09c232dbc689a7da0136ab744a071c5c))
+- **core:** align live update-item's itemIndex with the disk-side item enumeration ([25a6895](https://github.com/d-zero-dev/BurgerEditor/commit/25a6895df72160fe3879eec5ce350ccd80d817df))
+- **core:** dispose partial engine construction on failure, fix this-binding ([7e5dcb2](https://github.com/d-zero-dev/BurgerEditor/commit/7e5dcb2248978c5a022c7fd4ac899bfdb21b27f8))
+- **core:** make live block ops work with an iframe-hosted editable area ([460b23b](https://github.com/d-zero-dev/BurgerEditor/commit/460b23b554d0636249b64751114004c5d68f3d6d))
+- **core:** scope highlightElement's scrollend listener to the target's window ([da6596e](https://github.com/d-zero-dev/BurgerEditor/commit/da6596e2166129ba3aa0437bd8bdaf53b2fd6c77))
+- **custom-element:** surface the parent/child dispose race instead of hiding it ([869c108](https://github.com/d-zero-dev/BurgerEditor/commit/869c108f20c2ace92fbd426a33e05066dddd3d73))
+- **github:** retry CJK font install on transient apt mirror timeout ([51942ba](https://github.com/d-zero-dev/BurgerEditor/commit/51942ba4a143f30e51f327b3d2b3fd4486fbc3b7)), closes [#885](https://github.com/d-zero-dev/BurgerEditor/issues/885) [#883](https://github.com/d-zero-dev/BurgerEditor/issues/883)
+- **inspector:** close jsdom windows after each HTML file scan ([579a987](https://github.com/d-zero-dev/BurgerEditor/commit/579a987429a99ffa7d7017c2badd90a884d49e19))
+- **local:** close the Agent Hub gaps found in review ([fe2e02d](https://github.com/d-zero-dev/BurgerEditor/commit/fe2e02d992e8c2334971b235d982e9b0078dfc25))
+- **local:** close the Agent Hub review findings in the relay, auth and browser link ([2af10f7](https://github.com/d-zero-dev/BurgerEditor/commit/2af10f7c16030967d8918e48ee5deb71f8edfb44))
+- **local:** drive the editor through engine methods, not imported core functions ([dd368dc](https://github.com/d-zero-dev/BurgerEditor/commit/dd368dcee646aa18532c26d8a0bde0217988d5f1))
+- **local:** fix this-binding in FrontMatterEditorHandle's unmount() alias ([a568e3c](https://github.com/d-zero-dev/BurgerEditor/commit/a568e3c1e7c32995c7e1e99db3ad0d9545f3b2f3))
+- **local:** normalize the root-page path so a tab actually matches an agent's target ([a17b361](https://github.com/d-zero-dev/BurgerEditor/commit/a17b361cd4a2b6397131d5e405e09b31941acf75))
+- **local:** pin ws.spec.ts's real server to 127.0.0.1, not the ambiguous 'localhost' ([2e099b4](https://github.com/d-zero-dev/BurgerEditor/commit/2e099b4d09978eb0907eb5d33f4ba4611f3b83f1))
+- **local:** stop Agent Hub event log from misreporting page state ([a7e7410](https://github.com/d-zero-dev/BurgerEditor/commit/a7e74107b630a040757845a8124e8d41f5eb8c9d)), closes [#906](https://github.com/d-zero-dev/BurgerEditor/issues/906) [#907](https://github.com/d-zero-dev/BurgerEditor/issues/907) [#908](https://github.com/d-zero-dev/BurgerEditor/issues/908) [#909](https://github.com/d-zero-dev/BurgerEditor/issues/909)
+- **local:** surface the browser's actual error detail on an ApplyNackError ([b4b136a](https://github.com/d-zero-dev/BurgerEditor/commit/b4b136ab803ae0d8e45520f7a3c783f4232afd3b))
+- **mcp-server:** clear the startup-capture timer on every exit path ([070e3da](https://github.com/d-zero-dev/BurgerEditor/commit/070e3da2eeeccae326860d2d8ecd947d4d9450d3))
+- **mcp-server:** close the Client/Transport pair in v4.spec.ts's fixture ([3b74c4a](https://github.com/d-zero-dev/BurgerEditor/commit/3b74c4a9d701cef9c72fd6bc9bd6967dfa595a34))
+- **mcp-server:** forward editor_wait_for_event without misreading its own timeout as local dying ([3cad0fc](https://github.com/d-zero-dev/BurgerEditor/commit/3cad0fc5fd5442c74a662fd615c85fe9bd9041aa))
+- **mcp-server:** read local's agent token file and stop caching a failed context load ([b45550e](https://github.com/d-zero-dev/BurgerEditor/commit/b45550e3fc1890091e0b4a35f701e5601b187e42))
+- **mcp-server:** stop replaying event history after a wait-for-event safety-net timeout ([529b52e](https://github.com/d-zero-dev/BurgerEditor/commit/529b52e1949bb6967da6bcc93af3efe75aff4b34))
+- **mcp-server:** treat any HTTP response from local as authoritative, never as a crash ([e58e824](https://github.com/d-zero-dev/BurgerEditor/commit/e58e8249030cddc14d707cd85d2048d7272cc279))
+- **repo:** make grill-me template comply with textlint jtf-style ([446fa0a](https://github.com/d-zero-dev/BurgerEditor/commit/446fa0a041cfaf73ac90a9ea764def3e9f26c4e4))
+- **repo:** render dialog/block-menu context around form-like components ([45fe99e](https://github.com/d-zero-dev/BurgerEditor/commit/45fe99e2c4f53f56b4d51bb36cc44143796c65aa))
+- **repo:** replace dead example.com image URLs with a real placeholder ([302d235](https://github.com/d-zero-dev/BurgerEditor/commit/302d235f56a3be21a156addaa7220d241899921c))
+- **repo:** run start script from local's package dir for cosmiconfig cwd search ([0812055](https://github.com/d-zero-dev/BurgerEditor/commit/0812055ba49123ed57a9241c6f8f5e1c81f128f0))
+
+- fix(file-io)!: reject page paths that resolve outside documentRoot ([ea45605](https://github.com/d-zero-dev/BurgerEditor/commit/ea456054aa182fc33fe212fc4c010bd6c9ad32d9))
+- feat(local)!: add WebSocket-based Agent Hub for browser-side AI agent application ([c7755ae](https://github.com/d-zero-dev/BurgerEditor/commit/c7755ae8d35e0f8b30da268db5744ad94eccc245))
+- feat(mcp-server)!: route agent tools through disk/auto/local mode ([9be9064](https://github.com/d-zero-dev/BurgerEditor/commit/9be9064208f30e4fce5955922a5cb1fb534ebd1f))
+- feat(cli)!: add agent-tools framework for AI-agent page/block mutations ([b75ee87](https://github.com/d-zero-dev/BurgerEditor/commit/b75ee87798248a9683fbaba6a19ef844701dd3cb))
+
+### Features
+
+- **client:** fix isProcessed leak in move/remove-block and dialogHost leak ([910b581](https://github.com/d-zero-dev/BurgerEditor/commit/910b581595c6105441c3ccc58c204542776f16a2))
+- **client:** inject the [data-bge-highlight] blink animation into editable-area iframes ([673b179](https://github.com/d-zero-dev/BurgerEditor/commit/673b1795b6bd363baaf4b19ca775b53250ed9ed6))
+- **core:** add live block-ops for browser-side agent application ([d7394fd](https://github.com/d-zero-dev/BurgerEditor/commit/d7394fda533efe6275d4f6f4c970ecce4fd14d06))
+- **core:** add Symbol.dispose to HealthMonitor/CommandBus/ComponentObserver/engine ([ba45fe0](https://github.com/d-zero-dev/BurgerEditor/commit/ba45fe0ed7c15960e723e53420841a0ccce61eea))
+- **core:** let applyLiveBlockOp callers hook in right before the DOM mutates ([e13debe](https://github.com/d-zero-dev/BurgerEditor/commit/e13debe299d42ee5551c128ef6730063a0cab0cf))
+- **custom-element:** dispose the tiptap Editor on disconnect/destroy ([041bdb6](https://github.com/d-zero-dev/BurgerEditor/commit/041bdb63588f259237f5636e465a033be28544ea))
+- **file-io:** add agent config to BurgerEditorConfig ([3cddb98](https://github.com/d-zero-dev/BurgerEditor/commit/3cddb98d4f8f90203bb2a78e089c75355ec512d4))
+- **local:** log every Agent Hub WS message for debugging ([c792ed0](https://github.com/d-zero-dev/BurgerEditor/commit/c792ed0037d44fcbe3a5db73c89268660c423a89))
+- **local:** observe agent hub state and detect external page changes ([15d464c](https://github.com/d-zero-dev/BurgerEditor/commit/15d464c75cb60956de60f75c04bd0a96f1febd71))
+- **local:** send focus and switch-content over the Agent Hub socket ([020bded](https://github.com/d-zero-dev/BurgerEditor/commit/020bded22e4f1daaf340874089e3bf67ed584308))
+- **local:** timestamp agent responses and browser-side Agent Hub logs ([fe47ea7](https://github.com/d-zero-dev/BurgerEditor/commit/fe47ea7f984208ae925b3cc8cb641c65134ff1cc))
+- **repo:** add Storybook catalog for admin UI components ([571f5d1](https://github.com/d-zero-dev/BurgerEditor/commit/571f5d16024ea2f6eb87919dc08d9336cbdf74d8))
+- **storybook:** add an EditableAreaView story to demo BurgerBlock.highlight() ([4f30bc2](https://github.com/d-zero-dev/BurgerEditor/commit/4f30bc23cedf93d0ad6aac680f20728cc591cf3c))
+
+### BREAKING CHANGES
+
+- resolvePathInput now throws PathOutsideDocumentRootError
+  for inputs that would resolve outside documentRoot, where it previously
+  returned the escaped path. A `..` that stays inside documentRoot after
+  normalization (`foo/../bar.html`) is still accepted.
+
+GHSA-4v47-5hm4-93xf
+
+- local's "./get-user-config" export now returns
+  { config, configDir } instead of the config object directly.
+  `configDir` is where agent/auth.ts persists the per-launch token.
+  Callers must destructure: const { config } = await getUserConfig().
+- the 21 standalone v4 MCP tools + duplicate_block /
+  update_page helpers are replaced by the 28-tool agentTools set from
+  @burger-editor/cli (see the cli commit in this same change for the
+  tool-level breaking changes). No compatibility guaranteed pre-1.0; v3
+  compat tools are unaffected.
+- v4 tool names, argument shapes, and response shapes
+  changed (block_list removed, block_* targets are {index}|{id} instead
+  of a bare index, mutations require readToken). No compatibility
+  guaranteed pre-1.0; v3 compat tools are untouched.
+
 # [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
 
 ### Bug Fixes

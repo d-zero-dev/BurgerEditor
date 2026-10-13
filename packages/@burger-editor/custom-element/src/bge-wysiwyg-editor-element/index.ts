@@ -1,3 +1,28 @@
+/**
+ * `<bge-wysiwyg-editor>`: ツールバーとモード切り替えUIを持つ親要素。
+ * 編集本体は子要素 `<bge-wysiwyg>` に委ねる。
+ *
+ * 状態の所有者は子要素だけ。`mode` / `hasStructureChange` / TipTapの状態は
+ * `<bge-wysiwyg>` が持ち、親は都度それを読み取るだけで複製しない。親側に
+ * コピーを持つと、子が自分でモードを変えたとき（初期値に表示できない構造が
+ * あってHTMLモードで開く、HTMLモードからの復帰を構造変更で拒否する等）に
+ * 親の表示とずれるため。
+ *
+ * データは子→親の単方向に流れる。子は `transaction`（TipTapのトランザクション
+ * ごと。`detail.state` はツールバー状態）と `bge:structure-change`
+ * （`hasStructureChange` が変化したときのみ）を `bubbles` / `composed` 付きで
+ * 発火し、親はそれを購読してUIを同期する。親から子への操作は `mode` 代入と
+ * `toggle*()` 呼び出しに限り、結果は子の状態を読み直して確認する（代入が
+ * 拒否されることがあるため）。
+ *
+ * マークアップボタンは両方のイベントを購読する。`transaction` だけでは
+ * HTMLモード中に `hasStructureChange` が変わってもボタンが更新されないため。
+ * ただし `bge:structure-change` はモード切り替えのたびには発火しないので、
+ * モード切り替えUIのハンドラーでも切り替え成功直後にボタンを直接更新する。
+ * 購読と初期状態の反映は「リスナー登録→現在値の読み取り」の順で行い、
+ * 登録前に発火したイベントの取りこぼしを防ぐ。リスナーは `AbortController`
+ * の signal で登録し、dispose 時にまとめて解除する。
+ */
 import type { BgeWysiwygElement } from '../bge-wysiwyg-element/index.js';
 import type { BgeMode, EditorState } from '../bge-wysiwyg-element/types.js';
 import type { ElementSeed } from '../utils/types.js';
@@ -70,7 +95,14 @@ export interface BgeWysiwygEditorElementOptions {
 }
 
 /**
- *
+ * `wrapperElement` / `experimental.textOnlyMode` はモジュールの static
+ * プロパティに書き込まれ、`global`（既定は `window`、すなわちdocument単位）
+ * に定義される全ての `<bge-wysiwyg-editor>` / `<bge-wysiwyg>` に適用される。
+ * 同一documentに複数のBurgerEditorエンジンを置く場合でも、この設定は
+ * エンジン間で共有される前提でよい。プレビューiframeへ注入するコンテンツ
+ * CSS自体はエンジンごとに個別注入されるため、共有されて困るのはこの
+ * className/モード分岐だけであり、エンジンごとに値を分けたい要求が
+ * 生じたら要素の属性に切り出す
  * @param options
  * @param global
  */
@@ -95,8 +127,25 @@ export function defineBgeWysiwygEditorElement(
 }
 
 export class BgeWysiwygEditorElement extends HTMLElement {
+	#contentCss: string | null = null;
 	#disposables: DisposableStack | null = null;
 	#wysiwygElement: BgeWysiwygElement | null = null;
+
+	/**
+	 * CSS applied inside the WYSIWYG surface so it matches the published
+	 * page's styling. A plain property (not an attribute) — React 19 sets
+	 * it directly on custom elements, so consumers pass it as a JSX prop
+	 * instead of calling {@link setStyle} imperatively. Settable before
+	 * the element connects; the value is applied once the inner
+	 * `<bge-wysiwyg>` exists.
+	 */
+	get contentCss(): string | null {
+		return this.#contentCss;
+	}
+	set contentCss(css: string) {
+		this.#contentCss = css;
+		this.#wysiwygElement?.setStyle(css);
+	}
 	get editor() {
 		if (!this.#wysiwygElement) {
 			throw new ReferenceError('<bge-wysiwyg-editor> is not connected');
@@ -285,6 +334,12 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 			throw new Error('bge-wysiwyg-editor is not connected');
 		}
 		const wysiwygElement = this.#wysiwygElement;
+
+		// contentCssがconnectedCallback（＝ #wysiwygElement 生成）より先に
+		// プロパティとして設定されていた場合、ここで反映する
+		if (this.#contentCss != null) {
+			wysiwygElement.setStyle(this.#contentCss);
+		}
 		stack.defer(() => {
 			try {
 				const setPlainInnerHTML = Object.getOwnPropertyDescriptor(
@@ -427,7 +482,7 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 				{ signal: abortController.signal },
 			);
 		} else {
-			// experimental.textOnlyMode = false: HTMLモードボタンのみ（text-only実装前の動作）
+			// experimental.textOnlyMode = false: wysiwyg / html を切り替えるHTMLモードボタンのみ
 			const htmlModeButton = this.querySelector<HTMLButtonElement>(
 				'[data-bge-toolbar-button="html-mode"]',
 			);
@@ -435,7 +490,7 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 				throw new Error('HTML mode button not found');
 			}
 
-			// HTMLモードボタンのコマンドハンドラー（text-only実装前の動作）
+			// HTMLモードボタンのコマンドハンドラー
 			this.addEventListener(
 				'command',
 				(event) => {
@@ -468,7 +523,9 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 				{ signal: abortController.signal },
 			);
 
-			// 構造変更イベントでボタンのdisabled状態を更新
+			// 構造変更イベントでボタンの状態を更新。子が自分でHTMLモードへ切り替える
+			// ことがある（空の状態に表示できない構造を代入したとき）ので、
+			// aria-pressedも子のモードから読み直す
 			this.#wysiwygElement.addEventListener(
 				'bge:structure-change',
 				(event) => {
@@ -476,6 +533,7 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 						event as CustomEvent<{ hasStructureChange: boolean }>
 					).detail.hasStructureChange;
 					const isHtmlMode = this.#wysiwygElement!.mode === 'html';
+					htmlModeButton.ariaPressed = isHtmlMode ? 'true' : 'false';
 					htmlModeButton.disabled = isHtmlMode && hasStructureChange;
 				},
 				{ signal: abortController.signal },
@@ -592,6 +650,10 @@ function bindToggle(button: HTMLButtonElement, wysiwygElement: BgeWysiwygElement
 			wysiwygElement.toggleNote();
 			break;
 		}
+		case 'h1': {
+			wysiwygElement.toggleHeading(1);
+			break;
+		}
 		case 'h2': {
 			wysiwygElement.toggleHeading(2);
 			break;
@@ -639,11 +701,6 @@ function bindToggle(button: HTMLButtonElement, wysiwygElement: BgeWysiwygElement
 	}
 }
 
-/**
- * 現在のエディタ状態をオンデマンドで取得
- * モード切り替え直後のボタン更新に使用
- * @param wysiwygElement
- */
 /**
  * エディタ状態に基づいて単一ボタンのdisabledとaria-pressed状態を更新
  * @param button - 更新するボタン要素

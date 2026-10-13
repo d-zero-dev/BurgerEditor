@@ -57,7 +57,7 @@ describe('formatOutput', () => {
 	test('handles custom host and port', () => {
 		const customConfig: LocalServerConfig = {
 			...mockConfig,
-			host: '0.0.0.0',
+			host: '192.0.2.10',
 			port: 8080,
 		};
 
@@ -66,7 +66,18 @@ describe('formatOutput', () => {
 			config: customConfig,
 		});
 
-		expect(result).toBe('http://0.0.0.0:8080/pages/index.html:42');
+		expect(result).toBe('http://192.0.2.10:8080/pages/index.html:42');
+	});
+
+	test('brackets an IPv6 host so the URL is valid (regression: #1001)', () => {
+		const result = formatOutput(mockMatch, {
+			showUrl: true,
+			// The config type admits only localhost / IPv4, but an untyped JS
+			// config can still pass an IPv6 literal at runtime.
+			config: { ...mockConfig, host: '::1' as LocalServerConfig['host'], port: 8080 },
+		});
+
+		expect(result).toBe('http://[::1]:8080/pages/index.html:42');
 	});
 
 	test('normalizes Windows-style paths to forward slashes in URLs', () => {

@@ -51,8 +51,7 @@ export class EditableContent<T extends EditableAreaType = 'main'> {
 	async copyTo<T2 extends Exclude<EditableAreaType, T>>(
 		editableContent: EditableContent<T2>,
 	) {
-		editableContent.setContentsAsString(this.getContentsAsString());
-		await editableContent.#init();
+		await editableContent.replaceContents(this.getContentsAsString());
 	}
 
 	getContentsAsString() {
@@ -67,6 +66,22 @@ export class EditableContent<T extends EditableAreaType = 'main'> {
 		return this.getContentsAsString() === editableContent.getContentsAsString();
 	}
 
+	/**
+	 * Replace the entire content from an HTML string and rebind block/item
+	 * instances. Use this when the DOM is rebuilt from raw HTML (e.g. leaving
+	 * source mode). Does not dispatch `bge:saved` — call `engine.save()`
+	 * afterward when the change should be announced to the UI.
+	 * @param html - Full HTML for the editable area container
+	 * @example
+	 * ```ts
+	 * await content.replaceContents(editedHtml);
+	 * engine.save();
+	 * ```
+	 */
+	async replaceContents(html: string): Promise<void> {
+		this.setContentsAsString(html);
+		await this.#init();
+	}
 	save(content?: string) {
 		if (content) {
 			this.setContentsAsString(content);

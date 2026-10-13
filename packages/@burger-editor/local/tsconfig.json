@@ -11,9 +11,10 @@
 		"jsx": "react-jsx",
 		"jsxImportSource": "hono/jsx"
 	},
+	// 依存のうち blocks は noEmit（TS6310）、client は composite でない（TS6306）ため参照できない
 	"references": [
 		{
-			"path": "../migrator"
+			"path": "../cli"
 		},
 		{
 			"path": "../inspector"
@@ -23,9 +24,6 @@
 		},
 		{
 			"path": "../file-io"
-		},
-		{
-			"path": "../utils"
 		}
 	]
 }

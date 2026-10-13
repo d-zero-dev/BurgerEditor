@@ -1,4 +1,4 @@
-import type { ImageData } from './index.js';
+import type { ImageData } from './definition.js';
 import type { ItemEditorProps } from '@burger-editor/core';
 
 import {
@@ -10,13 +10,13 @@ import {
 	RadioGroup,
 	Tabs,
 	TextField,
-	useComponentEvent,
+	useExternalFileSelection,
+	useFileBrowser,
+	useMountEffect,
 } from '@burger-editor/client/ui';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 
 import { createWidthState } from './width.js';
-
-const TABS_CONTENT_ID = 'bgi-image__tabs-content';
 
 const tabLabel = (index: number) => `画像${index + 1}`;
 
@@ -32,9 +32,12 @@ type LoadedImage = {
  * @param root0
  * @param root0.state
  * @param root0.setState
- * @param root0.engine
  */
-export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageData>) {
+export function ImageEditor({ state, setState }: ItemEditorProps<ImageData>) {
+	const fileBrowser = useFileBrowser();
+	// 同一documentに複数のimageアイテムエディタが同時に開いてもhtmlFor/
+	// aria-*の参照先が混線しないよう、ハードコードIDではなくuseIdで一意化する
+	const uid = useId();
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const currentIndexRef = useRef(0);
 	const [fieldsetDisabled, setFieldsetDisabled] = useState(false);
@@ -67,10 +70,6 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 			scale: widthState.getScale(),
 			cssWidth: widthState.getCSSWidth(),
 		}));
-
-		engine.componentObserver.notify('update-css-width', {
-			cssWidth: widthState.getCSSWidth(),
-		});
 	};
 
 	const updateImage = ($src: LoadedImage) => {
@@ -98,6 +97,12 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 		updateCSSWidth();
 	};
 
+	// このtry/catch/finally自体が、このファイルがReact Compilerの最適化
+	// 対象から漏れている唯一の原因（babel-plugin-react-compiler 1.0.0の
+	// 既知の未対応: "(BuildHIR::lowerStatement) Handle TryStatement with
+	// a finalizer"）。finallyは失敗時でもサイズ入力欄を必ず復帰させる
+	// 正当な後始末処理のため削除しない — アップストリームでfinally対応が
+	// 入ったら自動的にコンパイル対象になる
 	const _updateImage = async (path: string) => {
 		if (!path) {
 			return;
@@ -126,12 +131,7 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 			throw new Error('currentPath is not found');
 		}
 
-		engine.componentObserver.notify('file-select', {
-			path: currentPath,
-			fileSize: Number.parseFloat(current.fileSize ?? '0'),
-			isEmpty: currentPath === '',
-			isMounted: false,
-		});
+		fileBrowser.select('image', currentPath, Number.parseFloat(current.fileSize ?? '0'));
 	};
 
 	const selectTab = (index: number) => {
@@ -140,31 +140,46 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 		fileSelect(index);
 		void _updateImage(stateRef.current.path?.[index] ?? '');
 
+		// altEditableはここでは更新しない。altは<source>要素に持てず、
+		// HTMLへは常にaltEditable（画像1用の値）だけが反映されるため
+		// （toItemData参照）、タブ2以降でも画像1のaltを表示し続ける
 		const media = stateRef.current.media?.[index] ?? '';
-		const altEditable = stateRef.current.alt?.[index] ?? '';
-		setState((prev) => ({ ...prev, mediaInput: media, altEditable }));
+		setState((prev) => ({ ...prev, mediaInput: media }));
 	};
 
-	useComponentEvent(engine, 'file-select', ({ path, isEmpty }) => {
-		if (isEmpty) {
-			return;
-		}
-
-		void _updateImage(path);
-	});
+	// FileList側で選ばれたファイル（fileBrowser.select経由の外部変更）を
+	// 反映する。selectTab/マウント時の初期化はすでに_updateImageを直接
+	// 呼んでいるため、そこから来た「自分自身の変更」は現在のタブのpathと
+	// 一致し、ここでは再度読み込まない。`selected`はengine単位で共有される
+	// FileBrowserStoreの値のため、マウント直後は前に開いていた別itemの
+	// 残留選択の可能性がある — useExternalFileSelectionが初回発火を
+	// スキップし、下のマウント初期化effect（fileSelect(0)がこのitem自身の
+	// pathでselectedを上書きする）に委ねる
+	const selected = useSyncExternalStore(
+		fileBrowser.subscribe,
+		() => fileBrowser.getSnapshot().selected.image,
+	);
+	useExternalFileSelection(
+		selected,
+		() => stateRef.current.path?.[currentIndexRef.current] ?? '',
+		(next) => {
+			void _updateImage(next.path);
+		},
+	);
 
 	// 初期化: タブ0のプレビュー連携と画像読み込み（マウント時のみ）。
 	// state側の初期値はtoEditorStateで正規化済みのためここでは更新しない
-	useEffect(() => {
-		engine.componentObserver.notify('update-css-width', {
-			cssWidth: widthState.getCSSWidth(),
-		});
+	useMountEffect(() => {
 		fileSelect(0);
 		void _updateImage(stateRef.current.path?.[0] ?? '');
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	});
 
 	const currentPath = state.path?.[currentIndex] ?? '';
+	// タブ2以降で画像未選択のままmediaを入力すると、frozen-patty側でpathが
+	// 先頭画像にフォールバックし重複pathとして扱われ、source要素ごと（＝
+	// 入力したmediaごと）無言で破棄される（set-component.tsのusedPaths判定）。
+	// UI側で先に画像選択を促すことでこの経路を回避する
+	const mediaLocked = currentIndex > 0 && !currentPath;
 
 	return (
 		<div data-bge-dialog="2col">
@@ -173,19 +188,23 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 					<Tabs
 						current={currentIndex}
 						onChange={selectTab}
-						contentId={TABS_CONTENT_ID}
+						contentId={`${uid}-tabs-content`}
 						createLabel={tabLabel}
 					/>
 
-					<div id={TABS_CONTENT_ID} role="tabpanel" aria-label={tabLabel(currentIndex)}>
-						<Preview engine={engine} path={currentPath} />
+					<div
+						id={`${uid}-tabs-content`}
+						role="tabpanel"
+						aria-label={tabLabel(currentIndex)}>
+						<Preview path={currentPath} />
 						{loadError ? <p role="alert">{loadError}</p> : null}
 						<div>
 							<TextField
 								label="メディアクエリー"
 								name="bge-media-input"
 								value={state.mediaInput ?? ''}
-								disabled={currentIndex === 0}
+								disabled={currentIndex === 0 || mediaLocked}
+								describedBy={mediaLocked ? `${uid}-media-desc` : undefined}
 								onChange={(mediaInput) => {
 									const index = currentIndexRef.current;
 									setState((prev) => {
@@ -195,6 +214,11 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 									});
 								}}
 							/>
+							{mediaLocked ? (
+								<small id={`${uid}-media-desc`}>
+									先に画像を選択してください。メディアクエリーは画像を選択した後に入力できます。
+								</small>
+							) : null}
 						</div>
 					</div>
 				</div>
@@ -202,7 +226,7 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 				<div>
 					<Fieldset
 						legend="画像のサイズ"
-						id="bge-image-size-fieldset"
+						id={`${uid}-size-fieldset`}
 						disabled={fieldsetDisabled}>
 						<RadioGroup
 							label="基準"
@@ -219,10 +243,10 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 						/>
 						<div>
 							<span>
-								<label htmlFor="bgi-image__range-number">幅</label>
+								<label htmlFor={`${uid}-range-number`}>幅</label>
 								<input
 									type="number"
-									id="bgi-image__range-number"
+									id={`${uid}-range-number`}
 									name="bge-css-width-number"
 									min={1}
 									step={1}
@@ -273,15 +297,15 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 						label="画像の代替テキスト(alt)"
 						name="bge-alt-editable"
 						value={state.altEditable ?? ''}
-						onChange={(altEditable) => {
-							const index = currentIndexRef.current;
-							setState((prev) => {
-								const alt = [...(prev.alt ?? [])];
-								alt[index] = altEditable;
-								return { ...prev, altEditable, alt };
-							});
-						}}
+						disabled={currentIndex > 0}
+						describedBy={currentIndex > 0 ? `${uid}-alt-desc` : undefined}
+						onChange={(altEditable) => setState((prev) => ({ ...prev, altEditable }))}
 					/>
+					{currentIndex > 0 ? (
+						<small id={`${uid}-alt-desc`}>
+							代替テキストは画像1（img要素）に設定され、画面幅で切り替わるすべての画像に共通で使われます。画像1のタブで編集してください。
+						</small>
+					) : null}
 					<TextField
 						label="キャプション"
 						name="bge-caption"
@@ -315,17 +339,17 @@ export function ImageEditor({ state, setState, engine }: ItemEditorProps<ImageDa
 						name="bge-lazy"
 						label="遅延読み込み"
 						checked={state.lazy ?? false}
-						describedBy="bge-lazy-desc"
+						describedBy={`${uid}-lazy-desc`}
 						onChange={(lazy) => setState({ ...state, lazy })}
 					/>
-					<small id="bge-lazy-desc">
+					<small id={`${uid}-lazy-desc`}>
 						画像がブラウザの表示エリアに現れるまでファイルを読み込みません。
 					</small>
 				</div>
 			</div>
 			<div>
-				<FileUploader engine={engine} fileType="image" />
-				<FileList engine={engine} fileType="image" />
+				<FileUploader fileType="image" />
+				<FileList fileType="image" />
 			</div>
 		</div>
 	);

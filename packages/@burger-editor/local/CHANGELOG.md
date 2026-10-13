@@ -3,6 +3,80 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.76](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.75...v4.0.0-alpha.76) (2026-10-06)
+
+### Bug Fixes
+
+- **local:** apply hostGuard and the non-loopback auth gate to the whole app ([dcbb4f6](https://github.com/d-zero-dev/BurgerEditor/commit/dcbb4f6c4438c3012143ee00470673f32d793329)), closes [#968](https://github.com/d-zero-dev/BurgerEditor/issues/968)
+
+# [4.0.0-alpha.75](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.74...v4.0.0-alpha.75) (2026-10-02)
+
+### Bug Fixes
+
+- **local:** import the editor-bound items from the blocks editor entry ([83ad7b0](https://github.com/d-zero-dev/BurgerEditor/commit/83ad7b09b27891fd8a66935134c94d6cbb7a22dc))
+- **local:** stop creating and saving a page just by opening it ([c62be37](https://github.com/d-zero-dev/BurgerEditor/commit/c62be37994539a837637c048d40805618524a5ca)), closes [#966](https://github.com/d-zero-dev/BurgerEditor/issues/966)
+
+# [4.0.0-alpha.74](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.73...v4.0.0-alpha.74) (2026-10-01)
+
+### Bug Fixes
+
+- **local:** reject a flag given right after --config ([b86e8c7](https://github.com/d-zero-dev/BurgerEditor/commit/b86e8c7f2ebad48e5bc83eacb123369b38c20257))
+
+### Features
+
+- **local:** add --config option to bge and bge search ([5520249](https://github.com/d-zero-dev/BurgerEditor/commit/5520249a53afa03556982b05b4ecc3b85bdf9bc4))
+
+# [4.0.0-alpha.73](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.72...v4.0.0-alpha.73) (2026-09-18)
+
+### Bug Fixes
+
+- **local:** avoid an embedded raw NUL byte in routes/static.ts ([c1daeac](https://github.com/d-zero-dev/BurgerEditor/commit/c1daeac47786d61dac54a2d2c1a10bdaa200abda))
+- **local:** bind and connect bootLocalServer's boot test via 127.0.0.1 ([8dfbdc8](https://github.com/d-zero-dev/BurgerEditor/commit/8dfbdc8f3cd56dedb93dda3142edbfc604ce7fd8))
+- **local:** debounce fs.watch callbacks per path to dedupe CI double-fires ([228d2ce](https://github.com/d-zero-dev/BurgerEditor/commit/228d2ce87d4f7007cdc61dcc3084614010459996)), closes [#948](https://github.com/d-zero-dev/BurgerEditor/issues/948)
+
+- refactor(local)!: restructure Hono app assembly and drop @hono/node-ws ([294ad37](https://github.com/d-zero-dev/BurgerEditor/commit/294ad3760245708397bd0551cdc45bd3740f09a3)), closes [#869](https://github.com/d-zero-dev/BurgerEditor/issues/869)
+
+### BREAKING CHANGES
+
+- setRoute()/AgentRouteDeps (route.tsx) are removed;
+  callers use createApp()/AppType from app.ts and createLocalServer() from
+  create-local-server.ts. /ws/editor now rejects an unauthenticated or
+  untrusted-Host upgrade with HTTP 401/403 at the handshake instead of
+  accepting it and closing with code 1008. Neither symbol was published via
+  package.json exports, and @burger-editor/local is 4.0.0-alpha, so this
+  ships without a migration guide.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+# [4.0.0-alpha.72](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.71...v4.0.0-alpha.72) (2026-09-02)
+
+### Bug Fixes
+
+- **local:** close the Agent Hub gaps found in review ([fe2e02d](https://github.com/d-zero-dev/BurgerEditor/commit/fe2e02d992e8c2334971b235d982e9b0078dfc25))
+- **local:** close the Agent Hub review findings in the relay, auth and browser link ([2af10f7](https://github.com/d-zero-dev/BurgerEditor/commit/2af10f7c16030967d8918e48ee5deb71f8edfb44))
+- **local:** drive the editor through engine methods, not imported core functions ([dd368dc](https://github.com/d-zero-dev/BurgerEditor/commit/dd368dcee646aa18532c26d8a0bde0217988d5f1))
+- **local:** fix this-binding in FrontMatterEditorHandle's unmount() alias ([a568e3c](https://github.com/d-zero-dev/BurgerEditor/commit/a568e3c1e7c32995c7e1e99db3ad0d9545f3b2f3))
+- **local:** normalize the root-page path so a tab actually matches an agent's target ([a17b361](https://github.com/d-zero-dev/BurgerEditor/commit/a17b361cd4a2b6397131d5e405e09b31941acf75))
+- **local:** pin ws.spec.ts's real server to 127.0.0.1, not the ambiguous 'localhost' ([2e099b4](https://github.com/d-zero-dev/BurgerEditor/commit/2e099b4d09978eb0907eb5d33f4ba4611f3b83f1))
+- **local:** stop Agent Hub event log from misreporting page state ([a7e7410](https://github.com/d-zero-dev/BurgerEditor/commit/a7e74107b630a040757845a8124e8d41f5eb8c9d)), closes [#906](https://github.com/d-zero-dev/BurgerEditor/issues/906) [#907](https://github.com/d-zero-dev/BurgerEditor/issues/907) [#908](https://github.com/d-zero-dev/BurgerEditor/issues/908) [#909](https://github.com/d-zero-dev/BurgerEditor/issues/909)
+- **local:** surface the browser's actual error detail on an ApplyNackError ([b4b136a](https://github.com/d-zero-dev/BurgerEditor/commit/b4b136ab803ae0d8e45520f7a3c783f4232afd3b))
+
+- feat(local)!: add WebSocket-based Agent Hub for browser-side AI agent application ([c7755ae](https://github.com/d-zero-dev/BurgerEditor/commit/c7755ae8d35e0f8b30da268db5744ad94eccc245))
+
+### Features
+
+- **local:** log every Agent Hub WS message for debugging ([c792ed0](https://github.com/d-zero-dev/BurgerEditor/commit/c792ed0037d44fcbe3a5db73c89268660c423a89))
+- **local:** observe agent hub state and detect external page changes ([15d464c](https://github.com/d-zero-dev/BurgerEditor/commit/15d464c75cb60956de60f75c04bd0a96f1febd71))
+- **local:** send focus and switch-content over the Agent Hub socket ([020bded](https://github.com/d-zero-dev/BurgerEditor/commit/020bded22e4f1daaf340874089e3bf67ed584308))
+- **local:** timestamp agent responses and browser-side Agent Hub logs ([fe47ea7](https://github.com/d-zero-dev/BurgerEditor/commit/fe47ea7f984208ae925b3cc8cb641c65134ff1cc))
+
+### BREAKING CHANGES
+
+- local's "./get-user-config" export now returns
+  { config, configDir } instead of the config object directly.
+  `configDir` is where agent/auth.ts persists the per-launch token.
+  Callers must destructure: const { config } = await getUserConfig().
+
 # [4.0.0-alpha.71](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.70...v4.0.0-alpha.71) (2026-08-11)
 
 ### Bug Fixes

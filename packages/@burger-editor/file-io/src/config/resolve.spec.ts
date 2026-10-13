@@ -1,7 +1,16 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest';
+import {
+	afterAll,
+	afterEach,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	test,
+	vi,
+} from 'vitest';
 
 import { clearConfigCache, resolveConfig } from './resolve.js';
 
@@ -19,6 +28,14 @@ beforeEach(() => {
 	// this, later tests that *do* create configs under previously-checked
 	// directories would still see null.
 	clearConfigCache();
+	// A BGE_CONFIG exported in the developer's shell would otherwise bypass
+	// the search every case below relies on.
+	// eslint-disable-next-line unicorn/no-useless-undefined -- `undefined` is how vi.stubEnv removes a variable; the argument is required
+	vi.stubEnv('BGE_CONFIG', undefined);
+});
+
+afterEach(() => {
+	vi.unstubAllEnvs();
 });
 
 afterAll(async () => {
@@ -144,5 +161,93 @@ describe('resolveConfig', () => {
 		);
 		const { config } = await resolveConfig(dir);
 		expect(config.virtualTree).toEqual({ enabled: true, pathKey: 'slug' });
+	});
+});
+
+describe('resolveConfig — a config file named explicitly', () => {
+	/**
+	 * A project holding a main config (found by the search) and a sub-site
+	 * config under a non-standard name (reachable only when named).
+	 * @param name
+	 */
+	async function makeTwoSiteFixture(name: string) {
+		const dir = await makeFixture(name, `export default { documentRoot: './main' };`);
+		const childPath = path.join(dir, 'burgereditor.child.config.mjs');
+		await fs.writeFile(childPath, `export default { documentRoot: './child' };`, 'utf8');
+		return { dir, childPath };
+	}
+
+	test('loads a file under any name given as configPath, resolving its relative paths against that file', async () => {
+		const { dir, childPath } = await makeTwoSiteFixture('explicit-basic');
+		const { config, configPath } = await resolveConfig(undefined, {
+			configPath: childPath,
+		});
+		expect(configPath).toBe(childPath);
+		expect(config.documentRoot).toBe(path.join(dir, 'child'));
+	});
+
+	test('configPath wins over the config the search from searchFrom would find', async () => {
+		const { dir, childPath } = await makeTwoSiteFixture('explicit-over-search');
+		const { configPath } = await resolveConfig(dir, { configPath: childPath });
+		expect(configPath).toBe(childPath);
+	});
+
+	test('a relative configPath resolves against process.cwd(), not searchFrom', async () => {
+		const { childPath } = await makeTwoSiteFixture('explicit-relative');
+		const relative = path.relative(process.cwd(), childPath);
+		const { configPath } = await resolveConfig(FIXTURE_ROOT, { configPath: relative });
+		expect(configPath).toBe(childPath);
+	});
+
+	test('BGE_CONFIG names the file when configPath is omitted', async () => {
+		const { dir, childPath } = await makeTwoSiteFixture('explicit-env');
+		vi.stubEnv('BGE_CONFIG', childPath);
+		const { configPath } = await resolveConfig(dir);
+		expect(configPath).toBe(childPath);
+	});
+
+	test('configPath wins over BGE_CONFIG', async () => {
+		const { dir, childPath } = await makeTwoSiteFixture('explicit-option-over-env');
+		vi.stubEnv('BGE_CONFIG', path.join(dir, 'burgereditor.config.mjs'));
+		const { configPath } = await resolveConfig(dir, { configPath: childPath });
+		expect(configPath).toBe(childPath);
+	});
+
+	test('rejects a configPath that does not exist instead of falling back to defaults', async () => {
+		const missing = path.join(FIXTURE_ROOT, 'no-such.config.mjs');
+		await expect(resolveConfig(undefined, { configPath: missing })).rejects.toThrow(
+			`Config file not found: ${missing}`,
+		);
+	});
+
+	test('names BGE_CONFIG in the error when the missing file came from it', async () => {
+		const missing = path.join(FIXTURE_ROOT, 'no-such-env.config.mjs');
+		vi.stubEnv('BGE_CONFIG', missing);
+		await expect(resolveConfig()).rejects.toThrow(
+			`Config file not found: ${missing} (from BGE_CONFIG=${missing})`,
+		);
+	});
+
+	test('rejects a configPath that names a directory, saying so rather than "not found"', async () => {
+		const { dir } = await makeTwoSiteFixture('explicit-directory');
+		await expect(resolveConfig(undefined, { configPath: dir })).rejects.toThrow(
+			`Config path is not a file: ${dir}`,
+		);
+	});
+
+	test('a missing parent directory is reported as not found', async () => {
+		const { childPath } = await makeTwoSiteFixture('explicit-under-file');
+		// A path *through* a file (ENOTDIR), e.g. a typo'd directory segment.
+		const through = path.join(childPath, 'burgereditor.config.mjs');
+		await expect(resolveConfig(undefined, { configPath: through })).rejects.toThrow(
+			`Config file not found: ${through}`,
+		);
+	});
+
+	test('an empty BGE_CONFIG is ignored and the search runs', async () => {
+		const { dir } = await makeTwoSiteFixture('explicit-empty-env');
+		vi.stubEnv('BGE_CONFIG', '');
+		const { configPath } = await resolveConfig(dir);
+		expect(configPath).toBe(path.join(dir, 'burgereditor.config.mjs'));
 	});
 });

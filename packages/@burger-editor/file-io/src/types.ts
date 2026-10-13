@@ -2,8 +2,9 @@ import type { BlockCatalog, FileType, SelectableValue } from '@burger-editor/cor
 import type { Mergeable } from '@burger-editor/utils';
 
 /**
- * Configuration loaded from `burgereditor.config.{js,mjs,ts,cjs,json}` via
- * cosmiconfig. Shared between the local CMS server (`@burger-editor/local`)
+ * Configuration loaded via cosmiconfig from the searched
+ * `burgereditor.config.{js,mjs,ts,cjs}`, or from a file named with `--config`
+ * / `BGE_CONFIG`. Shared between the local CMS server (`@burger-editor/local`)
  * and the agent-facing CLI/MCP layer.
  */
 export interface BurgerEditorConfig {
@@ -41,6 +42,7 @@ export interface BurgerEditorConfig {
 		};
 	};
 	readonly virtualTree: VirtualTreeConfig;
+	readonly agent: AgentConfig;
 }
 
 /**
@@ -51,18 +53,33 @@ export interface VirtualTreeConfig {
 	readonly pathKey: string;
 }
 
+/**
+ * Configuration for the AI agent hub (`@burger-editor/local`'s WebSocket +
+ * `/api/agent/*` routes). Disabling it turns off the WebSocket upgrade and
+ * agent REST routes while leaving the rest of the server (including the
+ * `Host`/`Origin` guard) unaffected.
+ * @example
+ * ```ts
+ * const agent: AgentConfig = { enabled: false }; // serve pages, no agent hub
+ * ```
+ */
+export interface AgentConfig {
+	readonly enabled: boolean;
+}
+
 export type SamplePath = `/${string}` | `https://${string}` | `base64:${string}`;
 
 export type BurgerEditorFileDirConfig = Record<FileType, FileDirSettings>;
 
 export type BurgerEditorConfigUserSettings = Omit<
 	Partial<BurgerEditorConfig>,
-	'filesDir' | 'healthCheck' | 'virtualTree'
+	'filesDir' | 'healthCheck' | 'virtualTree' | 'agent'
 > & {
 	readonly assetsRoot?: string;
 	readonly filesDir?: string | FileDirSettings | BurgerEditorFileDirUserSettings;
 	readonly healthCheck?: Partial<BurgerEditorConfig['healthCheck']>;
 	readonly virtualTree?: Partial<VirtualTreeConfig>;
+	readonly agent?: Partial<AgentConfig>;
 };
 
 export type BurgerEditorFileDirUserSettings = {

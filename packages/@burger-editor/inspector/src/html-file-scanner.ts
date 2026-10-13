@@ -46,9 +46,17 @@ function getElementLineNumber(html: string, elementIndex: number): number {
 
 /**
  * Scan all HTML files in documentRoot for CSS variable matches
+ *
+ * Results do not depend on `fs.readdir()` order: they are ordered by file path
+ * string (UTF-16 code unit order), then by position in the document.
  * @param documentRoot Root directory to search in
  * @param searchParams Search parameters (category and value)
  * @returns Array of matches with file path, line number, and content
+ * @example
+ * ```ts
+ * const matches = await scanHtmlFiles('/path/to/documentRoot', parseSearchQuery('margin=normal'));
+ * // => [{ filePath: '/path/to/documentRoot/a.html', lineNumber: 12, lineContent: '--bge-options-margin: ...' }, ...]
+ * ```
  */
 export async function scanHtmlFiles(
 	documentRoot: string,
@@ -68,9 +76,19 @@ export async function scanHtmlFiles(
 /**
  * Scan HTML files with multiple queries (AND search)
  * Returns matches where a single element matches ALL queries simultaneously
+ *
+ * Results are ordered the same way as {@link scanHtmlFiles}:
+ * by file path string (UTF-16 code unit order), then by position in the document.
  * @param documentRoot Root directory to search in
  * @param searchParamsArray Array of search parameters
  * @returns Array of matches where each element matches all queries
+ * @example
+ * ```ts
+ * const matches = await scanHtmlFilesWithMultipleQueries('/path/to/documentRoot', [
+ * 	parseSearchQuery('margin=normal'),
+ * 	parseSearchQuery('bg-color=blue'),
+ * ]);
+ * ```
  */
 export async function scanHtmlFilesWithMultipleQueries(
 	documentRoot: string,
@@ -147,11 +165,24 @@ async function searchInFileWithMultipleQueries(
 }
 
 /**
- * Recursively collect all HTML files from a directory
+ * Collect all HTML files from a directory
+ *
+ * `fs.readdir()` order depends on the OS / file system, so the result is sorted
+ * once here (not per recursion level) to keep scan results deterministic.
+ * @param dirPath Directory path to search
+ * @returns Array of absolute file paths to HTML files, sorted by UTF-16 code unit order
+ */
+async function collectHtmlFiles(dirPath: string): Promise<string[]> {
+	const files = await walkHtmlFiles(dirPath);
+	return files.toSorted();
+}
+
+/**
+ * Recursively walk a directory in `fs.readdir()` order (unsorted)
  * @param dirPath Directory path to search
  * @returns Array of absolute file paths to HTML files
  */
-async function collectHtmlFiles(dirPath: string): Promise<string[]> {
+async function walkHtmlFiles(dirPath: string): Promise<string[]> {
 	const entries = await fs.readdir(dirPath, { withFileTypes: true });
 	const files: string[] = [];
 
@@ -165,7 +196,7 @@ async function collectHtmlFiles(dirPath: string): Promise<string[]> {
 			}
 
 			// Recursively collect files from subdirectories
-			const subFiles = await collectHtmlFiles(fullPath);
+			const subFiles = await walkHtmlFiles(fullPath);
 			files.push(...subFiles);
 		} else if (entry.isFile() && entry.name.endsWith('.html')) {
 			files.push(fullPath);

@@ -1,17 +1,16 @@
-import type { BurgerEditorEngine } from '@burger-editor/core';
-
 import { BGE_COMMAND, CommandBus, UIStateStore } from '@burger-editor/core';
 import { test, expect, describe, beforeEach, afterEach, vi } from 'vitest';
 
 import { registerEngineCommands } from '../commands/register-engine-commands.js';
+import { createMockEngine as createBaseMockEngine } from '../testing/create-mock-engine.js';
 
 const alertMock = vi.fn();
 const confirmMock = vi.fn();
 vi.stubGlobal('alert', alertMock);
 vi.stubGlobal('confirm', confirmMock);
 
-// jsdomはWeb Animations API未実装のため、replaceElementの
-// アニメーションを即時完了扱いにしてDOM並べ替えだけ検証する
+// 実アニメーションの実時間経過を待たずにDOM並べ替えだけを検証するため、
+// replaceElementのアニメーションを即時完了扱いにする
 Element.prototype.animate = vi
 	.fn()
 	.mockReturnValue({ finished: Promise.resolve() }) as unknown as Element['animate'];
@@ -53,12 +52,9 @@ function createSource(value?: string) {
  *
  */
 function createMockEngine() {
-	const commandBus = new CommandBus();
-	const uiState = new UIStateStore();
-	const engine = {
-		commandBus,
-		uiState,
-		isProcessed: false,
+	return createBaseMockEngine({
+		commandBus: new CommandBus(),
+		uiState: new UIStateStore(),
 		getCurrentBlock: vi.fn().mockReturnValue(null),
 		clearCurrentBlock: vi.fn(),
 		showMain: vi.fn(),
@@ -71,8 +67,7 @@ function createMockEngine() {
 		content: {
 			insertionPoint: { set: vi.fn() },
 		},
-	} as unknown as BurgerEditorEngine;
-	return engine;
+	});
 }
 
 describe('registerEngineCommands', () => {

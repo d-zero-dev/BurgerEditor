@@ -9,10 +9,25 @@ import { string } from 'rollup-plugin-string';
 import { defineConfig } from 'vitest/config';
 
 import { vrCommands } from './packages/@burger-editor/client/src/__tests__/vr/vr-commands.ts';
+// @ts-ignore - plain JS module, no ambient types published for it
+import {
+	createReactCompilerBabelPlugin,
+	reactCompilerDisabled,
+} from './scripts/react-compiler-babel.js';
+// @ts-ignore - plain JS module, no ambient types published for it
+import { assertProjectsGrouped } from './scripts/vitest-project-groups.js';
 
 const blocksPkg = JSON.parse(
 	fs.readFileSync('./packages/@burger-editor/blocks/package.json', 'utf8'),
 );
+
+// blocks/rollup.config.jsの本番ビルドと同じReact Compiler設定を共有する
+// （scripts/react-compiler-babel.js）。テスト側だけコンパイル対象から
+// 外れる（コンパイル済み/非コンパイルの混在）と、本番とテストで挙動が
+// 食い違いうる。spec.tsx自体はテスト用のハーネスコンポーネントしか
+// 含まずコンパイルの恩恵がないため対象から除く
+const reactCompilerBabel = () =>
+	createReactCompilerBabelPlugin({ exclude: ['node_modules/**', '**/*.spec.tsx'] });
 
 const cssAsRaw = (): Plugin => {
 	return {
@@ -41,33 +56,52 @@ const jsdomConfig = {
 export default defineConfig({
 	test: {
 		exclude: ['**/node_modules/**', '**/dist/**'],
-		projects: [
+		// yarn testはscripts/vitest-project-groups.jsのグループ単位で別プロセス
+		// 実行する（#997）。グループ未登録のプロジェクトはyarn testで実行され
+		// なくなるため、定義のずれを設定読み込み時に検出する
+		projects: assertProjectsGrouped([
 			{
 				test: {
 					name: 'default',
 					include: [
-						'packages/@burger-editor/{cli,file-io,frozen-patty,legacy,mcp-server,migrator,utils}/**/*.spec.ts',
+						'packages/@burger-editor/{cli,file-io,frozen-patty,inspector,legacy,mcp-server,migrator,utils}/**/*.spec.ts',
 					],
 					...jsdomConfig,
 				},
 			},
 			{
-				// Reactエディタコンポーネントのテスト（jsdom + Testing Library）
+				// Reactエディタコンポーネントのテスト（実Chromium + Testing Library）
 				test: {
 					name: 'blocks-editor',
 					include: ['packages/@burger-editor/blocks/**/*.spec.tsx'],
-					...jsdomConfig,
+					setupFiles: ['./packages/@burger-editor/client/src/__tests__/setup.ts'],
+					browser: {
+						enabled: true,
+						provider: playwright(),
+						instances: [{ browser: 'chromium' }],
+						headless: true,
+						viewport: { width: 1280, height: 720 },
+						screenshotFailures: false,
+					},
+					testTimeout: 15_000,
 				},
 				resolve: {
 					alias: {
-						// clientはUIエントリをdist経由で提供するため、テストでは
-						// ソースを直接読んでReactインスタンスを揃える
+						// clientはUI/testingエントリをdist経由で提供するため、
+						// テストではソースを直接読んでReactインスタンスを揃える
 						'@burger-editor/client/ui': path.resolve(
 							'./packages/@burger-editor/client/src/ui.ts',
 						),
+						'@burger-editor/client/testing': path.resolve(
+							'./packages/@burger-editor/client/src/testing/index.ts',
+						),
 					},
 				},
-				plugins: [cssAsRaw(), string({ include: ['**/*.html', '**/*.svg'] })],
+				plugins: [
+					cssAsRaw(),
+					string({ include: ['**/*.html', '**/*.svg'] }),
+					...(reactCompilerDisabled ? [] : [reactCompilerBabel()]),
+				],
 				define: {
 					__VERSION__: JSON.stringify(blocksPkg.version),
 					__DEBUG__: false,
@@ -87,7 +121,11 @@ export default defineConfig({
 					},
 					testTimeout: 15_000,
 				},
-				plugins: [cssAsRaw(), string({ include: ['**/*.html', '**/*.svg'] })],
+				plugins: [
+					cssAsRaw(),
+					string({ include: ['**/*.html', '**/*.svg'] }),
+					...(reactCompilerDisabled ? [] : [reactCompilerBabel()]),
+				],
 				define: {
 					__VERSION__: JSON.stringify(blocksPkg.version),
 					__DEBUG__: false,
@@ -99,7 +137,16 @@ export default defineConfig({
 					name: 'client',
 					include: ['packages/@burger-editor/client/**/*.spec.{ts,tsx}'],
 					exclude: ['**/*.vr.spec.ts'],
-					...jsdomConfig,
+					setupFiles: ['./packages/@burger-editor/client/src/__tests__/setup.ts'],
+					browser: {
+						enabled: true,
+						provider: playwright(),
+						instances: [{ browser: 'chromium' }],
+						headless: true,
+						viewport: { width: 1280, height: 720 },
+						screenshotFailures: false,
+					},
+					testTimeout: 15_000,
 				},
 				define: {
 					__DEBUG__: false,
@@ -156,7 +203,10 @@ export default defineConfig({
 				extends: './packages/@burger-editor/local/vite.config.ts',
 				test: {
 					name: 'local/client',
-					include: ['packages/@burger-editor/local/src/client/**/*.spec.{ts,tsx}'],
+					include: [
+						'packages/@burger-editor/local/src/client/**/*.spec.{ts,tsx}',
+						'!packages/@burger-editor/local/src/client/**/*.browser.spec.ts',
+					],
 					...jsdomConfig,
 				},
 				resolve: {
@@ -169,6 +219,30 @@ export default defineConfig({
 					},
 				},
 				plugins: [cssAsRaw()],
+			},
+			{
+				// Agent Hub のブラウザ側（agent-link + engine-adapter）を本物の
+				// BurgerEditorEngine と組み合わせて実ブラウザで検証する
+				test: {
+					name: 'local/client-browser',
+					include: ['packages/@burger-editor/local/src/client/**/*.browser.spec.ts'],
+					browser: {
+						enabled: true,
+						provider: playwright(),
+						instances: [{ browser: 'chromium' }],
+						headless: true,
+						viewport: { width: 1280, height: 720 },
+						screenshotFailures: false,
+					},
+				},
+				resolve: {
+					alias: {
+						// ビルド済み dist に依存せず core のソースをそのまま読む
+						'@burger-editor/core': path.resolve(
+							'./packages/@burger-editor/core/src/index.ts',
+						),
+					},
+				},
 			},
 			{
 				test: {
@@ -186,6 +260,6 @@ export default defineConfig({
 					testTimeout: 15_000,
 				},
 			},
-		],
+		]),
 	},
 });

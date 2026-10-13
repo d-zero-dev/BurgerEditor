@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/client",
-	"version": "4.0.0-alpha.71",
+	"version": "4.0.0-alpha.76",
 	"description": "BurgerEditor client package",
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)",
@@ -22,6 +22,10 @@
 			"import": "./dist/ui.js",
 			"types": "./dist/ui.d.ts"
 		},
+		"./testing": {
+			"import": "./dist/testing.js",
+			"types": "./dist/testing/index.d.ts"
+		},
 		"./style": {
 			"import": "./dist/client.css"
 		}
@@ -36,25 +40,48 @@
 		"dev": "vite build --watch"
 	},
 	"dependencies": {
-		"@burger-editor/core": "4.0.0-alpha.71",
-		"@burger-editor/custom-element": "4.0.0-alpha.71",
-		"@burger-editor/migrator": "4.0.0-alpha.71",
-		"@burger-editor/utils": "4.0.0-alpha.71",
-		"@tabler/icons-react": "3.46.0"
+		"@burger-editor/core": "4.0.0-alpha.76",
+		"@burger-editor/custom-element": "4.0.0-alpha.76",
+		"@burger-editor/migrator": "4.0.0-alpha.76",
+		"@burger-editor/utils": "4.0.0-alpha.76",
+		"@tabler/icons-react": "3.48.0",
+		"react-error-boundary": "6.1.6",
+		"use-sync-external-store": "1.7.0"
 	},
 	"devDependencies": {
-		"@testing-library/dom": "10.4.1",
-		"@testing-library/react": "16.3.2",
-		"@types/react": "19.2.18",
-		"@types/react-dom": "19.2.4",
-		"@vitejs/plugin-react": "5.2.0",
-		"react": "19.2.8",
-		"react-dom": "19.2.8",
-		"vite": "7.3.6",
-		"vite-plugin-dts": "4.5.4"
+		"@babel/core": "7.29.7",
+		"@babel/preset-typescript": "7.29.7",
+		"@rolldown/plugin-babel": "0.2.4",
+		"@testing-library/dom": "10.4.2",
+		"@testing-library/react": "16.3.3",
+		"@types/babel__core": "7.20.5",
+		"@types/react": "19.3.0",
+		"@types/react-dom": "19.3.0",
+		"@types/use-sync-external-store": "1.7.0",
+		"@vitejs/plugin-react": "6.1.2",
+		"babel-plugin-react-compiler": "1.0.0",
+		"react": "19.3.0",
+		"react-dom": "19.3.0",
+		"vite": "8.3.2",
+		"vite-plugin-dts": "5.1.1",
+		"vitest": "4.1.11"
 	},
 	"peerDependencies": {
-		"react": "19.2.8",
-		"react-dom": "19.2.8"
+		"@testing-library/dom": "10.4.2",
+		"@testing-library/react": "16.3.3",
+		"react": "19.3.0",
+		"react-dom": "19.3.0",
+		"vitest": "4.1.11"
+	},
+	"peerDependenciesMeta": {
+		"@testing-library/dom": {
+			"optional": true
+		},
+		"@testing-library/react": {
+			"optional": true
+		},
+		"vitest": {
+			"optional": true
+		}
 	}
 }

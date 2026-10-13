@@ -1,0 +1,72 @@
+import type { LocalServerConfig } from '../types.js';
+import type { Hono } from 'hono';
+
+import { serveStatic } from '@hono/node-server/serve-static';
+
+import { log } from '../helpers/debug.js';
+
+/**
+ * Mount `GET ${clientPath}/*` → `serverPath` for every `filesDir` entry
+ * (image/pdf/video/audio/other), de-duplicated by `(clientPath, serverPath)`
+ * pair so two entries sharing a `clientPath` don't register the same prefix
+ * twice. Registered as plain statements (not chain links) so their
+ * string-typed paths never leak into `AppType` — nothing calls them through
+ * `hc`.
+ * @param app
+ * @param config
+ */
+export function mountMediaDirs(app: Hono, config: LocalServerConfig): void {
+	const seen = new Set<string>();
+	for (const { clientPath, serverPath } of Object.values(config.filesDir)) {
+		const prefix = clientPath.replace(/\/+$/, '');
+		// JSON-encode the pair rather than concatenating with a plain separator,
+		// so a prefix/serverPath split at different points can never collide
+		// (e.g. prefix "a" + serverPath "bc" vs. prefix "ab" + serverPath "c").
+		const key = JSON.stringify([prefix, serverPath]);
+		if (seen.has(key)) {
+			continue;
+		}
+		seen.add(key);
+		app.get(
+			`${prefix}/*`,
+			serveStatic({
+				root: serverPath,
+				rewriteRequestPath: (requestPath) => requestPath.slice(prefix.length) || '/',
+				onNotFound: (filePath) => log('Static miss (%s): %s', prefix, filePath),
+			}),
+		);
+	}
+}
+
+/**
+ * Mount the app's own built assets: `/app.css` (from `styleDir`) and
+ * `/client.js`, `/client.js.map`, `/client.css` (from `clientDir` — note
+ * `/client.css` maps to the built `local.css`, not a same-named file).
+ * @param app
+ * @param dirs
+ * @param dirs.clientDir
+ * @param dirs.styleDir
+ */
+export function mountAppAssets(
+	app: Hono,
+	dirs: { readonly clientDir: string; readonly styleDir: string },
+): void {
+	app.get('/app.css', serveStatic({ root: dirs.styleDir, path: 'app.css' }));
+	app.get('/client.js', serveStatic({ root: dirs.clientDir, path: 'client.js' }));
+	app.get('/client.js.map', serveStatic({ root: dirs.clientDir, path: 'client.js.map' }));
+	app.get('/client.css', serveStatic({ root: dirs.clientDir, path: 'local.css' }));
+}
+
+/**
+ * The trailing catch-all over `assetsRoot` — must be mounted LAST (after the
+ * page routes), since a miss falls through to `app.notFound()` rather than
+ * answering its own 404 body.
+ * @param assetsRoot
+ */
+export function assetsFallback(assetsRoot: string) {
+	return serveStatic({
+		root: assetsRoot,
+		onFound: (filePath) => log('Access(*): %s', filePath),
+		onNotFound: (filePath) => log('Access(*): %s => Not found', filePath),
+	});
+}

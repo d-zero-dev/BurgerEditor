@@ -1,14 +1,36 @@
+import type { BurgerEditorEngine, FileType } from '@burger-editor/core';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { FileUploader } from '@burger-editor/client/ui';
+import { EngineProvider, FileUploader } from '@burger-editor/client/ui';
 
 import placeholderImage from '../assets/placeholder-image.svg?url';
 import { createMockEngine } from '../mocks/create-mock-engine.js';
 
+/**
+ * `FileUploader` reads the engine via `useEngine()`; this story-only
+ * wrapper keeps the `{engine, fileType}` args shape the stories below use.
+ * @param root0
+ * @param root0.engine
+ * @param root0.fileType
+ */
+function FileUploaderStory({
+	engine,
+	fileType,
+}: {
+	readonly engine: BurgerEditorEngine;
+	readonly fileType: FileType;
+}) {
+	return (
+		<EngineProvider engine={engine}>
+			<FileUploader fileType={fileType} />
+		</EngineProvider>
+	);
+}
+
 const meta = {
 	title: 'Client/Components/FileUploader',
-	component: FileUploader,
-} satisfies Meta<typeof FileUploader>;
+	component: FileUploaderStory,
+} satisfies Meta<typeof FileUploaderStory>;
 
 export default meta;
 

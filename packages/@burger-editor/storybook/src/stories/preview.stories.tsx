@@ -1,24 +1,25 @@
 import type { BurgerEditorEngine } from '@burger-editor/core';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Preview } from '@burger-editor/client/ui';
-import { ComponentObserver } from '@burger-editor/core';
+import { EngineProvider, Preview } from '@burger-editor/client/ui';
 
 import placeholderImage from '../assets/placeholder-image.svg?url';
 
-// Preview は engine.componentObserver の file-upload-progress 購読のみ
-// 使用する。ComponentObserver は本物のクラスをそのままインスタンス化
-// できる（window.dispatchEvent の薄いラッパーで副作用が安全なため）
-const fakeEngine = {
-	componentObserver: new ComponentObserver(),
-} as unknown as BurgerEditorEngine;
+// Preview は engine の FileBrowserStore（useFileBrowser() 経由）から
+// アップロード進捗だけを読む。ここではその進捗を発生させないので、
+// 空のengineで足りる
+const fakeEngine = {} as unknown as BurgerEditorEngine;
 
 const meta = {
 	title: 'Client/Components/Preview',
 	component: Preview,
-	args: {
-		engine: fakeEngine,
-	},
+	decorators: [
+		(Story) => (
+			<EngineProvider engine={fakeEngine}>
+				<Story />
+			</EngineProvider>
+		),
+	],
 } satisfies Meta<typeof Preview>;
 
 export default meta;
