@@ -762,7 +762,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@burger-editor/migrator@workspace:packages/@burger-editor/migrator"
   dependencies:
-    "@burger-editor/blocks": "npm:4.0.0-alpha.76"
     "@burger-editor/core": "npm:4.0.0-alpha.76"
     "@burger-editor/legacy": "npm:4.0.0-alpha.76"
     "@burger-editor/utils": "npm:4.0.0-alpha.76"

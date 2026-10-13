@@ -83,7 +83,7 @@ description: Git 操作ルール（コミット作成、メッセージ形式、
 | 8      | `local`, `mcp-server`            |
 | 9      | `storybook`                      |
 
-`css` と `runtime` は `devDependencies` で `blocks` を使うため `blocks` より後に置く。`migrator` の `blocks` への依存は ARCHITECTURE.md の「依存の向き」にある既知の循環（コードでは使っていない）なので、`migrator` は `client` より前に置く。順序が不明な場合は `yarn lerna list --graph` で確認する。
+`css` と `runtime` は `devDependencies` で `blocks` を使うため `blocks` より後に置く。順序が不明な場合は `yarn lerna list --graph` で確認する。
 
 # コミットメッセージの形式
 
