@@ -650,6 +650,10 @@ function bindToggle(button: HTMLButtonElement, wysiwygElement: BgeWysiwygElement
 			wysiwygElement.toggleNote();
 			break;
 		}
+		case 'h1': {
+			wysiwygElement.toggleHeading(1);
+			break;
+		}
 		case 'h2': {
 			wysiwygElement.toggleHeading(2);
 			break;
