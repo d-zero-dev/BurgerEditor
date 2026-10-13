@@ -7,6 +7,8 @@ import { z } from 'zod';
 
 import { FileListManager } from '../model/file-list-manager.js';
 
+import { rejectInvalid } from './reject-invalid.js';
+
 const fileTypeSchema = z.enum(['image', 'pdf', 'video', 'audio', 'other']);
 
 const listSchema = z.object({
@@ -62,17 +64,17 @@ export function createFileApi(config: LocalServerConfig) {
 	} as const;
 
 	return new Hono()
-		.post('/list', zValidator('json', listSchema), async (c) => {
+		.post('/list', zValidator('json', listSchema, rejectInvalid), async (c) => {
 			const { type, filter, page, selected } = c.req.valid('json');
 			const result = await fileListManger[type].getList({ filter, page, selected });
 			return c.json<FileListResult>(result);
 		})
-		.post('/upload', zValidator('form', uploadSchema), async (c) => {
+		.post('/upload', zValidator('form', uploadSchema, rejectInvalid), async (c) => {
 			const { file, type } = c.req.valid('form');
 			const res = await fileListManger[type].add(file);
 			return c.json({ error: false, ...res });
 		})
-		.delete('/', zValidator('json', deleteSchema), async (c) => {
+		.delete('/', zValidator('json', deleteSchema, rejectInvalid), async (c) => {
 			const { type, url } = c.req.valid('json');
 			const success = await fileListManger[type].delete(url);
 			return c.json({ error: !success });
