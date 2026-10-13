@@ -6,6 +6,7 @@
 		"jsx": "react-jsx",
 		"types": ["google.maps"]
 	},
+	// 依存のうち client は composite でない（TS6306）、custom-element は noEmit（TS6310）ため参照できない
 	"references": [
 		{
 			"path": "../core"
