@@ -27,7 +27,7 @@ BurgerEditor v4 のページは Front Matter + 編集可能領域（`editableAre
 5. **`block_move` の `to` は「移動後の最終配列における index」**（`Array.prototype.splice` と同じ慣用）。`[A,B,C,D]` で `move({index:0}, 2)` は `[B,C,A,D]` になる。「現在 index 2 の要素の手前に置く」ではない。
 6. **`page_update` の `ops` は `spec` ではなく、レンダリング済みの `blockHtml` 文字列を要求する。** `block_get` の戻り値や `dryRun` の `diff.after` のように、すでに HTML を持っている場合以外は、`block_insert` / `block_replace` を個別に順番に呼ぶ方が単純。`page_update` は **all-or-nothing**（1 つでも op が失敗すると何も保存されない）。
 7. **`item_update` の `itemIndex` は DOM 順の通し番号。** `[data-bge-item]` を数えるが、`[data-bgi]` ラッパーの無いアイテムも 1 つとして数える。`page_blocks` の `itemNames` と対応する。
-8. **`style_options_list` の戻りが空でも「このプロジェクトにスタイル軸が無い」とは限らない。** `config.stylesheets` に指定された CSS が読めなかっただけの可能性がある。実在する軸・変種名は必ず `style_options_list` を読んで確認し、推測で `--bge-options-<軸>--<変種>` を書かない。
+8. **`style_options_list` に出てこない軸は、エディタでも選べない。** 戻り値はエディタのブロックオプションダイアログと同じ規則で検出した選択肢で、組み込みの軸は常に含まれる。プロジェクト独自の軸が見当たらないときは、その CSS が `config.stylesheets` に入っていないか、読めなかった可能性がある。実在する軸・変種名は必ず `style_options_list` を読んで確認し、推測で `--bge-options-<軸>--<変種>` を書かない。
 9. **`page_create` / `page_rename` / `page_copy` は絶対に上書きしない。** 宛先が既に存在すると `exists` エラーになる。上書きしたいなら先に `page_delete` する。
 10. **`.html` ファイルを `Edit` / `Write` で直接書き換えない。** 必ず CLI/MCP のツールを経由する。
 11. **`dryRun: true` はページが実在する場合のみ使える。** 存在しないパスに対して dry-run すると `Cannot dry-run mutation on a non-existent page` のようなエラーになる。まだ無いページの内容をプレビューしたいときは dry-run できない。

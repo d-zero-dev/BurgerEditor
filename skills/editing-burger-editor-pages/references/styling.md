@@ -2,7 +2,7 @@
 
 BurgerEditor v4 のブロックの見た目は 3 つの独立した軸で調整する。**軸・変種名はプロジェクト固有の CSS で定義されるので、実在するものしか使えない。推測で値を埋めない。**
 
-1. **CSS カスタムプロパティの軸** — `style: { '--bge-options-<軸>': 'var(--bge-options-<軸>--<変種>)' }`
+1. **CSS カスタムプロパティの軸** — `style: { '<軸>': '<変種>' }`
 2. **コンテナタイプ + オプション** — `containerProps.type: 'grid' | 'inline' | 'float'` とその下位オプション（`columns`, `justify`, `align` 等）
 3. **クラスリスト** — `classList: [...]`。プロジェクトの CSS/config で意味付けされた任意クラス
 
@@ -14,20 +14,23 @@ BurgerEditor v4 のブロックの見た目は 3 つの独立した軸で調整�
 style_options_list
 ```
 
-戻り値は `{ axes: { <軸名>: [<変種名>, ...] } }`。**空でも「軸が無い」と決めつけない** — `config.stylesheets` に列挙された CSS が読み込めなかっただけの可能性がある。
+戻り値は `{ axes: { <軸名>: [<変種名>, ...] } }`。エディタのブロックオプションダイアログと同じ規則で検出した選択肢なので、ここに無い軸・変種はエディタでも選べない。プロジェクト独自の軸が見当たらないときは、`config.stylesheets` に列挙された CSS が読み込めなかった可能性がある。
+
+`_grid_subgrid-gap` のように `_<コンテナ種別>_` で始まる軸は、そのコンテナ種別のブロックでしか使えない。作るブロックの種別が決まっているなら `style_options_list { containerType: "grid" }` のように渡すと、その種別で使える軸だけが返る。`spec.style` には接頭辞付きの名前のまま書く（`{ '_grid_subgrid-gap': 'small' }`）。
 
 このリポジトリの組み込みブロックが定義している軸の実例（プロジェクトによって増減する）:
 
 ```json
 {
 	"axes": {
-		"max-width": ["normal", "small", "medium", "large", "full"],
-		"margin": ["none", "small", "normal", "large"],
-		"bg-color": ["transparent", "white", "gray", "blue", "red"],
-		"padding-block": ["none", "small", "medium", "large"],
-		"padding-inline": ["none", "small", "medium", "large", "default-gutter"],
-		"column-gap": ["none", "small", "normal", "large"],
-		"row-gap": ["none", "small", "normal", "large"]
+		"max-width": ["full", "large", "normal", "small"],
+		"margin": ["large", "none", "normal", "small"],
+		"bg-color": ["blue", "gray", "red", "transparent", "white"],
+		"padding-block": ["large", "medium", "none", "small"],
+		"padding-inline": ["default-gutter", "large", "medium", "none", "small"],
+		"column-gap": ["large", "none", "normal", "small"],
+		"row-gap": ["large", "none", "normal", "small"],
+		"_grid_subgrid-gap": ["large", "none", "normal", "small"]
 	}
 }
 ```
@@ -40,7 +43,7 @@ style_options_list
 container_options_list
 ```
 
-`grid` / `inline` / `float` の下位オプションが返る。こちらはコアの静的仕様でプロジェクトに依存しない。
+`grid` / `inline` / `float` の下位オプションが返る。ほとんどはコアの固定の仕様だが、grid の `repeatMinInlineSizeVariants`（自動折り返しの最小幅のプリセット）だけはプロジェクトの CSS から読む。使うときは返ってきた名前をそのまま `containerProps.repeatMinInlineSize` に書く（例: `"small"`）。
 
 ### 3. 既存ブロックを参考にする
 
@@ -54,13 +57,13 @@ container_options_list
   "items": [...],
   "containerProps": { "type": "grid", "columns": 2 },
   "style": {
-    "--bge-options-margin": "var(--bge-options-margin--large)",
-    "--bge-options-bg-color": "var(--bge-options-bg-color--blue)"
+    "margin": "large",
+    "bg-color": "blue"
   },
   "classList": ["my-section"]
 }
 ```
 
-`--bge-options-<軸>` の値は必ず `var(--bge-options-<軸>--<変種>)` の形にする。`classList` はプロジェクトの CSS/config に実在するクラスだけを使い、意味の分からない任意クラス名を勝手に足さない。
+`style` のキーは軸名、値は変種名だけを書く（`style_options_list` が返す名前そのまま）。`--bge-options-` や `var()` は付けない — エディタが `--bge-options-<軸>: var(--bge-options-<軸>--<変種>)` に組み立てて書き込む。`classList` はプロジェクトの CSS/config に実在するクラスだけを使い、意味の分からない任意クラス名を勝手に足さない。
 
 候補が複数解釈できるとき（「広めに」が `margin` の `large` か `padding-block` の `large` か等）は、`style_options_list` の実在する軸を提示してユーザーに選ばせる。
