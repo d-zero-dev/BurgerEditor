@@ -4,6 +4,7 @@
 		"composite": true,
 		"types": ["node", "jsdom"]
 	},
+	// 依存のうち blocks は noEmit のため参照できない（TS6310）
 	"references": [
 		{
 			"path": "../core"

@@ -3,13 +3,5 @@
 	"compilerOptions": {
 		"composite": true,
 		"noEmit": true
-	},
-	"references": [
-		{
-			"path": "../core"
-		},
-		{
-			"path": "../utils"
-		}
-	]
+	}
 }

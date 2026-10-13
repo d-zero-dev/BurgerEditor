@@ -3,5 +3,11 @@
 	"compilerOptions": {
 		"composite": true
 	},
+	// test/ が使う依存のうち blocks は noEmit（TS6310）、css は TypeScript プロジェクトでないため参照できない
+	"references": [
+		{
+			"path": "../core"
+		}
+	],
 	"exclude": ["dist", "node_modules"]
 }

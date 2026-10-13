@@ -5,6 +5,7 @@
 		"jsx": "react-jsx"
 	},
 	"exclude": ["src/__tests__/vr"],
+	// 依存のうち custom-element は noEmit のため参照できない（TS6310）
 	"references": [
 		{
 			"path": "../migrator"
