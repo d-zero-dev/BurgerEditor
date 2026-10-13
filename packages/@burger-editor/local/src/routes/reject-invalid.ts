@@ -6,7 +6,10 @@ import type { Context } from 'hono';
  */
 export interface ValidationFailureBody {
 	readonly success: false;
-	readonly error: { readonly name: string; readonly issues: readonly unknown[] };
+	readonly target: string;
+	readonly data: unknown;
+	/** `message` is the JSON-stringified list of zod issues. */
+	readonly error: { readonly name: string; readonly message: string };
 }
 
 /**
@@ -18,9 +21,9 @@ export interface ValidationFailureBody {
  * which since zod 4.6 pulls `zod/v4/core/json-schema` into the route types.
  * That module is not reachable through zod's `exports`, so declaration emit of
  * `createApp` (and every sub-app) fails with TS2742.
- * @param result
- * @param result.success
- * @param c
+ * @param result zod-validator's parse result; only `success` is read, the rest is sent as is
+ * @param result.success whether the target passed validation
+ * @param c the request context used to build the 400 response
  * @example
  * app.post('/x', zValidator('json', schema, rejectInvalid), (c) => c.json({ ok: true }));
  */
