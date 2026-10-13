@@ -743,6 +743,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@burger-editor/mcp-server@workspace:packages/@burger-editor/mcp-server"
   dependencies:
+    "@burger-editor/blocks": "npm:4.0.0-alpha.76"
     "@burger-editor/cli": "npm:4.0.0-alpha.76"
     "@burger-editor/core": "npm:4.0.0-alpha.76"
     "@burger-editor/file-io": "npm:4.0.0-alpha.76"

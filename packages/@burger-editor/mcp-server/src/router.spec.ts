@@ -35,14 +35,15 @@ let projectDir: string;
 let docRoot: string;
 
 // loadContext() walks cosmiconfig from process.cwd() — co-locate the fixture
-// under this package's own directory tree so `@burger-editor/blocks`
-// resolves via the workspace node_modules (same pattern the removed
-// tools/v4.spec.ts used).
+// inside this package's directory so the config's bare
+// `@burger-editor/blocks` import resolves the way this package's own
+// devDependency does (a temp dir under the OS tmpdir has no node_modules
+// to walk up to).
 beforeAll(async () => {
 	stack = new AsyncDisposableStack();
 	const originalCwd = process.cwd();
 	const tmp = await mkdtempDisposable(
-		path.join(path.resolve(import.meta.dirname, '../../'), '.tmp-router-spec-'),
+		path.join(path.resolve(import.meta.dirname, '..'), '.tmp-router-spec-'),
 	);
 	stack.use(tmp);
 	stack.defer(() => {

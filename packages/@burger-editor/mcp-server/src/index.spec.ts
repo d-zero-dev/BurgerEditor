@@ -76,7 +76,7 @@ beforeAll(async () => {
 	stack = new AsyncDisposableStack();
 	const originalCwd = process.cwd();
 	const tmp = await mkdtempDisposable(
-		path.join(path.resolve(import.meta.dirname, '../../'), '.tmp-index-spec-'),
+		path.join(path.resolve(import.meta.dirname, '..'), '.tmp-index-spec-'),
 	);
 	stack.use(tmp);
 	stack.defer(() => {
