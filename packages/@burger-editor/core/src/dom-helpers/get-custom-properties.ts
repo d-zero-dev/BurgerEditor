@@ -1,3 +1,44 @@
+/**
+ * Static detection of block-option custom properties from the CSSOM.
+ *
+ * The browser does not expose "which values could this custom property
+ * take", so the editor reconstructs the option list by walking every
+ * stylesheet in the document and re-implementing the slice of the cascade
+ * it needs. `get-custom-properties.spec.ts` is the source of truth for the
+ * exact behavior; the rules are:
+ *
+ * - **Selector**: only rules whose selector is exactly `[data-bge-container]`
+ *   (or `& [data-bge-container]` produced by CSS nesting, or `:scope` inside
+ *   `@scope ([data-bge-container])`) are read. Compound/list selectors and
+ *   `:where(...)` wrappers are ignored on purpose: they are where the CSS
+ *   applies options, not where it declares them. One exception: a
+ *   leading `&` is stripped before comparing, so the nested compound
+ *   `&[data-bge-container]` (no space) is read as a nested declaration too.
+ * - **Traversed**: CSS nesting (any depth), `@layer`, `@scope` (also with a
+ *   limit). `@scope` is skipped silently when `CSSScopeRule` is unavailable.
+ * - **Not traversed**: `@media`, `@supports`, `@container`, and anything
+ *   nested inside them. Their applicability depends on runtime conditions,
+ *   so a single static option list cannot represent them.
+ * - **Priority**: unlayered beats layered; between layers the declaration
+ *   order wins (later = higher), resolved globally across all stylesheets as
+ *   in CSS Cascade 5; nested sub-layers compare parent first. On equal
+ *   priority the later declaration wins. `@scope` does not affect priority.
+ * - **Default (`getCustomProperties`)**: the key referenced by
+ *   `--bge-options-{category}: var(--bge-options-{category}--{key})` gets
+ *   `isDefault: true`. Defaults from nested selectors compete with direct
+ *   ones by layer priority — a higher-layer nested default wins, and on a
+ *   tie the direct selector wins. A nested default is also used when no
+ *   direct default exists.
+ * - **Empty values**: `getCustomProperties` drops keys whose value trims to
+ *   `''` (`--x--key: ;`), so project CSS can hide built-in choices.
+ *   `--x--key:;` (no space) is a parse error in current browsers and never
+ *   reaches the CSSOM. `getCustomProperty` and
+ *   `getRepeatMinInlineSizeVariants` do not filter empty values.
+ * - **Container-type categories**: categories named `_{type}_...` are
+ *   returned only when `containerType` matches; the `name` has the prefix
+ *   stripped for display.
+ * - Cross-origin stylesheets that throw `SecurityError` are skipped.
+ */
 import type { ContainerType } from '../block/types.js';
 
 import {
@@ -37,7 +78,8 @@ interface LayerPriority {
 }
 
 /**
- * Get all custom properties from document
+ * Get all `--bge-options-*` custom properties from document, grouped by
+ * category. See the file-level comment for the detection rules.
  * @param scope - Document to scan for CSS custom properties
  * @param containerType - Container type to filter container-scoped properties (prefixed with `_`)
  * @returns Categorized map of custom properties grouped by property name
@@ -96,9 +138,10 @@ export function getCustomProperties(
 				priority: layers.map((layer) => layer.priority),
 			};
 
-			// Direct selectors take precedence over nested selectors for default.
-			// Nested selectors (e.g. `.parent [data-bge-container]`) are context-specific
-			// overrides; they are used as fallback when no direct selector defines a default.
+			// Keep direct and nested defaults apart so the merge below can let a
+			// direct selector win ties: nested selectors (e.g. `.parent { [data-bge-container] {} }`)
+			// are context-specific, so on equal layer priority they should not
+			// override the context-free default. A higher-layer nested default still wins.
 			const targetMap = isNested ? nestedDefaultValues : defaultValues;
 			const currentDefaultValue = targetMap.get(propName);
 

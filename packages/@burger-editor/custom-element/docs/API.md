@@ -21,6 +21,18 @@ const editorElement = document.querySelector(
 editorElement.editor.chain().focus().toggleBold().run();
 ```
 
+### `contentCss`
+
+WYSIWYG の編集面に適用する CSS。公開ページと同じ見た目で編集するために使う。属性ではなくプロパティで、要素が文書に接続される前に設定してもよい（内側の `<bge-wysiwyg>` ができた時点で適用される）。React 19 では JSX の prop としてそのまま渡せる。
+
+**型**: 代入は `string`。読み取りは `string | null`（一度も代入していなければ `null`）
+
+**使用例**:
+
+```typescript
+editorElement.contentCss = 'p { line-height: 1.8; }';
+```
+
 ### `name` (readonly)
 
 エディタの識別子（`name`属性の値）。
@@ -106,9 +118,9 @@ editorElement.syncWysiwygToTextarea();
 
 ## 属性
 
-### `name` (required)
+### `name`
 
-エディタの識別子。
+エディタの識別子。省略すると空文字列。
 
 **型**: `string`
 
@@ -118,7 +130,7 @@ editorElement.syncWysiwygToTextarea();
 <bge-wysiwyg-editor name="my-editor" ...></bge-wysiwyg-editor>
 ```
 
-### `item-name` (required)
+### `item-name`
 
 アイテム名（通常は `"wysiwyg"`）。
 
@@ -130,9 +142,9 @@ editorElement.syncWysiwygToTextarea();
 <bge-wysiwyg-editor item-name="wysiwyg" ...></bge-wysiwyg-editor>
 ```
 
-### `commands` (required)
+### `commands`
 
-使用可能なコマンドのカンマ区切りリスト。
+使用可能なコマンドのカンマ区切りリスト。省略すると `BgeWysiwygEditorElement.defaultCommands` を使う。
 
 **型**: `string`
 
@@ -144,6 +156,7 @@ editorElement.syncWysiwygToTextarea();
 - `italic` - 斜体
 - `underline` - 下線
 - `strikethrough` - 取り消し線
+- `code` - インラインコード
 - `subscript` - 下付き文字
 - `superscript` - 上付き文字
 
@@ -165,6 +178,8 @@ editorElement.syncWysiwygToTextarea();
 
 **見出し:**
 
+- `h1` - 見出しレベル1
+- `h2` - 見出しレベル2
 - `h3` - 見出しレベル3
 - `h4` - 見出しレベル4
 - `h5` - 見出しレベル5
@@ -226,6 +241,8 @@ interface BgeWysiwygEditorElement extends HTMLElement {
 	readonly name: string;
 	readonly value: string;
 	readonly mode: 'wysiwyg' | 'html' | 'text-only';
+	get contentCss(): string | null;
+	set contentCss(css: string);
 	innerHTML: string;
 
 	// メソッド
@@ -237,5 +254,4 @@ interface BgeWysiwygEditorElement extends HTMLElement {
 ## 関連ドキュメント
 
 - [Events](./EVENTS.md) - カスタムイベント仕様
-- [Architecture](./ARCHITECTURE.md) - 内部アーキテクチャ
 - [Customization](./CUSTOMIZATION.md) - UI拡張ガイド

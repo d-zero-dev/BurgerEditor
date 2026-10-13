@@ -86,7 +86,7 @@ wysiwyg.addEventListener('bge:structure-change', (event) => {
 
 ### `transaction`
 
-TipTap のトランザクション単位で発火するイベント。`event.detail.state` にエディタ状態が入り、マークアップボタン（太字・斜体など）の押下状態の同期に使う。
+TipTap のトランザクション単位で発火するイベント。`event.detail.state` にはノード/マークごとの `{ active, disabled }`（ツールバー向けの状態。TipTap の `EditorState` ではない）が入り、マークアップボタン（太字・斜体など）の押下状態の同期に使う。
 
 ## スタイル
 
@@ -106,12 +106,12 @@ bge-wysiwyg {
 
 ## ドキュメント
 
-設計詳細・API リファレンス・カスタマイズ手順は `docs/` 配下を参照。
+API リファレンス・イベント仕様・カスタマイズ手順は `docs/` 配下を参照。
 
 - [`docs/API.md`](./docs/API.md) — プロパティ、メソッド、属性の詳細仕様
 - [`docs/EVENTS.md`](./docs/EVENTS.md) — `transaction` / `bge:structure-change` イベントの仕様
-- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — 内部構造、設計思想、データフロー
-- [`docs/CUSTOMIZATION.md`](./docs/CUSTOMIZATION.md) — UI 拡張方法とよくある間違い
+- [`docs/CUSTOMIZATION.md`](./docs/CUSTOMIZATION.md) — UI 拡張方法（UI 要素とイベントの対応、初期化パターン）とよくある間違い
+- [`.claude/skills/tiptap-extension/SKILL.md`](https://github.com/d-zero-dev/BurgerEditor/blob/dev/.claude/skills/tiptap-extension/SKILL.md) — 組み込みの TipTap 拡張・ツールバーボタンを本パッケージに追加するコントリビュータ向け手順
 
 ## 実験的機能
 

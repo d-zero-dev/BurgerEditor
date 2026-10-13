@@ -135,6 +135,27 @@ export interface Config {
 	readonly sampleImagePath: string;
 	readonly sampleFilePath: string;
 	readonly googleMapsApiKey: string | null;
+	/**
+	 * Opt-in features whose API is not settled yet. Every option here is off
+	 * when omitted, and leaving it off must keep the editor's behavior
+	 * exactly as if the option did not exist. Shapes may change or be removed
+	 * in any release; a mature option is promoted out of `experimental`.
+	 *
+	 * Options are grouped by the item they affect (`itemOptions.<itemName>`).
+	 * The engine only carries them: `wysiwyg` is forwarded to the custom
+	 * element through `defineCustomElement`, and `button` is read by the
+	 * button item's editor via `useEngine().config`.
+	 * @example
+	 * ```ts
+	 * const config: Partial<Config> = {
+	 * 	experimental: {
+	 * 		itemOptions: {
+	 * 			wysiwyg: { enableTextOnlyMode: true },
+	 * 		},
+	 * 	},
+	 * };
+	 * ```
+	 */
 	readonly experimental?: {
 		readonly itemOptions?: {
 			readonly wysiwyg?: {

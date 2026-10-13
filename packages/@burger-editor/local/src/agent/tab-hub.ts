@@ -75,8 +75,28 @@ export interface TabSessionSnapshot {
 	/**
 	 * The tab's main-area HTML as the editor normalized it on open (raw HTML
 	 * wrapped into a fallback block, legacy markup migrated, …), reported in
-	 * `hello` when it differs from disk. `null` once the tab's content has
-	 * reached disk by any route (a human save, an acked op, {@link TabHub.commit}).
+	 * `hello`. `null` once the tab's content has reached disk by any route (a
+	 * human save, an acked op, {@link TabHub.commit}), so a reconnecting tab
+	 * never re-sends content disk already has.
+	 *
+	 * Opening a page never writes it (issue #966), so after such a
+	 * normalization the tab's blocks and the file's blocks differ. An agent
+	 * reads block indices from disk while a browser-applied op is applied to
+	 * the tab by index — left alone, the op would hit a different block. The
+	 * client only reports this when the block list itself changed
+	 * (`client/block-structure.ts`'s `hasBlockStructureChanged`, which also
+	 * explains why a plain string comparison is not used), not for mere
+	 * re-serialization.
+	 *
+	 * `agent/route.ts`'s `runViaBrowserOrDisk` consumes it: when the primary
+	 * tab still holds one, the next agent mutation of that page writes this
+	 * HTML to disk once (instead of applying the op), sends `committed` to the
+	 * tab, and fails with `stale` carrying a fresh `readToken` so the agent
+	 * re-reads before retrying. That write still records a `content-saved`
+	 * event (`appliedTo: 'browser'`, since the content came from the tab), so
+	 * the event alone does not mean the agent's op landed. Opening or reading
+	 * the page alone never triggers that write — only a mutation that would
+	 * have written anyway.
 	 */
 	readonly normalizedHtml: string | null;
 	readonly uiState: UIState | null;

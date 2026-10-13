@@ -79,10 +79,11 @@ description: Git 操作ルール（コミット作成、メッセージ形式、
 | 4      | `client`                         |
 | 5      | `blocks`                         |
 | 6      | `css`, `file-io`                 |
-| 7      | `cli`, `local`, `runtime`        |
-| 8      | `mcp-server`                     |
+| 7      | `cli`, `runtime`                 |
+| 8      | `local`, `mcp-server`            |
+| 9      | `storybook`                      |
 
-順序が不明な場合は `yarn lerna list --graph` で確認する。
+`css` と `runtime` は `devDependencies` で `blocks` を使うため `blocks` より後に置く。`migrator` の `blocks` への依存は ARCHITECTURE.md の「依存の向き」にある既知の循環（コードでは使っていない）なので、`migrator` は `client` より前に置く。順序が不明な場合は `yarn lerna list --graph` で確認する。
 
 # コミットメッセージの形式
 

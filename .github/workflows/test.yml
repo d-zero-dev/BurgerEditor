@@ -32,6 +32,12 @@ jobs:
             apt-get install -y --no-install-recommends fonts-noto-cjk
             rm -rf /var/lib/apt/lists/*
 
+      - name: Verify architecture graph
+        # ARCHITECTURE.mdの依存グラフ（依存してよい向きの根拠）が各
+        # package.jsonと食い違っていないことを検証する
+        # （scripts/check-architecture-graph.mjs）
+        run: yarn verify:architecture-graph
+
       - name: Verify React Compiler coverage
         # React Compilerはコンパイル対象外の判断を診断ログなしで下すことが
         # あるため、item Editorごとの期待コンパイル状態をコードで固定して

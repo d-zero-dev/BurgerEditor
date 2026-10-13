@@ -4,7 +4,7 @@
 
 ローカルファイルシステム上の HTML を **開発者・編集者がブラウザ UI で WYSIWYG 編集** するための BurgerEditor CMS 実装。Hono ベースの HTTP サーバー + Vite でビルドした `@burger-editor/client` (React) UI を `bge`（`@burger-editor/local` の bin）一発で起動する。
 
-ファイル I/O / 設定解決 / virtual-path-resolver / Front Matter の本体は [`@burger-editor/file-io`](../file-io/) に集約されており、`local` はそれを再エクスポートする薄いシムに痩身化されている。
+ファイル I/O / 設定解決 / virtual-path-resolver / Front Matter の本体は [`@burger-editor/file-io`](../file-io/) にあり、`local` はそれを利用・再エクスポートする。
 
 ## Quick Start
 
@@ -179,7 +179,7 @@ export default {
 ### 受け付けるパス形式
 
 - 先頭スラッシュは正規化される（`about.html` と `/about.html` は同一）
-- 連続スラッシュも除去（`//foo.html` → `foo.html`）
+- 先頭の連続スラッシュも除去（`//foo.html` → `foo.html`）
 - 正規化後に空文字列になる値（`'/'`、`'///'`）は **起動時エラー / API は 400 `EmptyLogicalPathError`**
 - `..` / `.` セグメントと NUL 文字を含む論理パスは API 境界で **400 拒否**（孤児ファイル化を防ぐため）
 
@@ -201,7 +201,7 @@ Fix the conflicting front matter "path" values in the listed files and retry.
 - 新規作成ダイアログで **ID と論理パスの両方をユーザー手入力**（ID 自動採番なし）
 - 同一の論理パスを複数ファイルに持たせることは不可
 - 並行更新は内部 mutex で直列化（シングルユーザー前提）
-- 旧バージョンで `..` 入りの Front Matter が書き込まれていた場合は boot チェック対象外なので手動修正が必要
+- ディスク上の Front Matter に `..` / `.` セグメントを含む論理パスがあっても起動時には検査されない。そのページは編集 UI から開けないため、Front Matter を直接修正する
 
 ### ツリー表示
 
@@ -213,12 +213,46 @@ AI エージェント（`@burger-editor/mcp-server` 経由）が、開いてい�
 
 - **エンドポイント**: `GET /api/agent/tools`（ツール定義一覧）、`GET /api/agent/status`（到達確認）、`GET /api/agent/events`（状態変化のロングポーリング）、`POST /api/agent/invoke`（ツール呼び出し）、WebSocket `/ws/editor`（ブラウザタブとの接続）
 - **無効化**: `agent: { enabled: false }` で上記すべてがマウントされなくなる
-- **状態観測・外部変更検知の詳細**: [`docs/agent-hub.md`](./docs/agent-hub.md) を参照（`GET /api/agent/events` / `editor_wait_for_event` の契約、`fs.watch` による外部変更の能動検知、ナビツリー再ハイドレート・通知バナー）
 - **非ループバック bind 時のトークン**: `host` を LAN IP にすると、起動ごとのトークンが必要になる（エディター画面・`/api/content`・`/api/file`・静的ファイルを含むアプリ全体が対象で、`agent.enabled: false` でも同じ。`/api/health` のみ認証なしで応答する）。起動バナーに `http://<host>:<port>/?token=…` が表示されるので **一度だけそれを開く**と `bge_session` cookie が発行され、以後そのブラウザは認可される。同じトークンは `<configDir>/.burgereditor/agent-token`（`configDir` は読み込んだ設定ファイルのディレクトリ。mode 0600、終了時に削除）にも書かれる。**`.burgereditor/` を `.gitignore` に追加すること**。同じマシンで動く `mcp-server` はこのファイルを自動で読むので設定は不要。ただし `local` を `--config` / `BGE_CONFIG` で起動した場合は、`mcp-server` にも同じ設定ファイルを指定する（そうしないと別のディレクトリのトークンを探してしまう）。別マシンや任意の値を使いたいときは環境変数 `BGE_AGENT_TOKEN` で上書きできる。`localhost` / `127.0.0.1` / `::1` に bind している間はトークン不要
 - **Host / Origin 検査（DNS rebinding 対策）**: `hostGuard` はアプリ全体に掛かる。`Host`（と、あれば `Origin`）が `localhost` / ループバック / 設定した `host` 以外なら、ループバック bind でも 403
 - **認証されていない upgrade の扱い**: 非ループバック bind で cookie / bearer の無い `/ws/editor` の upgrade は HTTP 401、`Host` / `Origin` が許可リストに無い場合は 403 で、いずれもハンドシェイク時点で拒否される（`/api/agent/*` と同じ `hostGuard` / cookie-or-bearer 判定を upgrade 前に通す）。ハンドシェイクを受理してから close するのではなく、`app.request()` で in-process に検証できる
 - **利用側**: `@burger-editor/mcp-server --mode local`（既定の `auto` でも、`local` に到達できれば自動的にここへ転送される）
-- **デバッグ**: サーバー側は `DEBUG=@bge:local`、ブラウザ側は console の `[bge-agent-ws]` / `[bge-agent-link]` 行。ブラウザ側でフレーム全文のログを有効にするには `localStorage.setItem('bge:debug', '1')`（この設定は並行して実装中）。`/api/agent/*` の応答に付く ISO `timestamp` で両者を突き合わせられる
+- **デバッグ**: サーバー側は `DEBUG=@bge:local`、ブラウザ側は console の `[bge-agent-ws]` / `[bge-agent-link]` 行。ブラウザ側でフレーム全文のログを有効にするには `localStorage.setItem('bge:debug', '1')`。`/api/agent/*` の応答に付く ISO `timestamp` で両者を突き合わせられる
+
+### 状態の観測（`GET /api/agent/events` / `editor_wait_for_event`）
+
+タブの接続・UI 状態・保存・外部変更・ページ構造の変化はイベントとして記録され、ロングポーリングで受け取れる。`GET /api/agent/events?since=&timeoutMs=&types=` と MCP ツール `editor_wait_for_event({ since, timeoutMs, types })` は同じ契約で動く。
+
+| 引数        | 説明                                                                                                           |
+| ----------- | -------------------------------------------------------------------------------------------------------------- |
+| `since`     | 前回応答の `nextSince`。省略すると呼び出し時点より後のイベントだけを待つ（過去分は再生しない）                 |
+| `timeoutMs` | 待つ時間。既定 10,000ms、上限 30,000ms（超えた値は 30,000ms として扱う）                                       |
+| `types`     | 受け取るイベント種別のリスト（HTTP ではカンマ区切り）。下表に無い値は 400 `invalid`（`Unknown event type: …`） |
+
+応答は `{ events, nextSince, timedOut, overflowed }`（HTTP は `timestamp` も付く）。各イベントは `{ seq, type, at, payload }`。
+
+- 新しいイベントが届くと即座に返る。`timeoutMs` 内に何も無ければ `events: []`、`timedOut: true`
+- 次回は `nextSince` を `since` に渡す
+- イベントは直近 500 件だけ保持される。`overflowed: true` は `since` 以降のイベントの一部が既に破棄されたことを示すので、`editor_state_get` で状態を取り直す
+- HTTP 接続を切ると、サーバー側の待機もその時点で終わる
+- `mcp-server` 経由では、`local` が `timeoutMs` + 5 秒以内に応答しない場合、`timedOut: true` の空応答として返る
+
+| イベント種別                                     | 発生するとき                                                                                                         | `payload`                     |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| `session-connected`                              | タブが接続した                                                                                                       | `{ sessionId, page }`         |
+| `session-disconnected`                           | タブの接続が切れた（ping 応答が途絶えた場合を含む）                                                                  | `{ sessionId, page }`         |
+| `ui-state`                                       | タブの UI 状態が届いた                                                                                               | `{ sessionId, uiState }`      |
+| `ui-idle`                                        | タブの UI 状態が busy から idle になった（`ui-state` に加えて発生）                                                  | `{ sessionId }`               |
+| `content-saved`                                  | エージェントのツールでページ内容がタブまたはディスクに書き込まれた（`front_matter_set` とページ構造系ツールを除く）  | `{ page, appliedTo }`         |
+| `content-changed`                                | `local` 以外（IDE や別プロセス）がページのファイルを変更したことを検知した                                           | `{ page }`                    |
+| `front-matter-changed`                           | `front_matter_set` が成功した                                                                                        | `{ page, appliedTo: 'disk' }` |
+| `page-created` / `page-deleted` / `page-renamed` | `page_create` / `page_copy` / `page_concat`（created）、`page_delete`（deleted）、`page_rename`（renamed）が成功した | `{ from?, to? }`              |
+
+`content-saved` は、エージェントの操作そのものが成功しなかったときにも発生することがある。開いているタブが、ページを開いた時点でマークアップを正規化して（素の HTML をブロックで包む等）未保存のまま持っている場合、ブロックを操作するツールは先にその内容をディスクへ書き込み、`content-saved`（`appliedTo: 'browser'`）を発生させたうえで `stale` エラーを返す。エージェントの操作は適用されていないので、`content-saved` を操作の成功とみなさず、ツールの応答で判断する。
+
+`content-changed` は 2 つの経路で検知する。1 つはエージェントがそのページへの操作を呼んだときのディスク内容の比較で、常に有効。もう 1 つはファイル監視による即時検知で、`virtualTree.enabled: false` のときだけ動く。どちらも、`local` 経由で一度でも読み書きされたページだけが対象。変更を検知すると、そのページを開いているタブは再読み込みされる。
+
+ページが作成・削除・改名されると、開いているタブのページツリーは自動で更新される。タブで開いているページ自体が削除・改名された場合は、画面に通知が表示される。
 
 ## Front Matter 編集 UI
 

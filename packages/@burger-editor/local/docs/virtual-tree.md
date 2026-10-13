@@ -2,7 +2,7 @@
 
 外部 CMS / ヘッドレス連携向けに、`documentRoot` 配下を「フラットな ID 名のファイル群」のまま運用しつつ、編集 UI 上では Front Matter の値からツリー構造を再構築するオプトイン機能。
 
-このドキュメントは「採用するかしないかの判断」「採用するなら何を準備するか」「失敗時の戻し方」を扱う。機能の API リファレンスは [README.md](../README.md#virtual-file-tree仮想ファイルツリー) を参照。
+このドキュメントは「採用するかしないかの判断」「採用するなら何を準備するか」「失敗時の戻し方」を扱う。設定とパス形式のリファレンスは [README.md の Virtual File Tree セクション](../README.md#virtual-file-tree) を参照。
 
 ---
 
@@ -31,8 +31,8 @@
 
 1. Front Matter を持っている（`---` で囲まれた YAML ブロック）
 2. Front Matter に `pathKey`（既定 `path`）を **空でない文字列値** として持っている
-   - 値の先頭スラッシュは内部で除去されて正規化される。`path: foo.html` と `path: /foo.html` は同じ論理パスとして扱われる
-   - 連続スラッシュ（`//foo.html`、`///foo.html` 等）も同様に除去される
+   - 値の先頭スラッシュは除去されて正規化される。`path: foo.html` と `path: /foo.html` は同じ論理パスとして扱われる
+   - 先頭の連続スラッシュ（`//foo.html`、`///foo.html` 等）も同様に除去される
    - 正規化後に空文字列になる値（`'/'` のみ、`'////'` のみ等）は受け付けない
 3. `pathKey` の値がプロジェクト内で **一意**（衝突したら起動拒否）
 
@@ -80,8 +80,6 @@ export default {
 ### 3. 起動
 
 ```bash
-yarn dev
-# または
 npx bge
 ```
 
@@ -93,84 +91,13 @@ npx bge
 
 ---
 
-## 失敗パターンとリカバリ
+## 起動失敗のメッセージと対処
 
-### `PathConflictError: Conflicting logical paths in virtual tree`
+起動時の検査に失敗すると、メッセージを stderr に出して exit code 1 で終了する（スタックトレースは出ない）。PM2 / systemd などのプロセスマネージャは exit code で失敗を判定できる。
 
-複数のファイルが同じ論理パスを主張している。
+### 論理パスの衝突
 
-```
-Conflicting logical paths in virtual tree:
-  - "about.html" claimed by: 1.html, 2.html
-```
-
-**対処**: 列挙された 2 つ以上のファイルのうち、いずれか以外の Front Matter `path` を別の値に書き換えて再起動。
-
-### `Front matter "path" missing or not a string in <file>`
-
-該当ファイルに Front Matter がない、または `pathKey` の値が文字列でない（数値、`null`、配列、欠落）。
-
-**対処**: ファイルを開いて Front Matter を追加または修正。
-
-```html
----
-path: some/logical/path.html
----
-```
-
-### `IdAlreadyExistsError: File ID "<id>" is already in use`
-
-新規作成 API が叩かれたが、その ID は既にディスクに存在している。クライアントの入力ミスがほとんど。
-
-実際のメッセージには末尾に `(currently mapped to "<logical-path>")` が付き、その ID が現在どの論理パスで運用されているかを示す。重複していたファイルの所在をそこから辿れる。
-
-**対処**: 新規作成ダイアログで重複しない ID を再入力する。
-
-### `400 Logical path normalizes to empty string` (`EmptyLogicalPathError`)
-
-`POST /api/content/create` や `POST /api/content` で送信した `path` / `frontMatter.path` が `'/'` や `'///'` のように、先頭スラッシュ除去後に空文字列になる値の場合に返る。state を空キーで汚染しないよう全境界で拒否する。
-
-**対処**: パスの末尾にファイル名を必ず含める。例: `'/about.html'` は `'about.html'` として登録される。
-
-### `400 Resolved path escapes documentRoot`
-
-ID やパスに `..`、`/`、`\` などのパス区切り / トラバーサル試行が含まれている（[セキュリティ修正済み](../README.md#virtual-file-tree仮想ファイルツリー)）。
-
-**対処**: ID には以下を含めない。
-
-- パス区切り `/` および `\`
-- NUL 文字 `\0`
-- `.`（ドット 1 つ）あるいは `..`（ドット 2 つ）そのもの
-- 先頭が `.` で始まる文字列（dotfile）
-
-それ以外の文字は許可されますが、ファイル名としての安全性を考えると英数字・アンダースコア・ハイフン・ドット（先頭以外）に絞るのが無難です。
-
----
-
-## トラブルシュート
-
-### 論理パスに `..` / `.` / NUL を入れて 400 が返る
-
-`POST /api/content/create` および `POST /api/content` の `path` / `frontMatter[pathKey]` で、以下のいずれかに該当する値は **`400`** で拒否される。
-
-- 任意位置の `..` / `.` セグメント（`../foo.html`、`foo/../bar.html`、`./foo.html`、`foo/./bar.html` など）
-- NUL 文字 `\0`
-
-理由: 論理パスは fs に届かないので documentRoot 脱出は起きないが、ブラウザは `<a href="/../foo.html">` のクリック時に URL を `/foo.html` へ正規化してしまう。一方サーバ側は登録キー `../foo.html` のままなので `toDiskPath` が引けず、ファイルは保存されているのに UI から二度と開けない孤児になる。これを防ぐため API 境界で拒否している（[PR #758](https://github.com/d-zero-dev/BurgerEditor/pull/758)）。
-
-**対処**: パスから `..` / `.` セグメントを除き、ファイル名を含む通常の論理パス（`company/about.html` 等）に書き換える。
-
-> **注意**: 旧バージョンで disk 上の Front Matter にすでに `..` を含むパスが書かれているケースは boot 時のチェック対象外。該当ファイルは編集 UI から開けないままになるので、Front Matter を直接編集して論理パスを修正してから再起動すること。
-
-### 起動失敗時のメッセージは整形されて stderr に出る
-
-仮想モードで `loadResolverState` が失敗すると、`loadResolverStateOrExit` ラッパが PathConflictError などを整形して stderr に書き込み、`process.exit(1)` で終了する（[PR #759](https://github.com/d-zero-dev/BurgerEditor/pull/759)）。Node のデフォルト uncaught handler はバイパスされるため、スタックトレースは混入しない。
-
-- **PM2 / systemd** などのプロセスマネージャは exit code 1 で再起動判定が可能
-- **衝突している論理パスとディスクファイル名** はメッセージ先頭で確認できる
-- 直後に `Fix the conflicting front matter "path" values in the listed files and retry.` という対処ヒントが続く
-
-stderr 出力例:
+複数のファイルが同じ論理パスを主張している。衝突している論理パスと、それを主張するファイルが一覧される。
 
 ```
 Conflicting logical paths in virtual tree:
@@ -179,14 +106,90 @@ Conflicting logical paths in virtual tree:
 Fix the conflicting front matter "path" values in the listed files and retry.
 ```
 
+**対処**: 列挙されたファイルのうち 1 つを残し、他のファイルの Front Matter `path` を別の値に書き換えて再起動する。
+
+### Front Matter の `pathKey` が不正
+
+最初に見つかった不正なファイルについて、次のいずれかが出る（`path` は `pathKey` の値、`1.html` はファイル名）。
+
+```
+Failed to load virtualTree resolver state:
+  Front matter "path" missing in 1.html
+```
+
+| メッセージ（2 行目）                                         | 原因                                                           |
+| ------------------------------------------------------------ | -------------------------------------------------------------- |
+| `Front matter "path" missing in 1.html`                      | Front Matter が無い、または `pathKey` のキーが無い             |
+| `Front matter "path" is not a string (got number) in 1.html` | 値が文字列でない（`got` の後に実際の型が入る）                 |
+| `Front matter "path" is an empty string in 1.html`           | 値が空文字列                                                   |
+| `Front matter "path" normalizes to empty string in 1.html`   | 値が `'/'` や `'///'` のように、先頭スラッシュ除去後に空になる |
+
+**対処**: ファイルを開いて Front Matter を追加または修正し、再起動する。
+
+```html
+---
+path: some/logical/path.html
+---
+```
+
+---
+
+## 編集 API が返すエラー
+
+新規作成（`POST /api/content/create`）と保存（`POST /api/content`）は、不正な入力を次のエラーで拒否する。
+
+### ID が既に使われている（409）
+
+```
+File ID "10.html" is already in use (currently mapped to "company/about.html").
+```
+
+新規作成で指定した ID（`.html` が付いていなければ補われる）が、既に別の論理パスで登録されている。括弧内の論理パスから既存ファイルを辿れる。
+
+**対処**: 新規作成ダイアログで重複しない ID を再入力する。
+
+### 論理パスが空になる（400）
+
+```
+Logical path normalizes to empty string: "/"
+```
+
+送信した `path` / `frontMatter[pathKey]` が `'/'` や `'///'` のように、先頭スラッシュ除去後に空文字列になる。
+
+**対処**: パスにファイル名を含める。例: `'/about.html'` は `'about.html'` として登録される。
+
+### ID に使えない文字が含まれている（400）
+
+```
+id must not contain path separators, NUL bytes, or be "." / ".." / a dotfile
+```
+
+ID には以下を含められない。
+
+- パス区切り `/` および `\`
+- NUL 文字 `\0`
+- `.`（ドット 1 つ）あるいは `..`（ドット 2 つ）そのもの
+- 先頭が `.` で始まる文字列（dotfile）
+
+それ以外の文字は許可されるが、ファイル名としての安全性を考えると英数字・アンダースコア・ハイフン・ドット（先頭以外）に絞るのが無難。
+
+### 論理パスに `..` / `.` / NUL が含まれている（400）
+
+```
+logical path must not contain "." or ".." segments or NUL bytes
+```
+
+`frontMatter[pathKey]` 経由のときは先頭に `Front matter "path" ` が付く。任意位置の `..` / `.` セグメント（`../foo.html`、`foo/../bar.html`、`./foo.html`、`foo/./bar.html` など）と NUL 文字が対象。
+
+理由: 論理パスはファイルシステムに届かないので `documentRoot` の外には出ないが、ブラウザは `<a href="/../foo.html">` のクリック時に URL を `/foo.html` へ正規化してしまう。一方サーバ側の登録キーは `../foo.html` のままなので対応するファイルを引けず、ファイルは保存されているのに UI から二度と開けなくなる（[PR #758](https://github.com/d-zero-dev/BurgerEditor/pull/758)）。
+
+**対処**: パスから `..` / `.` セグメントを除き、ファイル名を含む通常の論理パス（`company/about.html` 等）に書き換える。
+
+> **注意**: この検査は API の入力にだけ掛かる。ディスク上の Front Matter に `..` / `.` セグメントを含む論理パスが既に書かれていても起動時には検査されず、そのページは編集 UI から開けない。Front Matter を直接編集して論理パスを修正してから再起動すること。
+
 ---
 
 ## 参考リンク
 
-- [README.md の Virtual File Tree セクション](../README.md#virtual-file-tree仮想ファイルツリー) — API リファレンス
+- [README.md の Virtual File Tree セクション](../README.md#virtual-file-tree) — 設定とパス形式のリファレンス
 - [gray-matter](https://github.com/jonschlinkert/gray-matter) — 内部で使っている Front Matter パーサ
-- 検索キーワード: `BurgerEditor virtualTree` / `PathConflictError` / `IdAlreadyExistsError` / `@burger-editor/local frontmatter path`
-
-## このドキュメントの更新責任
-
-`@burger-editor/local` のメンテナ。仮想ツリー機能の挙動を変更したら同時にこのドキュメントを更新する。RC 期間中の仕様変更は自由。安定リリース後はマイグレーションパスをここに追記する。

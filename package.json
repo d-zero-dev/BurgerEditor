@@ -22,6 +22,7 @@
 		"test:vr:update": "vitest run --project vr --update",
 		"test:vr:docker": "bash scripts/docker-yarn.sh test:vr",
 		"test:vr:docker:update": "bash scripts/docker-yarn.sh test:vr --update",
+		"verify:architecture-graph": "node scripts/check-architecture-graph.mjs",
 		"verify:react-compiler": "node scripts/check-react-compiler-coverage.mjs",
 		"verify:blocks-boundary": "node scripts/check-blocks-entry-boundary.mjs",
 		"verify:packed-install": "node scripts/verify-packed-install.mjs",
