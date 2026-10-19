@@ -475,7 +475,7 @@ __metadata:
     "@burger-editor/frozen-patty": "npm:4.0.0-alpha.77"
     "@d-zero/roar": "npm:2.3.0"
     "@d-zero/shared": "npm:0.23.0"
-    "@types/node": "npm:26.6.4"
+    "@types/node": "npm:26.6.5"
     zod: "npm:4.6.5"
   bin:
     cli: ./dist/bin.js
@@ -579,7 +579,7 @@ __metadata:
     "@burger-editor/utils": "npm:4.0.0-alpha.77"
     "@d-zero/shared": "npm:0.23.0"
     "@types/jsdom": "npm:28.0.3"
-    "@types/node": "npm:26.6.4"
+    "@types/node": "npm:26.6.5"
     cosmiconfig: "npm:10.0.1"
     jsdom: "npm:28.1.0"
     prettier: "npm:3.9.9"
@@ -629,7 +629,7 @@ __metadata:
     "@hono/node-server": "npm:2.1.4"
     "@hono/zod-validator": "npm:0.9.1"
     "@types/debug": "npm:4.1.13"
-    "@types/node": "npm:26.6.4"
+    "@types/node": "npm:26.6.5"
     "@types/react": "npm:19.3.0"
     "@types/react-dom": "npm:19.3.0"
     "@types/ws": "npm:8.18.2"
@@ -5766,12 +5766,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:*, @types/node@npm:26.6.4":
+"@types/node@npm:*":
   version: 26.6.4
   resolution: "@types/node@npm:26.6.4"
   dependencies:
     undici-types: "npm:~8.9.0"
   checksum: 10c0/094e7362df9200ba4c2da09131ca3b5d1aa51535a268a24e4ee2546d9c5a323d1d30cbdaaaa3db7ef8b2387572d1f9edabb11538ab7a09d3bca33ae5cddc2b1b
+  languageName: node
+  linkType: hard
+
+"@types/node@npm:26.6.5":
+  version: 26.6.5
+  resolution: "@types/node@npm:26.6.5"
+  dependencies:
+    undici-types: "npm:~8.9.0"
+  checksum: 10c0/4f791f69466ace7842c09e7bef96cb1ddbb65cf3db916ef7e84f0e2b2a17220b6b816dc7539d01520cadfb17ed7169b8214910900493e0a83be8bc7d124ec20a
   languageName: node
   linkType: hard
 
