@@ -113,6 +113,21 @@ git log --oneline $(git describe --tags --abbrev=0)..HEAD
 
 fixed モードなので `lerna.json` の `version` が現行バージョンの正。`yarn release` は conventional commits からバージョンを自動決定するため、**リリース種別（graduate / alpha / beta / rc）をユーザーに確認する必要はない**。差分は「何が入るか」の確認材料として提示するだけでよい。
 
+あわせて、前回タグ以降に破壊的変更マーカーが無いかを確認する。マーカー付きコミットが 1 つでもあれば `yarn release` の決めるバージョンが変わる。`0.x` ではマイナーに丸められ、`X.0.0-alpha.n`（v4 の alpha はここ）ではプレリリース番号が進むだけだが、安定版（`1.0.0` 以降）とマイナー / パッチのプレリリースではメジャーに跳ねる（段階ごとの効果と、付けてよい条件は `git` スキルの「破壊的変更と振る舞いの変更」）。
+
+```bash
+git log <last-tag>..HEAD --format=%s | grep -E '^[a-z]+(\([^)]*\))?!:'
+git log <last-tag>..HEAD --format=%B | grep -iE '^(\* +)?BREAKING[ -]CHANGE:'
+```
+
+ヒットがあれば提示する。ユーザーがメジャーを承認していた変更ならそのまま進む。承認の無いマーカー（誤って付いたもの）でそれでもリリースするなら、バンプを明示して回避する: `yarn release minor`（または `patch`）。`lerna version` は `--conventional-commits` の推奨より位置引数のバンプを優先し、CHANGELOG は生成する。その CHANGELOG にはコミットの注記から「BREAKING CHANGES」節が入るので、マイナーリリースが破壊的変更を告知する形になる。選択肢を提示するときにそう言う。
+
+振る舞いの変更の段落も集めて、リリース内容の一部として提示する。
+
+```bash
+git log <last-tag>..HEAD --grep='^Behavior change'
+```
+
 ## 8. バージョニングと push（ユーザー実行）
 
 `lerna version` は選択・確認のプロンプトを出すインタラクティブコマンドで、Claude Code の `!` 経由では対話できない（プロンプトが表示されても入力できず止まる）。ユーザーに次の手順を依頼する:
