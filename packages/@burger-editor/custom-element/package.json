@@ -29,7 +29,7 @@
 	},
 	"dependencies": {
 		"@burger-editor/utils": "4.0.0-alpha.77",
-		"@tabler/icons": "3.48.0",
+		"@tabler/icons": "3.49.0",
 		"@tiptap/core": "3.31.4",
 		"@tiptap/extension-image": "3.31.4",
 		"@tiptap/extension-paragraph": "3.31.4",
@@ -40,7 +40,7 @@
 		"@tiptap/starter-kit": "3.31.4"
 	},
 	"devDependencies": {
-		"rollup": "4.63.6",
+		"rollup": "4.64.3",
 		"rollup-plugin-dts": "6.5.1",
 		"rollup-plugin-esbuild": "6.2.1",
 		"rollup-plugin-string": "3.0.0"
