@@ -1,7 +1,7 @@
 import type { CarouselEnvironment, CarouselHandle } from './index.js';
 
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { userEvent } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
 
 import { initBurgerEditorRuntime } from '../init.js';
 
@@ -26,6 +26,10 @@ interface Settings {
 	dots?: boolean;
 	effect?: 'slide' | 'fade';
 	slides?: number;
+	/** スライドごとのキャプション。既定は `キャプション N` */
+	captions?: readonly string[];
+	/** スライドごとの画像の alt。既定は `スライド N` */
+	alts?: readonly string[];
 }
 
 let handle: CarouselHandle | null = null;
@@ -50,6 +54,8 @@ function mount(settings: Settings = {}) {
 		dots = true,
 		effect = 'slide',
 		slides = 5,
+		captions = Array.from({ length: slides }, (_, i) => `キャプション ${i + 1}`),
+		alts = Array.from({ length: slides }, (_, i) => `スライド ${i + 1}`),
 	} = settings;
 	const figures = Array.from(
 		{ length: slides },
@@ -57,16 +63,16 @@ function mount(settings: Settings = {}) {
 			<figure data-bge=":style, :scale, :scale-type, :aspect-ratio" style="--css-width: 100cqi">
 				<div data-bge=":node, :href, :target, :command">
 					<picture>
-						<img alt="スライド ${i + 1}" width="400" height="300" />
+						<img alt="${alts[i] ?? ''}" width="400" height="300" />
 					</picture>
 				</div>
-				<figcaption data-bge="caption">キャプション ${i + 1}</figcaption>
+				<figcaption data-bge="caption">${captions[i] ?? ''}</figcaption>
 			</figure>`,
 	).join('');
 	document.body.innerHTML = `
 		<div data-bgi="carousel" style="inline-size: 600px">
 			<div data-bge=":autoplay, :loop, :per-view, :arrows, :dots, :effect, layout-style:style" data-bge-autoplay="${autoplay}" data-bge-loop="${loop}" data-bge-per-view="${perView}" data-bge-arrows="${arrows}" data-bge-dots="${dots}" data-bge-effect="${effect}" style="--per-view: ${perView}">
-				<div data-bge-list>${figures}</div>
+				<div data-bge-list tabindex="0">${figures}</div>
 			</div>
 		</div>`;
 	const el = document.querySelector<HTMLElement>('[data-bge-per-view]')!;
@@ -99,48 +105,91 @@ describe('@burger-editor/css のレイアウト', () => {
 });
 
 describe('initCarousel', () => {
-	test('コンテナーとスライドに APG の Carousel パターンの役割と名前を付ける', () => {
-		const { el, slides } = mount({ slides: 3 });
-		handle = setupCarousels({}, NATIVE);
+	describe('役割と名前（名前は作者が書いた内容から付け、aria-label を使わない）', () => {
+		test('外枠は名前の無い group、スライドは figure のまま roledescription だけを足す', () => {
+			const { el, slides } = mount({ slides: 3 });
+			handle = setupCarousels({}, NATIVE);
 
-		expect(el.getAttribute('role')).toBe('region');
-		expect(el.getAttribute('aria-roledescription')).toBe('carousel');
-		expect(el.getAttribute('aria-label')).toBe('カルーセル');
-		expect(slides.map((s) => s.getAttribute('role'))).toEqual([
-			'group',
-			'group',
-			'group',
-		]);
-		expect(slides.map((s) => s.getAttribute('aria-roledescription'))).toEqual([
-			'slide',
-			'slide',
-			'slide',
-		]);
-		expect(slides.map((s) => s.getAttribute('aria-label'))).toEqual([
-			'1 / 3',
-			'2 / 3',
-			'3 / 3',
-		]);
-	});
+			expect(el.getAttribute('role')).toBe('group');
+			expect(el.getAttribute('aria-roledescription')).toBe('carousel');
+			expect(slides.map((s) => s.getAttribute('role'))).toEqual([null, null, null]);
+			expect(slides.map((s) => s.getAttribute('aria-roledescription'))).toEqual([
+				'slide',
+				'slide',
+				'slide',
+			]);
+			expect(el.hasAttribute('aria-label')).toBe(false);
+			expect(el.querySelector('[aria-label]')).toBeNull();
+		});
 
-	test('文言は設定で差し替えられる', () => {
-		const { el, slides, button, markers } = mount({ slides: 2 });
-		handle = setupCarousels(
-			{
-				carouselLabel: 'Carousel',
-				slideLabel: (i, t) => `${i} of ${t}`,
-				previousLabel: 'Previous',
-				nextLabel: 'Next',
-				markerLabel: (i) => `Go to ${i}`,
-			},
-			POLYFILL,
-		);
+		test('スライドの名前はキャプションから、キャプションが空なら画像の alt から付く', () => {
+			mount({ slides: 2, captions: ['春の庭', ''], alts: ['桜', '紅葉'] });
+			handle = setupCarousels({}, POLYFILL);
 
-		expect(el.getAttribute('aria-label')).toBe('Carousel');
-		expect(slides[1]?.getAttribute('aria-label')).toBe('2 of 2');
-		expect(button('previous')?.getAttribute('aria-label')).toBe('Previous');
-		expect(button('next')?.getAttribute('aria-label')).toBe('Next');
-		expect(markers()[0]?.getAttribute('aria-label')).toBe('Go to 1');
+			expect(page.getByRole('figure', { name: '春の庭' }).query()).not.toBeNull();
+			expect(page.getByRole('figure', { name: '紅葉' }).query()).not.toBeNull();
+		});
+
+		test('スライドは名前の元を aria-labelledby で明示する（Chromium は figcaption から figure の名前を計算せず、標準のドットが名前を失うため）', () => {
+			const { slides } = mount({
+				slides: 2,
+				captions: ['春の庭', ''],
+				alts: ['桜', '紅葉'],
+			});
+			handle = setupCarousels({}, NATIVE);
+
+			const [first, second] = slides;
+			expect(first!.getAttribute('aria-labelledby')).toBe(
+				first!.querySelector('figcaption')!.id,
+			);
+			expect(second!.getAttribute('aria-labelledby')).toBe(
+				second!.querySelector('img')!.id,
+			);
+		});
+
+		test('ドットの名前は、そのスライドの名前の元（キャプション、空なら alt）から付く', () => {
+			mount({ slides: 2, captions: ['春の庭', ''], alts: ['桜', '紅葉'] });
+			handle = setupCarousels({}, POLYFILL);
+
+			expect(page.getByRole('button', { name: '春の庭' }).query()).not.toBeNull();
+			expect(page.getByRole('button', { name: '紅葉' }).query()).not.toBeNull();
+		});
+
+		test('キャプションも alt も無いスライドのドットは、設定の文字を名前にする', () => {
+			mount({ slides: 2, captions: ['', ''], alts: ['', ''] });
+			handle = setupCarousels({ markerLabel: (i) => `Go to ${i}` }, POLYFILL);
+
+			expect(page.getByRole('button', { name: 'Go to 2' }).query()).not.toBeNull();
+		});
+
+		test('矢印の名前はボタンの中の文字から付き、文字は設定で差し替えられる', () => {
+			const { list } = mount();
+			handle = setupCarousels({ previousLabel: 'Previous', nextLabel: 'Next' }, POLYFILL);
+
+			const previous = page
+				.getByRole('button', { name: 'Previous', exact: true })
+				.query();
+			const next = page.getByRole('button', { name: 'Next', exact: true }).query();
+			expect(previous).not.toBeNull();
+			expect(next?.getAttribute('aria-controls')).toBe(list.id);
+		});
+
+		test('自動再生中は移動を読み上げず、止めると読み上げる', () => {
+			vi.useFakeTimers();
+			const { list, button } = mount({ autoplay: true });
+			handle = setupCarousels({ interval: 1000 }, POLYFILL);
+
+			expect(list.getAttribute('aria-live')).toBe('off');
+			button('play')!.click();
+			expect(list.getAttribute('aria-live')).toBe('polite');
+		});
+
+		test('自動再生しないときは、移動を読み上げる', () => {
+			const { list } = mount();
+			handle = setupCarousels({}, POLYFILL);
+
+			expect(list.getAttribute('aria-live')).toBe('polite');
+		});
 	});
 
 	describe('矢印とドット', () => {
@@ -250,12 +299,13 @@ describe('initCarousel', () => {
 					.map((m, i) => (m.getAttribute('aria-current') === 'true' ? i : -1))
 					.filter((i) => i >= 0);
 
-			expect(active()).toEqual([0, 1]);
+			// 標準の ::scroll-marker と同じく、表示枚数に関わらず現在の 1 枚だけを示す
+			expect(active()).toEqual([0]);
 			button('next')!.click();
-			expect(active()).toEqual([2, 3]);
+			expect(active()).toEqual([2]);
 			button('next')!.click();
 			// 5 枚・2 枚表示の最後の 1 画面は 4〜5 枚目
-			expect(active()).toEqual([3, 4]);
+			expect(active()).toEqual([3]);
 			expect(current()).toBe(3);
 			expect(button('next')!.disabled).toBe(true);
 		});
@@ -347,7 +397,9 @@ describe('initCarousel', () => {
 			const play = button('play')!;
 			expect(play.compareDocumentPosition(list)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
 			expect(el.querySelector('button')).toBe(play);
-			expect(play.getAttribute('aria-label')).toBe('自動再生を停止');
+			expect(play.querySelector('[data-bge-carousel-text]')?.textContent).toBe(
+				'自動再生を停止',
+			);
 
 			vi.advanceTimersByTime(1000);
 			expect(current()).toBe(1);
@@ -371,12 +423,16 @@ describe('initCarousel', () => {
 			const play = button('play')!;
 
 			play.click();
-			expect(play.getAttribute('aria-label')).toBe('自動再生を開始');
+			expect(play.querySelector('[data-bge-carousel-text]')?.textContent).toBe(
+				'自動再生を開始',
+			);
 			vi.advanceTimersByTime(3000);
 			expect(current()).toBe(0);
 
 			play.click();
-			expect(play.getAttribute('aria-label')).toBe('自動再生を停止');
+			expect(play.querySelector('[data-bge-carousel-text]')?.textContent).toBe(
+				'自動再生を停止',
+			);
 			vi.advanceTimersByTime(1000);
 			expect(current()).toBe(1);
 		});
@@ -421,9 +477,13 @@ describe('initCarousel', () => {
 			const play = button('play')!;
 
 			await userEvent.click(play);
-			expect(play.getAttribute('aria-label')).toBe('自動再生を開始');
+			expect(play.querySelector('[data-bge-carousel-text]')?.textContent).toBe(
+				'自動再生を開始',
+			);
 			await userEvent.click(play);
-			expect(play.getAttribute('aria-label')).toBe('自動再生を停止');
+			expect(play.querySelector('[data-bge-carousel-text]')?.textContent).toBe(
+				'自動再生を停止',
+			);
 			expect(document.activeElement).toBe(play);
 			// ポインターが載ったままだと止まるので、外へ出す
 			play
@@ -455,7 +515,9 @@ describe('initCarousel', () => {
 				{ ...POLYFILL, prefersReducedMotion: true },
 			);
 
-			expect(button('play')!.getAttribute('aria-label')).toBe('自動再生を開始');
+			expect(button('play')!.querySelector('[data-bge-carousel-text]')?.textContent).toBe(
+				'自動再生を開始',
+			);
 			vi.advanceTimersByTime(3000);
 			expect(current()).toBe(0);
 		});

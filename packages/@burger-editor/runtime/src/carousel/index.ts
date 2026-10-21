@@ -17,8 +17,14 @@
  *
  * スライドの複製は作らない（ループは先頭へ巻き戻す）。DOM と支援技術から見える
  * スライド数を一致させるため。
- */
-
+ *
+ * アクセシブルな名前は、作者が書いた内容から付ける（`aria-label` を使わない）。
+ * スライドは `figure` のまま、`aria-labelledby` で `figcaption`（空なら画像の `alt`）を
+ * 指して名前を得る。ドットも同じ要素を `aria-labelledby` で指す（標準の
+ * `::scroll-marker` はスライドの名前を引き継ぐので、両者が揃う）。
+ * 生成するボタンは中の文字を名前にする。外枠は作者由来の名前の元が無いため名前を
+ * 付けず、名前が必須の `region` ではなく `group` にする。
+ 
 /**
  * Carousel Configuration
  */
@@ -42,43 +48,32 @@ export interface CarouselConfig {
 	interval?: number;
 
 	/**
-	 * Accessible name of the carousel
-	 * @default 'カルーセル'
-	 */
-	carouselLabel?: string;
-
-	/**
-	 * Accessible name of each slide
-	 * @default (index, total) => `${index} / ${total}`
-	 */
-	slideLabel?: (index: number, total: number) => string;
-
-	/**
-	 * Label of the previous button
+	 * Text of the previous button
 	 * @default '前のスライド'
 	 */
 	previousLabel?: string;
 
 	/**
-	 * Label of the next button
+	 * Text of the next button
 	 * @default '次のスライド'
 	 */
 	nextLabel?: string;
 
 	/**
-	 * Label of each dot
+	 * Text of a dot whose slide has neither a caption nor an image `alt`
+	 * (otherwise the dot is named by the slide's caption or `alt`)
 	 * @default (index) => `スライド ${index}`
 	 */
 	markerLabel?: (index: number) => string;
 
 	/**
-	 * Label of the play button (shown while paused)
+	 * Text of the play button (shown while paused)
 	 * @default '自動再生を開始'
 	 */
 	playLabel?: string;
 
 	/**
-	 * Label of the pause button (shown while playing)
+	 * Text of the pause button (shown while playing)
 	 * @default '自動再生を停止'
 	 */
 	pauseLabel?: string;
@@ -115,8 +110,6 @@ export interface CarouselEnvironment {
 
 const DEFAULT_OPTIONS: Options = {
 	interval: 5000,
-	carouselLabel: 'カルーセル',
-	slideLabel: (index, total) => `${index} / ${total}`,
 	previousLabel: '前のスライド',
 	nextLabel: '次のスライド',
 	markerLabel: (index) => `スライド ${index}`,
@@ -259,31 +252,36 @@ const COMMAND = {
 } as const;
 
 /**
- *
- * @param label
+ * 名前はボタンの中の文字（`data-bge-carousel-text`。CSS で視覚的に隠す）から付く
  * @param area
- * @param text
  * @param command
  * @param targetId
+ * @param text
+ * @param icon - 見た目だけの記号。支援技術からは隠す
  */
 function createButton(
-	label: string,
 	area: string,
-	text: string,
 	command: string,
 	targetId: string,
+	text: string | null,
+	icon?: string,
 ): HTMLButtonElement {
 	const button = document.createElement('button');
 	button.type = 'button';
 	button.setAttribute('command', command);
 	button.setAttribute('commandfor', targetId);
-	button.setAttribute('aria-label', label);
 	button.dataset.bgeCarouselButton = area;
-	if (text) {
-		const icon = document.createElement('span');
-		icon.setAttribute('aria-hidden', 'true');
-		icon.textContent = text;
-		button.append(icon);
+	if (icon) {
+		const span = document.createElement('span');
+		span.setAttribute('aria-hidden', 'true');
+		span.textContent = icon;
+		button.append(span);
+	}
+	if (text != null) {
+		const span = document.createElement('span');
+		span.dataset.bgeCarouselText = '';
+		span.textContent = text;
+		button.append(span);
 	}
 	return button;
 }
@@ -316,28 +314,51 @@ function setupCarousel(
 	const listeners = new AbortController();
 	const { signal } = listeners;
 
-	restores.push(
-		setAttr(el, 'role', 'region'),
-		setAttr(el, 'aria-roledescription', 'carousel'),
-		setAttr(el, 'aria-label', options.carouselLabel),
-	);
-	for (const [i, slide] of slides.entries()) {
-		restores.push(
-			setAttr(slide, 'role', 'group'),
-			setAttr(slide, 'aria-roledescription', 'slide'),
-			setAttr(slide, 'aria-label', options.slideLabel(i + 1, total)),
-		);
-	}
-	if (fade) {
-		restores.push(setAttr(el, 'data-bge-carousel-fade', ''));
-	}
-	// 生成するボタンの `commandfor` が指す id
+	// 生成するボタンの `commandfor` が指す id。ほかの id はこれを接頭辞にする
 	if (!el.id) {
 		restores.push(
 			setAttr(el, 'id', `bge-carousel-${Math.random().toString(36).slice(2, 11)}`),
 		);
 	}
 	const id = el.id;
+	const ensureId = (node: Element, suffix: string) => {
+		if (!node.id) {
+			restores.push(setAttr(node, 'id', `${id}-${suffix}`));
+		}
+		return node.id;
+	};
+	const listId = ensureId(list, 'list');
+
+	restores.push(
+		setAttr(el, 'role', 'group'),
+		setAttr(el, 'aria-roledescription', 'carousel'),
+	);
+
+	// スライドの名前の元（作者が書いたキャプション、空なら画像の alt）の id。
+	// ドットの名前にも使う。どちらも無いスライドは null
+	const nameIds: (string | null)[] = [];
+	for (const [i, slide] of slides.entries()) {
+		restores.push(setAttr(slide, 'aria-roledescription', 'slide'));
+		const caption = slide.querySelector('figcaption');
+		const img = slide.querySelector('img');
+		// HTML-AAM では figure の名前は figcaption から付くが、Chromium はそれを計算しない。
+		// 標準の `::scroll-marker` はスライドの名前を引き継ぐので、名前が無いとドットが
+		// 名前なしになる。キャプションのときも aria-labelledby で明示する
+		const nameSource = caption?.textContent.trim()
+			? ensureId(caption, `caption-${i}`)
+			: img?.alt.trim()
+				? ensureId(img, `img-${i}`)
+				: null;
+		if (nameSource != null) {
+			restores.push(setAttr(slide, 'aria-labelledby', nameSource));
+		}
+		nameIds.push(nameSource);
+	}
+	if (fade) {
+		restores.push(setAttr(el, 'data-bge-carousel-fade', ''));
+	}
+	// 自動再生中は移動を読み上げない（APG）。updateTimer が切り替える
+	restores.push(setAttr(list, 'aria-live', 'polite'));
 
 	let current = 0;
 
@@ -399,9 +420,9 @@ function setupCarousel(
 			previous.disabled = index <= 0;
 			next.disabled = index >= lastStart;
 		}
+		// 標準の `::scroll-marker` と同じく、表示枚数に関わらず現在の 1 枚だけを示す
 		for (const [i, marker] of markers.entries()) {
-			const active = i >= index && i < index + perView;
-			if (active) {
+			if (i === index) {
 				marker.setAttribute('aria-current', 'true');
 			} else {
 				marker.removeAttribute('aria-current');
@@ -412,28 +433,39 @@ function setupCarousel(
 	// 再生・停止ボタンは Tab 順の先頭（スライドより前）に置く
 	let playButton: HTMLButtonElement | null = null;
 	if (settings.autoplay) {
-		playButton = createButton(options.pauseLabel, 'play', '', COMMAND.toggleAutoplay, id);
+		playButton = createButton(
+			'play',
+			COMMAND.toggleAutoplay,
+			id,
+			options.pauseLabel,
+			'❚❚',
+		);
 		list.before(playButton);
 		generated.push(playButton);
 	}
 
 	if (needsControls && settings.arrows) {
-		previous = createButton(options.previousLabel, 'previous', '‹', COMMAND.previous, id);
-		next = createButton(options.nextLabel, 'next', '›', COMMAND.next, id);
+		previous = createButton('previous', COMMAND.previous, id, options.previousLabel, '‹');
+		next = createButton('next', COMMAND.next, id, options.nextLabel, '›');
+		previous.setAttribute('aria-controls', listId);
+		next.setAttribute('aria-controls', listId);
 	}
 
 	let markerGroup: HTMLElement | null = null;
 	if (needsControls && settings.dots) {
 		markerGroup = document.createElement('div');
 		markerGroup.dataset.bgeCarouselMarkers = '';
-		for (const [i] of slides.entries()) {
+		for (const [i, nameId] of nameIds.entries()) {
 			const marker = createButton(
-				options.markerLabel(i + 1),
 				'marker',
-				'',
 				`${COMMAND.slidePrefix}${i}`,
 				id,
+				nameId == null ? options.markerLabel(i + 1) : null,
 			);
+			if (nameId != null) {
+				marker.setAttribute('aria-labelledby', nameId);
+			}
+			marker.setAttribute('aria-controls', listId);
 			markers.push(marker);
 			markerGroup.append(marker);
 		}
@@ -490,16 +522,21 @@ function setupCarousel(
 			clearInterval(timer);
 			timer = null;
 		}
+		list.setAttribute('aria-live', timer == null ? 'polite' : 'off');
 	};
 
 	const updatePlayButton = () => {
 		if (!playButton) {
 			return;
 		}
-		playButton.setAttribute(
-			'aria-label',
-			stoppedByUser ? options.playLabel : options.pauseLabel,
-		);
+		const icon = playButton.querySelector('[aria-hidden="true"]');
+		if (icon) {
+			icon.textContent = stoppedByUser ? '▶' : '❚❚';
+		}
+		const text = playButton.querySelector('[data-bge-carousel-text]');
+		if (text) {
+			text.textContent = stoppedByUser ? options.playLabel : options.pauseLabel;
+		}
 		playButton.dataset.bgeCarouselState = stoppedByUser ? 'paused' : 'playing';
 	};
 
