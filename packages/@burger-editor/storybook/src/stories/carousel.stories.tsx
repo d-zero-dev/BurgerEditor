@@ -22,6 +22,18 @@ interface CarouselArgs {
 	 */
 	readonly runtime: boolean;
 	readonly interval: number;
+	/**
+	 * 画像を包む要素（image アイテムの「リンク」「ポップアップ」と同じ）
+	 */
+	readonly node: 'div' | 'a' | 'button';
+	/**
+	 * キャプションを入れるか
+	 */
+	readonly caption: boolean;
+	/**
+	 * 画像の alt を入れるか
+	 */
+	readonly alt: boolean;
 }
 
 /**
@@ -59,7 +71,7 @@ function PublishedCarousel(args: CarouselArgs) {
 								effect: args.effect,
 								layoutStyle: `--per-view: ${args.perView}`,
 								path: slides.map(() => placeholderImage),
-								alt: slides.map((i) => `スライド ${i + 1}`),
+								alt: slides.map((i) => (args.alt ? `スライド ${i + 1}` : '')),
 								width: slides.map(() => 320),
 								height: slides.map(() => 240),
 								loading: slides.map(() => 'lazy'),
@@ -74,11 +86,11 @@ function PublishedCarousel(args: CarouselArgs) {
 								scale: slides.map(() => 100),
 								scaleType: slides.map(() => 'container'),
 								aspectRatio: slides.map(() => 'revert'),
-								caption: slides.map((i) => `キャプション ${i + 1}`),
-								node: slides.map(() => 'div'),
-								href: slides.map(() => ''),
+								caption: slides.map((i) => (args.caption ? `キャプション ${i + 1}` : '')),
+								node: slides.map(() => args.node),
+								href: slides.map(() => (args.node === 'a' ? 'https://example.com/' : '')),
 								target: slides.map(() => null),
-								command: slides.map(() => null),
+								command: slides.map(() => (args.node === 'button' ? 'show-modal' : null)),
 							},
 						},
 					],
@@ -109,6 +121,9 @@ function PublishedCarousel(args: CarouselArgs) {
 		args.slides,
 		args.runtime,
 		args.interval,
+		args.node,
+		args.caption,
+		args.alt,
 	]);
 
 	return <div ref={ref} />;
@@ -130,8 +145,15 @@ const meta = {
 		slides: 5,
 		runtime: true,
 		interval: 3000,
+		node: 'div',
+		caption: true,
+		alt: true,
 	},
 	argTypes: {
+		node: {
+			control: 'inline-radio',
+			options: ['div', 'a', 'button'],
+		},
 		effect: {
 			control: 'inline-radio',
 			options: ['slide', 'fade'],
