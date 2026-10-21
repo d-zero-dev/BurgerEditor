@@ -1,5 +1,6 @@
 import type { BurgerEditorRuntimeConfig } from './types.js';
 
+import { initCarousel } from './carousel/index.js';
 import { initImageModal } from './image-modal/index.js';
 
 /**
@@ -19,22 +20,32 @@ import { initImageModal } from './image-modal/index.js';
  * initBurgerEditorRuntime({
  *   imageModal: {
  *     closeButtonLabel: '閉じる',
- *   }
+ *   },
+ *   carousel: {
+ *     interval: 8000,
+ *   },
  * });
  *
  * // Disable a feature
  * initBurgerEditorRuntime({
  *   imageModal: false,
+ *   carousel: false,
  * });
  * ```
  */
 export function initBurgerEditorRuntime(config: BurgerEditorRuntimeConfig = {}): void {
-	const { imageModal = true } = config;
+	const { imageModal = true, carousel = true } = config;
 
 	// Initialize image modal
 	if (imageModal !== false) {
 		const imageModalConfig = typeof imageModal === 'object' ? imageModal : undefined;
 		initImageModal(imageModalConfig);
+	}
+
+	// Initialize carousel
+	if (carousel !== false) {
+		const carouselConfig = typeof carousel === 'object' ? carousel : undefined;
+		initCarousel(carouselConfig);
 	}
 }
 

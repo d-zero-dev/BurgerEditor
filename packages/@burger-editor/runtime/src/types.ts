@@ -1,3 +1,4 @@
+import type { CarouselConfig } from './carousel/index.js';
 import type { ImageModalConfig } from './image-modal/index.js';
 
 /**
@@ -9,4 +10,10 @@ export interface BurgerEditorRuntimeConfig {
 	 * @default true
 	 */
 	imageModal?: boolean | ImageModalConfig;
+
+	/**
+	 * Enable carousel functionality
+	 * @default true
+	 */
+	carousel?: boolean | CarouselConfig;
 }

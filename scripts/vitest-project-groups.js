@@ -21,7 +21,7 @@
  */
 export const VITEST_PROJECT_GROUPS = [
 	['default', 'local', 'local/import', 'local/client'], // Node / jsdom（Chromiumを起動しない）
-	['core', 'custom-element'], // ブラウザ
+	['core', 'custom-element', 'runtime'], // ブラウザ
 	['local/client-browser', 'vr'], // ブラウザ
 	['client'], // ブラウザ（単独ピーク最大のため1プロジェクトで1グループ）
 	['blocks', 'blocks-editor'], // ブラウザ
