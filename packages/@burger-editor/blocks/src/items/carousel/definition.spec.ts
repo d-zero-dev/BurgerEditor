@@ -395,5 +395,33 @@ describe('carouselItemSeed', () => {
 				effect: 'fade',
 			});
 		});
+
+		test('表示枚数は --per-view としてラッパーの style にも保存され、変更に追従する', async () => {
+			const item = createItem();
+			const wrapper = () => item.el.querySelector<HTMLElement>('[data-bge-per-view]');
+
+			expect(wrapper()?.style.getPropertyValue('--per-view').trim()).toBe('1');
+
+			await save(item, (data) => ({ ...data, perView: 3 }));
+			expect(wrapper()?.dataset.bgePerView).toBe('3');
+			expect(wrapper()?.style.getPropertyValue('--per-view').trim()).toBe('3');
+
+			await save(item, (data) => ({ ...data, perView: 2 }));
+			expect(wrapper()?.style.getPropertyValue('--per-view').trim()).toBe('2');
+		});
+
+		test('style の --per-view が属性の表示枚数と食い違っていても、属性の値を正として保存し直す', async () => {
+			const item = createItem();
+			await save(item, (data) => ({ ...data, perView: 2 }));
+			item.el
+				.querySelector<HTMLElement>('[data-bge-per-view]')
+				?.style.setProperty('--per-view', '5');
+
+			await save(item, (data) => data);
+
+			const wrapper = item.el.querySelector<HTMLElement>('[data-bge-per-view]');
+			expect(wrapper?.dataset.bgePerView).toBe('2');
+			expect(wrapper?.style.getPropertyValue('--per-view').trim()).toBe('2');
+		});
 	});
 });

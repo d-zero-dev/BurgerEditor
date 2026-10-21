@@ -121,13 +121,15 @@ export function withSlides(
 	slides: readonly Slide[],
 ): CarouselData {
 	const defaults = templateDefaults();
+	const perView = toPerView(data.perView, defaults.perView);
 	return {
 		autoplay: data.autoplay ?? defaults.autoplay,
 		loop: data.loop ?? defaults.loop,
-		perView: toPerView(data.perView, defaults.perView),
+		perView,
 		arrows: data.arrows ?? defaults.arrows,
 		dots: data.dots ?? defaults.dots,
 		effect: data.effect ?? defaults.effect,
+		layoutStyle: `--per-view: ${perView}`,
 		path: slides.map((s) => s.path),
 		alt: slides.map((s) => s.alt),
 		width: slides.map((s) => s.width),

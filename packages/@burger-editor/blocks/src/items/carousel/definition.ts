@@ -14,6 +14,8 @@ export type CarouselData = {
 	arrows: boolean;
 	dots: boolean;
 	effect: 'slide' | 'fade';
+	// ラッパーの `style`（`--per-view`）。`perView` から導く値で、読み戻した値は使わない
+	layoutStyle?: string;
 
 	// スライドごとの値（すべて同じ長さの配列）。値の意味は image アイテムと同じ。
 	// SP 画像は `<picture>` のリストにすると入れ子になるため、`sp*` の固定スロットで持つ
@@ -42,10 +44,12 @@ export type CarouselData = {
  */
 export const carouselDefinition: ItemSeed<string, CarouselData> = {
 	// 全体の設定（自動再生・ループ・表示枚数・矢印・ドット・効果）は、ラッパーの
-	// `data-bge-*` 属性として保存するだけで、このアイテムの CSS も JS も解釈しない。
-	// スライドを送る動作は公開ページ側が属性を読んで行う。`style.css` が持つのは
-	// 各スライド（figure / img / figcaption）の見た目だけで、スライドを横に並べる
-	// レイアウトは持たない（属性を読む側が決める）。
+	// `data-bge-*` 属性として保存する。`style.css` は scroll snap による横並びと、
+	// 対応ブラウザでの標準の矢印・ドット（`::scroll-button()` / `::scroll-marker`）を
+	// 持つ。表示枚数は属性値を CSS の計算に使えない（型付き `attr()` は Baseline では
+	// ない）ため、`--per-view` としてラッパーの `style` にも書く。
+	// 自動再生・ループ・フェードと、未対応ブラウザの矢印・ドットは
+	// `@burger-editor/runtime` が属性を読んで補う。
 	//
 	// 既定値の正は `template.html` ひとつだけ。足すスライドの初期値や、未指定の
 	// 全体設定は、`defaults.ts` がテンプレートを読んで導く（コードに値を写さない）
