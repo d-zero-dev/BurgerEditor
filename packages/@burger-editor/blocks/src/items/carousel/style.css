@@ -79,6 +79,12 @@
 			/* stylelint-disable-next-line selector-pseudo-class-no-unknown -- CSS Overflow 5 の `:target-current` を知らない */
 			> figure::scroll-marker:target-current {
 				background: currentcolor;
+
+				/* 強制カラーモードでは背景色が打ち消され、現在のドットが区別できなくなる */
+				@media (forced-colors: active) {
+					forced-color-adjust: none;
+					background: CanvasText;
+				}
 			}
 		}
 	}
@@ -189,6 +195,7 @@
 
 	/* runtime が生成する操作部品 */
 	[data-bge-carousel-button] {
+		position: relative;
 		display: inline-grid;
 		place-items: center;
 		min-inline-size: 2.5rem;
@@ -221,14 +228,6 @@
 		grid-area: play;
 		margin-inline-end: 0.5rem;
 		font-size: 0.75rem;
-
-		&::before {
-			content: '❚❚';
-		}
-
-		&[data-bge-carousel-state='paused']::before {
-			content: '▶';
-		}
 	}
 
 	[data-bge-carousel-markers] {
@@ -253,7 +252,24 @@
 
 			&[aria-current='true']::before {
 				background: currentcolor;
+
+				/* 強制カラーモードでは背景色が打ち消され、現在のドットが区別できなくなる */
+				@media (forced-colors: active) {
+					forced-color-adjust: none;
+					background: CanvasText;
+				}
 			}
 		}
+	}
+
+	/* 生成したボタンの名前になる文字。見た目は記号で示し、文字は視覚的に隠す */
+	[data-bge-carousel-text] {
+		position: absolute;
+		inset: 0;
+		inline-size: 1px;
+		block-size: 1px;
+		overflow: hidden;
+		white-space: nowrap;
+		clip-path: inset(50%);
 	}
 }
