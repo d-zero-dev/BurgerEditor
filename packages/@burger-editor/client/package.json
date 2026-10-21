@@ -26,6 +26,10 @@
 			"import": "./dist/testing.js",
 			"types": "./dist/testing/index.d.ts"
 		},
+		"./testing/mock-engine": {
+			"import": "./dist/testing-mock-engine.js",
+			"types": "./dist/testing/create-mock-engine.d.ts"
+		},
 		"./style": {
 			"import": "./dist/client.css"
 		}
