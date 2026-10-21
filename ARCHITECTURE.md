@@ -62,10 +62,13 @@ graph TD
     mcpserver --> legacy
     mcpserver --> migrator
     mcpserver --> utils
+    storybook --> blocks
     storybook --> client
     storybook --> core
+    storybook --> css
     storybook --> customelement
     storybook --> local
+    storybook --> runtime
 ```
 
 | パッケージ       | 実行環境      | 何があるか                                                                                               |
@@ -84,8 +87,8 @@ graph TD
 | `local`          | Node+ブラウザ | ローカルファイルを編集する CMS（`bge` コマンド）と、ブラウザへ編集を届ける Agent Hub                     |
 | `mcp-server`     | Node          | MCP サーバー（`bge-mcp-server`）。v3 互換ツールと `cli` のエージェント向けツールを登録する               |
 | `css`            | 配布物        | `blocks` の CSS をまとめて配布する                                                                       |
-| `runtime`        | ブラウザ      | 公開ページ側で動くランタイム（画像モーダルなど）。他のどのパッケージにも依存しない                       |
-| `storybook`      | 開発用        | 管理画面 UI のカタログ（private。他のパッケージから依存されない末端）                                    |
+| `runtime`        | ブラウザ      | 公開ページ側で動くランタイム（画像モーダル・カルーセル）。他のどのパッケージにも依存しない               |
+| `storybook`      | 開発用        | 管理画面 UI と公開ページ表示のカタログ（private。他のパッケージから依存されない末端）                    |
 
 ## 境界と所有権
 

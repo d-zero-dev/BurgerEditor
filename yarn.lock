@@ -682,7 +682,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/runtime@workspace:packages/@burger-editor/runtime":
+"@burger-editor/runtime@npm:4.0.0-alpha.77, @burger-editor/runtime@workspace:packages/@burger-editor/runtime":
   version: 0.0.0-use.local
   resolution: "@burger-editor/runtime@workspace:packages/@burger-editor/runtime"
   dependencies:
@@ -699,10 +699,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@burger-editor/storybook@workspace:packages/@burger-editor/storybook"
   dependencies:
+    "@burger-editor/blocks": "npm:4.0.0-alpha.77"
     "@burger-editor/client": "npm:4.0.0-alpha.77"
     "@burger-editor/core": "npm:4.0.0-alpha.77"
+    "@burger-editor/css": "npm:4.0.0-alpha.77"
     "@burger-editor/custom-element": "npm:4.0.0-alpha.77"
     "@burger-editor/local": "npm:4.0.0-alpha.77"
+    "@burger-editor/runtime": "npm:4.0.0-alpha.77"
     "@storybook/react-vite": "npm:10.6.2"
     "@tabler/icons-react": "npm:3.49.0"
     "@testing-library/dom": "npm:10.4.2"

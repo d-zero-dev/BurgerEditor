@@ -17,6 +17,9 @@
 		},
 		{
 			"path": "../local"
+		},
+		{
+			"path": "../runtime"
 		}
 	]
 }

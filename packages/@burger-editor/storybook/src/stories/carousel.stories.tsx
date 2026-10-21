@@ -1,0 +1,183 @@
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { items } from '@burger-editor/blocks';
+import { render } from '@burger-editor/core';
+import { initCarousel } from '@burger-editor/runtime';
+import { useEffect, useRef } from 'react';
+
+import placeholderImage from '../assets/placeholder-image.svg?url';
+
+import '@burger-editor/css';
+
+interface CarouselArgs {
+	readonly autoplay: boolean;
+	readonly loop: boolean;
+	readonly perView: number;
+	readonly arrows: boolean;
+	readonly dots: boolean;
+	readonly effect: 'slide' | 'fade';
+	readonly slides: number;
+	/**
+	 * `@burger-editor/runtime` を動かすか。`false` は CSS だけで表示した状態
+	 */
+	readonly runtime: boolean;
+	readonly interval: number;
+}
+
+/**
+ * 保存済みの carousel を、公開ページと同じく `@burger-editor/css` と
+ * `@burger-editor/runtime` だけで表示する。`render()` はアイテムの
+ * `toItemData` を通らないので、保存形（全配列が同じ長さ・`layoutStyle`）を
+ * そのまま渡す
+ * @param args
+ */
+function PublishedCarousel(args: CarouselArgs) {
+	const ref = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const container = ref.current;
+		if (!container) {
+			return;
+		}
+		let disposed = false;
+		let destroy = () => {};
+		const slides = Array.from({ length: args.slides }, (_, i) => i);
+		void render(
+			{
+				name: 'carousel',
+				containerProps: { type: 'grid' },
+				items: [
+					[
+						{
+							name: 'carousel',
+							data: {
+								autoplay: args.autoplay,
+								loop: args.loop,
+								perView: args.perView,
+								arrows: args.arrows,
+								dots: args.dots,
+								effect: args.effect,
+								layoutStyle: `--per-view: ${args.perView}`,
+								path: slides.map(() => placeholderImage),
+								alt: slides.map((i) => `スライド ${i + 1}`),
+								width: slides.map(() => 320),
+								height: slides.map(() => 240),
+								loading: slides.map(() => 'lazy'),
+								spPath: slides.map(() => null),
+								spMedia: slides.map(() => null),
+								spWidth: slides.map(() => null),
+								spHeight: slides.map(() => null),
+								style: slides.map(
+									() =>
+										'--css-width: 100cqi; --object-fit: cover; --aspect-ratio: revert',
+								),
+								scale: slides.map(() => 100),
+								scaleType: slides.map(() => 'container'),
+								aspectRatio: slides.map(() => 'revert'),
+								caption: slides.map((i) => `キャプション ${i + 1}`),
+								node: slides.map(() => 'div'),
+								href: slides.map(() => ''),
+								target: slides.map(() => null),
+								command: slides.map(() => null),
+							},
+						},
+					],
+				],
+			},
+			{ items },
+		).then((block) => {
+			if (disposed) {
+				return;
+			}
+			container.replaceChildren(block);
+			if (args.runtime) {
+				destroy = initCarousel({ root: container, interval: args.interval }).destroy;
+			}
+		});
+		return () => {
+			disposed = true;
+			destroy();
+			container.replaceChildren();
+		};
+	}, [
+		args.autoplay,
+		args.loop,
+		args.perView,
+		args.arrows,
+		args.dots,
+		args.effect,
+		args.slides,
+		args.runtime,
+		args.interval,
+	]);
+
+	return <div ref={ref} />;
+}
+
+const meta = {
+	title: 'Public/Carousel',
+	component: PublishedCarousel,
+	parameters: {
+		wrapper: 'none',
+	},
+	args: {
+		autoplay: false,
+		loop: false,
+		perView: 1,
+		arrows: true,
+		dots: true,
+		effect: 'slide',
+		slides: 5,
+		runtime: true,
+		interval: 3000,
+	},
+	argTypes: {
+		effect: {
+			control: 'inline-radio',
+			options: ['slide', 'fade'],
+		},
+		perView: {
+			control: { type: 'number', min: 1 },
+		},
+		slides: {
+			control: { type: 'number', min: 1 },
+		},
+	},
+} satisfies Meta<typeof PublishedCarousel>;
+
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};
+
+export const CssOnly: Story = {
+	args: {
+		runtime: false,
+	},
+};
+
+export const Loop: Story = {
+	args: {
+		loop: true,
+	},
+};
+
+export const Autoplay: Story = {
+	args: {
+		autoplay: true,
+	},
+};
+
+export const Fade: Story = {
+	args: {
+		effect: 'fade',
+	},
+};
+
+export const ThreePerView: Story = {
+	args: {
+		perView: 3,
+		slides: 7,
+	},
+};
