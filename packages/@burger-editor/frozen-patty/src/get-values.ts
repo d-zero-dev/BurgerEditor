@@ -6,7 +6,25 @@ import { normalizeIndent } from './normalize-indent.js';
 import { parseFields } from './parse-fields.js';
 
 /**
+ * 属性が無いときに `null` として読む `<source>` の属性。要素のプロパティが
+ * 属性の有無を隠す（空文字や `0` になる）ものだけを挙げる
+ */
+const SOURCE_ATTRIBUTES: ReadonlySet<string> = new Set([
+	'srcset',
+	'media',
+	'sizes',
+	'width',
+	'height',
+]);
+
+/**
  * Get value from an element
+ *
+ * For a `<source>` element, an attribute that is not set (`srcset`, `media`,
+ * `sizes`, `width`, `height`) is read as `null` instead of the empty string
+ * or `0` that the element property would report. An attribute that is set
+ * to an empty string stays an empty string, so "not set" and "empty" remain
+ * distinguishable and a round trip does not leave `srcset=""` / `width="0"`.
  * @param el A target element
  * @param convertType Auto covert type of value
  * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
@@ -111,6 +129,18 @@ export function getValues(
  * @param typeConvert
  */
 function getAttribute(el: Element, keyAttr: string, attr: string, typeConvert: boolean) {
+	// `<source>` の属性が無いとき、プロパティは空文字（`srcset` / `media`）や
+	// `0`（`width` / `height`）を返す。そのまま読むと「値が空」と「属性が無い」を
+	// 区別できず、書き戻すと `srcset=""` `width="0"` が属性として残ってしまう。
+	// 無いことを `null` で伝えれば、書き戻しで属性ごと取り除かれる
+	if (
+		el.localName === 'source' &&
+		SOURCE_ATTRIBUTES.has(keyAttr) &&
+		!el.hasAttribute(keyAttr)
+	) {
+		return null;
+	}
+
 	switch (keyAttr) {
 		case 'contenteditable': {
 			if (el instanceof HTMLElement) {

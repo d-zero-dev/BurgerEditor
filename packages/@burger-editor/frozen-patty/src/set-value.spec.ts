@@ -3,6 +3,24 @@ import { test, expect, describe } from 'vitest';
 import { setValue, setContent } from './set-value.js';
 
 describe('setValue', () => {
+	test('<source> の属性に null を渡すと、属性ごと取り除く', () => {
+		const el = document.createElement('source');
+		el.setAttribute('srcset', '/sp.png');
+		el.setAttribute('media', '(max-width: 767px)');
+		el.setAttribute('width', '300');
+		el.setAttribute('height', '200');
+
+		for (const name of ['srcset', 'media', 'width', 'height']) {
+			el.dataset.field = `foo:${name}`;
+			setValue(el, 'foo', null);
+		}
+
+		expect(el.hasAttribute('srcset')).toBe(false);
+		expect(el.hasAttribute('media')).toBe(false);
+		expect(el.hasAttribute('width')).toBe(false);
+		expect(el.hasAttribute('height')).toBe(false);
+	});
+
 	test('basic', () => {
 		const el = document.createElement('div');
 		el.dataset.field = 'foo:data-foo';
