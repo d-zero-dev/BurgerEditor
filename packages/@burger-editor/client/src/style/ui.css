@@ -503,6 +503,42 @@ button svg.tabler-icon {
 	block-size: 100%;
 }
 
+/* カルーセルのスライド一覧: サムネイルボタン・名前・並べ替え/削除ボタンを1行に並べる。
+   マークアップは blocks の carousel エディタが持ち、名前と操作は役割属性
+   （data-bge-slide-name / data-bge-slide-actions）で選ぶ */
+[data-bge-editor-ui-component='slide-list'] {
+	display: flex;
+	flex-direction: column;
+	gap: 0.8em;
+	padding: 0;
+	margin-block: 0 1em;
+	margin-inline: 0;
+	list-style: none;
+
+	> li {
+		display: flex;
+		gap: 1em;
+		align-items: center;
+	}
+
+	/* 長い名前（alt）は 1 行に省略する。min-inline-size: 0 がないと flex の子が縮まず省略されない */
+	> li > [data-bge-slide-name] {
+		flex: 1 1 auto;
+		min-inline-size: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* 操作ボタンは名前（alt）が長くても縮めない。縮むとボタンの文字が縦に折り返される */
+	> li > [data-bge-slide-actions] {
+		display: flex;
+		flex: none;
+		gap: 0.5em;
+		white-space: nowrap;
+	}
+}
+
 label:has(input[type='radio'][name='bge-scale-type'][value='container']) {
 	& > span {
 		&::before {

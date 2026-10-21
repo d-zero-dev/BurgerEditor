@@ -1,0 +1,66 @@
+/* サムネイルの大きさ（8em・4:3）は、スライドの一覧で 1 行に収まり、画像の
+   内容が見分けられる最小限として決めた値。画像の有無で大きさが変わらない
+   ように、画像・プレースホルダーとも同じ枠（.image）に入れる */
+.button {
+	position: relative;
+	display: block;
+
+	/* 横並びの行の中で、隣の要素（長い名前など）に押されて縮まない */
+	flex: none;
+	inline-size: 8em;
+	padding: 0;
+	overflow: hidden;
+	line-height: 0;
+	border-color: var(--bge-border-color);
+}
+
+.image {
+	display: block;
+	aspect-ratio: 4 / 3;
+	background: var(--bge-lightest-color);
+}
+
+.placeholder {
+	display: flex;
+	flex-direction: column;
+	gap: 0.3em;
+	align-items: center;
+	justify-content: center;
+	inline-size: 100%;
+	block-size: 100%;
+	font-size: 0.8em;
+	line-height: 1.2;
+	color: var(--bge-background-color02);
+	background: var(--bge-background-color01);
+
+	/* ui.cssの`button svg.tabler-icon`（block-size: 1em）より詳細度を上げる */
+	svg.tabler-icon {
+		inline-size: 2.4em;
+		block-size: 2.4em;
+	}
+}
+
+/* ホバー・キーボードフォーカスのときだけ操作名を重ねて見せる */
+.label {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.9em;
+	line-height: 1.2;
+	color: var(--bge-lightest-color);
+	background: rgb(0 0 0 / 55%);
+	opacity: 0;
+	transition: opacity 150ms linear;
+}
+
+.button:is(:hover, :focus-visible) .label {
+	opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.label {
+		transition: none;
+	}
+}
