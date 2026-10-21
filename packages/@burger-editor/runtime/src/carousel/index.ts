@@ -355,10 +355,15 @@ function setupCarousel(
 		nameIds.push(nameSource);
 	}
 	if (fade) {
-		restores.push(setAttr(el, 'data-bge-carousel-fade', ''));
+		restores.push(
+			setAttr(el, 'data-bge-carousel-fade', ''),
+			// フェードは表示中以外を inert で隠すので、切り替えで現れた中身を読み上げる。
+			// 自動再生中は読み上げない（APG）。updateTimer が切り替える。
+			// スライド効果では付けない。全スライドを支援技術に見せているので知らせる
+			// 新しい中身が無く、スクロールのたびに読み上げると邪魔になる
+			setAttr(list, 'aria-live', 'polite'),
+		);
 	}
-	// 自動再生中は移動を読み上げない（APG）。updateTimer が切り替える
-	restores.push(setAttr(list, 'aria-live', 'polite'));
 
 	let current = 0;
 
@@ -522,7 +527,9 @@ function setupCarousel(
 			clearInterval(timer);
 			timer = null;
 		}
-		list.setAttribute('aria-live', timer == null ? 'polite' : 'off');
+		if (fade) {
+			list.setAttribute('aria-live', timer == null ? 'polite' : 'off');
+		}
 	};
 
 	const updatePlayButton = () => {

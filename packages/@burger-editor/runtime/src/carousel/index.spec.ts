@@ -174,9 +174,16 @@ describe('initCarousel', () => {
 			expect(next?.getAttribute('aria-controls')).toBe(list.id);
 		});
 
-		test('自動再生中は移動を読み上げず、止めると読み上げる', () => {
+		test('フェードでは、切り替えで現れたスライドを読み上げる', () => {
+			const { list } = mount({ effect: 'fade' });
+			handle = setupCarousels({}, POLYFILL);
+
+			expect(list.getAttribute('aria-live')).toBe('polite');
+		});
+
+		test('フェードの自動再生中は読み上げず、止めると読み上げる', () => {
 			vi.useFakeTimers();
-			const { list, button } = mount({ autoplay: true });
+			const { list, button } = mount({ effect: 'fade', autoplay: true });
 			handle = setupCarousels({ interval: 1000 }, POLYFILL);
 
 			expect(list.getAttribute('aria-live')).toBe('off');
@@ -184,11 +191,14 @@ describe('initCarousel', () => {
 			expect(list.getAttribute('aria-live')).toBe('polite');
 		});
 
-		test('自動再生しないときは、移動を読み上げる', () => {
-			const { list } = mount();
-			handle = setupCarousels({}, POLYFILL);
+		test('スライド効果では読み上げない（全スライドを支援技術に見せているので、知らせる新しい中身が無い）', () => {
+			vi.useFakeTimers();
+			const { list, button } = mount({ autoplay: true });
+			handle = setupCarousels({ interval: 1000 }, POLYFILL);
 
-			expect(list.getAttribute('aria-live')).toBe('polite');
+			expect(list.hasAttribute('aria-live')).toBe(false);
+			button('play')!.click();
+			expect(list.hasAttribute('aria-live')).toBe(false);
 		});
 	});
 
