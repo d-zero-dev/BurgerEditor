@@ -139,6 +139,7 @@ describe('bin.js without react installed', () => {
 		expect(JSON.parse(result.stdout)).toEqual({
 			items: [
 				'button',
+				'carousel',
 				'details',
 				'download-file',
 				'google-maps',
