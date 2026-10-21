@@ -70,6 +70,20 @@ export default {
 		},
 	],
 	overrides: {
+		'packages/@burger-editor/blocks/src/items/carousel/template.html': {
+			nodeRules: [
+				{
+					// SP画像の固定スロットになる<source>。srcsetを持たない<source>は
+					// ブラウザが読み飛ばすので、SP画像が未設定の初期状態を安全に表せる。
+					// ここにプレースホルダーのURLを入れると、mediaのない<source>が常に
+					// 選ばれ、PC画像を上書きしてしまう。他のテンプレートには広げない
+					selector: 'picture > source[data-bge]',
+					rules: {
+						'required-attr': false,
+					},
+				},
+			],
+		},
 		'packages/@burger-editor/legacy/src/v3/**/*': {
 			...extended,
 			rules: {

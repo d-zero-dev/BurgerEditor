@@ -55,6 +55,7 @@ import { items } from '@burger-editor/blocks/editor';
 | key             | 用途                                                                             |
 | --------------- | -------------------------------------------------------------------------------- |
 | `button`        | ボタン                                                                           |
+| `carousel`      | カルーセル（複数のスライド画像。各スライドは `image` と同じ項目）                |
 | `details`       | 折りたたみ要素                                                                   |
 | `download-file` | ダウンロードファイル                                                             |
 | `google-maps`   | Google Maps 埋め込み                                                             |
@@ -66,6 +67,8 @@ import { items } from '@burger-editor/blocks/editor';
 | `title-h3`      | 中見出し（h3）                                                                   |
 | `wysiwyg`       | リッチテキストエディタ                                                           |
 | `youtube`       | YouTube 動画埋め込み                                                             |
+
+`carousel` の全体設定（自動再生・ループ・表示枚数・矢印・ドット・切り替え効果）は、ラッパーの `data-bge-*` 属性として保存するだけで、このパッケージの CSS も JS も解釈しない。スライドを送る動作は、公開ページ側が属性を読んで実装する。同梱の CSS はスライドごとの見た目（`figure` / `img` / `figcaption`）だけを持ち、横並びのレイアウトは持たない。
 
 ## デフォルトカタログ
 
@@ -84,6 +87,7 @@ import { items } from '@burger-editor/blocks/editor';
 | ---------- | ------------ | ------------ |
 | テキスト   | `wysiwyg`    | `wysiwyg`    |
 | 画像       | `image`      | `image`      |
+| カルーセル | `carousel`   | `carousel`   |
 | 折りたたみ | `disclosure` | `details`    |
 | テーブル   | `table`      | `table`      |
 | YouTube    | `youtube`    | `youtube`    |

@@ -1,4 +1,5 @@
 import button from './button/definition.js';
+import carousel from './carousel/definition.js';
 import details from './details/definition.js';
 import downloadFile from './download-file/definition.js';
 import googleMaps from './google-maps/definition.js';
@@ -16,6 +17,7 @@ import youtube from './youtube/definition.js';
 // （ESLintの`no-restricted-imports`と`yarn verify:blocks-boundary`で検査する）
 export const items = {
 	button,
+	carousel,
 	details,
 	'download-file': downloadFile,
 	'google-maps': googleMaps,

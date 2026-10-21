@@ -2,6 +2,7 @@ import type { BlockCatalog } from '@burger-editor/core';
 
 // 全ブロックのアイコンをインポート
 import button3Icon from '../icons/button3.svg';
+import carouselIcon from '../icons/carousel.svg';
 import contentNavigationIcon from '../icons/content-navigation.svg';
 import disclosureIcon from '../icons/disclosure.svg';
 import downloadFile3Icon from '../icons/download-file3.svg';
@@ -70,6 +71,19 @@ export const defaultCatalog: BlockCatalog = {
 					autoRepeat: 'auto-fit',
 				},
 				items: [['image']],
+			},
+		},
+		{
+			label: 'カルーセル',
+			definition: {
+				name: 'carousel',
+				svg: carouselIcon,
+				containerProps: {
+					type: 'grid',
+					columns: 1,
+					autoRepeat: 'auto-fit',
+				},
+				items: [['carousel']],
 			},
 		},
 		{

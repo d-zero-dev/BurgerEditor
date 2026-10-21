@@ -10,6 +10,7 @@ import { items } from '../items.js';
 
 const ITEM_NAMES = [
 	'button',
+	'carousel',
 	'details',
 	'download-file',
 	'google-maps',
@@ -24,7 +25,7 @@ const ITEM_NAMES = [
 ] as const;
 
 describe('ルートの items（Editor なしの定義）', () => {
-	test('標準の 12 アイテムを提供する', () => {
+	test('標準の 13 アイテムを提供する', () => {
 		expect(Object.keys(items).toSorted()).toEqual([...ITEM_NAMES]);
 	});
 
@@ -34,7 +35,7 @@ describe('ルートの items（Editor なしの定義）', () => {
 });
 
 describe('blocks/editor の items（Editor 付き）', () => {
-	test('ルートと同じ 12 アイテムを提供する', () => {
+	test('ルートと同じ 13 アイテムを提供する', () => {
 		expect(Object.keys(editorItems).toSorted()).toEqual([...ITEM_NAMES]);
 	});
 

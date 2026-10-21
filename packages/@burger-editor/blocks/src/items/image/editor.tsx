@@ -27,13 +27,22 @@ type LoadedImage = {
 };
 
 /**
+ * `ImageEditor` の props。`item` は使わないので省略できる。
+ */
+export type ImageEditorProps = Omit<ItemEditorProps<ImageData>, 'item'> &
+	Partial<Pick<ItemEditorProps<ImageData>, 'item'>>;
+
+/**
  * imageアイテムのエディタ。PC/SP 2枚の画像タブ・サイズ・リンク設定を
  * React stateとcontrolled inputsで編集する。
+ *
+ * `item` に依存しないので、カルーセルのスライド編集ダイアログのように、
+ * アイテムを介さず `ImageData` だけを持つ呼び出し元からも `item` なしで使える。
  * @param root0
  * @param root0.state
  * @param root0.setState
  */
-export function ImageEditor({ state, setState }: ItemEditorProps<ImageData>) {
+export function ImageEditor({ state, setState }: ImageEditorProps) {
 	const fileBrowser = useFileBrowser();
 	// 同一documentに複数のimageアイテムエディタが同時に開いてもhtmlFor/
 	// aria-*の参照先が混線しないよう、ハードコードIDではなくuseIdで一意化する
