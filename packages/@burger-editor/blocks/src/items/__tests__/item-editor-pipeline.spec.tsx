@@ -4,10 +4,12 @@ import { createMockEngine, renderWithEngine } from '@burger-editor/client/testin
 import { ItemEditorHost } from '@burger-editor/client/ui';
 import { Item, UIStateStore } from '@burger-editor/core';
 import { narrowElement } from '@burger-editor/utils';
-import { screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
+import { screen, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
 import { test, expect, describe, afterEach, vi } from 'vitest';
 
 import buttonSeed from '../button/index.js';
+import carouselSeed from '../carousel/index.js';
+import { appendSlide, defaultSlide } from '../carousel/slides.js';
 import downloadFileSeed from '../download-file/index.js';
 import titleH2Seed from '../title-h2/index.js';
 
@@ -25,6 +27,7 @@ const itemSeeds = new Map<string, ItemSeed>([
 	['title-h2', titleH2Seed as never],
 	['button', buttonSeed as never],
 	['download-file', downloadFileSeed as never],
+	['carousel', carouselSeed as never],
 ]);
 
 /**
@@ -189,5 +192,61 @@ describe('itemエディタのパイプライン統合（開く→編集→保存
 			);
 		});
 		expect(uiState.getSnapshot().openDialog).toBeNull();
+	});
+
+	test('carousel: 内側のスライド編集の決定は外側を閉じず、外側の決定でHTMLに反映される', async () => {
+		const base = carouselSeed.toEditorState!(
+			Item.create('carousel', itemSeeds, testConfig).export() as never,
+			testConfig,
+		);
+		const data = appendSlide(base, { ...defaultSlide(), path: '/b.png', caption: 'B' });
+		const { engine, item, uiState } = createHarness('carousel', data, {
+			serverAPI: { getFileList: () => resolvedFileList() },
+		});
+		// 内側のダイアログは engine.el へportalで描かれ、showModal()は接続済みの要素にしか使えない
+		document.body.append(engine.el);
+
+		renderWithEngine(engine, <ItemEditorHost item={item as never} />);
+
+		// 内側のダイアログを開いてキャプションを変え、内側の「決定」（内側のform submit）
+		const editButton = screen.getByRole('button', { name: 'スライド2を編集' });
+		const targetId = editButton.getAttribute('commandfor') ?? '';
+		const event = new Event('command');
+		Object.assign(event, {
+			command: editButton.getAttribute('command'),
+			source: editButton,
+		});
+		await act(() => {
+			document.getElementById(targetId)?.dispatchEvent(event);
+		});
+		const caption = narrowElement(
+			await screen.findByLabelText('キャプション'),
+			HTMLInputElement,
+		);
+		fireEvent.change(caption, { target: { value: '変更後' } });
+		fireEvent.submit(narrowElement(caption.form ?? document.body, HTMLFormElement));
+
+		// 一覧（外側の state）には反映されるが、保存はされず、外側のダイアログも開いたまま
+		await waitFor(() => {
+			expect(screen.queryByLabelText('キャプション')).toBeNull();
+		});
+		expect(uiState.getSnapshot().openDialog?.type).toBe('item-editor');
+		expect(engine.save).not.toHaveBeenCalled();
+		expect(item.el.querySelectorAll('figcaption')[1]?.textContent).toBe('B');
+
+		// 外側の「決定」でitemのHTMLに反映され、外側が閉じて保存される
+		const outerForm = narrowElement(
+			document
+				.querySelector('[data-bge-component="item-editor-dialog"]')
+				?.closest('form') ?? document.body,
+			HTMLFormElement,
+		);
+		fireEvent.submit(outerForm);
+
+		await waitFor(() => {
+			expect(item.el.querySelectorAll('figcaption')[1]?.textContent).toBe('変更後');
+		});
+		expect(uiState.getSnapshot().openDialog).toBeNull();
+		expect(engine.save).toHaveBeenCalledTimes(1);
 	});
 });

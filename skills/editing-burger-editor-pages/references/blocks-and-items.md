@@ -45,9 +45,11 @@
 
 `button` のように見た目が単純でもデータの形が非自明なアイテムがあるため、迷ったら必ず `item_schema` で確認する。
 
+`carousel` はスライド 1 枚につき、`path` `alt` `caption` などのスライドごとのキーが 1 要素ずつ並ぶ配列になる。**すべてのキーの配列を同じ長さにそろえる**。短い配列は、足りない位置が 0 番目の値で埋まり、意図しない複製になる。スライドは最低 1 枚。`item_update` で書く前に `item_schema` と、現在のデータの各配列の長さを確認する。
+
 ## このプロジェクトの既定カタログ名（差し替え可能）
 
-`h2` `h3` `wysiwyg` `image` `disclosure` `table` `youtube` `image-text` `text-image-text` `text-float-image-end` `text-float-image-start` `text-start-image-end` `image-start-text-end` `button` `file` `content-navigation` `google-maps` `hr` は組み込みの既定値であり、プロジェクトが差し替えている場合がある。**必ず `catalog_list` で実在するカタログを確認する。** `catalog_list` の戻りはカテゴリ名を含む — カテゴリ名は日本語（「見出し」「基本ブロック」等）で定義されていることが多い。
+`h2` `h3` `wysiwyg` `image` `carousel` `disclosure` `table` `youtube` `image-text` `text-image-text` `text-float-image-end` `text-float-image-start` `text-start-image-end` `image-start-text-end` `button` `file` `content-navigation` `google-maps` `hr` は組み込みの既定値であり、プロジェクトが差し替えている場合がある。**必ず `catalog_list` で実在するカタログを確認する。** `catalog_list` の戻りはカテゴリ名を含む — カテゴリ名は日本語（「見出し」「基本ブロック」等）で定義されていることが多い。
 
 ## `page_blocks` 2 回目の絞り込み
 

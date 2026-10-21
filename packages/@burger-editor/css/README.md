@@ -70,7 +70,7 @@ import '@burger-editor/css';
 
 ## 含まれるアイテムスタイル
 
-`button` / `details` / `download-file` / `google-maps` / `hr` / `image` / `import` / `table` / `title-h2` / `title-h3` / `wysiwyg` / `youtube` の計 12 種（`build.js` が `@burger-editor/blocks/src/items/**/*.css` をすべて統合する）。
+`button` / `carousel` / `details` / `download-file` / `google-maps` / `hr` / `image` / `import` / `table` / `title-h2` / `title-h3` / `wysiwyg` / `youtube` の計 13 種（`build.js` が `@burger-editor/blocks/src/items/**/*.css` をすべて統合する）。
 
 ## 単独利用
 

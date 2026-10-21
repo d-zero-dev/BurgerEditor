@@ -120,4 +120,26 @@ describe('Misc UI', () => {
 		);
 		expect(result.pass, result.message).toBe(true);
 	});
+
+	test('carousel slide list (thumbnail / name / actions in a row, long name is truncated)', async () => {
+		// サムネイルは CSS モジュールの部品（ThumbnailButton）なので、ここでは同じ大きさの
+		// ボタンで置き換える。確認するのは ui.css の slide-list の並びと名前の省略
+		const row = (name: string, actions: string) => `<li>
+			<button type="button" style="flex: none; inline-size: 8em; aspect-ratio: 4 / 3">編集</button>
+			<span data-bge-slide-name="">${name}</span>
+			<span data-bge-slide-actions="">${actions}</span>
+		</li>`;
+		const html = `<ol data-bge-editor-ui-component="slide-list">
+			${row('スライド1', '<button type="button" disabled>前へ</button><button type="button">後ろへ</button><button type="button" disabled>削除</button>')}
+			${row('2. 夕焼けの海岸線に沈んでいく太陽と、その手前を横切る小さな漁船の群れ、遠くに霞む島影', '<button type="button">前へ</button><button type="button">後ろへ</button><button type="button">削除</button>')}
+		</ol>`;
+		const dialog = renderDialog(html);
+		await waitForRender();
+		const base64 = await page.screenshot({ element: dialog, save: false });
+		const result = await commands.matchScreenshot(
+			base64,
+			'__snapshots__/misc/carousel-slide-list.png',
+		);
+		expect(result.pass, result.message).toBe(true);
+	});
 });

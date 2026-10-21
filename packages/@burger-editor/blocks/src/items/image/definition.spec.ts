@@ -497,6 +497,38 @@ describe('imageItemSeed', () => {
 		});
 	});
 
+	describe('width / height の無い <source> を含む保存済みHTML', () => {
+		test('読み込んで保存し直しても、<source> に空の width / height を足さず、img の寸法も保つ', async () => {
+			const seeds = new Map([['image', imageItemSeed as never]]);
+			const item = Item.create('image', seeds, testConfig);
+			let state = imageItemSeed.toEditorState!(item.export() as never, testConfig);
+			state = {
+				...state,
+				path: [state.path[0] ?? '', '/img/sp.png'],
+				width: [...state.width, 300],
+				height: [...state.height, 200],
+				media: [state.media[0] ?? '', '(max-width: 767px)'],
+			};
+			item.import((await imageItemSeed.toItemData!(state, testConfig)) as never);
+
+			// 寸法の無い<source>（v3 など、寸法を持たない保存済みHTML）にする
+			const source = item.el.querySelector('source');
+			source?.removeAttribute('width');
+			source?.removeAttribute('height');
+
+			state = imageItemSeed.toEditorState!(item.export() as never, testConfig);
+			item.import((await imageItemSeed.toItemData!(state, testConfig)) as never);
+
+			const resaved = item.el.querySelector('source');
+			expect(resaved?.getAttribute('srcset')).toBe('/img/sp.png');
+			expect(resaved?.hasAttribute('width')).toBe(false);
+			expect(resaved?.hasAttribute('height')).toBe(false);
+			const img = item.el.querySelector('img');
+			expect(img?.hasAttribute('width')).toBe(true);
+			expect(img?.hasAttribute('height')).toBe(true);
+		});
+	});
+
 	describe('template → HTML → data の往復（回帰）', () => {
 		test('2枚目を設定して2回保存してもaltとloadingが保持される', async () => {
 			const seeds = new Map([['image', imageItemSeed as never]]);

@@ -24,4 +24,65 @@ describe('getValues', () => {
 		expect(getValues(el)).toStrictEqual([['foo', 'path/to/file.png', false]]);
 		expect(el.src).toBe('https://www.d-zero.co.jp/path/to/file.png');
 	});
+
+	describe('<source> の未設定の属性', () => {
+		test('属性が無ければ、プロパティの既定値（空文字・0）ではなく null を返す', () => {
+			const el = document.createElement('source');
+			el.dataset.field = 'a:srcset, b:media, c:width, d:height';
+
+			expect(getValues(el)).toStrictEqual([
+				['a', null, false],
+				['b', null, false],
+				['c', null, false],
+				['d', null, false],
+			]);
+		});
+
+		test('属性があればその値を返す', () => {
+			const el = document.createElement('source');
+			el.dataset.field = 'a:srcset, b:media';
+			el.setAttribute('srcset', '/sp.png');
+			el.setAttribute('media', '(max-width: 767px)');
+
+			expect(getValues(el)).toStrictEqual([
+				['a', '/sp.png', false],
+				['b', '(max-width: 767px)', false],
+			]);
+		});
+
+		test('空文字の属性は空文字のまま返す（無いことと区別する）', () => {
+			const el = document.createElement('source');
+			el.dataset.field = 'a:media';
+			el.setAttribute('media', '');
+
+			expect(getValues(el)).toStrictEqual([['a', '', false]]);
+		});
+
+		test('sizes も、属性が無ければ null を返す', () => {
+			const el = document.createElement('source');
+			el.dataset.field = 'a:sizes';
+
+			expect(getValues(el)).toStrictEqual([['a', null, false]]);
+		});
+
+		test('width / height が属性にあれば、その値を返す', () => {
+			const el = document.createElement('source');
+			el.dataset.field = 'a:width, b:height';
+			el.setAttribute('width', '300');
+			el.setAttribute('height', '200');
+
+			const values = getValues(el);
+			expect(values.map(([name, value]) => [name, String(value)])).toStrictEqual([
+				['a', '300'],
+				['b', '200'],
+			]);
+		});
+
+		test('<source> 以外の要素の未設定の属性は、プロパティの値を返す', () => {
+			const el = document.createElement('img');
+			el.dataset.field = 'a:alt';
+
+			expect(getValues(el)).toStrictEqual([['a', '', false]]);
+		});
+	});
 });

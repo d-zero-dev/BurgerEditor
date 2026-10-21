@@ -1,4 +1,5 @@
 import button from './button/index.js';
+import carousel from './carousel/index.js';
 import details from './details/index.js';
 import downloadFile from './download-file/index.js';
 import googleMaps from './google-maps/index.js';
@@ -14,6 +15,7 @@ import youtube from './youtube/index.js';
 // 公開APIとしての説明は editor.d.ts。`src/editor.ts` が `items` として再exportする
 export const editorItems = {
 	button,
+	carousel,
 	details,
 	'download-file': downloadFile,
 	'google-maps': googleMaps,
