@@ -28,7 +28,9 @@ autoInit();
 - フェード
 - WAI-ARIA の Carousel パターンの役割と名前。名前は作者が書いた内容から付く（スライドとドットはキャプション、キャプションが空なら画像の `alt`）
 
-`root` を渡すとその中だけを初期化する。戻り値の `destroy()` で初期化を取り消せる。
+Invoker Commands API に対応していないブラウザでは、操作部品と自動再生を出さず、CSS だけの表示のままにする。
+
+`root` を渡すとその中だけを初期化する。初期化済みのカルーセルは、もう一度呼んでも初期化し直さない。戻り値の `destroy()` で初期化を取り消せる。
 
 ```ts
 import { initCarousel } from '@burger-editor/runtime';

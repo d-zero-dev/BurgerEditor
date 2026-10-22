@@ -1,5 +1,8 @@
 /**
  * Minimal typing for the Invoker Commands API `CommandEvent`.
+ * Delete this file once TypeScript's `lib.dom.d.ts` ships `CommandEvent`
+ * (https://github.com/microsoft/TypeScript-DOM-lib-generator), or the
+ * `HTMLElementEventMap.command` declarations will conflict.
  *
  * TypeScript's DOM lib does not ship this interface yet. The event is
  * dispatched on the element referenced by a button's `commandfor`

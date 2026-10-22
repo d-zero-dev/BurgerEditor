@@ -8,6 +8,9 @@ import { initImageModal } from './image-modal/index.js';
  *
  * This is a convenience function that initializes all runtime features
  * with a single call. You can also import and initialize features individually.
+ * It does not return a way to undo the carousel; call `initCarousel()` with
+ * `carousel: false` here when you need its `destroy()` (e.g. for content that is
+ * replaced on the client).
  * @param config - Configuration options for runtime features
  * @example
  * ```typescript
@@ -66,7 +69,10 @@ export function initBurgerEditorRuntime(config: BurgerEditorRuntimeConfig = {}):
  * autoInit({
  *   imageModal: {
  *     closeButtonLabel: '閉じる',
- *   }
+ *   },
+ *   carousel: {
+ *     interval: 8000,
+ *   },
  * });
  * ```
  */
