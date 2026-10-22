@@ -60,7 +60,7 @@ function mount(settings: Settings = {}) {
 	const figures = Array.from(
 		{ length: slides },
 		(_, i) => `
-			<figure data-bge=":style, :scale, :scale-type, :aspect-ratio" style="--css-width: 100cqi">
+			<figure data-bge=":style, :scale, :scale-type, :aspect-ratio, :slide-label" data-bge-slide-label="${captions[i] || alts[i] || ''}" style="--css-width: 100cqi">
 				<div data-bge=":node, :href, :target, :command">
 					<picture>
 						<img alt="${alts[i] ?? ''}" width="400" height="300" />
@@ -160,6 +160,22 @@ describe('initCarousel', () => {
 			handle = setupCarousels({ markerLabel: (i) => `Go to ${i}` }, POLYFILL);
 
 			expect(page.getByRole('button', { name: 'Go to 2' }).query()).not.toBeNull();
+		});
+
+		test('ドットはスライド内を参照せず、自身の文字で名前を持つ（フェードで inert のスライドを参照すると Chromium が名前を失うため）', () => {
+			const { markers } = mount({
+				effect: 'fade',
+				slides: 2,
+				captions: ['春の庭', ''],
+				alts: ['桜', '紅葉'],
+			});
+			handle = setupCarousels({}, POLYFILL);
+
+			expect(markers().map((m) => m.hasAttribute('aria-labelledby'))).toEqual([
+				false,
+				false,
+			]);
+			expect(markers().map((m) => m.textContent)).toEqual(['春の庭', '紅葉']);
 		});
 
 		test('矢印の名前はボタンの中の文字から付き、文字は設定で差し替えられる', () => {
@@ -503,6 +519,24 @@ describe('initCarousel', () => {
 			await vi.waitFor(() => {
 				expect(current()).toBeGreaterThan(0);
 			});
+		});
+
+		test('スライド内のダイアログ（画像モーダル）を開いている間は進まず、閉じると再開する', () => {
+			vi.useFakeTimers();
+			const { slides, current } = mount({ autoplay: true, effect: 'fade' });
+			const dialog = document.createElement('dialog');
+			slides[0]!.append(dialog);
+			handle = setupCarousels({ interval: 1000 }, POLYFILL);
+
+			// タッチで開いた想定（ポインターもキーボードフォーカスも止める条件にならない）
+			dialog.show();
+			vi.advanceTimersByTime(3000);
+			expect(current()).toBe(0);
+			expect(slides[0]!.inert).toBe(false);
+
+			dialog.close();
+			vi.advanceTimersByTime(1000);
+			expect(current()).toBe(1);
 		});
 
 		test('停止ボタンで止めたあとは、ポインターが離れても再開しない', () => {

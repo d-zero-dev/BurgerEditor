@@ -20,8 +20,9 @@
  *
  * アクセシブルな名前は、作者が書いた内容から付ける（`aria-label` を使わない）。
  * スライドは `figure` のまま、`aria-labelledby` で `figcaption`（空なら画像の `alt`）を
- * 指して名前を得る。ドットも同じ要素を `aria-labelledby` で指す（標準の
- * `::scroll-marker` はスライドの名前を引き継ぐので、両者が揃う）。
+ * 指して名前を得る。ドットは、保存時にキャプション（空なら alt）から導かれる
+ * `data-bge-slide-label` の文字を名前にする（標準の `::scroll-marker` も CSS の
+ * `attr()` で同じ属性を使うので、両者が揃う）。
  * 生成するボタンは中の文字を名前にする。外枠は作者由来の名前の元が無いため名前を
  * 付けず、名前が必須の `region` ではなく `group` にする。
  
@@ -334,9 +335,6 @@ function setupCarousel(
 		setAttr(el, 'aria-roledescription', 'carousel'),
 	);
 
-	// スライドの名前の元（作者が書いたキャプション、空なら画像の alt）の id。
-	// ドットの名前にも使う。どちらも無いスライドは null
-	const nameIds: (string | null)[] = [];
 	for (const [i, slide] of slides.entries()) {
 		restores.push(setAttr(slide, 'aria-roledescription', 'slide'));
 		const caption = slide.querySelector('figcaption');
@@ -352,7 +350,6 @@ function setupCarousel(
 		if (nameSource != null) {
 			restores.push(setAttr(slide, 'aria-labelledby', nameSource));
 		}
-		nameIds.push(nameSource);
 	}
 	if (fade) {
 		restores.push(
@@ -460,16 +457,17 @@ function setupCarousel(
 	if (needsControls && settings.dots) {
 		markerGroup = document.createElement('div');
 		markerGroup.dataset.bgeCarouselMarkers = '';
-		for (const [i, nameId] of nameIds.entries()) {
+		for (const [i, slide] of slides.entries()) {
+			// 名前は保存時にキャプション（空なら alt）から導いた `data-bge-slide-label` の
+			// 文字から付ける（標準の `::scroll-marker` と同じ元）。aria-labelledby で
+			// スライド内を指すと、フェードで inert のスライドを指したとき名前が失われる
+			const label = slide.dataset.bgeSlideLabel?.trim();
 			const marker = createButton(
 				'marker',
 				`${COMMAND.slidePrefix}${i}`,
 				id,
-				nameId == null ? options.markerLabel(i + 1) : null,
+				label || options.markerLabel(i + 1),
 			);
-			if (nameId != null) {
-				marker.setAttribute('aria-labelledby', nameId);
-			}
 			marker.setAttribute('aria-controls', listId);
 			markers.push(marker);
 			markerGroup.append(marker);
@@ -515,6 +513,12 @@ function setupCarousel(
 	let focusing = false;
 
 	const advance = () => {
+		// スライド内のダイアログ（画像モーダル）を開いている間は進めない。タッチで開くと
+		// ポインターもキーボードフォーカスも止める条件にならず、裏で切り替わってしまう。
+		// フェードでは開いているダイアログのスライドが inert になり、閉じられなくなる
+		if (el.querySelector('dialog[open]')) {
+			return;
+		}
 		// 自動再生は、ループの有無に関わらず末尾で先頭に戻る（止まると再生中なのに動かない）
 		goTo(current >= lastStart ? 0 : current + perView);
 	};
