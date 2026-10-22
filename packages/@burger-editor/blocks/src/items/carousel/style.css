@@ -4,6 +4,14 @@
  * それ以外のブラウザ・ループ・自動再生・フェードは @burger-editor/runtime が
  * 要素を生成して補う（生成したときはラッパーに `data-bge-carousel-controls` が付く）。
  * 表示枚数は、保存時にラッパーの `style` に書かれる `--per-view` で受け取る。
+ *
+ * `data-bge-carousel-*` 属性は runtime が実行時に付けるもので、保存 HTML には無い。
+ * 属性の取り決めはこのアイテム（blocks の carousel）が持ち、runtime はそれに従う。
+ *
+ * 参照: CSS Scroll Snap（https://www.w3.org/TR/css-scroll-snap-1/）、
+ * CSS Overflow 5 の ::scroll-button() / ::scroll-marker
+ * （https://drafts.csswg.org/css-overflow-5/）。後者は Chromium のみで Baseline ではない
+ * （https://webstatus.dev/features/scroll-markers）。
  */
 
 /*
@@ -45,12 +53,16 @@
 			/* stylelint-disable-next-line selector-type-no-unknown -- `::scroll-button()` の引数（方向）を型セレクタと誤認する */
 			&::scroll-button(inline-start) {
 				grid-area: previous;
+
+				/* 代替テキストは runtime の既定の文言（`DEFAULT_OPTIONS.previousLabel`）と揃える */
 				content: '‹' / '前のスライド';
 			}
 
 			/* stylelint-disable-next-line selector-type-no-unknown -- `::scroll-button()` の引数（方向）を型セレクタと誤認する */
 			&::scroll-button(inline-end) {
 				grid-area: next;
+
+				/* 代替テキストは runtime の既定の文言（`DEFAULT_OPTIONS.nextLabel`）と揃える */
 				content: '›' / '次のスライド';
 			}
 		}
@@ -94,7 +106,7 @@
 		}
 	}
 
-	> [data-bge-per-view] {
+	> :has(> [data-bge-list]) {
 		--bge-carousel-gap: var(--bge-options-column-gap, var(--bge-options-gap, 0));
 
 		display: grid;
@@ -215,7 +227,7 @@
 		border: 1px solid currentcolor;
 		border-radius: 50%;
 
-		&:disabled {
+		&[aria-disabled='true'] {
 			cursor: default;
 			opacity: 0.3;
 		}

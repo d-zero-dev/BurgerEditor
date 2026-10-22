@@ -68,7 +68,7 @@ import { items } from '@burger-editor/blocks/editor';
 | `wysiwyg`       | リッチテキストエディタ                                                           |
 | `youtube`       | YouTube 動画埋め込み                                                             |
 
-`carousel` の全体設定（自動再生・ループ・表示枚数・矢印・ドット・切り替え効果）は、ラッパーの `data-bge-*` 属性として保存する。表示枚数は `--per-view` としてラッパーの `style` にも保存する。同梱の CSS だけで、スライドが横に並び、1 枚ずつスナップしてスクロールする。`::scroll-button()` / `::scroll-marker` に対応したブラウザでは、矢印とドットも CSS だけで表示する。自動再生・ループ・フェードと、未対応ブラウザの矢印・ドットは [`@burger-editor/runtime`](../runtime/README.md) が補う。
+`carousel` の全体設定（自動再生・ループ・矢印・ドット・切り替え効果）は、ラッパーの `data-bge-*` 属性として保存する。表示枚数だけは、CSS が計算に使えるよう、ラッパーの `style` の `--per-view` として保存する（サイトの CSS で上書きすると、runtime もその値に従う）。同梱の CSS だけで、スライドが横に並び、1 枚ずつスナップしてスクロールする。`::scroll-button()` / `::scroll-marker` に対応したブラウザでは、矢印とドットも CSS だけで表示する。自動再生・ループ・フェードと、未対応ブラウザの矢印・ドットは [`@burger-editor/runtime`](../runtime/README.md) が補う。
 
 ## デフォルトカタログ
 

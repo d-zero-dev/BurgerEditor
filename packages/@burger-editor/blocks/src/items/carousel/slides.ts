@@ -129,7 +129,6 @@ export function withSlides(
 		arrows: data.arrows ?? defaults.arrows,
 		dots: data.dots ?? defaults.dots,
 		effect: data.effect ?? defaults.effect,
-		layoutStyle: `--per-view: ${perView}`,
 		path: slides.map((s) => s.path),
 		alt: slides.map((s) => s.alt),
 		width: slides.map((s) => s.width),
@@ -148,20 +147,36 @@ export function withSlides(
 		href: slides.map((s) => s.href),
 		target: slides.map((s) => s.target),
 		command: slides.map((s) => s.command),
-		slideLabel: slides.map((s) => slideLabelOf(s)),
+		slideLabel: slideLabels(slides),
 	};
 }
 
 /**
- * スライドの名前。キャプションの文字（マークアップを除く）、空なら画像の alt。
- * Node.js から呼ばれるときも `@burger-editor/file-io` が `DOMParser` を用意する
- * @param slide
+ * 名前の中で区切り（空白）にする要素。改行とブロック要素。`@burger-editor/runtime` の
+ * `carousel/index.ts` が同名の定数として写して持つ（runtime は他のパッケージに依存できない）。
+ * 変えるときは両方を直す。両者が同じ名前を導くことは runtime のテストが確かめる
  */
-function slideLabelOf(slide: Slide): string {
-	const caption = new DOMParser().parseFromString(slide.caption, 'text/html').body
-		.textContent;
+const LABEL_BOUNDARIES =
+	'br, hr, p, div, li, dt, dd, ul, ol, dl, h1, h2, h3, h4, h5, h6, blockquote, pre, table, tr, td, th, section, article, aside, header, footer, nav';
+
+/**
+ * スライドの名前。キャプションの文字（マークアップを除く）、空なら画像の alt。
+ * Node.js から呼ばれるときも `@burger-editor/file-io` が `DOMParser` を用意する。
+ * 改行やブロック要素の境目は空白にする（textContent はそのまま連結し、
+ * 「春の<br>庭」が「春の庭」になるため）
+ * @param slides
+ */
+function slideLabels(slides: readonly Slide[]): string[] {
+	const parser = new DOMParser();
 	const normalize = (text: string) => text.replaceAll(/\s+/g, ' ').trim();
-	return normalize(caption) || normalize(slide.alt);
+	return slides.map((slide) => {
+		const { body } = parser.parseFromString(slide.caption, 'text/html');
+		for (const el of body.querySelectorAll(LABEL_BOUNDARIES)) {
+			el.before(' ');
+			el.after(' ');
+		}
+		return normalize(body.textContent) || normalize(slide.alt);
+	});
 }
 
 /**

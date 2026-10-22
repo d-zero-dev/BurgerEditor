@@ -14,8 +14,6 @@ export type CarouselData = {
 	arrows: boolean;
 	dots: boolean;
 	effect: 'slide' | 'fade';
-	// ラッパーの `style`（`--per-view`）。`perView` から導く値で、読み戻した値は使わない
-	layoutStyle?: string;
 
 	// スライドごとの値（すべて同じ長さの配列）。値の意味は image アイテムと同じ。
 	// SP 画像は `<picture>` のリストにすると入れ子になるため、`sp*` の固定スロットで持つ
@@ -40,7 +38,9 @@ export type CarouselData = {
 	// スライドの名前（キャプションの文字、空なら alt）。`caption` / `alt` から導く値で、
 	// 読み戻した値は使わない。CSS だけで表示したとき、標準の `::scroll-marker` の
 	// 名前を `attr()` で付けるために持つ（Chromium は figcaption から figure の名前を
-	// 計算せず、id で指す方法はブロックの複製で重複する）
+	// 計算せず、id で指す方法はブロックの複製で重複する）。`toItemData` を通らない
+	// エージェント経由の保存では古いまま残り得るので、`@burger-editor/runtime` は
+	// 実行時にキャプション・alt から読み直して上書きする
 	slideLabel?: string[];
 };
 
@@ -52,7 +52,9 @@ export const carouselDefinition: ItemSeed<string, CarouselData> = {
 	// `data-bge-*` 属性として保存する。`style.css` は scroll snap による横並びと、
 	// 対応ブラウザでの標準の矢印・ドット（`::scroll-button()` / `::scroll-marker`）を
 	// 持つ。表示枚数は属性値を CSS の計算に使えない（型付き `attr()` は Baseline では
-	// ない）ため、`--per-view` としてラッパーの `style` にも書く。
+	// ない。https://webstatus.dev/features/attr）ため、`data-bge-*` 属性ではなくラッパーの `style` の `--per-view` だけに
+	// 保存する（2 か所に持つと、`toItemData` を通らないエージェント経由の保存で
+	// 食い違う）。
 	// 自動再生・ループ・フェードと、未対応ブラウザの矢印・ドットは
 	// `@burger-editor/runtime` が属性を読んで補う。
 	//

@@ -396,18 +396,28 @@ describe('carouselItemSeed', () => {
 			});
 		});
 
-		test('表示枚数は --per-view としてラッパーの style にも保存され、変更に追従する', async () => {
+		test('表示枚数はラッパーの style の --per-view だけに保存され、変更に追従する', async () => {
 			const item = createItem();
-			const wrapper = () => item.el.querySelector<HTMLElement>('[data-bge-per-view]');
+			const wrapper = () => item.el.querySelector<HTMLElement>('[data-bge-autoplay]');
 
-			expect(wrapper()?.style.getPropertyValue('--per-view').trim()).toBe('1');
+			expect(wrapper()?.getAttribute('style')).toBe('--per-view: 1');
 
 			await save(item, (data) => ({ ...data, perView: 3 }));
-			expect(wrapper()?.dataset.bgePerView).toBe('3');
-			expect(wrapper()?.style.getPropertyValue('--per-view').trim()).toBe('3');
+			expect(wrapper()?.getAttribute('style')).toBe('--per-view: 3');
+			expect(wrapper()?.hasAttribute('data-bge-per-view')).toBe(false);
 
 			await save(item, (data) => ({ ...data, perView: 2 }));
-			expect(wrapper()?.style.getPropertyValue('--per-view').trim()).toBe('2');
+			expect(wrapper()?.getAttribute('style')).toBe('--per-view: 2');
+		});
+
+		test('toItemData を通らない書き込み（エージェント経由）でも、表示枚数は 1 か所にしか無いので食い違わない', () => {
+			const item = createItem();
+
+			item.import({ ...(item.export() as never as CarouselData), perView: 4 } as never);
+
+			const wrapper = item.el.querySelector<HTMLElement>('[data-bge-autoplay]');
+			expect(wrapper?.getAttribute('style')).toBe('--per-view: 4');
+			expect((item.export() as never as CarouselData).perView).toBe(4);
 		});
 
 		test('スライドの名前（キャプションの文字、空なら alt）を data-bge-slide-label に保存し、変更に追従する', async () => {
@@ -431,6 +441,14 @@ describe('carouselItemSeed', () => {
 			expect(labels()).toEqual(['桜', '秋の山']);
 		});
 
+		test('キャプションの改行やブロック要素の境目は、名前では空白になる', async () => {
+			const item = createItem();
+
+			await save(item, (data) => ({ ...data, caption: ['春の<br>庭<p>桜</p>'] }));
+
+			expect(item.el.querySelector('figure')?.dataset.bgeSlideLabel).toBe('春の 庭 桜');
+		});
+
 		test('キャプションも alt も無いスライドの名前は空にする', async () => {
 			const item = createItem();
 
@@ -447,20 +465,6 @@ describe('carouselItemSeed', () => {
 			await save(item, (data) => data);
 
 			expect(item.el.querySelector('figure')?.dataset.bgeSlideLabel).toBe('春の庭');
-		});
-
-		test('style の --per-view が属性の表示枚数と食い違っていても、属性の値を正として保存し直す', async () => {
-			const item = createItem();
-			await save(item, (data) => ({ ...data, perView: 2 }));
-			item.el
-				.querySelector<HTMLElement>('[data-bge-per-view]')
-				?.style.setProperty('--per-view', '5');
-
-			await save(item, (data) => data);
-
-			const wrapper = item.el.querySelector<HTMLElement>('[data-bge-per-view]');
-			expect(wrapper?.dataset.bgePerView).toBe('2');
-			expect(wrapper?.style.getPropertyValue('--per-view').trim()).toBe('2');
 		});
 	});
 });
