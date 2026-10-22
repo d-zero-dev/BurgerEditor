@@ -410,6 +410,45 @@ describe('carouselItemSeed', () => {
 			expect(wrapper()?.style.getPropertyValue('--per-view').trim()).toBe('2');
 		});
 
+		test('スライドの名前（キャプションの文字、空なら alt）を data-bge-slide-label に保存し、変更に追従する', async () => {
+			const item = createItem();
+			const labels = () =>
+				[...item.el.querySelectorAll('figure')].map((f) => f.dataset.bgeSlideLabel);
+
+			await save(item, (data) =>
+				appendSlide(
+					{
+						...data,
+						caption: ['<strong>春の</strong>\n  庭'],
+						alt: ['桜'],
+					},
+					{ ...DEFAULT_SLIDE, path: '/b.png', alt: '紅葉', caption: '' },
+				),
+			);
+			expect(labels()).toEqual(['春の 庭', '紅葉']);
+
+			await save(item, (data) => ({ ...data, caption: ['', '秋の山'] }));
+			expect(labels()).toEqual(['桜', '秋の山']);
+		});
+
+		test('キャプションも alt も無いスライドの名前は空にする', async () => {
+			const item = createItem();
+
+			await save(item, (data) => ({ ...data, caption: [''], alt: [''] }));
+
+			expect(item.el.querySelector('figure')?.dataset.bgeSlideLabel).toBe('');
+		});
+
+		test('data-bge-slide-label がキャプションと食い違っていても、キャプションから導き直す', async () => {
+			const item = createItem();
+			await save(item, (data) => ({ ...data, caption: ['春の庭'] }));
+			item.el.querySelector('figure')?.setAttribute('data-bge-slide-label', '古い名前');
+
+			await save(item, (data) => data);
+
+			expect(item.el.querySelector('figure')?.dataset.bgeSlideLabel).toBe('春の庭');
+		});
+
 		test('style の --per-view が属性の表示枚数と食い違っていても、属性の値を正として保存し直す', async () => {
 			const item = createItem();
 			await save(item, (data) => ({ ...data, perView: 2 }));

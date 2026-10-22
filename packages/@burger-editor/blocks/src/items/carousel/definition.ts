@@ -37,6 +37,11 @@ export type CarouselData = {
 	href: string[];
 	target: ('_blank' | null)[];
 	command: ('show-modal' | null)[];
+	// スライドの名前（キャプションの文字、空なら alt）。`caption` / `alt` から導く値で、
+	// 読み戻した値は使わない。CSS だけで表示したとき、標準の `::scroll-marker` の
+	// 名前を `attr()` で付けるために持つ（Chromium は figcaption から figure の名前を
+	// 計算せず、id で指す方法はブロックの複製で重複する）
+	slideLabel?: string[];
 };
 
 /**

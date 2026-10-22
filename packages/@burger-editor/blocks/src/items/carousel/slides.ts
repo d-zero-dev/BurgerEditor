@@ -148,7 +148,20 @@ export function withSlides(
 		href: slides.map((s) => s.href),
 		target: slides.map((s) => s.target),
 		command: slides.map((s) => s.command),
+		slideLabel: slides.map((s) => slideLabelOf(s)),
 	};
+}
+
+/**
+ * スライドの名前。キャプションの文字（マークアップを除く）、空なら画像の alt。
+ * Node.js から呼ばれるときも `@burger-editor/file-io` が `DOMParser` を用意する
+ * @param slide
+ */
+function slideLabelOf(slide: Slide): string {
+	const caption = new DOMParser().parseFromString(slide.caption, 'text/html').body
+		.textContent;
+	const normalize = (text: string) => text.replaceAll(/\s+/g, ' ').trim();
+	return normalize(caption) || normalize(slide.alt);
 }
 
 /**

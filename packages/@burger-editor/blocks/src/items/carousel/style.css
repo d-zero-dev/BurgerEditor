@@ -71,7 +71,12 @@
 				inline-size: 0.75rem;
 				block-size: 0.75rem;
 				color: inherit;
-				content: '';
+
+				/*
+				 * 名前は保存時にキャプション（空なら alt）から導いた属性から付ける。
+				 * runtime が無いとスライドに名前が無く、ドットが名前なしになるため
+				 */
+				content: '' / attr(data-bge-slide-label);
 				border: 1px solid currentcolor;
 				border-radius: 50%;
 			}
