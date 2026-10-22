@@ -11,6 +11,7 @@ import buttonSeed from '../button/index.js';
 import carouselSeed from '../carousel/index.js';
 import { appendSlide, defaultSlide } from '../carousel/slides.js';
 import downloadFileSeed from '../download-file/index.js';
+import imageSeed from '../image/index.js';
 import titleH2Seed from '../title-h2/index.js';
 
 afterEach(cleanup);
@@ -28,6 +29,7 @@ const itemSeeds = new Map<string, ItemSeed>([
 	['button', buttonSeed as never],
 	['download-file', downloadFileSeed as never],
 	['carousel', carouselSeed as never],
+	['image', imageSeed as never],
 ]);
 
 /**
@@ -248,5 +250,91 @@ describe('itemエディタのパイプライン統合（開く→編集→保存
 		});
 		expect(uiState.getSnapshot().openDialog).toBeNull();
 		expect(engine.save).toHaveBeenCalledTimes(1);
+	});
+
+	test('image: リンクがあって alt が空のまま決定すると、理由を出してダイアログを開いたまま、HTMLも保存も変わらない', async () => {
+		const base = Item.create('image', itemSeeds, testConfig).export() as Record<
+			string,
+			unknown
+		>;
+		const { engine, item, uiState } = createHarness(
+			'image',
+			// path を空にして、画像の読み込み（失敗の表示）を起こさない
+			{ ...base, path: [''], alt: [''], node: 'a', href: 'https://example.com/' },
+			{ serverAPI: { getFileList: () => resolvedFileList() } },
+		);
+		const before = item.el.innerHTML;
+
+		renderWithEngine(engine, <ItemEditorHost item={item as never} />);
+
+		const alt = narrowElement(
+			screen.getByLabelText('画像の代替テキスト(alt)'),
+			HTMLInputElement,
+		);
+		expect(alt.getAttribute('aria-required')).toBe('true');
+		fireEvent.submit(narrowElement(alt.form ?? document.body, HTMLFormElement));
+
+		expect(await screen.findByText(/^代替テキスト\(alt\)が空です/)).toBeDefined();
+		expect(uiState.getSnapshot().openDialog?.type).toBe('item-editor');
+		expect(engine.save).not.toHaveBeenCalled();
+		expect(item.el.innerHTML).toBe(before);
+	});
+
+	test('image: リンクがあっても alt を入れて決定すれば、保存される', async () => {
+		const base = Item.create('image', itemSeeds, testConfig).export() as Record<
+			string,
+			unknown
+		>;
+		const { engine, item, uiState } = createHarness(
+			'image',
+			{ ...base, path: [''], alt: [''], node: 'a', href: 'https://example.com/' },
+			{ serverAPI: { getFileList: () => resolvedFileList() } },
+		);
+
+		renderWithEngine(engine, <ItemEditorHost item={item as never} />);
+
+		const alt = narrowElement(
+			screen.getByLabelText('画像の代替テキスト(alt)'),
+			HTMLInputElement,
+		);
+		fireEvent.change(alt, { target: { value: '詳細ページ' } });
+		fireEvent.submit(narrowElement(alt.form ?? document.body, HTMLFormElement));
+
+		await waitFor(() => {
+			expect(item.el.querySelector('img')?.getAttribute('alt')).toBe('詳細ページ');
+		});
+		expect(uiState.getSnapshot().openDialog).toBeNull();
+		expect(engine.save).toHaveBeenCalledTimes(1);
+	});
+
+	test('carousel: 名前の無いスライドがあるまま外側を決定すると、スライドの番号を出してダイアログを開いたまま、HTMLも保存も変わらない', async () => {
+		const base = carouselSeed.toEditorState!(
+			Item.create('carousel', itemSeeds, testConfig).export() as never,
+			testConfig,
+		);
+		// 2 枚目はキャプションも alt も無い
+		const data = appendSlide(base, { ...defaultSlide(), path: '/b.png' });
+		const { engine, item, uiState } = createHarness('carousel', data, {
+			serverAPI: { getFileList: () => resolvedFileList() },
+		});
+		document.body.append(engine.el);
+		const before = item.el.innerHTML;
+
+		renderWithEngine(engine, <ItemEditorHost item={item as never} />);
+
+		const outerForm = narrowElement(
+			document
+				.querySelector('[data-bge-component="item-editor-dialog"]')
+				?.closest('form') ?? document.body,
+			HTMLFormElement,
+		);
+		fireEvent.submit(outerForm);
+
+		expect(
+			await screen.findByText(/^スライド2: キャプションも代替テキスト\(alt\)も空です/),
+		).toBeDefined();
+		expect(uiState.getSnapshot().openDialog?.type).toBe('item-editor');
+		expect(engine.save).not.toHaveBeenCalled();
+		expect(item.el.innerHTML).toBe(before);
 	});
 });

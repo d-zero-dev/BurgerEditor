@@ -385,6 +385,26 @@ describe('CarouselEditor', () => {
 
 		invokeCommand(screen.getByRole('button', { name: 'スライドを追加' }));
 		await clickAndWait(screen.getByRole('button', { name: '決定' }), () => {
+			// Behavior change: キャプションも alt も空のスライドは追加できない（確定が拒まれ、2 枚のまま）
+			expect(screen.getByRole('alert').textContent).toContain(
+				'キャプションも代替テキスト(alt)も空',
+			);
+			// expect(getSlides(latest)).toHaveLength(3); // previous
+		});
+		expect(getSlides(latest)).toHaveLength(2);
+
+		expect(list.children[0]).toBe(firstRow);
+		// expect(list.children).toHaveLength(3); // previous
+		expect(list.children).toHaveLength(2);
+	});
+
+	test('名前を付けてスライドを追加しても、既存の行の DOM は保たれる', async () => {
+		const list = screen.getAllByRole('list')[0]!;
+		const firstRow = list.children[0];
+
+		invokeCommand(screen.getByRole('button', { name: 'スライドを追加' }));
+		fireEvent.change(screen.getByLabelText('キャプション'), { target: { value: 'C' } });
+		await clickAndWait(screen.getByRole('button', { name: '決定' }), () => {
 			expect(getSlides(latest)).toHaveLength(3);
 		});
 
@@ -546,6 +566,83 @@ describe('CarouselEditor', () => {
 		});
 		expect(getSlideDialog().open).toBe(true);
 		expect(getSlides(latest).map((s) => s.caption)).toStrictEqual(['A', 'B']);
+	});
+
+	test('キャプションも alt も空にして決定すると、内側のダイアログは開いたまま理由を出し、state は変わらない', async () => {
+		invokeCommand(screen.getByRole('button', { name: 'スライド1を編集' }));
+		fireEvent.change(screen.getByLabelText('キャプション'), { target: { value: '' } });
+		await act(() => {
+			fireEvent.click(screen.getByRole('button', { name: '決定' }));
+		});
+
+		await vi.waitFor(() => {
+			expect(screen.getByRole('alert').textContent).toContain(
+				'キャプションも代替テキスト(alt)も空',
+			);
+		});
+		expect(getSlideDialog().open).toBe(true);
+		expect(getSlides(latest).map((s) => s.caption)).toStrictEqual(['A', 'B']);
+	});
+
+	test('キャプションを空にしても、alt があれば決定できる', async () => {
+		invokeCommand(screen.getByRole('button', { name: 'スライド1を編集' }));
+		fireEvent.change(screen.getByLabelText('キャプション'), { target: { value: '' } });
+		fireEvent.change(screen.getByLabelText('画像の代替テキスト(alt)'), {
+			target: { value: '春の庭' },
+		});
+		await clickAndWait(screen.getByRole('button', { name: '決定' }), () => {
+			expect(getSlides(latest).map((s) => s.alt)).toStrictEqual(['春の庭', '']);
+		});
+		expect(getSlides(latest).map((s) => s.caption)).toStrictEqual(['', 'B']);
+	});
+
+	test('リンク先を入れて alt が空のまま決定すると、キャプションがあっても決定できない', async () => {
+		invokeCommand(screen.getByRole('button', { name: 'スライド1を編集' }));
+		fireEvent.change(screen.getByLabelText('リンク先URL'), {
+			target: { value: 'https://example.com/' },
+		});
+		await act(() => {
+			fireEvent.click(screen.getByRole('button', { name: '決定' }));
+		});
+
+		await vi.waitFor(() => {
+			expect(screen.getByRole('alert').textContent).toContain('代替テキスト(alt)');
+		});
+		expect(getSlideDialog().open).toBe(true);
+		expect(getSlides(latest).map((s) => s.href)).toStrictEqual(['', '']);
+	});
+
+	test('ポップアップにして alt が空のまま決定すると、キャプションがあっても決定できない', async () => {
+		invokeCommand(screen.getByRole('button', { name: 'スライド1を編集' }));
+		fireEvent.click(screen.getByLabelText('ポップアップで画像を開く'));
+		await act(() => {
+			fireEvent.click(screen.getByRole('button', { name: '決定' }));
+		});
+
+		await vi.waitFor(() => {
+			expect(screen.getByRole('alert').textContent).toContain(
+				'代替テキスト(alt)が空です',
+			);
+		});
+		expect(getSlideDialog().open).toBe(true);
+		expect(getSlides(latest).map((s) => s.node)).toStrictEqual(['div', 'div']);
+	});
+
+	test('追加するスライドは名前が空なので、ダイアログに名前が必須な理由が出て、キャプションを入れると消える', () => {
+		const note =
+			'キャプションか代替テキストのどちらかが、スライドとドットの名前になるため必須です。';
+
+		invokeCommand(screen.getByRole('button', { name: 'スライドを追加' }));
+		expect(screen.getByText(note)).toBeDefined();
+
+		fireEvent.change(screen.getByLabelText('キャプション'), { target: { value: 'C' } });
+		expect(screen.queryByText(note)).toBeNull();
+	});
+
+	test('名前のあるスライドの編集ダイアログには、名前が必須な理由は出ない', () => {
+		invokeCommand(screen.getByRole('button', { name: 'スライド1を編集' }));
+
+		expect(screen.queryByText(/スライドとドットの名前になるため必須/)).toBeNull();
 	});
 
 	test('全体の設定を編集できる', () => {

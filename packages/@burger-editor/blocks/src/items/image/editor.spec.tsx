@@ -1,4 +1,5 @@
 import type { ImageData } from './definition.js';
+import type { ImageEditorProps } from './editor.js';
 import type {
 	BurgerEditorEngine,
 	FileListResult,
@@ -120,21 +121,29 @@ function createMockEngine() {
  * @param root0.engine
  * @param root0.initialPath
  * @param root0.onState
+ * @param root0.slideName
  */
 function Harness({
 	engine,
 	initialPath,
 	onState,
+	slideName,
 }: {
 	readonly engine: BurgerEditorEngine;
 	readonly initialPath?: string[];
 	readonly onState?: (state: ImageData) => void;
+	readonly slideName?: ImageEditorProps['slideName'];
 }) {
 	const [state, setState] = useState<ImageData>(() => createInitialState(initialPath));
 	onState?.(state);
 	return (
 		<EngineProvider engine={engine}>
-			<ImageEditor state={state} setState={setState} item={{} as never} />
+			<ImageEditor
+				state={state}
+				setState={setState}
+				item={{} as never}
+				slideName={slideName}
+			/>
 		</EngineProvider>
 	);
 }
@@ -296,6 +305,106 @@ describe('ImageEditor', () => {
 
 		expect(href.disabled).toBe(true);
 		expect(targetBlank.disabled).toBe(true);
+	});
+
+	test('リンクもポップアップも無いときは、alt欄は必須にならず説明も出ない', () => {
+		render(<Harness engine={createMockEngine()} />);
+
+		const altInput = getInput('画像の代替テキスト(alt)');
+		expect(altInput.getAttribute('aria-required')).toBeNull();
+		expect(altInput.getAttribute('aria-describedby')).toBeNull();
+		expect(screen.queryByText(/リンクやボタンの名前になるため必須/)).toBeNull();
+	});
+
+	test('リンク先URLを入れるとalt欄が必須になり、説明がaria-describedbyでつながる', () => {
+		render(<Harness engine={createMockEngine()} />);
+
+		fireEvent.change(getInput('リンク先URL'), {
+			target: { value: 'https://example.com/' },
+		});
+
+		const altInput = getInput('画像の代替テキスト(alt)');
+		expect(altInput.getAttribute('aria-required')).toBe('true');
+		const note = screen.getByText(/リンクやボタンの名前になるため必須/);
+		expect(altInput.getAttribute('aria-describedby')).toBe(note.id);
+	});
+
+	test('ポップアップを有効にするとalt欄が必須になり、無効に戻すと必須でなくなる', () => {
+		render(<Harness engine={createMockEngine()} />);
+		const altInput = getInput('画像の代替テキスト(alt)');
+
+		fireEvent.click(screen.getByLabelText('ポップアップで画像を開く'));
+		expect(altInput.getAttribute('aria-required')).toBe('true');
+		expect(screen.queryByText(/リンクやボタンの名前になるため必須/)).not.toBeNull();
+
+		fireEvent.click(screen.getByLabelText('ポップアップで画像を開く'));
+		expect(altInput.getAttribute('aria-required')).toBeNull();
+		expect(screen.queryByText(/リンクやボタンの名前になるため必須/)).toBeNull();
+	});
+
+	describe('スライドとして編集するとき（slideName）', () => {
+		const slideName = {
+			labelOf: (state: ImageData) => state.caption || state.altEditable,
+			note: 'スライドの名前の説明',
+		};
+
+		test('キャプションも alt も空のあいだ、2つの欄に説明が出てつながる', () => {
+			render(<Harness engine={createMockEngine()} slideName={slideName} />);
+			fireEvent.change(getInput('画像の代替テキスト(alt)'), { target: { value: '' } });
+
+			const note = screen.getByText('スライドの名前の説明');
+			expect(getInput('画像の代替テキスト(alt)').getAttribute('aria-describedby')).toBe(
+				note.id,
+			);
+			expect(getInput('キャプション').getAttribute('aria-describedby')).toBe(note.id);
+		});
+
+		test('キャプションか alt のどちらかを入れると、説明は消える', () => {
+			render(<Harness engine={createMockEngine()} slideName={slideName} />);
+			fireEvent.change(getInput('画像の代替テキスト(alt)'), { target: { value: '' } });
+			expect(screen.queryByText('スライドの名前の説明')).not.toBeNull();
+
+			fireEvent.change(getInput('キャプション'), { target: { value: '春の庭' } });
+			expect(screen.queryByText('スライドの名前の説明')).toBeNull();
+			expect(getInput('キャプション').getAttribute('aria-describedby')).toBeNull();
+
+			fireEvent.change(getInput('キャプション'), { target: { value: '' } });
+			fireEvent.change(getInput('画像の代替テキスト(alt)'), { target: { value: '桜' } });
+			expect(screen.queryByText('スライドの名前の説明')).toBeNull();
+		});
+
+		test('リンクがあるときは alt の必須の説明を優先し、スライドの名前の説明は出さない', () => {
+			render(<Harness engine={createMockEngine()} slideName={slideName} />);
+			fireEvent.change(getInput('画像の代替テキスト(alt)'), { target: { value: '' } });
+			fireEvent.change(getInput('リンク先URL'), {
+				target: { value: 'https://example.com/' },
+			});
+
+			expect(screen.queryByText('スライドの名前の説明')).toBeNull();
+			expect(screen.queryByText(/リンクやボタンの名前になるため必須/)).not.toBeNull();
+		});
+
+		test('slideName を渡さない image アイテムでは、名前の説明は出ない', () => {
+			render(<Harness engine={createMockEngine()} />);
+			fireEvent.change(getInput('画像の代替テキスト(alt)'), { target: { value: '' } });
+
+			expect(screen.queryByText('スライドの名前の説明')).toBeNull();
+		});
+	});
+
+	test('タブ2でも必須の説明は残り、画像1のタブで編集する旨の注記と両方がつながる', () => {
+		render(<Harness engine={createMockEngine()} initialPath={['', '/img/sp.png']} />);
+		fireEvent.click(screen.getByLabelText('ポップアップで画像を開く'));
+
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+
+		const altInput = getInput('画像の代替テキスト(alt)');
+		const required = screen.getByText(/リンクやボタンの名前になるため必須/);
+		const tabNote = screen.getByText(/画像1のタブで編集/);
+		expect(altInput.getAttribute('aria-describedby')?.split(' ')).toEqual([
+			required.id,
+			tabNote.id,
+		]);
 	});
 });
 

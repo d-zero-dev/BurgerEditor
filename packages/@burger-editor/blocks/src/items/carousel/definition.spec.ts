@@ -146,6 +146,22 @@ describe('carouselItemSeed', () => {
 		test('SP画像のないスライドは spPath が null のまま往復する', async () => {
 			const state = slideToEditorState({ ...DEFAULT_SLIDE, path: '/pc.png' }, testConfig);
 
+			// Behavior change: キャプションも alt も無いスライドは確定できない（この入力は名前が無い）
+			await expect(editorStateToSlide(state, testConfig)).rejects.toThrow(
+				'キャプションも代替テキスト(alt)も空',
+			);
+			// const result = await editorStateToSlide(state, testConfig); // previous
+			// expect(result.spPath).toBeNull(); // previous
+			// expect(result.spMedia).toBeNull(); // previous
+			// expect(result.spWidth).toBeNull(); // previous
+		});
+
+		test('名前のある SP画像のないスライドは spPath が null のまま往復する', async () => {
+			const state = slideToEditorState(
+				{ ...DEFAULT_SLIDE, path: '/pc.png', alt: '説明' },
+				testConfig,
+			);
+
 			const result = await editorStateToSlide(state, testConfig);
 
 			expect(result.spPath).toBeNull();
@@ -202,9 +218,14 @@ describe('carouselItemSeed', () => {
 	describe('全体設定の既定値', () => {
 		test('全体設定が無い入力は、既定値で埋めて保存形に整える', async () => {
 			const state = carouselItemSeed.toEditorState!({} as never, testConfig);
-			const saved = await carouselItemSeed.toItemData!({} as never, testConfig);
+			// Behavior change: 名前の無いスライドを含む入力は確定できない（`{}` は既定のスライド 1 枚で、名前が無い）
+			await expect(async () =>
+				carouselItemSeed.toItemData!({} as never, testConfig),
+			).rejects.toThrow('スライド1');
+			// const saved = await carouselItemSeed.toItemData!({} as never, testConfig); // previous
 
-			for (const data of [state, saved]) {
+			// for (const data of [state, saved]) { // previous
+			for (const data of [state]) {
 				expect(data).toMatchObject({
 					autoplay: false,
 					loop: false,
@@ -215,6 +236,23 @@ describe('carouselItemSeed', () => {
 				});
 				expect(data.path).toHaveLength(1);
 			}
+		});
+
+		test('全体設定が無く、スライドに名前がある入力は、既定値で埋めて保存形に整える', async () => {
+			const saved = await carouselItemSeed.toItemData!(
+				{ alt: ['桜'] } as never,
+				testConfig,
+			);
+
+			expect(saved).toMatchObject({
+				autoplay: false,
+				loop: false,
+				perView: 1,
+				arrows: true,
+				dots: true,
+				effect: 'slide',
+			});
+			expect(saved.path).toHaveLength(1);
 		});
 
 		test('既定値は template.html から導かれる（コードに別の値を持たない）', () => {
@@ -452,9 +490,14 @@ describe('carouselItemSeed', () => {
 		test('キャプションも alt も無いスライドの名前は空にする', async () => {
 			const item = createItem();
 
-			await save(item, (data) => ({ ...data, caption: [''], alt: [''] }));
+			// Behavior change: 名前の無いスライドは確定できず、名前が空のまま保存されることは無い
+			await expect(
+				save(item, (data) => ({ ...data, caption: [''], alt: [''] })),
+			).rejects.toThrow('スライド1');
+			// await save(item, (data) => ({ ...data, caption: [''], alt: [''] })); // previous
 
-			expect(item.el.querySelector('figure')?.dataset.bgeSlideLabel).toBe('');
+			// expect(item.el.querySelector('figure')?.dataset.bgeSlideLabel).toBe(''); // previous
+			expect(item.el.querySelector('img')?.getAttribute('alt')).toBe('サンプル画像');
 		});
 
 		test('data-bge-slide-label がキャプションと食い違っていても、キャプションから導き直す', async () => {
@@ -467,4 +510,191 @@ describe('carouselItemSeed', () => {
 			expect(item.el.querySelector('figure')?.dataset.bgeSlideLabel).toBe('春の庭');
 		});
 	});
+
+	describe('スライドの名前とリンクの名前を必須にする', () => {
+		const named = { ...DEFAULT_SLIDE, path: '/a.png', alt: '桜', caption: '' };
+
+		/**
+		 * 確定が拒まれたときのメッセージ。拒まれなければテストを失敗させる
+		 * @param state
+		 */
+		async function rejectionOf(state: CarouselData) {
+			try {
+				await carouselItemSeed.toItemData!(state, testConfig);
+			} catch (error) {
+				return (error as Error).message;
+			}
+			throw new Error('確定が拒まれなかった');
+		}
+
+		test('キャプションも alt も無いスライドがあれば、そのスライドの番号だけを示して確定できない', async () => {
+			const state = withSlidesOf(named, { ...named, alt: '', caption: ' <br> ' });
+
+			const message = await rejectionOf(state);
+
+			expect(message).toMatch(/^スライド2: キャプションも代替テキスト\(alt\)も空です/);
+			expect(message).not.toContain('スライド1');
+		});
+
+		test('名前の無いスライドが複数あれば、名前のあるスライドを除いて、すべての番号を示す', async () => {
+			const state = withSlidesOf({ ...named, alt: '' }, named, { ...named, alt: '' });
+
+			const message = await rejectionOf(state);
+
+			expect(message).toMatch(
+				/^スライド1、スライド3: キャプションも代替テキスト\(alt\)も空です/,
+			);
+			expect(message).not.toContain('スライド2');
+		});
+
+		test('alt が空白だけのスライドも、キャプションが無ければ名前が無いものとして拒む', async () => {
+			const state = withSlidesOf(named, { ...named, alt: ' 　\n', caption: '' });
+
+			expect(await rejectionOf(state)).toMatch(/^スライド2: キャプションも/);
+		});
+
+		test.each([
+			['リンク', { node: 'a', href: 'https://example.com/' }],
+			['ポップアップ', { node: 'button', command: 'show-modal' }],
+		] as const)(
+			'%s のスライドで alt が空なら、キャプションがあっても確定できない',
+			async (_label, link) => {
+				const state = withSlidesOf(named, {
+					...named,
+					...link,
+					alt: '',
+					caption: '春の庭',
+				});
+
+				const message = await rejectionOf(state);
+
+				expect(message).toMatch(/^スライド2: 代替テキスト\(alt\)が空です/);
+				expect(message).not.toContain('スライド1');
+			},
+		);
+
+		test('リンクの理由と名前なしの理由が同居すれば、番号と理由の組を並べて示す', async () => {
+			const state = withSlidesOf(
+				{ ...named, node: 'a', href: 'https://example.com/', alt: '', caption: '春の庭' },
+				named,
+				{ ...named, alt: '', caption: '' },
+			);
+
+			const message = await rejectionOf(state);
+
+			expect(message).toMatch(
+				/^スライド1: 代替テキスト\(alt\)が空です。.+ スライド3: キャプションも代替テキスト\(alt\)も空です/,
+			);
+			expect(message).not.toContain('スライド2');
+		});
+
+		test('href が空白だけでも、image の toItemData と同じくリンクとして扱い、alt を必須にする', async () => {
+			const state = withSlidesOf({ ...named, href: ' ', alt: '', caption: '春の庭' });
+
+			expect(await rejectionOf(state)).toMatch(/^スライド1: 代替テキスト\(alt\)が空です/);
+		});
+
+		test('ポップアップとリンク先が両方あっても、alt があれば確定できる', async () => {
+			const state = withSlidesOf({
+				...named,
+				node: 'button',
+				command: 'show-modal',
+				href: 'https://example.com/',
+				alt: '拡大表示',
+			});
+
+			const saved = await carouselItemSeed.toItemData!(state, testConfig);
+
+			expect(saved.node).toEqual(['button']);
+		});
+
+		test('リンク先の無い a や、ポップアップでない button は、エディタと同じく装飾的な画像として扱い、alt が空でも名前があれば確定できる', async () => {
+			const state = withSlidesOf(
+				{ ...named, node: 'a', href: '', alt: '', caption: '春の庭' },
+				{ ...named, node: 'button', command: null, alt: '', caption: '秋の山' },
+			);
+
+			const saved = await carouselItemSeed.toItemData!(state, testConfig);
+
+			expect(saved.slideLabel).toEqual(['春の庭', '秋の山']);
+		});
+
+		test('キャプションだけ、alt だけのスライドは確定できる', async () => {
+			const state = withSlidesOf(
+				{ ...named, alt: '', caption: '春の庭' },
+				{ ...named, alt: '桜', caption: '' },
+			);
+
+			const saved = await carouselItemSeed.toItemData!(state, testConfig);
+
+			expect(saved.slideLabel).toEqual(['春の庭', '桜']);
+		});
+
+		test('リンクのスライドは、alt があれば確定できる', async () => {
+			const state = withSlidesOf({
+				...named,
+				node: 'a',
+				href: 'https://example.com/',
+				alt: '詳細ページ',
+			});
+
+			const saved = await carouselItemSeed.toItemData!(state, testConfig);
+
+			expect(saved.node).toEqual(['a']);
+		});
+
+		test('名前の無いスライドを含む入力でも、読み込み・並べ替え・削除は止めない', () => {
+			const state = withSlidesOf({ ...named, alt: '' }, { ...named, alt: '' }, named);
+
+			expect(() => carouselItemSeed.toEditorState!(state, testConfig)).not.toThrow();
+			expect(() => moveSlide(state, 0, 1)).not.toThrow();
+			expect(removeSlide(state, 0).path).toHaveLength(2);
+		});
+
+		test('スライドの「決定」でも、名前が無ければ確定できない', async () => {
+			const noName = { ...named, alt: '', caption: '' };
+
+			await expect(
+				editorStateToSlide(slideToEditorState(noName, testConfig), testConfig),
+			).rejects.toThrow('キャプションも代替テキスト(alt)も空');
+		});
+
+		test('スライドの「決定」で、リンクなのに alt が無ければ確定できない', async () => {
+			const link = {
+				...named,
+				node: 'a',
+				href: 'https://example.com/',
+				alt: '',
+				caption: '春の庭',
+			} as const;
+
+			await expect(
+				editorStateToSlide(slideToEditorState(link, testConfig), testConfig),
+			).rejects.toThrow('代替テキスト(alt)');
+		});
+
+		test('スライドの「決定」は、キャプションだけでも alt だけでも通る', async () => {
+			const onlyCaption = { ...named, alt: '', caption: '春の庭' };
+			const onlyAlt = { ...named, alt: '桜', caption: '' };
+
+			await expect(
+				editorStateToSlide(slideToEditorState(onlyCaption, testConfig), testConfig),
+			).resolves.toMatchObject({ caption: '春の庭' });
+			await expect(
+				editorStateToSlide(slideToEditorState(onlyAlt, testConfig), testConfig),
+			).resolves.toMatchObject({ alt: '桜' });
+		});
+	});
 });
+
+/**
+ * スライドを並べた、保存前の状態（全体設定は既定値）を作る
+ * @param slides
+ */
+function withSlidesOf(...slides: Parameters<typeof appendSlide>[1][]): CarouselData {
+	let data = normalizeCarousel({} as never);
+	for (const [index, slide] of slides.entries()) {
+		data = index === 0 ? replaceSlide(data, 0, slide) : appendSlide(data, slide);
+	}
+	return data;
+}
