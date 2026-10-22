@@ -85,4 +85,40 @@ describe('getValues', () => {
 			expect(getValues(el)).toStrictEqual([['a', '', false]]);
 		});
 	});
+
+	describe('style(--custom-property)', () => {
+		test('型の変換を指定すると、カスタムプロパティの値は属性と同じく変換する', () => {
+			const el = document.createElement('div');
+			el.dataset.field = 'n:style(--per-view)';
+			el.setAttribute('style', '--per-view: 3');
+
+			expect(getValues(el, true)).toStrictEqual([['n', 3, false]]);
+		});
+
+		test('型の変換を指定しなければ、カスタムプロパティの値は文字列のまま', () => {
+			const el = document.createElement('div');
+			el.dataset.field = 'n:style(--per-view)';
+			el.setAttribute('style', '--per-view: 3');
+
+			expect(getValues(el)).toStrictEqual([['n', '3', false]]);
+		});
+
+		test('カスタムプロパティの URL は、型の変換を指定しても書き換えない', () => {
+			const el = document.createElement('div');
+			el.dataset.field = 'u:style(--link)';
+			el.setAttribute('style', `--link: ${location.origin}/path/to/page`);
+
+			expect(getValues(el, true)).toStrictEqual([
+				['u', `${location.origin}/path/to/page`, false],
+			]);
+		});
+
+		test('通常のプロパティの値は、型の変換を指定しても変換しない', () => {
+			const el = document.createElement('div');
+			el.dataset.field = 'n:style(z-index)';
+			el.setAttribute('style', 'z-index: 3');
+
+			expect(getValues(el, true)).toStrictEqual([['n', '3', false]]);
+		});
+	});
 });

@@ -89,6 +89,13 @@ export function getValues(
 						if (css === 'background-image') {
 							value = getBackgroundImagePath(value);
 						}
+						// カスタムプロパティは JSON として読める値だけを変換する（`--per-view: 3` を
+						// 数値の 3 に）。属性の変換と違い、同じオリジンの URL を pathname に縮めない
+						// （値を書き換えて情報を落とすため）。通常のプロパティ（`color` など）の値は
+						// CSS の値なので変換しない
+						if (css.startsWith('--') && convertType) {
+							value = parse(value.trim());
+						}
 						break;
 					}
 
