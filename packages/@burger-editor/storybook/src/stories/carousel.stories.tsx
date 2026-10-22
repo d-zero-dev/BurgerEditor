@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { items } from '@burger-editor/blocks';
 import { render } from '@burger-editor/core';
 import { initCarousel } from '@burger-editor/runtime';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import placeholderImage from '../assets/placeholder-image.svg?url';
 
@@ -49,11 +49,17 @@ const CONFIG: Config = {
  * 保存済みの carousel を、公開ページと同じく `@burger-editor/css` と
  * `@burger-editor/runtime` だけで表示する。`render()` はアイテムの `toItemData` を
  * 通らないので、先に保存と同じ `toItemData` で保存形（足りない値の補完、全配列の
- * 長さの揃え、`slideLabel` の導出）にしてから渡す
+ * 長さの揃え、`slideLabel` の導出）にしてから渡す。
+ *
+ * `toItemData` は名前の無いスライド（キャプションも `alt` も無い）と、リンク・ポップアップで
+ * `alt` が空のスライドを拒む。編集画面が確定させない組み合わせなので、その組み合わせ
+ * （Controls で `alt` を外して、リンク・ボタンにしたとき、またはキャプションも外したとき）は
+ * カルーセルの代わりに、拒んだ理由を表示する
  * @param args
  */
 function PublishedCarousel(args: CarouselArgs) {
 	const ref = useRef<HTMLDivElement>(null);
+	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
 		const container = ref.current;
@@ -80,26 +86,41 @@ function PublishedCarousel(args: CarouselArgs) {
 			href: slides.map(() => (args.node === 'a' ? 'https://example.com/' : '')),
 			command: slides.map(() => (args.node === 'button' ? 'show-modal' : null)),
 		};
-		void Promise.resolve(seed.toItemData!(state as never, CONFIG))
-			.then((data) =>
-				render(
-					{
-						name: 'carousel',
-						containerProps: { type: 'grid' },
-						items: [[{ name: 'carousel', data }]],
-					},
-					{ items },
-				),
-			)
-			.then((block) => {
-				if (disposed) {
-					return;
-				}
-				container.replaceChildren(block);
-				if (args.runtime) {
-					destroy = initCarousel({ root: container, interval: args.interval }).destroy;
-				}
-			});
+		// `toItemData` は同期的に throw することがあるので、then の中で呼んで拒否に揃える。
+		// 受けるのは `toItemData` の拒否だけにして、描画や runtime の本物の不具合を
+		// 「拒まれた入力」として表示しない（then の第 2 引数は、同じ then の第 1 引数の失敗を受けない）
+		void Promise.resolve()
+			.then(() => seed.toItemData!(state as never, CONFIG))
+			.then(
+				(data) =>
+					render(
+						{
+							name: 'carousel',
+							containerProps: { type: 'grid' },
+							items: [[{ name: 'carousel', data }]],
+						},
+						{ items },
+					).then((block) => {
+						if (disposed) {
+							return;
+						}
+						setError(null);
+						container.replaceChildren(block);
+						if (args.runtime) {
+							destroy = initCarousel({
+								root: container,
+								interval: args.interval,
+							}).destroy;
+						}
+					}),
+				(error_: unknown) => {
+					if (disposed) {
+						return;
+					}
+					container.replaceChildren();
+					setError(error_ instanceof Error ? error_.message : String(error_));
+				},
+			);
 		return () => {
 			disposed = true;
 			destroy();
@@ -120,7 +141,12 @@ function PublishedCarousel(args: CarouselArgs) {
 		args.alt,
 	]);
 
-	return <div ref={ref} />;
+	return (
+		<>
+			{error ? <p role="alert">{error}</p> : null}
+			<div ref={ref} />
+		</>
+	);
 }
 
 const meta = {
