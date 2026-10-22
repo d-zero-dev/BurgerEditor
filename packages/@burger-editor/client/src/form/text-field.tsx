@@ -14,6 +14,11 @@
  * @param root0.disabled
  * @param root0.placeholder
  * @param root0.describedBy
+ * @param root0.required - Marks the field as required for assistive
+ * technology via `aria-required`. The native `required` attribute is not
+ * used: `type` is dynamic here, so markup linting cannot tell it is valid.
+ * The dialog form is `noValidate`, so the browser never blocks submission;
+ * the item's `toItemData` is what rejects an empty value.
  * @example
  * ```tsx
  * <TextField
@@ -33,6 +38,7 @@ export function TextField({
 	disabled,
 	placeholder,
 	describedBy,
+	required,
 }: {
 	readonly label: string;
 	readonly value: string;
@@ -42,6 +48,7 @@ export function TextField({
 	readonly disabled?: boolean;
 	readonly placeholder?: string;
 	readonly describedBy?: string;
+	readonly required?: boolean;
 }) {
 	return (
 		<label>
@@ -51,6 +58,7 @@ export function TextField({
 				name={name}
 				value={value}
 				disabled={disabled}
+				aria-required={required || undefined}
 				placeholder={placeholder}
 				aria-describedby={describedBy}
 				onChange={(e) => onChange(e.currentTarget.value)}
