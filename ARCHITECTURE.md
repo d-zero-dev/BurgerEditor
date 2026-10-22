@@ -99,7 +99,7 @@ graph TD
   - 「どのダイアログが開いているか」「処理中か」「ソース編集中か」は `engine.uiState`（`UIStateStore`）が持つ。UI はそれを購読して描画するだけで、`core` から UI を命令的に呼ぶ経路はない。
   - React 実装は `client` の `createReactView()`。`engine.viewArea` 配下の React root は 1 つで、編集エリアやダイアログはそこから portal で描く。例外は `attachDraftSwitcher()` で、ホスト側の好きな位置に置けるよう独立した root を持つ。
 - **エンジンを動かすのはコマンドだけ。** 語彙は `core`（`BGE_COMMAND`）、ディスパッチ表は `client` の `registerEngineCommands()`。ボタンは `command` / `commandfor` 属性でコマンドバスを指す。
-- **アイテムの契約は `core` の `createItem()`。** 定義（テンプレート・`toEditorState` / `toItemData`）は React に依存せず、編集 UI の `Editor` だけが React に依存する。`blocks` はこの 2 つを別ファイルに分けて、ルートエントリから React を外している。
+- **アイテムの契約は `core` の `createItem()`。** 定義（テンプレート・`toEditorState` / `toItemData`）は React に依存せず、編集 UI の `Editor` だけが React に依存する。`blocks` はこの 2 つを別ファイルに分けて、ルートエントリから React を外している。`toItemData` は throw して確定を拒める（ダイアログは開いたまま理由を表示する）。この検査は編集画面の経路だけが持つ。
 - **`BlockOp`（ブロック操作）の型は `core` が持つ。** `cli` の `blockOpSchema` はそれを検証するだけ。
 - **Front Matter のパーサは `core` が持つ。** `file-io` と `local` はそれを使う。
 - **ファイルシステム・設定・パスの解釈は `file-io` だけが持つ。** `local` / `cli` / `mcp-server` が同じ `resolveConfig()` と `resolvePathInput()` を通るので、ブラウザから編集しても AI エージェントから編集しても結果が同じになる。
@@ -128,7 +128,7 @@ graph TD
 - **`createItem()` の戻り値はスプレッドできない。** テスト用の getter（`_`）が throw する。合成するときは、`createItem()` に通す前の素の定義オブジェクトを使う。
 - **React Compiler は、オブジェクトのメソッド省略記法で書いたコンポーネントを黙って対象から外す。** アイテムの `Editor` は `editor.tsx` に名前付きの関数として定義する。`eslint-disable-next-line react-hooks/exhaustive-deps` を書くと、そのコンポーネント全体が対象外になる（`useMountEffect()` や `useEffectEvent` で避ける）。`yarn verify:react-compiler` が、アイテムごとに期待するコンパイル状態を CI で検査している。`BGE_NO_COMPILER=1` を付けるとコンパイラなしでビルド・テストできる。
 - **`readToken` はセキュリティ境界ではない。** 「読んでから書く」という手順を強制するための、内容のハッシュに結び付いたトークンで、偽造は防がない。パスのセキュリティ境界は `resolvePathInput()` の documentRoot 封じ込め（`PathOutsideDocumentRootError`）。
-- **公開ページでの carousel の動作は、blocks の CSS と runtime の JS で分担する。** 保存 HTML の形と、runtime が実行時に付ける `data-bge-carousel-*` 属性の取り決めは blocks の `carousel`（`style.css` と `definition.ts`）が持ち、runtime はそれに従う。runtime はどのパッケージにも依存しないので、取り決めは型ではなく、runtime のテストが本物のテンプレートと `@burger-editor/css` で検査する。値を 2 か所に持たない（表示枚数は `style` の `--per-view` だけ）。エージェント経由の保存は `toItemData` を通らないため、2 か所に持つと食い違う。
+- **公開ページでの carousel の動作は、blocks の CSS と runtime の JS で分担する。** 保存 HTML の形と、runtime が実行時に付ける `data-bge-carousel-*` 属性の取り決めは blocks の `carousel`（`style.css` と `definition.ts`）が持ち、runtime はそれに従う。runtime はどのパッケージにも依存しないので、取り決めは型ではなく、runtime のテストが本物のテンプレートと `@burger-editor/css` で検査する。値を 2 か所に持たない（表示枚数は `style` の `--per-view` だけ）。エージェント経由の保存は `toItemData` を通らないため、2 か所に持つと食い違う。同じ理由で、スライドの名前（キャプションか alt）とリンク・ポップアップの alt が必須という検査も `toItemData` にあり、エージェント経由の保存や保存済みの HTML は検査されない（名前の無いスライドの代わりの名前は runtime が付ける）。
 - **`local` のルートは、すべて認証の内側に置く。** `createApp()` は全ルートの前に `hostGuard`（DNS rebinding 対策）→ `tokenLogin` → `requireAuth`（ループバック以外で待ち受けるときは認証必須）を掛ける。このゲートを素通りするのは `/api/health`（何も公開しない）と、自前で認証する `/api/agent/*`・`/ws/*` だけ。この 2 つの配下にルートを足すときは自分で認証する。ゲートの認証は Agent Hub を無効にしても有効なまま。
 
 ## 変更の種類ごとの読み方
