@@ -152,6 +152,11 @@ export interface ItemSeed<
 	 * @param state - The editor state at submit time
 	 * @param config - Engine configuration
 	 * @returns The item data to import into the content
+	 * @throws {Error} When the state must not be saved (e.g. a required value is empty).
+	 * The submit is cancelled: the editor dialog stays open and shows the error
+	 * message, so write the message as a description of the state for the author.
+	 * Note this runs only for edits made in the editor UI; writes that skip it
+	 * (agent tools, already saved HTML) are not validated.
 	 */
 	toItemData?: (state: Readonly<E>, config: Config) => T | Promise<T>;
 
