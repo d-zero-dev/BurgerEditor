@@ -1,3 +1,4 @@
+import type { Config } from '@burger-editor/core';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { items } from '@burger-editor/blocks';
@@ -36,11 +37,19 @@ interface CarouselArgs {
 	readonly alt: boolean;
 }
 
+const CONFIG: Config = {
+	classList: [],
+	googleMapsApiKey: null,
+	sampleImagePath: '',
+	sampleFilePath: '',
+	stylesheets: [],
+};
+
 /**
  * 保存済みの carousel を、公開ページと同じく `@burger-editor/css` と
- * `@burger-editor/runtime` だけで表示する。`render()` はアイテムの
- * `toItemData` を通らないので、保存形（全配列が同じ長さ・`layoutStyle`・`slideLabel`）を
- * そのまま渡す
+ * `@burger-editor/runtime` だけで表示する。`render()` はアイテムの `toItemData` を
+ * 通らないので、先に保存と同じ `toItemData` で保存形（足りない値の補完、全配列の
+ * 長さの揃え、`slideLabel` の導出）にしてから渡す
  * @param args
  */
 function PublishedCarousel(args: CarouselArgs) {
@@ -54,66 +63,43 @@ function PublishedCarousel(args: CarouselArgs) {
 		let disposed = false;
 		let destroy = () => {};
 		const slides = Array.from({ length: args.slides }, (_, i) => i);
-		void render(
-			{
-				name: 'carousel',
-				containerProps: { type: 'grid' },
-				items: [
-					[
-						{
-							name: 'carousel',
-							data: {
-								autoplay: args.autoplay,
-								loop: args.loop,
-								perView: args.perView,
-								arrows: args.arrows,
-								dots: args.dots,
-								effect: args.effect,
-								layoutStyle: `--per-view: ${args.perView}`,
-								path: slides.map(() => placeholderImage),
-								alt: slides.map((i) => (args.alt ? `スライド ${i + 1}` : '')),
-								width: slides.map(() => 320),
-								height: slides.map(() => 240),
-								loading: slides.map(() => 'lazy'),
-								spPath: slides.map(() => null),
-								spMedia: slides.map(() => null),
-								spWidth: slides.map(() => null),
-								spHeight: slides.map(() => null),
-								style: slides.map(
-									() =>
-										'--css-width: 100cqi; --object-fit: cover; --aspect-ratio: revert',
-								),
-								scale: slides.map(() => 100),
-								scaleType: slides.map(() => 'container'),
-								aspectRatio: slides.map(() => 'revert'),
-								caption: slides.map((i) => (args.caption ? `キャプション ${i + 1}` : '')),
-								node: slides.map(() => args.node),
-								href: slides.map(() => (args.node === 'a' ? 'https://example.com/' : '')),
-								target: slides.map(() => null),
-								command: slides.map(() => (args.node === 'button' ? 'show-modal' : null)),
-								// 保存時にキャプション（空なら alt）から導かれる値
-								slideLabel: slides.map((i) =>
-									args.caption
-										? `キャプション ${i + 1}`
-										: args.alt
-											? `スライド ${i + 1}`
-											: '',
-								),
-							},
-						},
-					],
-				],
-			},
-			{ items },
-		).then((block) => {
-			if (disposed) {
-				return;
-			}
-			container.replaceChildren(block);
-			if (args.runtime) {
-				destroy = initCarousel({ root: container, interval: args.interval }).destroy;
-			}
-		});
+		const seed = items.carousel;
+		const state = {
+			autoplay: args.autoplay,
+			loop: args.loop,
+			perView: args.perView,
+			arrows: args.arrows,
+			dots: args.dots,
+			effect: args.effect,
+			path: slides.map(() => placeholderImage),
+			alt: slides.map((i) => (args.alt ? `スライド ${i + 1}` : '')),
+			width: slides.map(() => 320),
+			height: slides.map(() => 240),
+			caption: slides.map((i) => (args.caption ? `キャプション ${i + 1}` : '')),
+			node: slides.map(() => args.node),
+			href: slides.map(() => (args.node === 'a' ? 'https://example.com/' : '')),
+			command: slides.map(() => (args.node === 'button' ? 'show-modal' : null)),
+		};
+		void Promise.resolve(seed.toItemData!(state as never, CONFIG))
+			.then((data) =>
+				render(
+					{
+						name: 'carousel',
+						containerProps: { type: 'grid' },
+						items: [[{ name: 'carousel', data }]],
+					},
+					{ items },
+				),
+			)
+			.then((block) => {
+				if (disposed) {
+					return;
+				}
+				container.replaceChildren(block);
+				if (args.runtime) {
+					destroy = initCarousel({ root: container, interval: args.interval }).destroy;
+				}
+			});
 		return () => {
 			disposed = true;
 			destroy();
