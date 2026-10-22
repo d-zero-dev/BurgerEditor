@@ -39,7 +39,7 @@ interface CarouselArgs {
 /**
  * 保存済みの carousel を、公開ページと同じく `@burger-editor/css` と
  * `@burger-editor/runtime` だけで表示する。`render()` はアイテムの
- * `toItemData` を通らないので、保存形（全配列が同じ長さ・`layoutStyle`）を
+ * `toItemData` を通らないので、保存形（全配列が同じ長さ・`layoutStyle`・`slideLabel`）を
  * そのまま渡す
  * @param args
  */
@@ -91,6 +91,14 @@ function PublishedCarousel(args: CarouselArgs) {
 								href: slides.map(() => (args.node === 'a' ? 'https://example.com/' : '')),
 								target: slides.map(() => null),
 								command: slides.map(() => (args.node === 'button' ? 'show-modal' : null)),
+								// 保存時にキャプション（空なら alt）から導かれる値
+								slideLabel: slides.map((i) =>
+									args.caption
+										? `キャプション ${i + 1}`
+										: args.alt
+											? `スライド ${i + 1}`
+											: '',
+								),
 							},
 						},
 					],
