@@ -1,17 +1,161 @@
+/*
+ * 基本は Baseline の CSS（scroll snap）だけで横スクロールと 1 枚ずつのスナップを作る。
+ * 矢印とドットは、対応ブラウザでは `::scroll-button()` / `::scroll-marker` で出し、
+ * それ以外のブラウザ・ループ・自動再生・フェードは @burger-editor/runtime が
+ * 要素を生成して補う（生成したときはラッパーに `data-bge-carousel-controls` が付く）。
+ * 表示枚数は、保存時にラッパーの `style` に書かれる `--per-view` で受け取る。
+ *
+ * `data-bge-carousel-*` 属性は runtime が実行時に付けるもので、保存 HTML には無い。
+ * 属性の取り決めはこのアイテム（blocks の carousel）が持ち、runtime はそれに従う。
+ *
+ * 参照: CSS Scroll Snap（https://www.w3.org/TR/css-scroll-snap-1/）、
+ * CSS Overflow 5 の ::scroll-button() / ::scroll-marker
+ * （https://drafts.csswg.org/css-overflow-5/）。後者は Chromium のみで Baseline ではない
+ * （https://webstatus.dev/features/scroll-markers）。
+ */
+
+/*
+ * スライド間の余白を長さとして登録する。余白の値は単位なしの `0` でも来る
+ * （general.css の `--bge-options-column-gap--none`）。未登録のままだと
+ * `calc(100% - 0 * …)` が無効になり、列幅の指定ごと捨てられる
+ */
+@property --bge-carousel-gap {
+	syntax: '<length>';
+	inherits: true;
+	initial-value: 0;
+}
+
 [data-bgi='carousel'] {
+	/* 標準の矢印とドット（runtime が操作部品を生成していないときだけ） */
+	@supports selector(::scroll-marker) {
+		[data-bge-arrows='true']:not([data-bge-carousel-controls]) > [data-bge-list] {
+			scrollbar-width: none;
+
+			&::scroll-button(*) {
+				display: inline-grid;
+				place-items: center;
+				min-inline-size: 2.5rem;
+				min-block-size: 2.5rem;
+				font-size: 1.5rem;
+				line-height: 1;
+				color: inherit;
+				cursor: pointer;
+				background: transparent;
+				border: 1px solid currentcolor;
+				border-radius: 50%;
+			}
+
+			&::scroll-button(*):disabled {
+				cursor: default;
+				opacity: 0.3;
+			}
+
+			/* stylelint-disable-next-line selector-type-no-unknown -- `::scroll-button()` の引数（方向）を型セレクタと誤認する */
+			&::scroll-button(inline-start) {
+				grid-area: previous;
+
+				/* 代替テキストは runtime の既定の文言（`DEFAULT_OPTIONS.previousLabel`）と揃える */
+				content: '‹' / '前のスライド';
+			}
+
+			/* stylelint-disable-next-line selector-type-no-unknown -- `::scroll-button()` の引数（方向）を型セレクタと誤認する */
+			&::scroll-button(inline-end) {
+				grid-area: next;
+
+				/* 代替テキストは runtime の既定の文言（`DEFAULT_OPTIONS.nextLabel`）と揃える */
+				content: '›' / '次のスライド';
+			}
+		}
+
+		[data-bge-dots='true']:not([data-bge-carousel-controls]) > [data-bge-list] {
+			scrollbar-width: none;
+			scroll-marker-group: after;
+
+			&::scroll-marker-group {
+				display: flex;
+				flex-wrap: wrap;
+				grid-area: markers;
+				gap: 0.5rem;
+				justify-content: center;
+			}
+
+			> figure::scroll-marker {
+				inline-size: 0.75rem;
+				block-size: 0.75rem;
+				color: inherit;
+
+				/*
+				 * 名前は保存時にキャプション（空なら alt）から導いた属性から付ける。
+				 * runtime が無いとスライドに名前が無く、ドットが名前なしになるため
+				 */
+				content: '' / attr(data-bge-slide-label);
+				border: 1px solid currentcolor;
+				border-radius: 50%;
+			}
+
+			/* stylelint-disable-next-line selector-pseudo-class-no-unknown -- CSS Overflow 5 の `:target-current` を知らない */
+			> figure::scroll-marker:target-current {
+				background: currentcolor;
+
+				/* 強制カラーモードでは背景色が打ち消され、現在のドットが区別できなくなる */
+				@media (forced-colors: active) {
+					forced-color-adjust: none;
+					background: CanvasText;
+				}
+			}
+		}
+	}
+
+	> :has(> [data-bge-list]) {
+		--bge-carousel-gap: var(--bge-options-column-gap, var(--bge-options-gap, 0));
+
+		display: grid;
+		grid-template-areas:
+			'list list list list'
+			'play previous markers next';
+		grid-template-columns: auto auto 1fr auto;
+		row-gap: 0.5rem;
+		align-items: center;
+	}
+
+	[data-bge-list] {
+		display: grid;
+		grid-area: list;
+		grid-auto-columns: calc(
+			(100% - var(--bge-carousel-gap) * (var(--per-view, 1) - 1)) / var(--per-view, 1)
+		);
+		grid-auto-flow: column;
+		column-gap: var(--bge-carousel-gap);
+		min-inline-size: 0;
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		scroll-snap-type: x mandatory;
+
+		@media (prefers-reduced-motion: no-preference) {
+			scroll-behavior: smooth;
+		}
+	}
+
+	/*
+	 * 各スライドの幅（`--css-width`）は image と同じく `cqi` で保存される。
+	 * スライドを列幅の基準にするため、スライド自身をコンテナーにし、
+	 * 幅は内側の要素に当てる
+	 */
 	figure {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		inline-size: var(--css-width, 100%);
-		max-inline-size: 100cqi;
+		min-inline-size: 0;
 		padding: 0;
-		margin-block: 0;
-		margin-inline: auto;
+		margin: 0;
+		container-type: inline-size;
+		scroll-snap-align: start;
 
 		> :is(div, a, button) {
 			display: block;
+			inline-size: var(--css-width, 100%);
+			max-inline-size: 100cqi;
 			padding: 0;
 			background: transparent;
 			border: none;
@@ -35,5 +179,114 @@
 		&:empty {
 			display: none;
 		}
+	}
+
+	/* 操作部品があるときだけスクロールバーを隠す（無いときに隠すとマウスで送れない） */
+	[data-bge-carousel-controls] > [data-bge-list] {
+		scrollbar-width: none;
+	}
+
+	/* フェード（runtime が付ける）: スライドを重ね、表示中のものだけを見せる */
+	[data-bge-carousel-fade] > [data-bge-list] {
+		grid-template-areas: 'slide';
+		grid-auto-columns: 100%;
+		overflow: hidden;
+
+		> figure {
+			visibility: hidden;
+			grid-area: slide;
+			opacity: 0;
+
+			@media (prefers-reduced-motion: no-preference) {
+				transition:
+					opacity 0.5s,
+					visibility 0.5s;
+			}
+		}
+
+		> [data-bge-carousel-current] {
+			visibility: visible;
+			opacity: 1;
+		}
+	}
+
+	/* runtime が生成する操作部品 */
+	[data-bge-carousel-button] {
+		position: relative;
+		display: inline-grid;
+		place-items: center;
+		min-inline-size: 2.5rem;
+		min-block-size: 2.5rem;
+		padding: 0;
+		font: inherit;
+		font-size: 1.5rem;
+		line-height: 1;
+		color: inherit;
+		cursor: pointer;
+		background: transparent;
+		border: 1px solid currentcolor;
+		border-radius: 50%;
+
+		&[aria-disabled='true'] {
+			cursor: default;
+			opacity: 0.3;
+		}
+	}
+
+	[data-bge-carousel-button='previous'] {
+		grid-area: previous;
+	}
+
+	[data-bge-carousel-button='next'] {
+		grid-area: next;
+	}
+
+	[data-bge-carousel-button='play'] {
+		grid-area: play;
+		margin-inline-end: 0.5rem;
+		font-size: 0.75rem;
+	}
+
+	[data-bge-carousel-markers] {
+		display: flex;
+		flex-wrap: wrap;
+		grid-area: markers;
+		gap: 0.5rem;
+		justify-content: center;
+
+		> [data-bge-carousel-button] {
+			min-inline-size: 1.5rem;
+			min-block-size: 1.5rem;
+			border: none;
+
+			&::before {
+				inline-size: 0.75rem;
+				block-size: 0.75rem;
+				content: '';
+				border: 1px solid currentcolor;
+				border-radius: 50%;
+			}
+
+			&[aria-current='true']::before {
+				background: currentcolor;
+
+				/* 強制カラーモードでは背景色が打ち消され、現在のドットが区別できなくなる */
+				@media (forced-colors: active) {
+					forced-color-adjust: none;
+					background: CanvasText;
+				}
+			}
+		}
+	}
+
+	/* 生成したボタンの名前になる文字。見た目は記号で示し、文字は視覚的に隠す */
+	[data-bge-carousel-text] {
+		position: absolute;
+		inset: 0;
+		inline-size: 1px;
+		block-size: 1px;
+		overflow: hidden;
+		white-space: nowrap;
+		clip-path: inset(50%);
 	}
 }

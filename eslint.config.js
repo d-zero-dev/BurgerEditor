@@ -106,6 +106,26 @@ export default [
 		},
 	},
 	{
+		// `@burger-editor/client/testing/mock-engine` の実体。Storybook の開発サーバー
+		// （tree-shaking しない）がテストランナーの外で読み込むため、vitest や
+		// @testing-library を引き込むと、ブラウザで vitest が初期化されて全 story が壊れる
+		files: ['packages/@burger-editor/client/src/testing/create-mock-engine.ts'],
+		rules: {
+			'no-restricted-imports': [
+				2,
+				{
+					patterns: [
+						{
+							group: ['vitest', 'vitest/*', '@testing-library/*'],
+							message:
+								'create-mock-engine.tsはテストランナーの外（Storybook）からも読まれるため、vitest / @testing-libraryをimportできません。',
+						},
+					],
+				},
+			],
+		},
+	},
+	{
 		// リポジトリルートのビルドツール向けスクリプト（scripts/）は、
 		// vitest.config.ts等の*.config.tsと同様にワークスペース横断解決を
 		// 前提にしており、ルートpackage.jsonへの個別宣言は求めない

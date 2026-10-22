@@ -1,5 +1,6 @@
 import type { BurgerEditorRuntimeConfig } from './types.js';
 
+import { initCarousel } from './carousel/index.js';
 import { initImageModal } from './image-modal/index.js';
 
 /**
@@ -7,6 +8,9 @@ import { initImageModal } from './image-modal/index.js';
  *
  * This is a convenience function that initializes all runtime features
  * with a single call. You can also import and initialize features individually.
+ * It does not return a way to undo the carousel; call `initCarousel()` with
+ * `carousel: false` here when you need its `destroy()` (e.g. for content that is
+ * replaced on the client).
  * @param config - Configuration options for runtime features
  * @example
  * ```typescript
@@ -19,22 +23,32 @@ import { initImageModal } from './image-modal/index.js';
  * initBurgerEditorRuntime({
  *   imageModal: {
  *     closeButtonLabel: '閉じる',
- *   }
+ *   },
+ *   carousel: {
+ *     interval: 8000,
+ *   },
  * });
  *
  * // Disable a feature
  * initBurgerEditorRuntime({
  *   imageModal: false,
+ *   carousel: false,
  * });
  * ```
  */
 export function initBurgerEditorRuntime(config: BurgerEditorRuntimeConfig = {}): void {
-	const { imageModal = true } = config;
+	const { imageModal = true, carousel = true } = config;
 
 	// Initialize image modal
 	if (imageModal !== false) {
 		const imageModalConfig = typeof imageModal === 'object' ? imageModal : undefined;
 		initImageModal(imageModalConfig);
+	}
+
+	// Initialize carousel
+	if (carousel !== false) {
+		const carouselConfig = typeof carousel === 'object' ? carousel : undefined;
+		initCarousel(carouselConfig);
 	}
 }
 
@@ -55,7 +69,10 @@ export function initBurgerEditorRuntime(config: BurgerEditorRuntimeConfig = {}):
  * autoInit({
  *   imageModal: {
  *     closeButtonLabel: '閉じる',
- *   }
+ *   },
+ *   carousel: {
+ *     interval: 8000,
+ *   },
  * });
  * ```
  */

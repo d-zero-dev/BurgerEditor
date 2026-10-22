@@ -19,6 +19,11 @@ export default defineConfig(({ mode }) => ({
 				client: 'src/index.tsx',
 				ui: 'src/ui.ts',
 				testing: 'src/testing/index.ts',
+				// テストランナーの外（Storybook のブラウザ）で使うモックだけを、
+				// vitest・@testing-library に依存しないエントリーとして分ける。
+				// `testing` は先頭で vitest を import するため、開発サーバーのように
+				// tree-shaking しない環境では、ランナーの外で vitest が初期化されて失敗する
+				'testing-mock-engine': 'src/testing/create-mock-engine.ts',
 			},
 			name: 'BgE',
 			formats: ['es'],

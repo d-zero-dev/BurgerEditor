@@ -16,10 +16,13 @@
 		"dev": "storybook dev -p 6006 --no-open"
 	},
 	"dependencies": {
+		"@burger-editor/blocks": "4.0.0-alpha.77",
 		"@burger-editor/client": "4.0.0-alpha.77",
 		"@burger-editor/core": "4.0.0-alpha.77",
+		"@burger-editor/css": "4.0.0-alpha.77",
 		"@burger-editor/custom-element": "4.0.0-alpha.77",
 		"@burger-editor/local": "4.0.0-alpha.77",
+		"@burger-editor/runtime": "4.0.0-alpha.77",
 		"@storybook/react-vite": "10.6.2",
 		"@tabler/icons-react": "3.49.0",
 		"react": "19.3.0",

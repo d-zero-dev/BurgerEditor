@@ -395,5 +395,76 @@ describe('carouselItemSeed', () => {
 				effect: 'fade',
 			});
 		});
+
+		test('表示枚数はラッパーの style の --per-view だけに保存され、変更に追従する', async () => {
+			const item = createItem();
+			const wrapper = () => item.el.querySelector<HTMLElement>('[data-bge-autoplay]');
+
+			expect(wrapper()?.getAttribute('style')).toBe('--per-view: 1');
+
+			await save(item, (data) => ({ ...data, perView: 3 }));
+			expect(wrapper()?.getAttribute('style')).toBe('--per-view: 3');
+			expect(wrapper()?.hasAttribute('data-bge-per-view')).toBe(false);
+
+			await save(item, (data) => ({ ...data, perView: 2 }));
+			expect(wrapper()?.getAttribute('style')).toBe('--per-view: 2');
+		});
+
+		test('toItemData を通らない書き込み（エージェント経由）でも、表示枚数は 1 か所にしか無いので食い違わない', () => {
+			const item = createItem();
+
+			item.import({ ...(item.export() as never as CarouselData), perView: 4 } as never);
+
+			const wrapper = item.el.querySelector<HTMLElement>('[data-bge-autoplay]');
+			expect(wrapper?.getAttribute('style')).toBe('--per-view: 4');
+			expect((item.export() as never as CarouselData).perView).toBe(4);
+		});
+
+		test('スライドの名前（キャプションの文字、空なら alt）を data-bge-slide-label に保存し、変更に追従する', async () => {
+			const item = createItem();
+			const labels = () =>
+				[...item.el.querySelectorAll('figure')].map((f) => f.dataset.bgeSlideLabel);
+
+			await save(item, (data) =>
+				appendSlide(
+					{
+						...data,
+						caption: ['<strong>春の</strong>\n  庭'],
+						alt: ['桜'],
+					},
+					{ ...DEFAULT_SLIDE, path: '/b.png', alt: '紅葉', caption: '' },
+				),
+			);
+			expect(labels()).toEqual(['春の 庭', '紅葉']);
+
+			await save(item, (data) => ({ ...data, caption: ['', '秋の山'] }));
+			expect(labels()).toEqual(['桜', '秋の山']);
+		});
+
+		test('キャプションの改行やブロック要素の境目は、名前では空白になる', async () => {
+			const item = createItem();
+
+			await save(item, (data) => ({ ...data, caption: ['春の<br>庭<p>桜</p>'] }));
+
+			expect(item.el.querySelector('figure')?.dataset.bgeSlideLabel).toBe('春の 庭 桜');
+		});
+
+		test('キャプションも alt も無いスライドの名前は空にする', async () => {
+			const item = createItem();
+
+			await save(item, (data) => ({ ...data, caption: [''], alt: [''] }));
+
+			expect(item.el.querySelector('figure')?.dataset.bgeSlideLabel).toBe('');
+		});
+
+		test('data-bge-slide-label がキャプションと食い違っていても、キャプションから導き直す', async () => {
+			const item = createItem();
+			await save(item, (data) => ({ ...data, caption: ['春の庭'] }));
+			item.el.querySelector('figure')?.setAttribute('data-bge-slide-label', '古い名前');
+
+			await save(item, (data) => data);
+
+			expect(item.el.querySelector('figure')?.dataset.bgeSlideLabel).toBe('春の庭');
+		});
 	});
 });

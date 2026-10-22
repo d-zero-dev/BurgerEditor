@@ -168,6 +168,20 @@ export default defineConfig({
 			},
 			{
 				test: {
+					name: 'runtime',
+					include: ['packages/@burger-editor/runtime/**/*.spec.ts'],
+					browser: {
+						enabled: true,
+						provider: playwright(),
+						instances: [{ browser: 'chromium' }],
+						headless: true,
+						viewport: { width: 1280, height: 720 },
+						screenshotFailures: false,
+					},
+				},
+			},
+			{
+				test: {
 					name: 'core',
 					include: ['packages/@burger-editor/core/**/*.spec.ts'],
 					browser: {
