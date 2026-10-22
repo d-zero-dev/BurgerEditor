@@ -21,10 +21,12 @@
  */
 export const VITEST_PROJECT_GROUPS = [
 	['default', 'local', 'local/import', 'local/client'], // Node / jsdom（Chromiumを起動しない）
-	['core', 'custom-element', 'runtime'], // ブラウザ
+	['core', 'custom-element'], // ブラウザ
 	['local/client-browser', 'vr'], // ブラウザ
 	['client'], // ブラウザ（単独ピーク最大のため1プロジェクトで1グループ）
 	['blocks', 'blocks-editor'], // ブラウザ
+	// ブラウザ。単独ピーク約 1.0GiB。core / custom-element（3.3GiB）に足すと 4.1GiB で目安を超える
+	['runtime'],
 ];
 
 /**

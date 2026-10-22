@@ -128,6 +128,7 @@ graph TD
 - **`createItem()` の戻り値はスプレッドできない。** テスト用の getter（`_`）が throw する。合成するときは、`createItem()` に通す前の素の定義オブジェクトを使う。
 - **React Compiler は、オブジェクトのメソッド省略記法で書いたコンポーネントを黙って対象から外す。** アイテムの `Editor` は `editor.tsx` に名前付きの関数として定義する。`eslint-disable-next-line react-hooks/exhaustive-deps` を書くと、そのコンポーネント全体が対象外になる（`useMountEffect()` や `useEffectEvent` で避ける）。`yarn verify:react-compiler` が、アイテムごとに期待するコンパイル状態を CI で検査している。`BGE_NO_COMPILER=1` を付けるとコンパイラなしでビルド・テストできる。
 - **`readToken` はセキュリティ境界ではない。** 「読んでから書く」という手順を強制するための、内容のハッシュに結び付いたトークンで、偽造は防がない。パスのセキュリティ境界は `resolvePathInput()` の documentRoot 封じ込め（`PathOutsideDocumentRootError`）。
+- **公開ページでの carousel の動作は、blocks の CSS と runtime の JS で分担する。** 保存 HTML の形と、runtime が実行時に付ける `data-bge-carousel-*` 属性の取り決めは blocks の `carousel`（`style.css` と `definition.ts`）が持ち、runtime はそれに従う。runtime はどのパッケージにも依存しないので、取り決めは型ではなく、runtime のテストが本物のテンプレートと `@burger-editor/css` で検査する。値を 2 か所に持たない（表示枚数は `style` の `--per-view` だけ）。エージェント経由の保存は `toItemData` を通らないため、2 か所に持つと食い違う。
 - **`local` のルートは、すべて認証の内側に置く。** `createApp()` は全ルートの前に `hostGuard`（DNS rebinding 対策）→ `tokenLogin` → `requireAuth`（ループバック以外で待ち受けるときは認証必須）を掛ける。このゲートを素通りするのは `/api/health`（何も公開しない）と、自前で認証する `/api/agent/*`・`/ws/*` だけ。この 2 つの配下にルートを足すときは自分で認証する。ゲートの認証は Agent Hub を無効にしても有効なまま。
 
 ## 変更の種類ごとの読み方
@@ -145,6 +146,7 @@ graph TD
 | v3 互換・移行                  | `legacy` → `migrator` → `mcp-server` の v3 ツール                                                                                                                                                     |
 | パッケージ間の依存             | 該当する `package.json` → この文書の図 → `CLAUDE.md` の「依存関係の追加」                                                                                                                             |
 | テストプロジェクト             | `vitest.config.ts` → `scripts/vitest-project-groups.js`（登録しないと設定の読み込みで失敗する）                                                                                                       |
+| 公開ページの動作（carousel）   | `blocks/src/items/carousel/` の `template.html` → `style.css` → `runtime/src/carousel/`。見た目と操作は Storybook の `Public/Carousel` で確かめる                                                     |
 
 ## テスト
 
