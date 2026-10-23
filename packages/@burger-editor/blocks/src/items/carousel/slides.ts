@@ -2,7 +2,13 @@ import type { CarouselData } from './definition.js';
 import type { ImageData } from '../image/definition.js';
 import type { Config } from '@burger-editor/core';
 
-import { imageDefinition } from '../image/definition.js';
+import {
+	ALT_REQUIRED_MESSAGE,
+	imageDefinition,
+	isPopup,
+	needsAltForName,
+	wrapperNodeOf,
+} from '../image/definition.js';
 
 import { templateDefaults } from './defaults.js';
 
@@ -160,23 +166,94 @@ const LABEL_BOUNDARIES =
 	'br, hr, p, div, li, dt, dd, ul, ol, dl, h1, h2, h3, h4, h5, h6, blockquote, pre, table, tr, td, th, section, article, aside, header, footer, nav';
 
 /**
- * スライドの名前。キャプションの文字（マークアップを除く）、空なら画像の alt。
+ * スライド 1 枚の名前。キャプションの文字（マークアップを除く）、空なら画像の alt。
  * Node.js から呼ばれるときも `@burger-editor/file-io` が `DOMParser` を用意する。
  * 改行やブロック要素の境目は空白にする（textContent はそのまま連結し、
  * 「春の<br>庭」が「春の庭」になるため）
+ * @param slide
+ * @param parser - 複数枚を続けて導くときに使い回す
+ * @example
+ * ```ts
+ * slideLabelOf({ caption: '春の<br>庭', alt: '桜' }) // '春の 庭'
+ * slideLabelOf({ caption: '', alt: '桜' }) // '桜'
+ * slideLabelOf({ caption: '', alt: '' }) // ''（名前が無い）
+ * ```
+ */
+export function slideLabelOf(
+	slide: Pick<Slide, 'caption' | 'alt'>,
+	parser = new DOMParser(),
+): string {
+	const normalize = (text: string) => text.replaceAll(/\s+/g, ' ').trim();
+	const { body } = parser.parseFromString(slide.caption, 'text/html');
+	for (const el of body.querySelectorAll(LABEL_BOUNDARIES)) {
+		el.before(' ');
+		el.after(' ');
+	}
+	return normalize(body.textContent) || normalize(slide.alt);
+}
+
+/**
+ * スライドごとの名前。{@link slideLabelOf} を全スライドに適用する。
  * @param slides
  */
 function slideLabels(slides: readonly Slide[]): string[] {
 	const parser = new DOMParser();
-	const normalize = (text: string) => text.replaceAll(/\s+/g, ' ').trim();
-	return slides.map((slide) => {
-		const { body } = parser.parseFromString(slide.caption, 'text/html');
-		for (const el of body.querySelectorAll(LABEL_BOUNDARIES)) {
-			el.before(' ');
-			el.after(' ');
+	return slides.map((slide) => slideLabelOf(slide, parser));
+}
+
+/**
+ * スライドにキャプションか alt のどちらかが必須な理由。スライド編集ダイアログの
+ * 説明文と、確定を拒むときのメッセージが同じ文言を使う。
+ */
+export const SLIDE_NAME_NOTE =
+	'キャプションか代替テキストのどちらかが、スライドとドットの名前になるため必須です。';
+
+const UNNAMED_SLIDE_MESSAGE = `キャプションも代替テキスト(alt)も空です。${SLIDE_NAME_NOTE}`;
+
+const UNNAMED_LINK_MESSAGE = ALT_REQUIRED_MESSAGE;
+
+/**
+ * スライドが名前を持てない理由。名前を持てるなら `null`。
+ *
+ * 包む要素は image のエディタと同じ決め方（{@link wrapperNodeOf}）で、保存された
+ * `node` ではなくポップアップ・リンク先から導く。保存された `node` を使うと、
+ * リンク先が空の `a` のように、エディタが必須と示さないものまで拒んでしまう。
+ * @param slide
+ * @param parser - 複数枚を続けて調べるときに使い回す
+ */
+function unnamedReasonOf(slide: Slide, parser?: DOMParser): string | null {
+	const popup = isPopup(slide.node, slide.command);
+	if (needsAltForName(wrapperNodeOf(popup, slide.href), slide.alt)) {
+		return UNNAMED_LINK_MESSAGE;
+	}
+	return slideLabelOf(slide, parser) ? null : UNNAMED_SLIDE_MESSAGE;
+}
+
+/**
+ * 保存する前に、すべてのスライドが名前を持つことを確かめる。名前の無いスライドは、
+ * ドットの名前（`::scroll-marker`）が支援技術から消え、リンクやポップアップの
+ * スライドは操作する要素に名前が付かない。保存済みの HTML を開くだけでは呼ばないので、
+ * すでに保存された名前の無いスライドも開ける。そのカルーセルを確定するときは、
+ * 名前の無いスライドを直す必要がある。
+ * @param slides
+ * @throws {Error} 名前の無いスライドがあるとき。メッセージにスライドの番号（1 始まり）を含む
+ */
+export function assertSlidesNamed(slides: readonly Slide[]): void {
+	const parser = new DOMParser();
+	const byReason = new Map<string, string[]>();
+	for (const [index, slide] of slides.entries()) {
+		const reason = unnamedReasonOf(slide, parser);
+		if (reason) {
+			const names = byReason.get(reason) ?? [];
+			names.push(`スライド${index + 1}`);
+			byReason.set(reason, names);
 		}
-		return normalize(body.textContent) || normalize(slide.alt);
-	});
+	}
+	if (byReason.size > 0) {
+		throw new Error(
+			[...byReason].map(([reason, names]) => `${names.join('、')}: ${reason}`).join(' '),
+		);
+	}
 }
 
 /**
@@ -355,6 +432,8 @@ export function slideToEditorState(slide: Slide, config: Config): ImageData {
  * スライド編集ダイアログの編集状態を、スライド 1 枚に戻す。
  * @param state
  * @param config
+ * @throws {Error} リンクやポップアップで alt が空のとき（image の `toItemData`）、
+ * またはキャプションも alt も空のとき。ダイアログは開いたまま理由を表示する
  */
 export async function editorStateToSlide(
 	state: ImageData,
@@ -363,5 +442,10 @@ export async function editorStateToSlide(
 	const data = imageDefinition.toItemData
 		? await imageDefinition.toItemData(state, config)
 		: state;
-	return imageDataToSlide(data);
+	const slide = imageDataToSlide(data);
+	const reason = unnamedReasonOf(slide);
+	if (reason) {
+		throw new Error(reason);
+	}
+	return slide;
 }

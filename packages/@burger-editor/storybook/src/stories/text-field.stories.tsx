@@ -39,6 +39,20 @@ export const WithPlaceholder: Story = {
 	},
 };
 
+/**
+ * 支援技術に「必須」と伝える。ダイアログのフォームは `noValidate` なので、ブラウザは
+ * 送信を止めない（空を拒むのはアイテムの `toItemData`）
+ */
+export const Required: Story = {
+	args: {
+		...Default.args,
+		label: '画像の代替テキスト(alt)',
+		name: 'bge-alt-editable',
+		value: '',
+		required: true,
+	},
+};
+
 export const Disabled: Story = {
 	args: {
 		...Default.args,

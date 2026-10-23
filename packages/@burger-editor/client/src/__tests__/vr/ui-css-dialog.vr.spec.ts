@@ -71,6 +71,40 @@ const imageHtml = `<div data-bge-dialog="2col">
 	</div>
 </div>`;
 
+// リンク先を入れた image。alt が包む要素の名前になるので必須（`aria-required` と説明）。
+// 他のフィクスチャと同じく手書きの静的 HTML で、実エディタ（image/editor.tsx）の出力そのもの
+// ではない。確かめるのは、`aria-required` の入力欄と直後の `<small>` が 2col の中で崩れないという
+// ui.css の見た目だけで、エディタ側の DOM の順や属性の追従は blocks-editor のテストが担う
+const imageLinkHtml = `<div data-bge-dialog="2col">
+	<div data-bge-dialog-ui="sticky">
+		<div>
+			<div role="tablist">
+				<button type="button" role="tab" aria-selected="true" tabindex="0">画像1</button>
+				<button type="button" role="tab" aria-selected="false" tabindex="-1">画像2</button>
+			</div>
+			<div role="tabpanel" aria-label="画像">
+				<div><div class="img"><p>プレビューできません</p></div></div>
+				<div>
+					<label><span>メディアクエリー</span><input type="text" name="bge-media-input" disabled /></label>
+				</div>
+			</div>
+		</div>
+		<div>
+			<label><span>画像の代替テキスト(alt)</span><input type="text" name="bge-alt-editable" aria-required="true" aria-describedby="alt-required" /></label>
+			<small id="alt-required">リンクやポップアップの画像では、代替テキストがリンクやボタンの名前になるため必須です。</small>
+			<label><span>キャプション</span><input type="text" name="bge-caption" /></label>
+			<fieldset>
+				<legend>リンク</legend>
+				<label><span>リンク先URL</span><input type="url" name="bge-href" value="https://example.com/" /></label>
+			</fieldset>
+		</div>
+	</div>
+	<div>
+		<div><button type="button">ファイルを追加アップロードする</button></div>
+		<ul></ul>
+	</div>
+</div>`;
+
 const downloadFileHtml = `<div data-bge-dialog="2col">
 	<div data-bge-dialog-ui="sticky">
 		<div>
@@ -137,6 +171,17 @@ describe('Dialog Layout', () => {
 		const result = await commands.matchScreenshot(
 			base64,
 			'__snapshots__/dialog/2col-image.png',
+		);
+		expect(result.pass, result.message).toBe(true);
+	});
+
+	test('dialog 2col — image (リンクの alt 必須)', async () => {
+		const dialog = renderDialog(imageLinkHtml);
+		await waitForRender();
+		const base64 = await page.screenshot({ element: dialog, save: false });
+		const result = await commands.matchScreenshot(
+			base64,
+			'__snapshots__/dialog/2col-image-link.png',
 		);
 		expect(result.pass, result.message).toBe(true);
 	});

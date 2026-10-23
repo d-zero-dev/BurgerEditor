@@ -16,6 +16,7 @@ import {
 } from '@burger-editor/client/ui';
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 
+import { ALT_FOR_NAME_NOTE, wrapperNodeOf } from './definition.js';
 import { createWidthState } from './width.js';
 
 const tabLabel = (index: number) => `画像${index + 1}`;
@@ -30,7 +31,17 @@ type LoadedImage = {
  * `ImageEditor` の props。`item` は使わないので省略できる。
  */
 export type ImageEditorProps = Omit<ItemEditorProps<ImageData>, 'item'> &
-	Partial<Pick<ItemEditorProps<ImageData>, 'item'>>;
+	Partial<Pick<ItemEditorProps<ImageData>, 'item'>> & {
+		/**
+		 * カルーセルのスライドとして編集するとき、スライドの名前の決め方と、名前が必須な理由。
+		 * 名前が空のあいだ、キャプションと代替テキストの欄に理由を出す。image アイテム
+		 * としては渡されない（ホストは `state` / `setState` / `item` だけを渡す）
+		 */
+		readonly slideName?: {
+			readonly labelOf: (state: ImageData) => string;
+			readonly note: string;
+		};
+	};
 
 /**
  * imageアイテムのエディタ。PC/SP 2枚の画像タブ・サイズ・リンク設定を
@@ -41,8 +52,9 @@ export type ImageEditorProps = Omit<ItemEditorProps<ImageData>, 'item'> &
  * @param root0
  * @param root0.state
  * @param root0.setState
+ * @param root0.slideName
  */
-export function ImageEditor({ state, setState }: ImageEditorProps) {
+export function ImageEditor({ state, setState, slideName }: ImageEditorProps) {
 	const fileBrowser = useFileBrowser();
 	// 同一documentに複数のimageアイテムエディタが同時に開いてもhtmlFor/
 	// aria-*の参照先が混線しないよう、ハードコードIDではなくuseIdで一意化する
@@ -189,6 +201,22 @@ export function ImageEditor({ state, setState }: ImageEditorProps) {
 	// 入力したmediaごと）無言で破棄される（set-component.tsのusedPaths判定）。
 	// UI側で先に画像選択を促すことでこの経路を回避する
 	const mediaLocked = currentIndex > 0 && !currentPath;
+	// リンク・ポップアップでは、altが包む要素の名前になる（toItemDataが空を拒む）。
+	// 入力欄で先に伝えるため、確定を押す前から必須として示す
+	const altRequired = wrapperNodeOf(state.popup ?? false, state.href ?? '') !== 'div';
+	// スライドとして編集するとき、名前（キャプションか alt）が空なら、2 つの欄の
+	// どちらでもよいことを伝える。リンク・ポップアップは alt が必須（上）なので、
+	// そちらを優先して、ここでは出さない
+	const nameMissing = !altRequired && !!slideName && !slideName.labelOf(state);
+	const nameDescId = `${uid}-name-desc`;
+	const altDescribedBy =
+		[
+			altRequired ? `${uid}-alt-required-desc` : null,
+			nameMissing ? nameDescId : null,
+			currentIndex > 0 ? `${uid}-alt-desc` : null,
+		]
+			.filter((id) => id !== null)
+			.join(' ') || undefined;
 
 	return (
 		<div data-bge-dialog="2col">
@@ -307,9 +335,13 @@ export function ImageEditor({ state, setState }: ImageEditorProps) {
 						name="bge-alt-editable"
 						value={state.altEditable ?? ''}
 						disabled={currentIndex > 0}
-						describedBy={currentIndex > 0 ? `${uid}-alt-desc` : undefined}
+						required={altRequired}
+						describedBy={altDescribedBy}
 						onChange={(altEditable) => setState((prev) => ({ ...prev, altEditable }))}
 					/>
+					{altRequired ? (
+						<small id={`${uid}-alt-required-desc`}>{ALT_FOR_NAME_NOTE}</small>
+					) : null}
 					{currentIndex > 0 ? (
 						<small id={`${uid}-alt-desc`}>
 							代替テキストは画像1（img要素）に設定され、画面幅で切り替わるすべての画像に共通で使われます。画像1のタブで編集してください。
@@ -319,8 +351,10 @@ export function ImageEditor({ state, setState }: ImageEditorProps) {
 						label="キャプション"
 						name="bge-caption"
 						value={state.caption ?? ''}
+						describedBy={nameMissing ? nameDescId : undefined}
 						onChange={(caption) => setState({ ...state, caption })}
 					/>
+					{nameMissing ? <small id={nameDescId}>{slideName?.note}</small> : null}
 					<Fieldset legend="リンク">
 						<Checkbox
 							name="bge-popup"

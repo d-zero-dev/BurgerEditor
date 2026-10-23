@@ -201,7 +201,7 @@ export default createItem<{
 2. **初期化**: `init()` で初期データ反映
 3. **エディタを開く**: UI 層が `engine.uiState.openItemEditor(item)` → `toEditorState(data, config)` で初期状態を導出し `Editor` をレンダリング
 4. **編集**: controlled inputs で `state` を更新
-5. **保存**: 決定ボタン（フォーム submit）→ `toItemData(state, config)` → `item.import(data)` → 保存
+5. **保存**: 決定ボタン（フォーム submit）→ `toItemData(state, config)` → `item.import(data)` → 保存。`toItemData` が throw すると確定は取り消され、ダイアログは開いたままエラーメッセージを表示する（必須の入力を検査するならここで throw する。`Editor` 側に同じ検査を重ねて書かない）。エージェント経由の書き込みや、すでに保存された HTML は `toItemData` を通らないので、検査されない
 
 ### `dangerouslySetInnerHTML`
 

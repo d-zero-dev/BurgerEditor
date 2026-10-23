@@ -283,10 +283,13 @@ describe('imageItemSeed', () => {
 				command: null,
 			} as const satisfies Readonly<ImageItemData>;
 
-			const result = await imageItemSeed.toItemData?.(data, testConfig);
-
-			expect(result?.node).toBe('button');
-			expect(result?.command).toBe('show-modal');
+			// Behavior change: ポップアップは代替テキストが空だと確定できない（この入力は altEditable が空）
+			await expect(async () =>
+				imageItemSeed.toItemData?.(data, testConfig),
+			).rejects.toThrow('代替テキスト(alt)');
+			// const result = await imageItemSeed.toItemData?.(data, testConfig); // previous
+			// expect(result?.node).toBe('button'); // previous
+			// expect(result?.command).toBe('show-modal'); // previous
 		});
 
 		test('hrefとtargetBlankからnodeとtargetへの変換', async () => {
@@ -317,10 +320,13 @@ describe('imageItemSeed', () => {
 				command: null,
 			} as const satisfies Readonly<ImageItemData>;
 
-			const result = await imageItemSeed.toItemData?.(data, testConfig);
-
-			expect(result?.node).toBe('a');
-			expect(result?.target).toBe('_blank');
+			// Behavior change: リンクは代替テキストが空だと確定できない（この入力は altEditable が空）
+			await expect(async () =>
+				imageItemSeed.toItemData?.(data, testConfig),
+			).rejects.toThrow('代替テキスト(alt)');
+			// const result = await imageItemSeed.toItemData?.(data, testConfig); // previous
+			// expect(result?.node).toBe('a'); // previous
+			// expect(result?.target).toBe('_blank'); // previous
 		});
 
 		test('scaleType=containerの場合のstyle生成', async () => {
@@ -559,6 +565,106 @@ describe('imageItemSeed', () => {
 
 			const img = item.el.querySelector('img');
 			expect(img?.getAttribute('alt')).toBe('サンプル画像');
+		});
+	});
+
+	describe('リンク・ポップアップの画像は代替テキストを必須にする', () => {
+		const base = {
+			path: ['/path/to/image.jpg'],
+			alt: [''],
+			width: [100],
+			height: [50],
+			media: [''],
+			fileSize: '100KB',
+			mediaInput: '',
+			style: '',
+			cssWidth: '100px',
+			scaleType: 'original',
+			scale: 100,
+			aspectRatio: 'revert',
+			cssWidthNumber: 100,
+			cssWidthUnit: 'px',
+			lazy: false,
+			loading: ['eager'],
+			caption: 'キャプション',
+			altEditable: '',
+			node: 'div',
+			href: '',
+			popup: false,
+			target: null,
+			targetBlank: false,
+			command: null,
+		} as const satisfies Readonly<ImageItemData>;
+
+		// toItemData は同期関数でも throw しうる。確定処理は await の内側で呼ぶので、
+		// ここでも async 関数で包んで、拒否として表明する
+		test('リンク先があって代替テキストが空なら、確定できない', async () => {
+			await expect(async () =>
+				imageItemSeed.toItemData?.({ ...base, href: 'https://example.com' }, testConfig),
+			).rejects.toThrow('代替テキスト(alt)');
+		});
+
+		test('ポップアップで代替テキストが空なら、確定できない', async () => {
+			await expect(async () =>
+				imageItemSeed.toItemData?.({ ...base, popup: true }, testConfig),
+			).rejects.toThrow('代替テキスト(alt)');
+		});
+
+		test('空白だけの代替テキストも空として扱う', async () => {
+			await expect(async () =>
+				imageItemSeed.toItemData?.(
+					{ ...base, href: 'https://example.com', altEditable: ' 　\n' },
+					testConfig,
+				),
+			).rejects.toThrow('代替テキスト(alt)');
+		});
+
+		test('キャプションがあっても、リンクの代替テキストの代わりにはならない', async () => {
+			await expect(async () =>
+				imageItemSeed.toItemData?.(
+					{ ...base, href: 'https://example.com', caption: '春の庭' },
+					testConfig,
+				),
+			).rejects.toThrow('代替テキスト(alt)');
+		});
+
+		test('代替テキストがあれば、リンクもポップアップも確定できる', async () => {
+			const link = await imageItemSeed.toItemData?.(
+				{ ...base, href: 'https://example.com', altEditable: '詳細ページ' },
+				testConfig,
+			);
+			const popup = await imageItemSeed.toItemData?.(
+				{ ...base, popup: true, altEditable: '拡大表示' },
+				testConfig,
+			);
+
+			expect(link?.node).toBe('a');
+			expect(link?.alt).toStrictEqual(['詳細ページ']);
+			expect(popup?.node).toBe('button');
+			expect(popup?.command).toBe('show-modal');
+			expect(popup?.alt).toStrictEqual(['拡大表示']);
+		});
+
+		test('別タブで開くリンクは、代替テキストがあれば target が _blank になる', async () => {
+			const result = await imageItemSeed.toItemData?.(
+				{
+					...base,
+					href: 'https://example.com',
+					targetBlank: true,
+					altEditable: '詳細ページ',
+				},
+				testConfig,
+			);
+
+			expect(result?.node).toBe('a');
+			expect(result?.target).toBe('_blank');
+		});
+
+		test('リンクもポップアップも無い画像は、代替テキストが空でも確定できる（装飾的な画像）', async () => {
+			const result = await imageItemSeed.toItemData?.(base, testConfig);
+
+			expect(result?.node).toBe('div');
+			expect(result?.alt).toStrictEqual(['']);
 		});
 	});
 });

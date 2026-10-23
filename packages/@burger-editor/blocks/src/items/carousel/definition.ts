@@ -2,7 +2,7 @@ import type { ItemSeed } from '@burger-editor/core';
 
 import { createItem } from '@burger-editor/core';
 
-import { normalizeCarousel } from './slides.js';
+import { assertSlidesNamed, getSlides, normalizeCarousel } from './slides.js';
 import style from './style.css';
 import template from './template.html';
 
@@ -38,9 +38,11 @@ export type CarouselData = {
 	// スライドの名前（キャプションの文字、空なら alt）。`caption` / `alt` から導く値で、
 	// 読み戻した値は使わない。CSS だけで表示したとき、標準の `::scroll-marker` の
 	// 名前を `attr()` で付けるために持つ（Chromium は figcaption から figure の名前を
-	// 計算せず、id で指す方法はブロックの複製で重複する）。`toItemData` を通らない
-	// エージェント経由の保存では古いまま残り得るので、`@burger-editor/runtime` は
-	// 実行時にキャプション・alt から読み直して上書きする
+	// 計算せず、id で指す方法はブロックの複製で重複する）。
+	// `toItemData` は名前の無いスライドを拒むので、編集画面で保存すれば空にならない。
+	// 一方、`toItemData` を通らない保存（エージェント経由、すでに保存された HTML）では、
+	// 空や古いまま残り得る。`@burger-editor/runtime` は実行時にキャプション・alt から
+	// 読み直して上書きする
 	slideLabel?: string[];
 };
 
@@ -68,7 +70,11 @@ export const carouselDefinition: ItemSeed<string, CarouselData> = {
 		return normalizeCarousel(data);
 	},
 	toItemData(state) {
-		return normalizeCarousel(state);
+		// 失敗はEditorDialogが表示し、ダイアログは開いたままになる。読み込み・
+		// 並べ替え・削除は検査しないので、名前の無い保存済みスライドも扱える
+		const data = normalizeCarousel(state);
+		assertSlidesNamed(getSlides(data));
+		return data;
 	},
 };
 

@@ -28,6 +28,8 @@ import {
 	moveSlide,
 	removeSlide,
 	replaceSlide,
+	SLIDE_NAME_NOTE,
+	slideLabelOf,
 	slideToEditorState,
 } from './slides.js';
 
@@ -298,6 +300,18 @@ export function CarouselEditor({ state, setState }: ItemEditorProps<CarouselData
 	);
 }
 
+// スライドの名前は、確定を拒む検査と同じ決め方（キャプションの文字、空なら alt）で導く。
+// キー入力のたびに導くので、HTML のパーサーは使い回す
+let labelParser: DOMParser | undefined;
+const SLIDE_NAME = {
+	labelOf: (state: ImageData) =>
+		slideLabelOf(
+			{ caption: state.caption ?? '', alt: state.altEditable ?? '' },
+			(labelParser ??= new DOMParser()),
+		),
+	note: SLIDE_NAME_NOTE,
+} as const;
+
 /**
  * スライド 1 枚の編集フォーム。imageアイテムの `ImageEditor` に、
  * スライドから組み立てた `ImageData` を渡す。
@@ -336,5 +350,5 @@ function SlideEditorBody({
 		};
 	}, [submitRef]);
 
-	return <ImageEditor state={state} setState={setState} />;
+	return <ImageEditor state={state} setState={setState} slideName={SLIDE_NAME} />;
 }

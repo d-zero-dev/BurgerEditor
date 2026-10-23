@@ -210,7 +210,33 @@ describe('initCarousel', () => {
 		});
 
 		test('キャプションも alt も無いスライドのドットは、設定の文字を名前にする', async () => {
-			await mount({ slides: 2, captions: ['', ''], alts: ['', ''] });
+			// Behavior change: 名前の無いスライドは toItemData が拒むので、保存形として作れない
+			await expect(
+				mount({ slides: 2, captions: ['', ''], alts: ['', ''] }),
+			).rejects.toThrow('キャプションも代替テキスト(alt)も空');
+			// await mount({ slides: 2, captions: ['', ''], alts: ['', ''] }); // previous
+			// handle = setupCarousels({ markerLabel: (i) => `Go to ${i}` }, POLYFILL); // previous
+			// expect(page.getByRole('button', { name: 'Go to 2' }).query()).not.toBeNull(); // previous
+		});
+
+		test('toItemData を通らずに名前が空になった HTML（エージェント経由の保存や、すでに保存されたページ）でも、ドットは設定の文字を名前にする', async () => {
+			const { slides } = await mount({ slides: 2 });
+			for (const slide of slides) {
+				slide.querySelector('figcaption')!.textContent = '';
+				slide.querySelector('img')!.setAttribute('alt', '');
+				slide.dataset.bgeSlideLabel = '';
+			}
+			// 前提: 名前の元が本当に空になっている（テンプレートの構造が変わって別の要素を
+			// 空にしていても、ここで気づける）
+			expect(slides).toHaveLength(2);
+			expect(slides.map((s) => s.querySelector('figcaption')?.textContent)).toEqual([
+				'',
+				'',
+			]);
+			expect(slides.map((s) => s.querySelector('img')?.getAttribute('alt'))).toEqual([
+				'',
+				'',
+			]);
 			handle = setupCarousels({ markerLabel: (i) => `Go to ${i}` }, POLYFILL);
 
 			expect(page.getByRole('button', { name: 'Go to 2' }).query()).not.toBeNull();
