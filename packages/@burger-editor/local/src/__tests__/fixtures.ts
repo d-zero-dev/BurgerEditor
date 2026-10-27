@@ -70,8 +70,7 @@ export function makeLocalServerConfig(
 		googleMapsApiKey: null,
 		open: false,
 		newFileContent: '<!doctype html><html><body></body></html>',
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		catalog: {} as any,
+		catalog: {},
 		enableImportBlock: false,
 		healthCheck: { enabled: false, interval: 10_000, retryCount: 3 },
 		virtualTree: { enabled: false, pathKey: 'path', ...virtualTree },

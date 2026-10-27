@@ -34,7 +34,7 @@ async function mount(itemStyle: string) {
 		CarouselData,
 		{}
 	>;
-	const state = carouselItemSeed.toEditorState!(item.export() as never, testConfig);
+	const state = carouselItemSeed.toEditorState!(item.export(), testConfig);
 	const slides = (key: keyof CarouselData) =>
 		Array.from({ length: 4 }, () => (state[key] as unknown[])[0]);
 	const data = {
@@ -47,7 +47,7 @@ async function mount(itemStyle: string) {
 		style: slides('style'),
 		caption: ['1', '2', '3', '4'],
 	} as CarouselData;
-	item.import((await carouselItemSeed.toItemData!(data, testConfig)) as never);
+	item.import(await carouselItemSeed.toItemData!(data, testConfig));
 	item.el.setAttribute('style', `inline-size: 600px; ${itemStyle}`);
 	document.body.append(item.el);
 

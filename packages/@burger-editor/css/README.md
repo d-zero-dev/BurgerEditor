@@ -1,6 +1,6 @@
 # `@burger-editor/css`
 
-[`@burger-editor/blocks`](../blocks/) の `general.css` と各アイテムの `style.css` を 1 ファイルに統合した配布パッケージ。BurgerEditor の編集機能を使わず、生成された HTML だけを表示する用途で使う。
+[`@burger-editor/blocks`](../blocks/)の`general.css`と各アイテムの`style.css`を 1 ファイルに統合した配布パッケージ。BurgerEditor の編集機能を使わず、生成された HTML だけを表示する用途で使う。
 
 ## Installation
 
@@ -25,12 +25,12 @@ import '@burger-editor/css';
 | パッケージ                            | 関係                                               | 使い分け                              |
 | ------------------------------------- | -------------------------------------------------- | ------------------------------------- |
 | [`@burger-editor/blocks`](../blocks/) | CSS の一次ソース（本パッケージはここから統合生成） | 表示専用なら css 単独で足りる         |
-| [`@burger-editor/core`](../core/)     | DOM 契約（`[data-bge-container]` 等）の定義元      | 表示専用なら不要                      |
-| [`@burger-editor/client`](../client/) | エディタ UI。`blocks` の CSS を直接参照            | エディタ UI を組み込むなら css は不要 |
+| [`@burger-editor/core`](../core/)     | DOM 契約（`[data-bge-container]`等）の定義元       | 表示専用なら不要                      |
+| [`@burger-editor/client`](../client/) | エディタ UI。`blocks`の CSS を直接参照             | エディタ UI を組み込むなら css は不要 |
 
 ## ブロックコンテナ属性
 
-`[data-bge-container]` の値は BurgerEditor が生成する HTML の契約。値ごとに利用可能なバリアントは以下のとおり（一次ソースとして本パッケージで定義）。
+`[data-bge-container]`の値は BurgerEditor が生成する HTML の契約。値ごとに利用可能なバリアントは以下のとおり（一次ソースとして本パッケージで定義）。
 
 ### `grid` — グリッドレイアウト
 
@@ -40,7 +40,7 @@ import '@burger-editor/css';
 | `grid:auto-fit`    | コンテナ幅に応じて自動でカラム数を調整（空きを伸長） |
 | `grid:auto-fill`   | コンテナ幅に応じて自動でカラム数を調整（空きを保持） |
 
-`auto-fit` / `auto-fill` はプリセット（最小カラム幅）と併用する。`grid:auto-fit:--medium` のようにコロン区切りで `--bge-repeat-min-inline-size--{variant}` を指定。デフォルトは `--small` (150px) / `--medium` (300px) / `--large` (500px)。
+`auto-fit`/`auto-fill`はプリセット（最小カラム幅）と併用する。`grid:auto-fit:--medium`のようにコロン区切りで`--bge-repeat-min-inline-size--{variant}`を指定。デフォルトは`--small` (150px)/`--medium` (300px)/`--large` (500px)。
 
 ### `inline` — フレックスボックス横並び
 
@@ -50,7 +50,7 @@ import '@burger-editor/css';
 | align-items     | `align-start` / `align-center` / `align-end` / `align-stretch` / `align-baseline` |
 | 折り返し        | `wrap` / `nowrap`                                                                 |
 
-合計 13 種。組み合わせはコロン区切りで `inline:center:align-center:wrap` のように指定。
+合計 13 種。組み合わせはコロン区切りで`inline:center:align-center:wrap`のように指定。
 
 ### `float` — テキスト回り込み
 
@@ -70,7 +70,7 @@ import '@burger-editor/css';
 
 ## 含まれるアイテムスタイル
 
-`button` / `carousel` / `details` / `download-file` / `google-maps` / `hr` / `image` / `import` / `table` / `title-h2` / `title-h3` / `wysiwyg` / `youtube` の計 13 種（`build.js` が `@burger-editor/blocks/src/items/**/*.css` をすべて統合する）。
+`button`/`carousel`/`details`/`download-file`/`google-maps`/`hr`/`image`/`import`/`table`/`title-h2`/`title-h3`/`wysiwyg`/`youtube`の計 13 種（`build.js`が`@burger-editor/blocks/src/items/**/*.css`をすべて統合する）。
 
 ## 単独利用
 
@@ -92,7 +92,7 @@ BurgerEditor の編集機能を使わず、生成済み HTML のスタイル付�
 
 ## ビルド
 
-`@burger-editor/blocks` から CSS を収集して `style.css` に統合する（`build.js`）。blocks の CSS が更新されたら `yarn build` で再生成。
+`@burger-editor/blocks`から CSS を収集して`style.css`に統合する（`build.js`）。blocks の CSS が更新されたら`yarn build`で再生成。
 
 ## License
 

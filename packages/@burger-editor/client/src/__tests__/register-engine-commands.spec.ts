@@ -11,9 +11,7 @@ vi.stubGlobal('confirm', confirmMock);
 
 // 実アニメーションの実時間経過を待たずにDOM並べ替えだけを検証するため、
 // replaceElementのアニメーションを即時完了扱いにする
-Element.prototype.animate = vi
-	.fn()
-	.mockReturnValue({ finished: Promise.resolve() }) as unknown as Element['animate'];
+Element.prototype.animate = vi.fn().mockReturnValue({ finished: Promise.resolve() });
 
 beforeEach(() => {
 	alertMock.mockClear();

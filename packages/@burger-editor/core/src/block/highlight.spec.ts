@@ -23,7 +23,7 @@ afterEach(() => {
  * @param matches
  */
 function stubReducedMotion(matches: boolean): void {
-	globalThis.matchMedia = ((query: string) => ({
+	globalThis.matchMedia = (query: string) => ({
 		matches,
 		media: query,
 		addEventListener: () => {},
@@ -32,7 +32,7 @@ function stubReducedMotion(matches: boolean): void {
 		removeListener: () => {},
 		dispatchEvent: () => false,
 		onchange: null,
-	})) as unknown as typeof matchMedia;
+	});
 }
 
 describe('highlightElement', () => {

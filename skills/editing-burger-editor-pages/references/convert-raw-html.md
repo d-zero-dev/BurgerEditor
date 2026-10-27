@@ -15,13 +15,13 @@ container_options_list
 
 ### 2. 意味のかたまりで分解する
 
-- `<h2>` 単独 → `h2` カタログ、`<h3>` 単独 → `h3` カタログ
-- `<p>` / `<ul>` / `<ol>` の連続 → `wysiwyg` にまとめる
-- `<img>` 単独 → `image` カタログ、`<table>` → `table` カタログ
-- 見出し + テキスト + 画像の複合 → `wysiwyg` にまとめるか、`image-text` 系の構成ブロックに分解
-- `<a class="btn">` 等のボタン風要素 → `button` カタログ
+- `<h2>`単独 → `h2`カタログ、`<h3>`単独 → `h3`カタログ
+- `<p>`/`<ul>`/`<ol>`の連続 → `wysiwyg`にまとめる
+- `<img>`単独 → `image`カタログ、`<table>` → `table`カタログ
+- 見出し + テキスト + 画像の複合 → `wysiwyg`にまとめるか、`image-text`系の構成ブロックに分解
+- `<a class="btn">`等のボタン風要素 → `button`カタログ
 
-**判別が難しいかたまりは推測せずユーザーに確認する。** カタログ名やアイテムのデータ形は `blocks-and-items.md` の手順（`catalog_get` の `template` をそのまま使う）に従う。
+**判別が難しいかたまりは推測せずユーザーに確認する。** カタログ名やアイテムのデータ形は`blocks-and-items.md`の手順（`catalog_get`の`template`をそのまま使う）に従う。
 
 ### 3. マッピング案を提示する
 
@@ -38,18 +38,18 @@ container_options_list
 
 ### 4. 元ファイルを壊さない順序で置き換える
 
-BurgerEditor のページ系ツールは既存パスへの `page_create` / `page_rename` を上書きしない設計（`exists` エラー）なので、次の順で進める:
+BurgerEditor のページ系ツールは既存パスへの`page_create`/`page_rename`を上書きしない設計（`exists`エラー）なので、次の順で進める:
 
 1. `page_copy { from, to: "<page>.bak.html" }` — バックアップ
 2. `page_create { path: "<page>.new.html", frontMatter: <元のFM>, blocks: [...] }` — 別パスに新規ブロック構造で作成
 3. ユーザーに見比べてもらう
-4. `page_delete { path: "<page>" }` → `page_rename { from: "<page>.new.html", to: "<page>" }` で差し替える（`page_rename` は宛先既存だと `exists` になるため、この順序が必須）
+4. `page_delete { path: "<page>" }` → `page_rename { from: "<page>.new.html", to: "<page>" }`で差し替える（`page_rename`は宛先既存だと`exists`になるため、この順序が必須）
 
-`.bak.html` はバックアップとして `documentRoot` に残り続け、`page_list` にも表示され続ける。不要になったらユーザーの判断で `page_delete` してもらう（AI 側から無断で消さない）。
+`.bak.html`はバックアップとして`documentRoot`に残り続け、`page_list`にも表示され続ける。不要になったらユーザーの判断で`page_delete`してもらう（AI 側から無断で消さない）。
 
 ### 5. 検証
 
-`page_blocks` で構造、`page_get` で見た目のスニペットを確認する。ずれがあれば該当ブロックを `block_replace` で個別に直す。
+`page_blocks`で構造、`page_get`で見た目のスニペットを確認する。ずれがあれば該当ブロックを`block_replace`で個別に直す。
 
 ## してはいけないこと
 

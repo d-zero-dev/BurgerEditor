@@ -1,6 +1,6 @@
 # `@burger-editor/file-io`
 
-Node 側のファイル I/O 集約パッケージ。`@burger-editor/local`（ブラウザ UI 付き CMS サーバー）と `@burger-editor/cli` / `@burger-editor/mcp-server`（AI エージェント向け非対話レイヤー）が**共有**して使う。
+Node 側のファイル I/O 集約パッケージ。`@burger-editor/local`（ブラウザ UI 付き CMS サーバー）と`@burger-editor/cli`/`@burger-editor/mcp-server`（AI エージェント向け非対話レイヤー）が**共有**して使う。
 
 ## Installation
 
@@ -8,7 +8,7 @@ Node 側のファイル I/O 集約パッケージ。`@burger-editor/local`（ブ
 yarn add @burger-editor/file-io
 ```
 
-`@burger-editor/core` と `@burger-editor/blocks` は依存として一緒にインストールされる。
+`@burger-editor/core`と`@burger-editor/blocks`は依存として一緒にインストールされる。
 
 ## Related Packages
 
@@ -22,15 +22,15 @@ yarn add @burger-editor/file-io
 
 ## 提供する機能
 
-| 機能                                                                                                       | エントリ                                                                                                         |
-| ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `burgereditor.config.*` ローダー（cosmiconfig ラッパー、親ディレクトリへ walk-up。ファイルの直接指定も可） | `resolveConfig(searchFrom?, { configPath? })` / `clearConfigCache()`                                             |
-| ページ HTML の読み書き（Front Matter + editableArea + prettier）                                           | `loadContent(...)` / `saveContent(...)` / `FileNotFoundError` / `NoEditableAreaError`                            |
-| ディスク上のディレクトリツリーから HTML ファイルツリーを構築                                               | `generateFileTree(dir)` / `buildFileTreeFromLogicalPaths(input)`                                                 |
-| 仮想（論理）パス ↔ 実ファイル名のリゾルバ（`virtualTree.enabled: true` 時）                                | `loadResolverState(documentRoot, pathKey)` 他、`registerEntry` / `setLogicalPath` / `toDiskPath` / `listEntries` |
-| ユーザー入力（実パス / 仮想パス / 末尾スラッシュ等）を documentRoot 配下の絶対パスに正規化                 | `resolvePathInput(input, config, resolverState)`                                                                 |
-| jsdom-backed DOM の **遅延** インストール（`@burger-editor/core` を Node から使えるようにする）            | side-effect import + `ensureDom()`                                                                               |
-| CSS 文字列を読み込んだ独立した jsdom 文書（`core` のスタイルオプション検出を Node で動かす）               | `createStylesheetDocument(cssTexts)`                                                                             |
+| 機能                                                                                                      | エントリ                                                                                                        |
+| --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `burgereditor.config.*`ローダー（cosmiconfig ラッパー、親ディレクトリへ walk-up。ファイルの直接指定も可） | `resolveConfig(searchFrom?, { configPath? })` / `clearConfigCache()`                                            |
+| ページ HTML の読み書き（Front Matter + editableArea + prettier）                                          | `loadContent(...)` / `saveContent(...)` / `FileNotFoundError` / `NoEditableAreaError`                           |
+| ディスク上のディレクトリツリーから HTML ファイルツリーを構築                                              | `generateFileTree(dir)` / `buildFileTreeFromLogicalPaths(input)`                                                |
+| 仮想（論理）パス ↔ 実ファイル名のリゾルバ（`virtualTree.enabled: true`時）                                | `loadResolverState(documentRoot, pathKey)`他、`registerEntry` / `setLogicalPath` / `toDiskPath` / `listEntries` |
+| ユーザー入力（実パス / 仮想パス / 末尾スラッシュ等）を documentRoot 配下の絶対パスに正規化                | `resolvePathInput(input, config, resolverState)`                                                                |
+| jsdom-backed DOM の **遅延** インストール（`@burger-editor/core`を Node から使えるようにする）            | side-effect import + `ensureDom()`                                                                              |
+| CSS 文字列を読み込んだ独立した jsdom 文書（`core`のスタイルオプション検出を Node で動かす）               | `createStylesheetDocument(cssTexts)`                                                                            |
 
 ## 使用例
 
@@ -80,7 +80,7 @@ const diskFile = toDiskPath(state, 'foo/bar/about.html'); // → '42.html' or nu
 
 #### lenient（既定）/ strict モード
 
-v4.0.0-alpha.68 以降、`loadResolverState` は **lenient（寛容）モード** をデフォルトとします。Front Matter の `pathKey` が無い / 文字列でない / 空 / 正規化後に空、のいずれかに該当するファイルは `state` に登録せず、`invalid` 配列に降格して残りを処理します。
+v4.0.0-alpha.68 以降、`loadResolverState`は **lenient（寛容）モード** をデフォルトとします。Front Matter の`pathKey`が無い/文字列でない/空/正規化後に空、のいずれかに該当するファイルは`state`に登録せず、`invalid`配列に降格して残りを処理します。
 
 ```ts
 // Lenient (既定): CLI / MCP agent セッション向け
@@ -95,13 +95,13 @@ const { state } = await loadResolverState(documentRoot, 'path', { strict: true }
 // 不備があれば throw — invalid は常に空
 ```
 
-| reason         | 意味                                                 |
-| -------------- | ---------------------------------------------------- |
-| `missing-key`  | Front Matter に `pathKey` がない                     |
-| `invalid-type` | `pathKey` の値が文字列でない（数値など）             |
-| `empty-path`   | 空文字列、または `/` のみで normalize すると空になる |
+| reason         | 意味                                               |
+| -------------- | -------------------------------------------------- |
+| `missing-key`  | Front Matter に`pathKey`がない                     |
+| `invalid-type` | `pathKey`の値が文字列でない（数値など）            |
+| `empty-path`   | 空文字列、または`/`のみで normalize すると空になる |
 
-**I/O エラー（EACCES, EBUSY, EIO 等）は strict / lenient どちらでも常に伝搬** します。Front Matter 不備（dirt）だけが lenient で `invalid` に降格され、ファイルシステムの障害は silent mask されません。
+**I/O エラー（EACCES, EBUSY, EIO 等）は strict / lenient どちらでも常に伝搬** します。Front Matter 不備（dirt）だけが lenient で`invalid`に降格され、ファイルシステムの障害は silent mask されません。
 
 **`PathConflictError`（同じ logical path を主張するファイルが複数）も常に throw** します。構造的曖昧性は dirt ではないため。
 
@@ -124,35 +124,35 @@ fs を触る全パッケージの共通フロントエンド。**同じ config /
 
 ### 遅延 DOM インストール
 
-`./index.js` を import すると `globalThis.document` / `DOMParser` 等の**アクセサだけ**が置かれる。最初のアクセスで初めて JSDOM を構築するため、DOM 不要な CLI コマンド（`catalog-list` 等）は JSDOM コストを払わない。vitest の `jsdom` 環境下では `globalThis.document` が既に存在するため shim は no-op。
+`./index.js`を import すると`globalThis.document`/`DOMParser`等の**アクセサだけ**が置かれる。最初のアクセスで初めて JSDOM を構築するため、DOM 不要な CLI コマンド（`catalog-list`等）は JSDOM コストを払わない。vitest の`jsdom`環境下では`globalThis.document`が既に存在するため shim は no-op。
 
 ### cosmiconfig `searchStrategy: 'project'`
 
-サブディレクトリから CLI / MCP を起動しても、プロジェクトルートの設定が見つかる（cosmiconfig v9+ の挙動）。
+サブディレクトリから CLI/MCP を起動しても、プロジェクトルートの設定が見つかる（cosmiconfig v9+ の挙動）。
 
 ### 設定ファイルの直接指定（`configPath` / `BGE_CONFIG`）
 
-1 つのリポジトリに本体サイトと子サイトの設定が並ぶケースのために、探索をせずに設定ファイルを直接読める（使い方と優先順位は `resolveConfig` の JSDoc を参照）。
+1 つのリポジトリに本体サイトと子サイトの設定が並ぶケースのために、探索をせずに設定ファイルを直接読める（使い方と優先順位は`resolveConfig`の JSDoc を参照）。
 
-- `BGE_CONFIG` は各エントリポイントではなく `resolveConfig` 自身が読む。local / cli / mcp-server のどれから起動しても同じ設定ファイルに解決される
-- 指定したファイルが存在しない場合は reject する。探索で見つからない場合のように既定値へは落とさない（既定値だと `documentRoot` がカレントディレクトリになり、指定した意図と食い違うため）
+- `BGE_CONFIG`は各エントリポイントではなく`resolveConfig`自身が読む。local/cli/mcp-server のどれから起動しても同じ設定ファイルに解決される
+- 指定したファイルが存在しない場合は reject する。探索で見つからない場合のように既定値へは落とさない（既定値だと`documentRoot`がカレントディレクトリになり、指定した意図と食い違うため）
 
-### Leading `/` は documentRoot 直下
+### Leading `/`は documentRoot 直下
 
-`resolvePathInput('/about.html', ...)` は OS ルートではなく documentRoot 直下を返す。AI エージェントが `/about.html` と書いたとき「about ページ」を意図することがほぼ確実なため。
+`resolvePathInput('/about.html', ...)`は OS ルートではなく documentRoot 直下を返す。AI エージェントが`/about.html`と書いたとき「about ページ」を意図することがほぼ確実なため。
 
-### `loadContent` / `saveContent` の挙動
+### `loadContent` / `saveContent`の挙動
 
-- `loadContent` はファイル不在時 `newFileContent` で新規作成する。表示するだけでファイルを作りたくない場合（例: `local` でページを開いたとき）は `{ createMissingFile: false }` を渡す。不在を作成ではなくエラーとして扱いたいケース（例: `pageConcat` の source path）では呼び出し前に `fs.access` で確認する
-- `saveContent` は外部削除を `FileNotFoundError` で検知（race）。`{ newFileContent }` を渡すと、不在のファイルをそのテンプレートから作成して保存する（例: `local` で開いたページの初回保存）
-- editableArea セレクタ不一致時は `NoEditableAreaError`。**フルドキュメント / fragment 共通の挙動**
+- `loadContent`はファイル不在時`newFileContent`で新規作成する。表示するだけでファイルを作りたくない場合（例: `local`でページを開いたとき）は`{ createMissingFile: false }`を渡す。不在を作成ではなくエラーとして扱いたいケース（例: `pageConcat`の source path）では呼び出し前に`fs.access`で確認する
+- `saveContent`は外部削除を`FileNotFoundError`で検知（race）。`{ newFileContent }`を渡すと、不在のファイルをそのテンプレートから作成して保存する（例: `local`で開いたページの初回保存）
+- editableArea セレクタ不一致時は`NoEditableAreaError`。**フルドキュメント / fragment 共通の挙動**
 
 ## メンテナンス責任
 
-- 設定スキーマ（`BurgerEditorConfig`）の追加 → `src/types.ts` を更新し、`local/src/types.ts` の `LocalKeys` も明示追加
-- 新 fs 操作の追加 → 必ず `edit-content.spec.ts` か新規 spec でカバー
-- DOMParser / jsdom の差し替え検討時は dom-shim のテストを起点に互換性確認
-- `loadResolverState` のエラー分類（`missing-key` / `invalid-type` / `empty-path`）を追加・変更する場合、`ResolverInvalidEntry.reason` の union 型と test を両方更新
+- 設定スキーマ（`BurgerEditorConfig`）の追加 → `src/types.ts`を更新し、`local/src/types.ts`の`LocalKeys`も明示追加
+- 新 fs 操作の追加 → 必ず`edit-content.spec.ts`か新規 spec でカバー
+- DOMParser/jsdom の差し替え検討時は dom-shim のテストを起点に互換性確認
+- `loadResolverState`のエラー分類（`missing-key`/`invalid-type`/`empty-path`）を追加・変更する場合、`ResolverInvalidEntry.reason`の union 型と test を両方更新
 
 ## License
 

@@ -515,7 +515,7 @@ describe('imageItemSeed', () => {
 				height: [...state.height, 200],
 				media: [state.media[0] ?? '', '(max-width: 767px)'],
 			};
-			item.import((await imageItemSeed.toItemData!(state, testConfig)) as never);
+			item.import(await imageItemSeed.toItemData!(state, testConfig));
 
 			// 寸法の無い<source>（v3 など、寸法を持たない保存済みHTML）にする
 			const source = item.el.querySelector('source');
@@ -523,7 +523,7 @@ describe('imageItemSeed', () => {
 			source?.removeAttribute('height');
 
 			state = imageItemSeed.toEditorState!(item.export() as never, testConfig);
-			item.import((await imageItemSeed.toItemData!(state, testConfig)) as never);
+			item.import(await imageItemSeed.toItemData!(state, testConfig));
 
 			const resaved = item.el.querySelector('source');
 			expect(resaved?.getAttribute('srcset')).toBe('/img/sp.png');
@@ -549,12 +549,12 @@ describe('imageItemSeed', () => {
 				height: [...state.height, 200],
 				media: [state.media[0] ?? '', '(max-width: 767px)'],
 			};
-			item.import((await imageItemSeed.toItemData!(state, testConfig)) as never);
+			item.import(await imageItemSeed.toItemData!(state, testConfig));
 
 			// 2回目の決定: 何も変えずにもう一度保存（Item.importが現在の
 			// innerHTMLをテンプレートとして再利用する経路をなぞる）
 			state = imageItemSeed.toEditorState!(item.export() as never, testConfig);
-			item.import((await imageItemSeed.toItemData!(state, testConfig)) as never);
+			item.import(await imageItemSeed.toItemData!(state, testConfig));
 
 			const exported = item.export() as never as ImageItemData;
 			expect(exported.alt).toStrictEqual(['サンプル画像']);

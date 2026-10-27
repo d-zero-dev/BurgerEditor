@@ -77,6 +77,7 @@ function createHarness(name: string) {
 	const item = Item.create<{ text: string }, {}>(name, itemSeeds, testConfig, {
 		text: '初期値',
 	});
+	// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- ESLint は core のソースを、build の型チェック（tsconfig.check.json）は core の型定義を参照し、後者では Item<{ text: string }> を Item<ItemData> に代入できない
 	uiState.openItemEditor(item as never);
 	return { engine, item, uiState };
 }
@@ -87,6 +88,7 @@ describe('ItemEditorHost — containerTypeのdata-bge-container配線', () => {
 
 		renderWithEngine(
 			engine,
+			// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- createHarness と同じ理由
 			<ItemEditorHost item={item as never} containerType="main" />,
 		);
 
@@ -100,6 +102,7 @@ describe('ItemEditorHost — Editor未定義のフォールバック', () => {
 	test('Editorを持たないitemは名前付きのフォールバックメッセージを表示する', () => {
 		const { engine, item } = createHarness('no-editor-item');
 
+		// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- createHarness と同じ理由
 		renderWithEngine(engine, <ItemEditorHost item={item as never} />);
 
 		expect(screen.getByText(/編集できないコンテンツです.*no-editor-item/)).toBeTruthy();
@@ -110,6 +113,7 @@ describe('ItemEditorHost — submit失敗時はダイアログを閉じない', 
 	test('toItemDataが投げるとcloseAndSaveは呼ばれず、role="alert"でエラーが表示される', async () => {
 		const { engine, item } = createHarness('throwing-item');
 
+		// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- createHarness と同じ理由
 		renderWithEngine(engine, <ItemEditorHost item={item as never} />);
 
 		const input = narrowElement(screen.getByTestId('stub-input'), HTMLInputElement);

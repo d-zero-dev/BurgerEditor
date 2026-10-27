@@ -23,9 +23,9 @@ editorElement.editor.chain().focus().toggleBold().run();
 
 ### `contentCss`
 
-WYSIWYG の編集面に適用する CSS。公開ページと同じ見た目で編集するために使う。属性ではなくプロパティで、要素が文書に接続される前に設定してもよい（内側の `<bge-wysiwyg>` ができた時点で適用される）。React 19 では JSX の prop としてそのまま渡せる。
+WYSIWYG の編集面に適用する CSS。公開ページと同じ見た目で編集するために使う。属性ではなくプロパティで、要素が文書に接続される前に設定してもよい（内側の`<bge-wysiwyg>`ができた時点で適用される）。React 19 では JSX の prop としてそのまま渡せる。
 
-**型**: 代入は `string`。読み取りは `string | null`（一度も代入していなければ `null`）
+**型**: 代入は`string`。読み取りは`string | null`（一度も代入していなければ`null`）
 
 **使用例**:
 
@@ -132,7 +132,7 @@ editorElement.syncWysiwygToTextarea();
 
 ### `item-name`
 
-アイテム名（通常は `"wysiwyg"`）。
+アイテム名（通常は`"wysiwyg"`）。
 
 **型**: `string`
 
@@ -144,7 +144,7 @@ editorElement.syncWysiwygToTextarea();
 
 ### `commands`
 
-使用可能なコマンドのカンマ区切りリスト。省略すると `BgeWysiwygEditorElement.defaultCommands` を使う。
+使用可能なコマンドのカンマ区切りリスト。省略すると`BgeWysiwygEditorElement.defaultCommands`を使う。
 
 **型**: `string`
 

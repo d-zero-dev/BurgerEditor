@@ -4,7 +4,7 @@ import type { ResolverStateStore } from '../resolver-state-store.js';
 import type { LocalServerConfig } from '../types.js';
 import type { AgentTool, CliContext } from '@burger-editor/cli';
 import type { BlockOp } from '@burger-editor/cli/block-op';
-import type { BurgerEditorConfig, ResolverState } from '@burger-editor/file-io';
+import type { ResolverState } from '@burger-editor/file-io';
 import type { Context } from 'hono';
 
 import {
@@ -53,7 +53,7 @@ function toCliContext(
 	resolverState: ResolverState | null,
 ): CliContext {
 	return {
-		config: userConfig as unknown as BurgerEditorConfig,
+		config: userConfig,
 		configPath: null,
 		resolverState,
 		invalidPages: [],
@@ -132,6 +132,7 @@ export function createAgentRoutes(
 				tools: agentTools.map((tool) => ({
 					name: tool.name,
 					description: tool.description,
+					// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- 外すと createApp の推論型が zod 内部の型を参照し、型定義を出力できなくなる（TS2742）
 					inputSchema: z.toJSONSchema(tool.input) as JsonSchemaObject,
 					outputSchema: tool.output
 						? (z.toJSONSchema(tool.output) as JsonSchemaObject)
@@ -393,7 +394,7 @@ function hasStringPath(value: unknown): value is { path: string } {
 		!!value &&
 		typeof value === 'object' &&
 		'path' in value &&
-		typeof (value as { path: unknown }).path === 'string'
+		typeof value.path === 'string'
 	);
 }
 

@@ -146,7 +146,7 @@ describe('setValue — null datum removes attribute', () => {
 		const el = document.createElement('input');
 		el.dataset.field = 'foo:placeholder';
 		el.setAttribute('placeholder', 'old');
-		setValue(el, 'foo', null as never);
+		setValue(el, 'foo', null);
 		expect(el.hasAttribute('placeholder')).toBe(false);
 	});
 });

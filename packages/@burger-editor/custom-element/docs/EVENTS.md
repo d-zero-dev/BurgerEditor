@@ -1,6 +1,6 @@
 # Custom Events
 
-`<bge-wysiwyg-editor>`の内部にある`<bge-wysiwyg>`要素は、以下のカスタムイベントを発火します。どちらも`bubbles: true` / `composed: true`のため、`<bge-wysiwyg-editor>`やその祖先でも受け取れます。
+`<bge-wysiwyg-editor>`の内部にある`<bge-wysiwyg>`要素は、以下のカスタムイベントを発火します。どちらも`bubbles: true`/`composed: true`のため、`<bge-wysiwyg-editor>`やその祖先でも受け取れます。
 
 ## `transaction`イベント
 
@@ -21,7 +21,7 @@ TipTapのトランザクションごとに発火します。
 
 - `event.detail.state`: ツールバー向けの状態。ノード/マークごとの`{ active: boolean; disabled: boolean }`を持つオブジェクト（`Record<EditorNode, NodeState>`）です。TipTap/ProseMirrorの`EditorState`ではありません
 
-キーは`bold` / `italic` / `underline` / `strike` / `subscript` / `superscript` / `code` / `link` / `buttonLikeLink` / `blockquote` / `bulletList` / `orderedList` / `note` / `h1`〜`h6` / `flexBox` / `image` / `alignStart` / `alignCenter` / `alignEnd`です。これ以外の拡張の状態は`wysiwygElement.isActive(name)`で取得します。
+キーは`bold`/`italic`/`underline`/`strike`/`subscript`/`superscript`/`code`/`link`/`buttonLikeLink`/`blockquote`/`bulletList`/`orderedList`/`note`/`h1`〜`h6`/`flexBox`/`image`/`alignStart`/`alignCenter`/`alignEnd`です。これ以外の拡張の状態は`wysiwygElement.isActive(name)`で取得します。
 
 ### 使用例
 

@@ -79,10 +79,7 @@ async function mount(settings: Settings = {}) {
 	} = settings;
 	const seed = items.carousel;
 	const item = Item.create('carousel', new Map([['carousel', seed]]), CONFIG);
-	const base = seed.toEditorState!(item.export() as never, CONFIG) as Record<
-		string,
-		unknown
-	>;
+	const base = seed.toEditorState!(item.export(), CONFIG) as Record<string, unknown>;
 	const state: Record<string, unknown> = { ...base };
 	// スライドごとの配列は、テンプレートの 1 枚目の値をスライド数分に揃える
 	for (const [key, value] of Object.entries(base)) {
@@ -106,7 +103,7 @@ async function mount(settings: Settings = {}) {
 				}
 			: {}),
 	});
-	item.import((await seed.toItemData!(state as never, CONFIG)) as never);
+	item.import(await seed.toItemData!(state, CONFIG));
 	item.el.style.inlineSize = '600px';
 	document.body.append(item.el);
 

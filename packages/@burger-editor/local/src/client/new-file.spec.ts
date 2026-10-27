@@ -77,9 +77,7 @@ describe('newFile (virtualTree enabled)', () => {
 	beforeEach(() => {
 		navigate.mockReset();
 		fetchCalls.length = 0;
-		alertSpy = vi
-			.spyOn(globalThis, 'alert')
-			.mockImplementation(() => undefined as unknown as void);
+		alertSpy = vi.spyOn(globalThis, 'alert').mockImplementation(() => {});
 	});
 
 	afterEach(() => {
