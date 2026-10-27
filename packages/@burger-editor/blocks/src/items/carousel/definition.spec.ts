@@ -37,8 +37,8 @@ async function save(
 	item: Item<CarouselData, {}>,
 	update: (data: CarouselData) => CarouselData,
 ) {
-	const state = carouselItemSeed.toEditorState!(item.export() as never, testConfig);
-	item.import((await carouselItemSeed.toItemData!(update(state), testConfig)) as never);
+	const state = carouselItemSeed.toEditorState!(item.export(), testConfig);
+	item.import(await carouselItemSeed.toItemData!(update(state), testConfig));
 }
 
 /**
@@ -52,7 +52,7 @@ function createItem() {
 describe('carouselItemSeed', () => {
 	describe('template', () => {
 		test('テンプレートはスライド1枚と既定の全体設定を持つ', () => {
-			const data = createItem().export() as never as CarouselData;
+			const data = createItem().export();
 
 			expect(data.path).toHaveLength(1);
 			expect(data.autoplay).toBe(false);
@@ -76,7 +76,7 @@ describe('carouselItemSeed', () => {
 	describe('スライドの操作', () => {
 		test('追加したスライドは既定値で、全配列が同じ長さになる', () => {
 			const data = appendSlide(
-				carouselItemSeed.toEditorState!(createItem().export() as never, testConfig),
+				carouselItemSeed.toEditorState!(createItem().export(), testConfig),
 				{ ...DEFAULT_SLIDE },
 			);
 
@@ -87,17 +87,14 @@ describe('carouselItemSeed', () => {
 		});
 
 		test('残り1枚のときは削除できない', () => {
-			const data = carouselItemSeed.toEditorState!(
-				createItem().export() as never,
-				testConfig,
-			);
+			const data = carouselItemSeed.toEditorState!(createItem().export(), testConfig);
 
 			expect(removeSlide(data, 0).path).toHaveLength(1);
 		});
 
 		test('並べ替えは端では何もしない', () => {
 			let data = appendSlide(
-				carouselItemSeed.toEditorState!(createItem().export() as never, testConfig),
+				carouselItemSeed.toEditorState!(createItem().export(), testConfig),
 				{ ...DEFAULT_SLIDE },
 			);
 			data = replaceSlide(data, 0, { ...DEFAULT_SLIDE, path: '/a.png' });
@@ -171,7 +168,7 @@ describe('carouselItemSeed', () => {
 
 		test('保存済みHTMLの読み戻しで空文字・0になるSPの値は null に揃える', () => {
 			const [slide] = getSlides({
-				...carouselItemSeed.toEditorState!(createItem().export() as never, testConfig),
+				...carouselItemSeed.toEditorState!(createItem().export(), testConfig),
 				path: ['/pc.png'],
 				spPath: [''],
 				spMedia: [''],
@@ -190,10 +187,7 @@ describe('carouselItemSeed', () => {
 
 	describe('スライドの操作（範囲外・並び）', () => {
 		const threeSlides = () => {
-			let data = carouselItemSeed.toEditorState!(
-				createItem().export() as never,
-				testConfig,
-			);
+			let data = carouselItemSeed.toEditorState!(createItem().export(), testConfig);
 			data = replaceSlide(data, 0, { ...DEFAULT_SLIDE, path: '/a.png' });
 			data = appendSlide(data, { ...DEFAULT_SLIDE, path: '/b.png' });
 			return appendSlide(data, { ...DEFAULT_SLIDE, path: '/c.png' });
@@ -279,7 +273,7 @@ describe('carouselItemSeed', () => {
 			});
 
 			// 全体設定は、テンプレートから読んだ値と、未指定を埋めた値が一致する
-			const fromTemplate = createItem().export() as never as CarouselData;
+			const fromTemplate = createItem().export();
 			const filled = normalizeCarousel({} as never);
 			for (const key of [
 				'autoplay',
@@ -302,10 +296,7 @@ describe('carouselItemSeed', () => {
 			[2.7, 2],
 			[3, 3],
 		])('保存する表示枚数 %s は 1 以上の整数 %s に整える', async (input, expected) => {
-			const base = carouselItemSeed.toEditorState!(
-				createItem().export() as never,
-				testConfig,
-			);
+			const base = carouselItemSeed.toEditorState!(createItem().export(), testConfig);
 
 			const saved = await carouselItemSeed.toItemData!(
 				{ ...base, perView: input },
@@ -318,10 +309,7 @@ describe('carouselItemSeed', () => {
 
 	describe('スライド数', () => {
 		test('path より長い配列があっても、そのスライドの値を捨てない', () => {
-			const base = carouselItemSeed.toEditorState!(
-				createItem().export() as never,
-				testConfig,
-			);
+			const base = carouselItemSeed.toEditorState!(createItem().export(), testConfig);
 
 			const slides = getSlides({
 				...base,
@@ -370,7 +358,7 @@ describe('carouselItemSeed', () => {
 		test('SP画像のあるスライドとないスライドが混在しても、位置がずれない', async () => {
 			const item = await createMixedItem(0);
 
-			const slides = getSlides(item.export() as never as CarouselData);
+			const slides = getSlides(item.export());
 			expect(slides).toHaveLength(2);
 			expect(slides[0]).toMatchObject({
 				path: '/a.png',
@@ -390,9 +378,7 @@ describe('carouselItemSeed', () => {
 			const onceItem = await createMixedItem(0);
 			const twiceItem = await createMixedItem(2);
 
-			expect(getSlides(twiceItem.export() as never as CarouselData)).toStrictEqual(
-				getSlides(onceItem.export() as never as CarouselData),
-			);
+			expect(getSlides(twiceItem.export())).toStrictEqual(getSlides(onceItem.export()));
 		});
 
 		test('SP画像のないスライドの<source>に、空の srcset / media や 0 の width / height を残さない', async () => {
@@ -423,7 +409,7 @@ describe('carouselItemSeed', () => {
 				effect: 'fade',
 			}));
 
-			const data = item.export() as never as CarouselData;
+			const data = item.export();
 			expect(data).toMatchObject({
 				autoplay: true,
 				loop: true,
@@ -451,11 +437,11 @@ describe('carouselItemSeed', () => {
 		test('toItemData を通らない書き込み（エージェント経由）でも、表示枚数は 1 か所にしか無いので食い違わない', () => {
 			const item = createItem();
 
-			item.import({ ...(item.export() as never as CarouselData), perView: 4 } as never);
+			item.import({ ...item.export(), perView: 4 });
 
 			const wrapper = item.el.querySelector<HTMLElement>('[data-bge-autoplay]');
 			expect(wrapper?.getAttribute('style')).toBe('--per-view: 4');
-			expect((item.export() as never as CarouselData).perView).toBe(4);
+			expect(item.export().perView).toBe(4);
 		});
 
 		test('スライドの名前（キャプションの文字、空なら alt）を data-bge-slide-label に保存し、変更に追従する', async () => {
