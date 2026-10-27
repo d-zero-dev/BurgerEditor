@@ -206,7 +206,7 @@ function expectBlockSpec(raw: unknown): BlockSpec {
 			`spec must be a JSON object describing a block (got ${Array.isArray(raw) ? 'array' : raw === null ? 'null' : typeof raw}).`,
 		);
 	}
-	return raw as BlockSpec;
+	return raw;
 }
 
 /**

@@ -14,9 +14,9 @@
  */
 export function silenceStdout(): Disposable {
 	const saved = process.stdout.write;
-	process.stdout.write = ((chunk: string | Uint8Array, ...rest: unknown[]) => {
-		return process.stderr.write(chunk as never, ...(rest as []));
-	}) as typeof process.stdout.write;
+	process.stdout.write = (chunk: string | Uint8Array, ...rest: unknown[]) => {
+		return process.stderr.write(chunk, ...(rest as []));
+	};
 	return {
 		[Symbol.dispose]() {
 			process.stdout.write = saved;

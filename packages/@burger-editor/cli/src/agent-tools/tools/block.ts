@@ -1,5 +1,3 @@
-import type { BlockSpec } from '../../block-builder.js';
-
 import { NoEditableAreaError } from '@burger-editor/core';
 import { loadContent, resolvePathInput, saveContent } from '@burger-editor/file-io';
 import { z } from 'zod';
@@ -47,15 +45,9 @@ export const blockInsertTool = defineAgentTool({
 	annotations: {},
 	async run(ctx, args) {
 		await requireReadToken(ctx, args.path, args.readToken);
-		const write = await h.blockInsert(
-			ctx,
-			args.path,
-			args.index,
-			args.spec as BlockSpec,
-			{
-				dryRun: args.dryRun,
-			},
-		);
+		const write = await h.blockInsert(ctx, args.path, args.index, args.spec, {
+			dryRun: args.dryRun,
+		});
 		if (write.dryRun) {
 			const diff = await buildBlockDiff(
 				ctx,
@@ -86,15 +78,9 @@ export const blockReplaceTool = defineAgentTool({
 		await requireReadToken(ctx, args.path, args.readToken);
 		const blocks = await h.readBlocks(ctx, args.path);
 		const index = h.resolveIndexInBlocks(blocks, args.target, args.path);
-		const write = await h.blockReplace(
-			ctx,
-			args.path,
-			args.target,
-			args.spec as BlockSpec,
-			{
-				dryRun: args.dryRun,
-			},
-		);
+		const write = await h.blockReplace(ctx, args.path, args.target, args.spec, {
+			dryRun: args.dryRun,
+		});
 		if (write.dryRun) {
 			const diff = await buildBlockDiff(
 				ctx,

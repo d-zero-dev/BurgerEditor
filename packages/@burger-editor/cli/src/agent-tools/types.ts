@@ -80,5 +80,5 @@ export function defineAgentTool<Input, Output>(
 				throw toAgentError(error);
 			}
 		},
-	} as AgentTool<unknown, unknown>;
+	};
 }

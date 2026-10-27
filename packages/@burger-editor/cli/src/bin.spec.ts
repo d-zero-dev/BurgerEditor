@@ -387,10 +387,10 @@ describe('bin.js end-to-end', () => {
 		// directly with the same AgentError requireReadToken() throws.
 		const chunks: string[] = [];
 		const original = process.stderr.write;
-		process.stderr.write = ((chunk: string | Uint8Array) => {
+		process.stderr.write = (chunk: string | Uint8Array) => {
 			chunks.push(String(chunk));
 			return true;
-		}) as typeof process.stderr.write;
+		};
 		try {
 			writeErrorJson(
 				new AgentError('read-required', 'Call page_blocks first.', {
