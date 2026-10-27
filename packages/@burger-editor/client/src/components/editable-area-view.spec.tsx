@@ -364,7 +364,7 @@ test('サイズ変化の通知でiframeの高さがコンテンツに追従す�
 
 	const observer = ResizeObserverStub.instances.at(0)!;
 	await act(async () => {
-		observer.callback([], observer as unknown as ResizeObserver);
+		observer.callback([], observer);
 		await new Promise((resolve) => requestAnimationFrame(resolve));
 	});
 
@@ -377,7 +377,7 @@ test('アンマウント前に積まれた高さ更新はアンマウントで�
 	const measure = vi.spyOn(host.containerElement, 'getBoundingClientRect');
 
 	const observer = ResizeObserverStub.instances.at(0)!;
-	observer.callback([], observer as unknown as ResizeObserver);
+	observer.callback([], observer);
 	unmount();
 	await new Promise((resolve) => requestAnimationFrame(resolve));
 
