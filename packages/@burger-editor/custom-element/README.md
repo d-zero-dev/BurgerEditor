@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/@burger-editor%2Fcustom-element.svg)](https://badge.fury.io/js/@burger-editor%2Fcustom-element)
 
-TipTap ベースの WYSIWYG エディタを Web Components（`<bge-wysiwyg-editor>`）として提供。`@burger-editor/blocks` の `wysiwyg` アイテムの編集 UI 実体。
+TipTap ベースの WYSIWYG エディタを Web Components（`<bge-wysiwyg-editor>`）として提供。`@burger-editor/blocks`の`wysiwyg`アイテムの編集 UI 実体。
 
 ## Installation
 
@@ -12,10 +12,10 @@ yarn add @burger-editor/custom-element
 
 ## Related Packages
 
-| パッケージ                            | 関係                                           | 使い分け                                               |
-| ------------------------------------- | ---------------------------------------------- | ------------------------------------------------------ |
-| [`@burger-editor/client`](../client/) | 本要素を内部で利用する完成形のエディタ UI      | 通常はこちらを使う                                     |
-| [`@burger-editor/blocks`](../blocks/) | `wysiwyg` アイテムの編集 UI として本要素を参照 | リッチテキスト編集 UI 単体なら本パッケージのみで足りる |
+| パッケージ                            | 関係                                          | 使い分け                                               |
+| ------------------------------------- | --------------------------------------------- | ------------------------------------------------------ |
+| [`@burger-editor/client`](../client/) | 本要素を内部で利用する完成形のエディタ UI     | 通常はこちらを使う                                     |
+| [`@burger-editor/blocks`](../blocks/) | `wysiwyg`アイテムの編集 UI として本要素を参照 | リッチテキスト編集 UI 単体なら本パッケージのみで足りる |
 
 ## Usage
 
@@ -42,7 +42,7 @@ editor.editor.chain().focus().toggleBold().run(); // TipTap への直接アク�
 
 ## 属性 / プロパティ
 
-### `commands` 属性
+### `commands`属性
 
 カンマ区切りでツールバーに表示するコマンドを指定する。代表的な値:
 
@@ -59,15 +59,15 @@ editor.editor.chain().focus().toggleBold().run(); // TipTap への直接アク�
 
 指定順がそのまま表示順になる。完全な一覧は型定義参照。
 
-### `value` プロパティ
+### `value`プロパティ
 
-- **getter のみ（読み取り専用）**: 現在のエディタ内容を HTML 文字列で返す。TipTap の `editor.getHTML()` 相当だが、本要素の正規化（属性順序・改行など）を経た最終 HTML
-- 内容の書き換えは `innerHTML` への代入で行う。本要素は `innerHTML` に独自 setter を定義しており、TipTap の document state に同期させる（詳細は `docs/API.md`）
+- **getter のみ（読み取り専用）**: 現在のエディタ内容を HTML 文字列で返す。TipTap の`editor.getHTML()`相当だが、本要素の正規化（属性順序・改行など）を経た最終 HTML
+- 内容の書き換えは`innerHTML`への代入で行う。本要素は`innerHTML`に独自 setter を定義しており、TipTap の document state に同期させる（詳細は`docs/API.md`）
 
-### `name` / `item-name` 属性
+### `name` / `item-name`属性
 
 - `name`: フォーム要素としての識別子（複数エディタを区別する用途）
-- `item-name`: ブロックカタログ上のアイテム名（通常 `wysiwyg`）。スタイル適用のための DOM 契約
+- `item-name`: ブロックカタログ上のアイテム名（通常`wysiwyg`）。スタイル適用のための DOM 契約
 
 ## イベント
 
@@ -82,15 +82,15 @@ wysiwyg.addEventListener('bge:structure-change', (event) => {
 });
 ```
 
-発火タイミングの詳細は [`docs/EVENTS.md`](./docs/EVENTS.md) を参照。
+発火タイミングの詳細は[`docs/EVENTS.md`](./docs/EVENTS.md)を参照。
 
 ### `transaction`
 
-TipTap のトランザクション単位で発火するイベント。`event.detail.state` にはノード/マークごとの `{ active, disabled }`（ツールバー向けの状態。TipTap の `EditorState` ではない）が入り、マークアップボタン（太字・斜体など）の押下状態の同期に使う。
+TipTap のトランザクション単位で発火するイベント。`event.detail.state`にはノード/マークごとの`{ active, disabled }`（ツールバー向けの状態。TipTap の`EditorState`ではない）が入り、マークアップボタン（太字・斜体など）の押下状態の同期に使う。
 
 ## スタイル
 
-HTMLモードの内容にデザインモードで表示できない構造が含まれるとき、`<bge-wysiwyg>` は textarea の下に補足メッセージを表示する。これはエラーではなく状態の説明なので、既定ではグレー系の中立色で表示する。色は次の CSS カスタムプロパティで変更できる。
+HTMLモードの内容にデザインモードで表示できない構造が含まれるとき、`<bge-wysiwyg>`は textarea の下に補足メッセージを表示する。これはエラーではなく状態の説明なので、既定ではグレー系の中立色で表示する。色は次の CSS カスタムプロパティで変更できる。
 
 | プロパティ                      | 既定値                             |
 | ------------------------------- | ---------------------------------- |
@@ -106,16 +106,16 @@ bge-wysiwyg {
 
 ## ドキュメント
 
-API リファレンス・イベント仕様・カスタマイズ手順は `docs/` 配下を参照。
+API リファレンス・イベント仕様・カスタマイズ手順は`docs/`配下を参照。
 
 - [`docs/API.md`](./docs/API.md) — プロパティ、メソッド、属性の詳細仕様
-- [`docs/EVENTS.md`](./docs/EVENTS.md) — `transaction` / `bge:structure-change` イベントの仕様
+- [`docs/EVENTS.md`](./docs/EVENTS.md) — `transaction`/`bge:structure-change`イベントの仕様
 - [`docs/CUSTOMIZATION.md`](./docs/CUSTOMIZATION.md) — UI 拡張方法（UI 要素とイベントの対応、初期化パターン）とよくある間違い
 - [`.claude/skills/tiptap-extension/SKILL.md`](https://github.com/d-zero-dev/BurgerEditor/blob/dev/.claude/skills/tiptap-extension/SKILL.md) — 組み込みの TipTap 拡張・ツールバーボタンを本パッケージに追加するコントリビュータ向け手順
 
 ## 実験的機能
 
-`experimental.textOnlyMode` を有効化すると、以下の 3 モードを切り替え可能になる:
+`experimental.textOnlyMode`を有効化すると、以下の 3 モードを切り替え可能になる:
 
 | モード値      | 名称               | 概要                                    |
 | ------------- | ------------------ | --------------------------------------- |
@@ -131,7 +131,7 @@ defineBgeWysiwygEditorElement({
 
 ## ブラウザサポート
 
-ツールバーが Invoker Commands API（`command`/`commandfor`）を使用するため、対応ブラウザが下限（ポリフィルなし）。対応状況は https://caniuse.com/mdn-api_commandevent を参照。
+ツールバーが Invoker Commands API（`command`/`commandfor`）を使用するため、対応ブラウザが下限（ポリフィルなし）。対応状況はhttps://caniuse.com/mdn-api_commandeventを参照。
 
 ## License
 

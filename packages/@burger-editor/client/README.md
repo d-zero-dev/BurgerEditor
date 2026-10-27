@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/@burger-editor%2Fclient.svg)](https://badge.fury.io/js/@burger-editor%2Fclient)
 
-BurgerEditor をブラウザ上の DOM に組み込むための UI レイヤー。React 製の編集 UI（ブロックメニュー・各種ダイアログ・アイテムエディタ）を内部で組み立て、`@burger-editor/core` の編集エンジンに差し込んだ状態でひとつのファクトリ関数として提供する。エンジンは props ドリルではなく `useEngine()`（`EngineContext`）で配布される — item `Editor` を含む配下のコンポーネントはすべてこのフックでエンジンを読む。アイテムエディタ用のフォーム部品とフック群は `@burger-editor/client/ui` として公開される。
+BurgerEditor をブラウザ上の DOM に組み込むための UI レイヤー。React 製の編集 UI（ブロックメニュー・各種ダイアログ・アイテムエディタ）を内部で組み立て、`@burger-editor/core`の編集エンジンに差し込んだ状態でひとつのファクトリ関数として提供する。エンジンは props ドリルではなく`useEngine()`（`EngineContext`）で配布される — item `Editor`を含む配下のコンポーネントはすべてこのフックでエンジンを読む。アイテムエディタ用のフォーム部品とフック群は`@burger-editor/client/ui`として公開される。
 
 ## Installation
 
@@ -10,16 +10,16 @@ BurgerEditor をブラウザ上の DOM に組み込むための UI レイヤー�
 yarn add @burger-editor/client @burger-editor/core @burger-editor/blocks react@19.3.0 react-dom@19.3.0
 ```
 
-`react` と `react-dom` は peerDependencies のため、利用側でインストールする（client は React を同梱しない）。アプリのバンドルには React が 1 つだけ含まれるようにする。標準アイテムを使う場合、`items` は `@burger-editor/blocks/editor` から import する（`@burger-editor/blocks` のルートは `Editor` を含まない）。
+`react`と`react-dom`は peerDependencies のため、利用側でインストールする（client は React を同梱しない）。アプリのバンドルには React が 1 つだけ含まれるようにする。標準アイテムを使う場合、`items`は`@burger-editor/blocks/editor`から import する（`@burger-editor/blocks`のルートは`Editor`を含まない）。
 
 ## Related Packages
 
-| パッケージ                    | 関係     | このパッケージとの使い分け                                            |
-| ----------------------------- | -------- | --------------------------------------------------------------------- |
-| `@burger-editor/core`         | 依存元   | 編集エンジンと HTML 契約。ブラウザ以外で使うなら core 単体で十分      |
-| `@burger-editor/blocks`       | 依存元   | 標準ブロック / アイテム。独自カタログのみなら不要                     |
-| `@burger-editor/migrator`     | 連携     | データバージョン移行。client から `Migrator` として再エクスポート済み |
-| `@burger-editor/frozen-patty` | 間接依存 | core 経由で HTML ⇄ JSON 変換に利用。直接の API 利用は不要             |
+| パッケージ                    | 関係     | このパッケージとの使い分け                                          |
+| ----------------------------- | -------- | ------------------------------------------------------------------- |
+| `@burger-editor/core`         | 依存元   | 編集エンジンと HTML 契約。ブラウザ以外で使うなら core 単体で十分    |
+| `@burger-editor/blocks`       | 依存元   | 標準ブロック / アイテム。独自カタログのみなら不要                   |
+| `@burger-editor/migrator`     | 連携     | データバージョン移行。client から`Migrator`として再エクスポート済み |
+| `@burger-editor/frozen-patty` | 間接依存 | core 経由で HTML ⇄ JSON 変換に利用。直接の API 利用は不要           |
 
 ブラウザで編集 UI を組み込むなら client、Node 単体レンダリングや非ブラウザ環境なら core を直接使う、と判断する。
 
@@ -42,9 +42,9 @@ const { engine } = await createBurgerEditorClient({
 });
 ```
 
-`options` は `BurgerEditorEngineOptions` から `view` を除いた型。`view`（`BurgerEditorView`）は client が **React 実装で内部的に注入**するため、利用側で渡してはいけない。加えて client はエンジンコマンドのディスパッチテーブル（`registerEngineCommands`）を登録し、ダイアログ群を `engine.uiState` から宣言的にレンダリングするルートをマウントする。
+`options`は`BurgerEditorEngineOptions`から`view`を除いた型。`view`（`BurgerEditorView`）は client が **React 実装で内部的に注入**するため、利用側で渡してはいけない。加えて client はエンジンコマンドのディスパッチテーブル（`registerEngineCommands`）を登録し、ダイアログ群を`engine.uiState`から宣言的にレンダリングするルートをマウントする。
 
-## `createBurgerEditorClient` オプション
+## `createBurgerEditorClient`オプション
 
 ### 必須プロパティ
 
@@ -69,31 +69,31 @@ const { engine } = await createBurgerEditorClient({
 | `healthCheck`       | `HealthCheckOptions`                                      | ヘルスチェックの設定                           |
 | `experimental`      | `ExperimentalOptions`                                     | 実験的機能の設定                               |
 
-### `config` 配下のキー
+### `config`配下のキー
 
-| キー               | 型                                               | 説明                                                                                                                                          |
-| ------------------ | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `classList`        | `string[]`                                       | ブロックに適用する CSS クラスの配列                                                                                                           |
-| `stylesheets`      | `(string \| { path: string; layer?: string })[]` | 読み込むスタイルシート。`CSS_LAYER` でレイヤー指定可（core より緩い受容形式： `string` を許す。内部で `{ path, layer? }` 形式に正規化される） |
-| `sampleImagePath`  | `string`                                         | サンプル画像のパス                                                                                                                            |
-| `sampleFilePath`   | `string`                                         | サンプルファイルのパス                                                                                                                        |
-| `googleMapsApiKey` | `string \| null`                                 | Google Maps API キー（マップ機能を使う場合のみ）                                                                                              |
-| `experimental`     | `object`                                         | 実験的な機能の設定（オプション）                                                                                                              |
+| キー               | 型                                               | 説明                                                                                                                                      |
+| ------------------ | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `classList`        | `string[]`                                       | ブロックに適用する CSS クラスの配列                                                                                                       |
+| `stylesheets`      | `(string \| { path: string; layer?: string })[]` | 読み込むスタイルシート。`CSS_LAYER`でレイヤー指定可（core より緩い受容形式： `string`を許す。内部で`{ path, layer? }`形式に正規化される） |
+| `sampleImagePath`  | `string`                                         | サンプル画像のパス                                                                                                                        |
+| `sampleFilePath`   | `string`                                         | サンプルファイルのパス                                                                                                                    |
+| `googleMapsApiKey` | `string \| null`                                 | Google Maps API キー（マップ機能を使う場合のみ）                                                                                          |
+| `experimental`     | `object`                                         | 実験的な機能の設定（オプション）                                                                                                          |
 
 ## その他のエクスポート
 
-| 名前                          | 種別   | 説明                                                                                   |
-| ----------------------------- | ------ | -------------------------------------------------------------------------------------- |
-| `attachDraftSwitcher(engine)` | 関数   | 下書き切り替え UI を手動でアタッチ。`engine.hasDraft()` が `true` の場合のみ UI を生成 |
-| `version`                     | 定数   | パッケージのバージョン文字列                                                           |
-| `Migrator`                    | クラス | `@burger-editor/migrator` の re-export                                                 |
-| `getConfig()`                 | 関数   | `@deprecated` — 後述                                                                   |
+| 名前                          | 種別   | 説明                                                                                |
+| ----------------------------- | ------ | ----------------------------------------------------------------------------------- |
+| `attachDraftSwitcher(engine)` | 関数   | 下書き切り替え UI を手動でアタッチ。`engine.hasDraft()`が`true`の場合のみ UI を生成 |
+| `version`                     | 定数   | パッケージのバージョン文字列                                                        |
+| `Migrator`                    | クラス | `@burger-editor/migrator`の re-export                                               |
+| `getConfig()`                 | 関数   | `@deprecated` — 後述                                                                |
 
-### `getConfig()` が非推奨である理由
+### `getConfig()`が非推奨である理由
 
-`getConfig()` は単一の `Config` 型を返す前提で実装されているが、現行設計ではプラットフォーム（client / 他プラットフォーム）ごとに `Config` 型の構造が異なる。グローバル参照として使うと型が一致しないケースが発生し、実行時エラー・型不整合の温床になる。
+`getConfig()`は単一の`Config`型を返す前提で実装されているが、現行設計ではプラットフォーム（client/他プラットフォーム）ごとに`Config`型の構造が異なる。グローバル参照として使うと型が一致しないケースが発生し、実行時エラー・型不整合の温床になる。
 
-**代替手段**: 起動時に得られる `engine.config` を直接参照すること。`engine` はそのプラットフォーム向けに型付けされた `config` を保持しているため、整合性が保たれる。
+**代替手段**: 起動時に得られる`engine.config`を直接参照すること。`engine`はそのプラットフォーム向けに型付けされた`config`を保持しているため、整合性が保たれる。
 
 ```ts
 const { engine } = await createBurgerEditorClient({/* ... */});
@@ -101,9 +101,9 @@ const { engine } = await createBurgerEditorClient({/* ... */});
 const stylesheets = engine.config.stylesheets;
 ```
 
-## `FileAPI` の実装例
+## `FileAPI`の実装例
 
-ファイルアップロード機能を有効にする場合、`fileIO` プロパティに以下のインタフェースを満たす実装を渡す。各メソッドはすべて optional で、提供したメソッドに対応する UI 機能（ファイル一覧表示・アップロード・削除）だけが有効になる。
+ファイルアップロード機能を有効にする場合、`fileIO`プロパティに以下のインタフェースを満たす実装を渡す。各メソッドはすべて optional で、提供したメソッドに対応する UI 機能（ファイル一覧表示・アップロード・削除）だけが有効になる。
 
 ```ts
 import type { FileAPI } from '@burger-editor/core';
@@ -133,14 +133,14 @@ const fileIO: FileAPI = {
 
 ブロック単位のコピー & ペーストを sessionStorage 経由で提供する。タブを閉じると消去され、ペースト後はクリップボードが自動的にクリアされる。
 
-| 項目     | 値                                                                |
-| -------- | ----------------------------------------------------------------- |
-| 保存形式 | JSON（`BlockData`）                                               |
-| 保存先   | `sessionStorage`                                                  |
-| 有効期限 | ブラウザセッション内のみ                                          |
-| 既定キー | `engine.storageKey.blockClipboard`（既定値 `'bge-copied-block'`） |
+| 項目     | 値                                                               |
+| -------- | ---------------------------------------------------------------- |
+| 保存形式 | JSON（`BlockData`）                                              |
+| 保存先   | `sessionStorage`                                                 |
+| 有効期限 | ブラウザセッション内のみ                                         |
+| 既定キー | `engine.storageKey.blockClipboard`（既定値`'bge-copied-block'`） |
 
-カスタムキーを使うには `storageKey.blockClipboard` を上書きする。
+カスタムキーを使うには`storageKey.blockClipboard`を上書きする。
 
 ```ts
 await createBurgerEditorClient({
@@ -151,18 +151,18 @@ await createBurgerEditorClient({
 });
 ```
 
-デフォルトのまま複数のエディタを共存させると、クリップボードは共有される（片方でコピーしたブロックをもう片方に貼り付けられる）。分離したい場合のみ `storageKey.blockClipboard` をエンジンごとに別値にする。
+デフォルトのまま複数のエディタを共存させると、クリップボードは共有される（片方でコピーしたブロックをもう片方に貼り付けられる）。分離したい場合のみ`storageKey.blockClipboard`をエンジンごとに別値にする。
 
 ## 複数エディタの共存
 
-同一 document に `createBurgerEditorClient` を複数回呼んでも動作する。各呼び出しの `root` には同じセレクタで両方が同じ要素に解決されないよう、別々の要素（または別々のセレクタ）を渡す。
+同一 document に`createBurgerEditorClient`を複数回呼んでも動作する。各呼び出しの`root`には同じセレクタで両方が同じ要素に解決されないよう、別々の要素（または別々のセレクタ）を渡す。
 
 ```ts
 const editorA = await createBurgerEditorClient({ root: document.querySelector('#editor-a')!, ... });
 const editorB = await createBurgerEditorClient({ root: document.querySelector('#editor-b')!, ... });
 ```
 
-`attachDraftSwitcher(engine)` はエンジンごとに個別に呼ぶ。コマンドバス（`commandfor` の配送先）はエンジンごとに一意な ID を持つため、片方のツールバー操作がもう片方のエンジンに誤って作用することはない。WYSIWYG（`bge-wysiwyg-editor`）の `classList` / `experimental.itemOptions.wysiwyg.enableTextOnlyMode` は document 単位で共有される（詳細は `@burger-editor/custom-element` の `defineBgeWysiwygEditorElement` の JSDoc を参照）。
+`attachDraftSwitcher(engine)`はエンジンごとに個別に呼ぶ。コマンドバス（`commandfor`の配送先）はエンジンごとに一意な ID を持つため、片方のツールバー操作がもう片方のエンジンに誤って作用することはない。WYSIWYG（`bge-wysiwyg-editor`）の`classList`/`experimental.itemOptions.wysiwyg.enableTextOnlyMode`は document 単位で共有される（詳細は`@burger-editor/custom-element`の`defineBgeWysiwygEditorElement`の JSDoc を参照）。
 
 ## License
 

@@ -17,11 +17,11 @@ const params = parseSearchQuery('margin=normal');
 const matches = await scanHtmlFiles('/path/to/documentRoot', params);
 ```
 
-クエリ形式: `key=value`（完全一致）、`key=*`（ワイルドカード）、`key=a,b`（OR）。AND 検索は `scanHtmlFilesWithMultipleQueries`。
+クエリ形式: `key=value`（完全一致）、`key=*`（ワイルドカード）、`key=a,b`（OR）。AND 検索は`scanHtmlFilesWithMultipleQueries`。
 
 ## jsdom 互換シム
 
-jsdom の `CSSStyleDeclaration` は iterable ではないため、`@burger-editor/core` の `exportStyleOptions` 等をそのまま使うには Proxy ラップが必要:
+jsdom の`CSSStyleDeclaration`は iterable ではないため、`@burger-editor/core`の`exportStyleOptions`等をそのまま使うには Proxy ラップが必要:
 
 ```ts
 import { proxyJsdomElementForIterableStyle } from '@burger-editor/inspector';

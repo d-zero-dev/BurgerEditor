@@ -8,7 +8,7 @@ BurgerEditorは、プラットフォーム非依存のブロックエディタ�
 
 ### 🏗️ CMS実装者向け
 
-既存のCMSやWebアプリケーションにBurgerEditorを統合したい開発者の方は、[@burger-editor/client](./packages/@burger-editor/client/) のREADMEをご覧ください。
+既存のCMSやWebアプリケーションにBurgerEditorを統合したい開発者の方は、[@burger-editor/client](./packages/@burger-editor/client/)のREADMEをご覧ください。
 
 **主な内容:**
 
@@ -18,7 +18,7 @@ BurgerEditorは、プラットフォーム非依存のブロックエディタ�
 
 ### 🖥️ Local App利用者向け
 
-ローカルファイルシステムでBurgerEditorを使いたい方は、[@burger-editor/local](./packages/@burger-editor/local/) のREADMEをご覧ください。
+ローカルファイルシステムでBurgerEditorを使いたい方は、[@burger-editor/local](./packages/@burger-editor/local/)のREADMEをご覧ください。
 
 **主な内容:**
 
@@ -31,15 +31,15 @@ BurgerEditorは、プラットフォーム非依存のブロックエディタ�
 Claude Code 等の AI エージェント、または非対話なスクリプトからページ・ブロックを編集したい方は次を参照してください：
 
 - [@burger-editor/cli](./packages/@burger-editor/cli/) — JSON-only な CLI（`npx @burger-editor/cli <subcommand>`）
-- [@burger-editor/mcp-server](./packages/@burger-editor/mcp-server/) — Model Context Protocol サーバー。v3 / v4 両対応
+- [@burger-editor/mcp-server](./packages/@burger-editor/mcp-server/) — Model Context Protocol サーバー。v3/v4 両対応
 - [skills/editing-burger-editor-pages/](./skills/editing-burger-editor-pages/) — 既存ページのブロック編集向け SKILL
 - [skills/building-burger-editor-projects/](./skills/building-burger-editor-projects/) — プロジェクト構築・カスタムブロック向け SKILL
 
-`npx skills add d-zero-dev/BurgerEditor --skill editing-burger-editor-pages` のように `--skill` で個別に導入できます（省略すると両方が導入対象になります）。
+`npx skills add d-zero-dev/BurgerEditor --skill editing-burger-editor-pages`のように`--skill`で個別に導入できます（省略すると両方が導入対象になります）。
 
 **主な内容:**
 
-- CLI / MCP 経由のページ・ブロック操作（create/read/update/delete）
+- CLI/MCP 経由のページ・ブロック操作（create/read/update/delete）
 - カタログ・アイテム・スタイルオプションのスキーマ取得
 - 設定ファイル（`burgereditor.config.js`）の自動解決（cosmiconfig が親ディレクトリを walk-up）
 
@@ -82,8 +82,8 @@ yarn lint
 yarn storybook  # 管理画面 UI のカタログ
 ```
 
-- コミットメッセージは [Conventional Commits](https://www.conventionalcommits.org/) の形式に従ってください（`yarn commit`）
-- PR は `dev` ブランチへ向けてください
+- コミットメッセージは[Conventional Commits](https://www.conventionalcommits.org/)の形式に従ってください（`yarn commit`）
+- PR は`dev`ブランチへ向けてください
 
 ## License
 

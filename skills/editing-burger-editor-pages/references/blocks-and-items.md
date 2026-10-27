@@ -2,7 +2,7 @@
 
 ## spec は「テンプレートを引いて値だけ差し替える」が基本
 
-`block_insert` / `block_replace` / `page_create` の `blocks` に渡す spec の形:
+`block_insert`/`block_replace`/`page_create`の`blocks`に渡す spec の形:
 
 ```ts
 {
@@ -15,7 +15,7 @@
 }
 ```
 
-最も安全な作り方は、この spec を自分で組み立てず **`catalog_get({ name })` の `template` をそのまま使う**こと。`template` は該当カタログブロックの `items` を `{name, data}` 形式に展開済みで、**全データキーが空文字で埋まっている**ので、値を差し替えるだけで済む。
+最も安全な作り方は、この spec を自分で組み立てず **`catalog_get({ name })`の`template`をそのまま使う**こと。`template`は該当カタログブロックの`items`を`{name, data}`形式に展開済みで、**全データキーが空文字で埋まっている**ので、値を差し替えるだけで済む。
 
 ```jsonc
 // catalog_get({ name: "h2" }).template の例
@@ -28,12 +28,12 @@
 
 ## `data-bge` → camelCase 変換規則
 
-アイテムの data キーは、そのアイテムの template HTML にある `data-bge="xxx-yyy"` を **frozen-patty が camelCase 化した文字列**（`xxx-yyy` → `xxxYyy`、`abc` → `abc`）。**レンダリング済みのテキストから推測しない** — 同じ見た目でも、プロジェクトによって別のアイテム型・別のデータ形が使われていることがある。
+アイテムの data キーは、そのアイテムの template HTML にある`data-bge="xxx-yyy"`を **frozen-patty が camelCase 化した文字列**（`xxx-yyy` → `xxxYyy`、`abc` → `abc`）。**レンダリング済みのテキストから推測しない** — 同じ見た目でも、プロジェクトによって別のアイテム型・別のデータ形が使われていることがある。
 
 確認する方法は 2 つ:
 
-- 既に類似ブロックがページにあるなら、`block_get({ path, target, readToken })` で `data.items[グループ][アイテム].data` の実キーを読む
-- なければ `item_schema({ name })` → `dataKeys`（確定済み camelCase 配列）
+- 既に類似ブロックがページにあるなら、`block_get({ path, target, readToken })`で`data.items[グループ][アイテム].data`の実キーを読む
+- なければ`item_schema({ name })` → `dataKeys`（確定済み camelCase 配列）
 
 | アイテム名 | データキー例                                                                                                           |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------- |
@@ -43,24 +43,24 @@
 | `image`    | `alt, aspectRatio, caption, command, height, href, loading, media, node, path, scale, scaleType, style, target, width` |
 | `button`   | `link, target, kind, beforeIcon, afterIcon, text, subtext`                                                             |
 
-`button` のように見た目が単純でもデータの形が非自明なアイテムがあるため、迷ったら必ず `item_schema` で確認する。
+`button`のように見た目が単純でもデータの形が非自明なアイテムがあるため、迷ったら必ず`item_schema`で確認する。
 
-`carousel` はスライド 1 枚につき、`path` `alt` `caption` などのスライドごとのキーが 1 要素ずつ並ぶ配列になる。**すべてのキーの配列を同じ長さにそろえる**。短い配列は、足りない位置が 0 番目の値で埋まり、意図しない複製になる。スライドは最低 1 枚。`item_update` で書く前に `item_schema` と、現在のデータの各配列の長さを確認する。`slideLabel` はキャプション（空なら `alt`）から導かれる値で、エディタでの保存と公開ページのランタイムが導き直す。ただし `item_update` は導き直さないので、スライドを足すときは `slideLabel` も同じ長さにそろえ、そのスライドのキャプション（空なら `alt`）を書く（短いままだと、足りない位置が 0 番目の名前で埋まる）。
+`carousel`はスライド 1 枚につき、`path` `alt` `caption`などのスライドごとのキーが 1 要素ずつ並ぶ配列になる。**すべてのキーの配列を同じ長さにそろえる**。短い配列は、足りない位置が 0 番目の値で埋まり、意図しない複製になる。スライドは最低 1 枚。`item_update`で書く前に`item_schema`と、現在のデータの各配列の長さを確認する。`slideLabel`はキャプション（空なら`alt`）から導かれる値で、エディタでの保存と公開ページのランタイムが導き直す。ただし`item_update`は導き直さないので、スライドを足すときは`slideLabel`も同じ長さにそろえ、そのスライドのキャプション（空なら`alt`）を書く（短いままだと、足りない位置が 0 番目の名前で埋まる）。
 
-**`alt` は空にしない場合がある。** `item_update` は検査しないが、空のままだと、人が編集画面でそのアイテムを開いて「決定」するときに、確定を拒まれる。`alt=""` は装飾的な画像を意味して支援技術に無視されるので、リンクやボタンの中では名前が無くなるためである。
+**`alt`は空にしない場合がある。** `item_update`は検査しないが、空のままだと、人が編集画面でそのアイテムを開いて「決定」するときに、確定を拒まれる。`alt=""`は装飾的な画像を意味して支援技術に無視されるので、リンクやボタンの中では名前が無くなるためである。
 
-- `image` で `href` を入れるか `command: "show-modal"`（ポップアップ）にするときは、リンク先や動作が分かる `alt` を必ず書く
-- `carousel` は、スライドごとに `caption` か `alt` のどちらかを必ず書く（リンク・ポップアップのスライドは `alt`）
+- `image`で`href`を入れるか`command: "show-modal"`（ポップアップ）にするときは、リンク先や動作が分かる`alt`を必ず書く
+- `carousel`は、スライドごとに`caption`か`alt`のどちらかを必ず書く（リンク・ポップアップのスライドは`alt`）
 
 ## このプロジェクトの既定カタログ名（差し替え可能）
 
-`h2` `h3` `wysiwyg` `image` `carousel` `disclosure` `table` `youtube` `image-text` `text-image-text` `text-float-image-end` `text-float-image-start` `text-start-image-end` `image-start-text-end` `button` `file` `content-navigation` `google-maps` `hr` は組み込みの既定値であり、プロジェクトが差し替えている場合がある。**必ず `catalog_list` で実在するカタログを確認する。** `catalog_list` の戻りはカテゴリ名を含む — カテゴリ名は日本語（「見出し」「基本ブロック」等）で定義されていることが多い。
+`h2` `h3` `wysiwyg` `image` `carousel` `disclosure` `table` `youtube` `image-text` `text-image-text` `text-float-image-end` `text-float-image-start` `text-start-image-end` `image-start-text-end` `button` `file` `content-navigation` `google-maps` `hr`は組み込みの既定値であり、プロジェクトが差し替えている場合がある。**必ず`catalog_list`で実在するカタログを確認する。** `catalog_list`の戻りはカテゴリ名を含む — カテゴリ名は日本語（「見出し」「基本ブロック」等）で定義されていることが多い。
 
 ## `page_blocks` 2 回目の絞り込み
 
-2 回目の呼び出しは任意で `filter: { text, regex, blockName, itemName, headingLevel }` と `range: { from, to }` を受け付ける。これ以外の検索手段は無いので、複数候補が残る場合は自分で一覧を読んで判断するか、ユーザーに選ばせる。1 回目のレスポンスの `recommendation` が `filter-first`（ブロック数が多いページ）なら、素の一覧取得より先にこれらの絞り込みを使うことを検討する。
+2 回目の呼び出しは任意で`filter: { text, regex, blockName, itemName, headingLevel }`と`range: { from, to }`を受け付ける。これ以外の検索手段は無いので、複数候補が残る場合は自分で一覧を読んで判断するか、ユーザーに選ばせる。1 回目のレスポンスの`recommendation`が`filter-first`（ブロック数が多いページ）なら、素の一覧取得より先にこれらの絞り込みを使うことを検討する。
 
-`blocks[]` の各要素（`BlockSummary`）:
+`blocks[]`の各要素（`BlockSummary`）:
 
 ```ts
 { index, id: string | null, name, itemNames: string[],
@@ -70,4 +70,4 @@
   hasImage: boolean, hasLink: boolean }
 ```
 
-`id` が `null` のブロックを `target: { id }` で指したいときは、先に `block_ensure_id` を呼んで安定 id（`bge-<n>`）を付与する。**`block_duplicate` で複製したブロックには id が付かない**ので、複製後にそれを id で指すなら追加で `block_ensure_id` を呼ぶ。
+`id`が`null`のブロックを`target: { id }`で指したいときは、先に`block_ensure_id`を呼んで安定 id（`bge-<n>`）を付与する。**`block_duplicate`で複製したブロックには id が付かない**ので、複製後にそれを id で指すなら追加で`block_ensure_id`を呼ぶ。

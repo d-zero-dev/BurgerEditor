@@ -2,9 +2,9 @@
 
 [![npm version](https://badge.fury.io/js/@burger-editor%2Flocal.svg)](https://badge.fury.io/js/@burger-editor%2Flocal)
 
-ローカルファイルシステム上の HTML を **開発者・編集者がブラウザ UI で WYSIWYG 編集** するための BurgerEditor CMS 実装。Hono ベースの HTTP サーバー + Vite でビルドした `@burger-editor/client` (React) UI を `bge`（`@burger-editor/local` の bin）一発で起動する。
+ローカルファイルシステム上の HTML を **開発者・編集者がブラウザ UI で WYSIWYG 編集** するための BurgerEditor CMS 実装。Hono ベースの HTTP サーバー + Vite でビルドした`@burger-editor/client` (React) UI を`bge`（`@burger-editor/local`の bin）一発で起動する。
 
-ファイル I/O / 設定解決 / virtual-path-resolver / Front Matter の本体は [`@burger-editor/file-io`](../file-io/) にあり、`local` はそれを利用・再エクスポートする。
+ファイル I/O/設定解決/virtual-path-resolver/Front Matter の本体は[`@burger-editor/file-io`](../file-io/)にあり、`local`はそれを利用・再エクスポートする。
 
 ## Quick Start
 
@@ -12,7 +12,7 @@
 yarn add -D @burger-editor/local
 ```
 
-プロジェクトルートに `burgereditor.config.js` を 1 ファイル置く（最小構成）:
+プロジェクトルートに`burgereditor.config.js`を 1 ファイル置く（最小構成）:
 
 ```js
 /** @type {import('@burger-editor/local').LocalServerConfigUserSettings} */
@@ -29,19 +29,19 @@ npx bge
 # → http://localhost:5255 が自動で開く
 ```
 
-`./src/*.html` がそのまま編集対象になる。終了は Ctrl-C。
+`./src/*.html`がそのまま編集対象になる。終了は Ctrl-C。
 
 ## Related Packages
 
-| パッケージ                                        | 役割                                                     | このパッケージ単独で足りるケース                                                      |
-| ------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| [`@burger-editor/local`](./) **（本パッケージ）** | ブラウザ UI + HTTP サーバー                              | 編集者が GUI で操作するだけなら本パッケージのみ                                       |
-| [`@burger-editor/cli`](../cli/)                   | 非対話 CLI（`npx @burger-editor/cli <subcommand>`）      | スクリプト・CI から JSON 入出力で操作したいときに追加で使う。`local` と同じ設定を参照 |
-| [`@burger-editor/mcp-server`](../mcp-server/)     | MCP サーバー（Claude / Cursor 等からの自然言語操作）     | AI エージェントから操作したいときに追加で使う。内部で `cli` のハンドラを再利用        |
-| [`@burger-editor/core`](../core/)                 | エディタエンジン本体・カスタムアイテム実装基盤           | 独自ブロック / アイテムを開発するときに追加で使う                                     |
-| [`@burger-editor/file-io`](../file-io/)           | ファイル I/O・virtual-path-resolver・Front Matter の本体 | 本パッケージが内部利用。直接依存する必要はない（`local` から re-export される）       |
+| パッケージ                                        | 役割                                                     | このパッケージ単独で足りるケース                                                     |
+| ------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| [`@burger-editor/local`](./) **（本パッケージ）** | ブラウザ UI + HTTP サーバー                              | 編集者が GUI で操作するだけなら本パッケージのみ                                      |
+| [`@burger-editor/cli`](../cli/)                   | 非対話 CLI（`npx @burger-editor/cli <subcommand>`）      | スクリプト・CI から JSON 入出力で操作したいときに追加で使う。`local`と同じ設定を参照 |
+| [`@burger-editor/mcp-server`](../mcp-server/)     | MCP サーバー（Claude / Cursor 等からの自然言語操作）     | AI エージェントから操作したいときに追加で使う。内部で`cli`のハンドラを再利用         |
+| [`@burger-editor/core`](../core/)                 | エディタエンジン本体・カスタムアイテム実装基盤           | 独自ブロック / アイテムを開発するときに追加で使う                                    |
+| [`@burger-editor/file-io`](../file-io/)           | ファイル I/O・virtual-path-resolver・Front Matter の本体 | 本パッケージが内部利用。直接依存する必要はない（`local`から re-export される）       |
 
-依存方向: `local` → `core` / `file-io` / `blocks`。`cli` と `mcp-server` は `local` には依存せず、同じ `burgereditor.config.js` を読む。
+依存方向: `local` → `core`/`file-io`/`blocks`。`cli`と`mcp-server`は`local`には依存せず、同じ`burgereditor.config.js`を読む。
 
 ## Installation
 
@@ -58,20 +58,20 @@ npx bge search --help
 npx bge --config ./burgereditor.child.config.js   # 設定ファイルを指定して起動（後述）
 ```
 
-`--config <path>` は `bge` と `bge search` のどちらにも使える。
+`--config <path>`は`bge`と`bge search`のどちらにも使える。
 
-### `bge search` クエリ形式
+### `bge search`クエリ形式
 
 - `{category}={value}` — シンプル
 - `{category}=*` — ワイルドカード
 - `{category}={v1,v2,...}` — OR
 - 複数クエリ — AND（同じ要素にすべてマッチ）
 
-`--url` で `http://localhost:5255/file.html:354` 形式の出力に切替。デフォルトは絶対パス + 行番号。
+`--url`で`http://localhost:5255/file.html:354`形式の出力に切替。デフォルトは絶対パス + 行番号。
 
 ## `burgereditor.config.js`
 
-プロジェクトルートに置く。cosmiconfig が `package.json` を持つ祖先まで遡って検索する。探索で見つかるのは `.js` / `.mjs` / `.ts` / `.cjs`（`burgereditor.config.json` は探索対象外で、`--config` で直接指定すれば読める）。
+プロジェクトルートに置く。cosmiconfig が`package.json`を持つ祖先まで遡って検索する。探索で見つかるのは`.js`/`.mjs`/`.ts`/`.cjs`（`burgereditor.config.json`は探索対象外で、`--config`で直接指定すれば読める）。
 
 ### 必須
 
@@ -86,15 +86,15 @@ npx bge --config ./burgereditor.child.config.js   # 設定ファイルを指定�
 | ------------------- | ------------------------------------------------------------------ | --------------------------------------------------- | -------------------------------------------- |
 | `version`           | `string`                                                           | `'0.0.0-unknown'`                                   | 設定ファイルのバージョン                     |
 | `port`              | `number`                                                           | `5255`                                              | サーバーポート                               |
-| `host`              | `` 'localhost' \| `${number}.${number}.${number}.${number}` ``     | `'localhost'`                                       | ホスト名（`0.0.0.0` / `::` は設定エラー）    |
+| `host`              | `` 'localhost' \| `${number}.${number}.${number}.${number}` ``     | `'localhost'`                                       | ホスト名（`0.0.0.0` / `::`は設定エラー）     |
 | `lang`              | `string`                                                           | `'en'`                                              | エディタ UI 言語                             |
 | `stylesheets`       | `string[]`                                                         | `[]`                                                | 編集領域にロードする CSS                     |
 | `classList`         | `string[]`                                                         | `[]`                                                | 編集領域ルートに付与するクラス               |
 | `editableArea`      | `string \| null`                                                   | `null`                                              | 編集可能エリアのセレクタ                     |
-| `indexFileName`     | `string`                                                           | `'index.html'`                                      | `/` で終わるパスのインデックスファイル名     |
+| `indexFileName`     | `string`                                                           | `'index.html'`                                      | `/`で終わるパスのインデックスファイル名      |
 | `catalog`           | `BlockCatalog`                                                     | `defaultCatalog`                                    | ブロックカタログ                             |
 | `newFileContent`    | `string`                                                           | `''`                                                | 新規ページのひな型。初回保存時に作成         |
-| `filesDir`          | `string \| FileDirSettings \| { image, pdf, video, audio, other }` | `assetsRoot` 配下                                   | アップロード先ディレクトリ（タイプ別指定可） |
+| `filesDir`          | `string \| FileDirSettings \| { image, pdf, video, audio, other }` | `assetsRoot`配下                                    | アップロード先ディレクトリ（タイプ別指定可） |
 | `sampleImagePath`   | `` `/${string}` \| `https://${string}` \| `base64:${string}` ``    | `${filesDir.image.clientPath}/sample.png`           | サンプル画像のパス                           |
 | `sampleFilePath`    | 同上                                                               | `${filesDir.other.clientPath}/sample.pdf`           | サンプルファイルのパス                       |
 | `googleMapsApiKey`  | `string \| null`                                                   | `null`                                              | Google Maps API キー                         |
@@ -105,11 +105,11 @@ npx bge --config ./burgereditor.child.config.js   # 設定ファイルを指定�
 | `experimental`      | `{ itemOptions?: { button?, wysiwyg? } }`                          | `undefined`                                         | 実験的機能（後述）                           |
 | `agent`             | `{ enabled }`                                                      | `{ enabled: true }`                                 | Agent Hub（後述）の有効 / 無効               |
 
-> `config` はクライアント側にもそのまま埋め込まれるため、シリアライズ可能な値のみ受け付ける。
+> `config`はクライアント側にもそのまま埋め込まれるため、シリアライズ可能な値のみ受け付ける。
 
 ### TypeScript 型補完
 
-`.js` 設定でも JSDoc `@type` で型補完が効く。
+`.js`設定でも JSDoc `@type`で型補完が効く。
 
 ```js
 /** @type {import('@burger-editor/local').LocalServerConfigUserSettings} */
@@ -128,14 +128,14 @@ npx bge --config ./burgereditor.child.config.js
 BGE_CONFIG=./burgereditor.child.config.js npx bge
 ```
 
-- **優先順位**: `--config` → 環境変数 `BGE_CONFIG` → `burgereditor.config.*` の探索
-- **ファイル名は任意**: `burgereditor.config.*` である必要はない。拡張子（`.js` / `.mjs` / `.cjs` / `.ts` / `.json` / `.yaml` など）で読み込み方が決まる
-- **相対パスの基準**: 指定したパス自体はカレントディレクトリ基準。設定ファイル内の `documentRoot` などは、探索で見つかった場合と同じく設定ファイルのディレクトリ基準
+- **優先順位**: `--config` → 環境変数`BGE_CONFIG` → `burgereditor.config.*`の探索
+- **ファイル名は任意**: `burgereditor.config.*`である必要はない。拡張子（`.js`/`.mjs`/`.cjs`/`.ts`/`.json`/`.yaml`など）で読み込み方が決まる
+- **相対パスの基準**: 指定したパス自体はカレントディレクトリ基準。設定ファイル内の`documentRoot`などは、探索で見つかった場合と同じく設定ファイルのディレクトリ基準
 - **ファイルが無いときはエラー終了**: 指定したファイルが存在しない場合、既定値で起動せずに終了する
-- **確認方法**: 起動バナーの `Config:` 行に読み込んだ設定ファイルが表示される
-- **cli / mcp-server**: どちらも同じく `--config` と `BGE_CONFIG` を受け付ける（[cli の README](../cli/README.md#設定ファイルを指定する)、[mcp-server の README](../mcp-server/README.md#起動オプション) を参照）
+- **確認方法**: 起動バナーの`Config:`行に読み込んだ設定ファイルが表示される
+- **cli / mcp-server**: どちらも同じく`--config`と`BGE_CONFIG`を受け付ける（[cli の README](../cli/README.md#設定ファイルを指定する)、[mcp-server の README](../mcp-server/README.md#起動オプション)を参照）
 
-2 つのサイトを同時に起動する場合は、どちらかの設定で `port` を変える（既定はどちらも `5255`）。
+2 つのサイトを同時に起動する場合は、どちらかの設定で`port`を変える（既定はどちらも`5255`）。
 
 ```js
 // burgereditor.child.config.js
@@ -147,20 +147,20 @@ export default {
 };
 ```
 
-- 子サイトが本体の `documentRoot` の配下にある場合、本体側のページツリーには子サイトのページも表示される
-- `host` をループバック以外（LAN IP）にして 2 つ同時に起動する場合は、設定ファイルを別々のディレクトリに置く。Agent Hub のトークンは設定ファイルと同じディレクトリの `.burgereditor/agent-token` に書かれるため、同じディレクトリだと後から起動したほうが上書きし、先に終了したほうが削除してしまう（後述の「非ループバック bind 時のトークン」を参照）
+- 子サイトが本体の`documentRoot`の配下にある場合、本体側のページツリーには子サイトのページも表示される
+- `host`をループバック以外（LAN IP）にして 2 つ同時に起動する場合は、設定ファイルを別々のディレクトリに置く。Agent Hub のトークンは設定ファイルと同じディレクトリの`.burgereditor/agent-token`に書かれるため、同じディレクトリだと後から起動したほうが上書きし、先に終了したほうが削除してしまう（後述の「非ループバック bind 時のトークン」を参照）
 
 ## Virtual File Tree
 
-外部 CMS と連携する際など、`documentRoot` 直下に **フラットな `<id>.html` が並ぶ** プロジェクト向けに、Front Matter の値からエディタ上の仮想ツリーを構築するオプトイン機能。詳細は [`docs/virtual-tree.md`](./docs/virtual-tree.md) を参照。
+外部 CMS と連携する際など、`documentRoot`直下に **フラットな`<id>.html`が並ぶ** プロジェクト向けに、Front Matter の値からエディタ上の仮想ツリーを構築するオプトイン機能。詳細は[`docs/virtual-tree.md`](./docs/virtual-tree.md)を参照。
 
 ### 採用前提（満たさないと起動失敗）
 
-1. `documentRoot` 直下のすべての `*.html` が Front Matter を持つ
-2. Front Matter に `pathKey`（既定 `'path'`）が**空でない文字列値**として存在する
-3. `pathKey` の値がプロジェクト内で**一意**である
+1. `documentRoot`直下のすべての`*.html`が Front Matter を持つ
+2. Front Matter に`pathKey`（既定`'path'`）が**空でない文字列値**として存在する
+3. `pathKey`の値がプロジェクト内で**一意**である
 
-`pathKey` の値は「論理パス」として扱われ、エディタ上のツリー位置を決めるが、ディスク上のファイル名は変更しない。
+`pathKey`の値は「論理パス」として扱われ、エディタ上のツリー位置を決めるが、ディスク上のファイル名は変更しない。
 
 ### 設定例
 
@@ -178,14 +178,14 @@ export default {
 
 ### 受け付けるパス形式
 
-- 先頭スラッシュは正規化される（`about.html` と `/about.html` は同一）
+- 先頭スラッシュは正規化される（`about.html`と`/about.html`は同一）
 - 先頭の連続スラッシュも除去（`//foo.html` → `foo.html`）
 - 正規化後に空文字列になる値（`'/'`、`'///'`）は **起動時エラー / API は 400 `EmptyLogicalPathError`**
-- `..` / `.` セグメントと NUL 文字を含む論理パスは API 境界で **400 拒否**（孤児ファイル化を防ぐため）
+- `..`/`.`セグメントと NUL 文字を含む論理パスは API 境界で **400 拒否**（孤児ファイル化を防ぐため）
 
-### `PathConflictError` で起動失敗したら
+### `PathConflictError`で起動失敗したら
 
-衝突した論理パスと、それを主張するディスクファイル一覧が stderr に整形出力され、`exit code 1` で終了する。
+衝突した論理パスと、それを主張するディスクファイル一覧が stderr に整形出力され、`exit code 1`で終了する。
 
 ```
 Conflicting logical paths in virtual tree:
@@ -194,63 +194,63 @@ Conflicting logical paths in virtual tree:
 Fix the conflicting front matter "path" values in the listed files and retry.
 ```
 
-衝突しているファイルのうち一方の Front Matter `path` を別の値に書き換えて再起動する。
+衝突しているファイルのうち一方の Front Matter `path`を別の値に書き換えて再起動する。
 
 ### 既知の制約
 
 - 新規作成ダイアログで **ID と論理パスの両方をユーザー手入力**（ID 自動採番なし）
 - 同一の論理パスを複数ファイルに持たせることは不可
 - 並行更新は内部 mutex で直列化（シングルユーザー前提）
-- ディスク上の Front Matter に `..` / `.` セグメントを含む論理パスがあっても起動時には検査されない。そのページは編集 UI から開けないため、Front Matter を直接修正する
+- ディスク上の Front Matter に`..`/`.`セグメントを含む論理パスがあっても起動時には検査されない。そのページは編集 UI から開けないため、Front Matter を直接修正する
 
 ### ツリー表示
 
-仮想モード時、各リンクは `<論理ファイル名> (<id>)` 形式で表示（例: `maintenance.html (10)`）。CSS で `.file-id` をグレーアウト / 非表示にすることで見た目を調整できる。
+仮想モード時、各リンクは`<論理ファイル名> (<id>)`形式で表示（例: `maintenance.html (10)`）。CSS で`.file-id`をグレーアウト/非表示にすることで見た目を調整できる。
 
 ## Agent Hub
 
-AI エージェント（`@burger-editor/mcp-server` 経由）が、開いているブラウザタブへ直接ブロック操作を届けるための入口。ツール定義は [`@burger-editor/cli`](../cli/) の `agentTools` を共有しており、タブが開いていればそこへ、無ければディスクへ適用する。
+AI エージェント（`@burger-editor/mcp-server`経由）が、開いているブラウザタブへ直接ブロック操作を届けるための入口。ツール定義は[`@burger-editor/cli`](../cli/)の`agentTools`を共有しており、タブが開いていればそこへ、無ければディスクへ適用する。
 
 - **エンドポイント**: `GET /api/agent/tools`（ツール定義一覧）、`GET /api/agent/status`（到達確認）、`GET /api/agent/events`（状態変化のロングポーリング）、`POST /api/agent/invoke`（ツール呼び出し）、WebSocket `/ws/editor`（ブラウザタブとの接続）
-- **無効化**: `agent: { enabled: false }` で上記すべてがマウントされなくなる
-- **非ループバック bind 時のトークン**: `host` を LAN IP にすると、起動ごとのトークンが必要になる（エディター画面・`/api/content`・`/api/file`・静的ファイルを含むアプリ全体が対象で、`agent.enabled: false` でも同じ。`/api/health` のみ認証なしで応答する）。起動バナーに `http://<host>:<port>/?token=…` が表示されるので **一度だけそれを開く**と `bge_session` cookie が発行され、以後そのブラウザは認可される。同じトークンは `<configDir>/.burgereditor/agent-token`（`configDir` は読み込んだ設定ファイルのディレクトリ。mode 0600、終了時に削除）にも書かれる。**`.burgereditor/` を `.gitignore` に追加すること**。同じマシンで動く `mcp-server` はこのファイルを自動で読むので設定は不要。ただし `local` を `--config` / `BGE_CONFIG` で起動した場合は、`mcp-server` にも同じ設定ファイルを指定する（そうしないと別のディレクトリのトークンを探してしまう）。別マシンや任意の値を使いたいときは環境変数 `BGE_AGENT_TOKEN` で上書きできる。`localhost` / `127.0.0.1` / `::1` に bind している間はトークン不要
-- **Host / Origin 検査（DNS rebinding 対策）**: `hostGuard` はアプリ全体に掛かる。`Host`（と、あれば `Origin`）が `localhost` / ループバック / 設定した `host` 以外なら、ループバック bind でも 403
-- **認証されていない upgrade の扱い**: 非ループバック bind で cookie / bearer の無い `/ws/editor` の upgrade は HTTP 401、`Host` / `Origin` が許可リストに無い場合は 403 で、いずれもハンドシェイク時点で拒否される（`/api/agent/*` と同じ `hostGuard` / cookie-or-bearer 判定を upgrade 前に通す）。ハンドシェイクを受理してから close するのではなく、`app.request()` で in-process に検証できる
-- **利用側**: `@burger-editor/mcp-server --mode local`（既定の `auto` でも、`local` に到達できれば自動的にここへ転送される）
-- **デバッグ**: サーバー側は `DEBUG=@bge:local`、ブラウザ側は console の `[bge-agent-ws]` / `[bge-agent-link]` 行。ブラウザ側でフレーム全文のログを有効にするには `localStorage.setItem('bge:debug', '1')`。`/api/agent/*` の応答に付く ISO `timestamp` で両者を突き合わせられる
+- **無効化**: `agent: { enabled: false }`で上記すべてがマウントされなくなる
+- **非ループバック bind 時のトークン**: `host`を LAN IP にすると、起動ごとのトークンが必要になる（エディター画面・`/api/content`・`/api/file`・静的ファイルを含むアプリ全体が対象で、`agent.enabled: false`でも同じ。`/api/health`のみ認証なしで応答する）。起動バナーに`http://<host>:<port>/?token=…`が表示されるので **一度だけそれを開く**と`bge_session` cookie が発行され、以後そのブラウザは認可される。同じトークンは`<configDir>/.burgereditor/agent-token`（`configDir`は読み込んだ設定ファイルのディレクトリ。mode 0600、終了時に削除）にも書かれる。**`.burgereditor/`を`.gitignore`に追加すること**。同じマシンで動く`mcp-server`はこのファイルを自動で読むので設定は不要。ただし`local`を`--config`/`BGE_CONFIG`で起動した場合は、`mcp-server`にも同じ設定ファイルを指定する（そうしないと別のディレクトリのトークンを探してしまう）。別マシンや任意の値を使いたいときは環境変数`BGE_AGENT_TOKEN`で上書きできる。`localhost`/`127.0.0.1`/`::1`に bind している間はトークン不要
+- **Host / Origin 検査（DNS rebinding 対策）**: `hostGuard`はアプリ全体に掛かる。`Host`（と、あれば`Origin`）が`localhost`/ループバック/設定した`host`以外なら、ループバック bind でも 403
+- **認証されていない upgrade の扱い**: 非ループバック bind で cookie/bearer の無い`/ws/editor`の upgrade は HTTP 401、`Host`/`Origin`が許可リストに無い場合は 403 で、いずれもハンドシェイク時点で拒否される（`/api/agent/*`と同じ`hostGuard`/cookie-or-bearer 判定を upgrade 前に通す）。ハンドシェイクを受理してから close するのではなく、`app.request()`で in-process に検証できる
+- **利用側**: `@burger-editor/mcp-server --mode local`（既定の`auto`でも、`local`に到達できれば自動的にここへ転送される）
+- **デバッグ**: サーバー側は`DEBUG=@bge:local`、ブラウザ側は console の`[bge-agent-ws]`/`[bge-agent-link]`行。ブラウザ側でフレーム全文のログを有効にするには`localStorage.setItem('bge:debug', '1')`。`/api/agent/*`の応答に付く ISO `timestamp`で両者を突き合わせられる
 
 ### 状態の観測（`GET /api/agent/events` / `editor_wait_for_event`）
 
-タブの接続・UI 状態・保存・外部変更・ページ構造の変化はイベントとして記録され、ロングポーリングで受け取れる。`GET /api/agent/events?since=&timeoutMs=&types=` と MCP ツール `editor_wait_for_event({ since, timeoutMs, types })` は同じ契約で動く。
+タブの接続・UI 状態・保存・外部変更・ページ構造の変化はイベントとして記録され、ロングポーリングで受け取れる。`GET /api/agent/events?since=&timeoutMs=&types=`と MCP ツール`editor_wait_for_event({ since, timeoutMs, types })`は同じ契約で動く。
 
 | 引数        | 説明                                                                                                           |
 | ----------- | -------------------------------------------------------------------------------------------------------------- |
-| `since`     | 前回応答の `nextSince`。省略すると呼び出し時点より後のイベントだけを待つ（過去分は再生しない）                 |
+| `since`     | 前回応答の`nextSince`。省略すると呼び出し時点より後のイベントだけを待つ（過去分は再生しない）                  |
 | `timeoutMs` | 待つ時間。既定 10,000ms、上限 30,000ms（超えた値は 30,000ms として扱う）                                       |
 | `types`     | 受け取るイベント種別のリスト（HTTP ではカンマ区切り）。下表に無い値は 400 `invalid`（`Unknown event type: …`） |
 
-応答は `{ events, nextSince, timedOut, overflowed }`（HTTP は `timestamp` も付く）。各イベントは `{ seq, type, at, payload }`。
+応答は`{ events, nextSince, timedOut, overflowed }`（HTTP は`timestamp`も付く）。各イベントは`{ seq, type, at, payload }`。
 
-- 新しいイベントが届くと即座に返る。`timeoutMs` 内に何も無ければ `events: []`、`timedOut: true`
-- 次回は `nextSince` を `since` に渡す
-- イベントは直近 500 件だけ保持される。`overflowed: true` は `since` 以降のイベントの一部が既に破棄されたことを示すので、`editor_state_get` で状態を取り直す
+- 新しいイベントが届くと即座に返る。`timeoutMs`内に何も無ければ`events: []`、`timedOut: true`
+- 次回は`nextSince`を`since`に渡す
+- イベントは直近 500 件だけ保持される。`overflowed: true`は`since`以降のイベントの一部が既に破棄されたことを示すので、`editor_state_get`で状態を取り直す
 - HTTP 接続を切ると、サーバー側の待機もその時点で終わる
-- `mcp-server` 経由では、`local` が `timeoutMs` + 5 秒以内に応答しない場合、`timedOut: true` の空応答として返る
+- `mcp-server`経由では、`local`が`timeoutMs` + 5 秒以内に応答しない場合、`timedOut: true`の空応答として返る
 
 | イベント種別                                     | 発生するとき                                                                                                         | `payload`                     |
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
 | `session-connected`                              | タブが接続した                                                                                                       | `{ sessionId, page }`         |
 | `session-disconnected`                           | タブの接続が切れた（ping 応答が途絶えた場合を含む）                                                                  | `{ sessionId, page }`         |
 | `ui-state`                                       | タブの UI 状態が届いた                                                                                               | `{ sessionId, uiState }`      |
-| `ui-idle`                                        | タブの UI 状態が busy から idle になった（`ui-state` に加えて発生）                                                  | `{ sessionId }`               |
-| `content-saved`                                  | エージェントのツールでページ内容がタブまたはディスクに書き込まれた（`front_matter_set` とページ構造系ツールを除く）  | `{ page, appliedTo }`         |
-| `content-changed`                                | `local` 以外（IDE や別プロセス）がページのファイルを変更したことを検知した                                           | `{ page }`                    |
-| `front-matter-changed`                           | `front_matter_set` が成功した                                                                                        | `{ page, appliedTo: 'disk' }` |
+| `ui-idle`                                        | タブの UI 状態が busy から idle になった（`ui-state`に加えて発生）                                                   | `{ sessionId }`               |
+| `content-saved`                                  | エージェントのツールでページ内容がタブまたはディスクに書き込まれた（`front_matter_set`とページ構造系ツールを除く）   | `{ page, appliedTo }`         |
+| `content-changed`                                | `local`以外（IDE や別プロセス）がページのファイルを変更したことを検知した                                            | `{ page }`                    |
+| `front-matter-changed`                           | `front_matter_set`が成功した                                                                                         | `{ page, appliedTo: 'disk' }` |
 | `page-created` / `page-deleted` / `page-renamed` | `page_create` / `page_copy` / `page_concat`（created）、`page_delete`（deleted）、`page_rename`（renamed）が成功した | `{ from?, to? }`              |
 
-`content-saved` は、エージェントの操作そのものが成功しなかったときにも発生することがある。開いているタブが、ページを開いた時点でマークアップを正規化して（素の HTML をブロックで包む等）未保存のまま持っている場合、ブロックを操作するツールは先にその内容をディスクへ書き込み、`content-saved`（`appliedTo: 'browser'`）を発生させたうえで `stale` エラーを返す。エージェントの操作は適用されていないので、`content-saved` を操作の成功とみなさず、ツールの応答で判断する。
+`content-saved`は、エージェントの操作そのものが成功しなかったときにも発生することがある。開いているタブが、ページを開いた時点でマークアップを正規化して（素の HTML をブロックで包む等）未保存のまま持っている場合、ブロックを操作するツールは先にその内容をディスクへ書き込み、`content-saved`（`appliedTo: 'browser'`）を発生させたうえで`stale`エラーを返す。エージェントの操作は適用されていないので、`content-saved`を操作の成功とみなさず、ツールの応答で判断する。
 
-`content-changed` は 2 つの経路で検知する。1 つはエージェントがそのページへの操作を呼んだときのディスク内容の比較で、常に有効。もう 1 つはファイル監視による即時検知で、`virtualTree.enabled: false` のときだけ動く。どちらも、`local` 経由で一度でも読み書きされたページだけが対象。変更を検知すると、そのページを開いているタブは再読み込みされる。
+`content-changed`は 2 つの経路で検知する。1 つはエージェントがそのページへの操作を呼んだときのディスク内容の比較で、常に有効。もう 1 つはファイル監視による即時検知で、`virtualTree.enabled: false`のときだけ動く。どちらも、`local`経由で一度でも読み書きされたページだけが対象。変更を検知すると、そのページを開いているタブは再読み込みされる。
 
 ページが作成・削除・改名されると、開いているタブのページツリーは自動で更新される。タブで開いているページ自体が削除・改名された場合は、画面に通知が表示される。
 
@@ -266,7 +266,7 @@ HTML の Front Matter（YAML）を編集領域の上に展開される UI から
 | 日付                | 日付ピッカー        | `date: '2026-01-06'`     |
 | 配列 / オブジェクト | JSON テキストエリア | `tags: ['blog', 'news']` |
 
-`+ 追加` ボタンでキー名と型を選んで新規フィールド追加可能。
+`+ 追加`ボタンでキー名と型を選んで新規フィールド追加可能。
 
 ## ブロックのコピー & ペースト
 
@@ -291,17 +291,17 @@ HTML の Front Matter（YAML）を編集領域の上に展開される UI から
 
 | フィールド  | 型       | 説明                     |
 | ----------- | -------- | ------------------------ |
-| `status`    | `string` | 常に `"ok"`              |
+| `status`    | `string` | 常に`"ok"`               |
 | `timestamp` | `number` | レスポンス生成時刻（ms） |
 
 ### クライアント側自動監視
 
-`config.healthCheck.enabled = true`（デフォルト）のとき、クライアントは `/api/health` を `interval` ms ごとに叩き、`retryCount` 回連続失敗で**サーバーオフライン**と判定する。状態遷移時に CustomEvent が **エディタ要素 (`engine.el`)** に発火する（`bubbles: false`、`document` では捕捉できない）。
+`config.healthCheck.enabled = true`（デフォルト）のとき、クライアントは`/api/health`を`interval` ms ごとに叩き、`retryCount`回連続失敗で**サーバーオフライン**と判定する。状態遷移時に CustomEvent が **エディタ要素 (`engine.el`)** に発火する（`bubbles: false`、`document`では捕捉できない）。
 
-| イベント             | detail                  | タイミング                                        |
-| -------------------- | ----------------------- | ------------------------------------------------- |
-| `bge:server-offline` | `{ timestamp: number }` | `retryCount` 回連続失敗してオフライン判定したとき |
-| `bge:server-online`  | `{ timestamp: number }` | オフライン状態から復旧したとき                    |
+| イベント             | detail                  | タイミング                                       |
+| -------------------- | ----------------------- | ------------------------------------------------ |
+| `bge:server-offline` | `{ timestamp: number }` | `retryCount`回連続失敗してオフライン判定したとき |
+| `bge:server-online`  | `{ timestamp: number }` | オフライン状態から復旧したとき                   |
 
 ```js
 engine.el.addEventListener('bge:server-offline', (e) => {
@@ -311,11 +311,11 @@ engine.el.addEventListener('bge:server-offline', (e) => {
 
 ## サブパス API
 
-`@burger-editor/local/get-user-config`、`@burger-editor/local/create-health-checker`、`@burger-editor/local/get-candidate-name`、`@burger-editor/local/upload` の 4 サブパスを公開している。
+`@burger-editor/local/get-user-config`、`@burger-editor/local/create-health-checker`、`@burger-editor/local/get-candidate-name`、`@burger-editor/local/upload`の 4 サブパスを公開している。
 
 ### `getUserConfig(): Promise<{ config: LocalServerConfig; configDir: string }>`
 
-`burgereditor.config.js` を解決してデフォルトをマージした完成形 `config` と、その設定ファイルが見つかったディレクトリ `configDir`（設定ファイルが無い場合は `process.cwd()`）を返す。`configDir` は Agent Hub が非ループバック bind 時の起動ごとの token を `<configDir>/.burgereditor/agent-token` に書くために使う。
+`burgereditor.config.js`を解決してデフォルトをマージした完成形`config`と、その設定ファイルが見つかったディレクトリ`configDir`（設定ファイルが無い場合は`process.cwd()`）を返す。`configDir`は Agent Hub が非ループバック bind 時の起動ごとの token を`<configDir>/.burgereditor/agent-token`に書くために使う。
 
 ```ts
 import { getUserConfig } from '@burger-editor/local/get-user-config';
@@ -327,7 +327,7 @@ console.log(configDir); // '/path/to/project'
 
 ### `createHealthChecker(config): HealthMonitor`
 
-ブラウザ環境で動く `HealthMonitor` インスタンスを生成する。`config` には `getUserConfig()` の結果の `config` を渡す。
+ブラウザ環境で動く`HealthMonitor`インスタンスを生成する。`config`には`getUserConfig()`の結果の`config`を渡す。
 
 ```ts
 import { createHealthChecker } from '@burger-editor/local/create-health-checker';
@@ -352,7 +352,7 @@ monitor.stop();
 
 ### `getCandidateName(name, destDir): Promise<EncodedFileName>`
 
-アップロード先ディレクトリをスキャンし、次に使うべきファイル名 `${number}__${string}` を返す。
+アップロード先ディレクトリをスキャンし、次に使うべきファイル名`${number}__${string}`を返す。
 
 ```ts
 import {
@@ -369,11 +369,11 @@ const fileName: EncodedFileName = await getCandidateName('photo.jpg', '/path/to/
 | `name`     | `string` | 元ファイル名（拡張子込み） |
 | `destDir`  | `string` | 保存先ディレクトリ絶対パス |
 
-`EncodedFileName` は `` `${number}__${string}` `` のテンプレートリテラル型で、`upload()` 第一引数もこの型を要求する。これにより誤った形式のファイル名を渡すと型エラーで弾かれる。
+`EncodedFileName`は`` `${number}__${string}` ``のテンプレートリテラル型で、`upload()`第一引数もこの型を要求する。これにより誤った形式のファイル名を渡すと型エラーで弾かれる。
 
 ### `upload(fileName, destDir, file): Promise<UploadResult>`
 
-`getCandidateName()` で取得した名前でファイルを保存する。
+`getCandidateName()`で取得した名前でファイルを保存する。
 
 ```ts
 import { upload, type UploadResult } from '@burger-editor/local/upload';
@@ -381,11 +381,11 @@ import { upload, type UploadResult } from '@burger-editor/local/upload';
 const result: UploadResult = await upload(fileName, '/path/to/dest', file);
 ```
 
-| パラメータ | 型                    | 説明                          |
-| ---------- | --------------------- | ----------------------------- |
-| `fileName` | `EncodedFileName`     | `getCandidateName()` の戻り値 |
-| `destDir`  | `string`              | 保存先ディレクトリ絶対パス    |
-| `file`     | `File \| ArrayBuffer` | アップロードするデータ        |
+| パラメータ | 型                    | 説明                         |
+| ---------- | --------------------- | ---------------------------- |
+| `fileName` | `EncodedFileName`     | `getCandidateName()`の戻り値 |
+| `destDir`  | `string`              | 保存先ディレクトリ絶対パス   |
+| `file`     | `File \| ArrayBuffer` | アップロードするデータ       |
 
 **`UploadResult`**
 
@@ -428,13 +428,13 @@ export default {
 };
 ```
 
-カスタムアイテムの作成は [`@burger-editor/core` の README](../core/README.md) を参照。
+カスタムアイテムの作成は[`@burger-editor/core`の README](../core/README.md)を参照。
 
 ## 実験的機能
 
 ### `experimental.itemOptions.button`
 
-ボタンアイテムの `kinds` 選択肢をマージ・上書き・削除できる。
+ボタンアイテムの`kinds`選択肢をマージ・上書き・削除できる。
 
 ```js
 export default {
@@ -456,7 +456,7 @@ export default {
 
 ## 内部構造の注意
 
-`local/src/helpers/{front-matter,html-detection,no-editable-area-error,edit-content}.ts` および `local/src/model/{file-tree,virtual-path-resolver,get-user-config}.ts` は **互換性のためのシム re-export**。本体は `@burger-editor/core` / `@burger-editor/file-io` 側にあるため、修正はそちらで行うこと。
+`local/src/helpers/{front-matter,html-detection,no-editable-area-error,edit-content}.ts`および`local/src/model/{file-tree,virtual-path-resolver,get-user-config}.ts`は **互換性のためのシム re-export**。本体は`@burger-editor/core`/`@burger-editor/file-io`側にあるため、修正はそちらで行うこと。
 
 ## License
 

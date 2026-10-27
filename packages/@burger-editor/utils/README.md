@@ -23,7 +23,7 @@ kebabCase('backgroundColor'); // => 'background-color'
 markdownToHtml('# Title'); // => '<h1>Title</h1>'
 ```
 
-提供関数（文字列ケース変換 / Markdown ↔ HTML 変換 / 日付フォーマット / HTML 操作系）と各シグネチャは `src/index.ts` および型定義を参照。
+提供関数（文字列ケース変換/Markdown ↔ HTML 変換/日付フォーマット/HTML 操作系）と各シグネチャは`src/index.ts`および型定義を参照。
 
 ## License
 

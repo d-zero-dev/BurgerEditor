@@ -269,7 +269,7 @@ console.log('hasStructureChange:', wysiwygElement.hasStructureChange);
 
 ### 例1: カスタムツールバーボタンの追加
 
-サブクラスで独自ボタンを足す利用者向けの例。本パッケージに組み込みの TipTap 拡張・ツールバーボタンを追加するコントリビュータは [`.claude/skills/tiptap-extension/SKILL.md`](../../../../.claude/skills/tiptap-extension/SKILL.md) を参照する。
+サブクラスで独自ボタンを足す利用者向けの例。本パッケージに組み込みの TipTap 拡張・ツールバーボタンを追加するコントリビュータは[`.claude/skills/tiptap-extension/SKILL.md`](../../../../.claude/skills/tiptap-extension/SKILL.md)を参照する。
 
 ```typescript
 // 子要素の参照を取得
