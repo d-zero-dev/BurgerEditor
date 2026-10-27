@@ -133,6 +133,6 @@ if ((globalThis as { document?: unknown }).document === undefined) {
  */
 export function ensureDom(): void {
 	if ((globalThis as { document?: unknown }).document !== undefined) {
-		bulkCopyOnto(globalThis as unknown as Record<string | symbol, unknown>);
+		bulkCopyOnto(globalThis);
 	}
 }
