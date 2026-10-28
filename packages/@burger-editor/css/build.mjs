@@ -6,31 +6,16 @@ import autoprefixer from 'autoprefixer';
 import cssnano from 'cssnano';
 import { globSync } from 'glob';
 import postcss from 'postcss';
-import base64 from 'postcss-base64';
 import calc from 'postcss-calc';
-import colorFunction from 'postcss-color-function';
 import customMedia from 'postcss-custom-media';
 import atImport from 'postcss-import';
-import math from 'postcss-math';
 import * as sass from 'sass';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const sassDir = path.join(dirname, 'src', 'sass');
 const blocksSrcDir = path.resolve(dirname, '..', 'blocks', 'src');
 
-const processor = postcss([
-	atImport(),
-	customMedia(),
-	math(),
-	calc(),
-	colorFunction(),
-	autoprefixer(),
-	base64({
-		pattern: '/<svg.*</svg>/i',
-		prepend: 'data:image/svg+xml;base64,',
-	}),
-	cssnano(),
-]);
+const processor = postcss([atImport(), customMedia(), calc(), autoprefixer(), cssnano()]);
 
 /**
  * @param {string[]} files

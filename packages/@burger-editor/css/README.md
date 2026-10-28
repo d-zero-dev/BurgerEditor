@@ -18,23 +18,23 @@ Vite や PostCSS などのビルドツールを使えば、パッケージ名か
 @import '@burger-editor/css';
 ```
 
-baserCMS プラグインとして利用する場合、`setting.php` で `Bge.loadCSS.bge_style_default` を `false` にすると読み込まれなくなります。
+baserCMS プラグインとして利用する場合、`setting.php`で`Bge.loadCSS.bge_style_default`を`false`にすると読み込まれなくなります。
 
 #### カスタムプロパティ
 
-- `--bge-grid-gap: 20px;` カラム間のマージン
-- `--bge-column-margin-block-end: 20px;` レスポンシブレイアウトでカラムが落ちた時の下マージン
-- `--bge-options-margin-normal: 1.5rem;` マージンのデフォルト値
-- `--bge-options-margin-none: 0;` マージンの最小値（ブロックオプション）
-- `--bge-options-margin-small: 1rem;` マージンの小さい値（ブロックオプション）
-- `--bge-options-margin-large: 4rem;` マージンの大きい値（ブロックオプション）
-- `--bge-options-bgcolor-gray: #efefef;` 背景色のグレー（ブロックオプション）
-- `--bge-options-bgcolor-blue: #d8f4ff;` 背景色の青（ブロックオプション）
-- `--bge-options-bgcolor-pink: #fee;` 背景色のピンク（ブロックオプション）
-- `--bge-options-border-bold: solid 5px currentcolor;` 枠線の太い値（ブロックオプション）
-- `--bge-options-border-thin: solid 1px currentcolor;` 枠線の細い値（ブロックオプション）
-- `--bge-options-border-dotted: dotted 1px currentcolor;` 枠線の点線の値（ブロックオプション）
-- `--bge-options-padding-with-border-or-bg: 1.5em;` ブロックオプションで背景色や枠線を使用した時のパディング
+- `--bge-grid-gap: 20px;`カラム間のマージン
+- `--bge-column-margin-block-end: 20px;`レスポンシブレイアウトでカラムが落ちた時の下マージン
+- `--bge-options-margin-normal: 1.5rem;`マージンのデフォルト値
+- `--bge-options-margin-none: 0;`マージンの最小値（ブロックオプション）
+- `--bge-options-margin-small: 1rem;`マージンの小さい値（ブロックオプション）
+- `--bge-options-margin-large: 4rem;`マージンの大きい値（ブロックオプション）
+- `--bge-options-bgcolor-gray: #efefef;`背景色のグレー（ブロックオプション）
+- `--bge-options-bgcolor-blue: #d8f4ff;`背景色の青（ブロックオプション）
+- `--bge-options-bgcolor-pink: #fee;`背景色のピンク（ブロックオプション）
+- `--bge-options-border-bold: solid 5px currentcolor;`枠線の太い値（ブロックオプション）
+- `--bge-options-border-thin: solid 1px currentcolor;`枠線の細い値（ブロックオプション）
+- `--bge-options-border-dotted: dotted 1px currentcolor;`枠線の点線の値（ブロックオプション）
+- `--bge-options-padding-with-border-or-bg: 1.5em;`ブロックオプションで背景色や枠線を使用した時のパディング
 
 ### `bge_style.css`（コンテンツスタイルのサンプル）
 

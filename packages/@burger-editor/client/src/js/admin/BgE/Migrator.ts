@@ -14,6 +14,45 @@ import Util from './Util.js';
 // eslint-disable-next-line unicorn/no-static-only-class
 export default class Migrator {
 	/**
+	 * CbEditor 時代の画像パスに含まれる`cbeditor`・`cb-noimage.gif`・`cb-sample.png`を、
+	 * それぞれ最初の一致だけ BurgerEditor の名前に置き換える。
+	 * 移行元の入力要素が無いと`.val()`は`undefined`を返すため空文字として扱い、
+	 * `.replace()`の例外で移行処理を止めない。複数選択の配列は先頭の値を使う。
+	 * @param value 移行元の入力要素の`.val()`の戻り値
+	 * @returns 置き換えたパス
+	 */
+	static convertCbePath(value: string | number | string[] | undefined) {
+		const path = Array.isArray(value) ? (value[0] ?? '') : `${value ?? ''}`;
+		return path
+			.replace('cbeditor', 'bgeditor') // cspell:disable-line
+			.replace('cb-noimage.gif', 'bg-noimage.gif')
+			.replace('cb-sample.png', 'bg-sample.png');
+	}
+
+	/**
+	 * v2.10.0 より前の google-maps ブロックから、移行先の google-maps タイプのデータを取り出す。
+	 * 緯度・経度が数値として読めないときは lat/lng/url を含めず、タイプのテンプレートの既定値を残す。
+	 * NaN を保存しないため。
+	 * @param el 移行元のブロック要素
+	 * @returns google-maps タイプに渡すデータ
+	 */
+	static extractLegacyGoogleMapsData(el: HTMLElement): BgE.IBurgerTypeContentData {
+		const $el = $(el);
+		const lat = Number.parseFloat($el.find('.bge-lat, .cbe-lat').val() as string);
+		const lng = Number.parseFloat($el.find('.bge-lng, .cbe-lng').val() as string);
+		const zoom = $el.find('.bge-zoom, .cbe-zoom').val();
+		if (Number.isNaN(lat) || Number.isNaN(lng)) {
+			return { zoom };
+		}
+		return {
+			lat,
+			lng,
+			zoom,
+			url: `//maps.apple.com/?q=${lat},${lng}`,
+		};
+	}
+
+	/**
 	 * 強制的なマイグレーション
 	 *
 	 * 強制的に書き換えてしまっても問題ないもの
@@ -47,7 +86,10 @@ export default class Migrator {
 			if ($hidden.length > 0) {
 				const data = BurgerType.contentExport(el);
 				const path = data['path'] as string;
-				const popup = data['path'] as boolean;
+				// hidden input の値は frozen-patty が型変換するため、"1"/"true" は 1/true になる
+				const popup = [true, 1, '1', 'true'].includes(
+					data['popup'] as boolean | number | string,
+				);
 				const $container = $this.find('>div');
 				$container.attr('data-bge-popup', popup ? '1' : '0');
 				$container.attr('data-bge-empty', /bg-noimage\.gif$/.test(path) ? '1' : '0');
@@ -199,14 +241,7 @@ export default class Migrator {
 				) {
 					data = BurgerType.contentExport($this.get(0)!);
 				} else {
-					const lat = Number.parseFloat($this.find('.bge-lat, .cbe-lat').val() as string);
-					const lng = Number.parseFloat($this.find('.bge-lng, .cbe-lng').val() as string);
-					data = {
-						lat,
-						lng,
-						zoom: $this.find('.bge-zoom, .cbe-zoom').val() as string,
-						url: `//maps.apple.com/?q=${lat},${lng}`,
-					};
+					data = Migrator.extractLegacyGoogleMapsData(this);
 				}
 				void block.types[0]?.import(data);
 				block.importOptions(BurgerBlock.extractOptions($targetContent.get(0)!));
@@ -230,19 +265,16 @@ export default class Migrator {
 					data = BurgerType.contentExport($imgLink.get(0)!);
 				} else if ($targetContent.hasClass('cb-editor-type')) {
 					data = {
-						path: ($imgLink.find('.cbe-image-link-url').val() as string)
-							.replace('cbeditor', 'bgeditor') // cspell:disable-line
-							.replace('cb-noimage.gif', 'bg-noimage.gif')
-							.replace('cb-sample.png', 'bg-sample.png'),
-						link: $imgLink.find('.cbe-image-link-link').val() as string,
+						path: Migrator.convertCbePath($imgLink.find('.cbe-image-link-url').val()),
+						link: $imgLink.find('.cbe-image-link-link').val(),
 						target: $imgLink.find('.cbe-image-link-target').val() === '1' ? '_blank' : '',
 						caption: $imgLink.find('.cbe-image-link-caption').html(),
 						alt: $imgLink.find('.cbe-image-link-caption').text(),
 					};
 				} else {
 					data = {
-						path: $imgLink.find('.bge-image-link-url').val() as string,
-						link: $imgLink.find('.bge-image-link-link').val() as string,
+						path: $imgLink.find('.bge-image-link-url').val(),
+						link: $imgLink.find('.bge-image-link-link').val(),
 						target: $imgLink.find('.bge-image-link-target').val() === '1' ? '_blank' : '',
 						caption: $imgLink.find('.bge-image-link-caption').html(),
 						alt: $imgLink.find('.bge-image-link-caption').text(),
@@ -309,8 +341,8 @@ export default class Migrator {
 					data = BurgerType.contentExport($imgLink.get(0)!);
 				} else {
 					data = {
-						path: $imgLink.find('.bge-image-link-trimmed-url').val() as string,
-						link: $imgLink.find('.bge-image-link-trimmed-link').val() as string,
+						path: $imgLink.find('.bge-image-link-trimmed-url').val(),
+						link: $imgLink.find('.bge-image-link-trimmed-link').val(),
 						target:
 							$imgLink.find('.bge-image-link-trimmed-target').val() === '1'
 								? '_blank'
@@ -365,17 +397,14 @@ export default class Migrator {
 					data = BurgerType.contentExport($img.get(0)!);
 				} else if ($targetContent.hasClass('cb-editor-type')) {
 					data = {
-						path: ($img.find('.cbe-image-url').val() as string)
-							.replace('cbeditor', 'bgeditor') // cspell:disable-line
-							.replace('cb-noimage.gif', 'bg-noimage.gif')
-							.replace('cb-sample.png', 'bg-sample.png'),
+						path: Migrator.convertCbePath($img.find('.cbe-image-url').val()),
 						popup: $img.find('.cbe-image-popup').val() === '1',
 						caption: $img.find('.cbe-image-caption').html(),
 						alt: $img.find('.cbe-image-caption').text(),
 					};
 				} else {
 					data = {
-						path: $img.find('.bge-image-url').val() as string,
+						path: $img.find('.bge-image-url').val(),
 						popup: $img.find('.bge-image-popup').val() === '1',
 						caption: $img.find('.bge-image-caption').html(),
 						alt: $img.find('.bge-image-caption').text(),
@@ -476,8 +505,8 @@ export default class Migrator {
 					data = BurgerType.contentExport($imgLink.get(0)!);
 				} else {
 					data = {
-						path: $imgLink.find('.bge-image-trimmed-url').val() as string,
-						link: $imgLink.find('.bge-image-trimmed-link-link').val() as string,
+						path: $imgLink.find('.bge-image-trimmed-url').val(),
+						link: $imgLink.find('.bge-image-trimmed-link-link').val(),
 						target:
 							$imgLink.find('.bge-image-trimmed-link-target').val() === '1'
 								? '_blank'
@@ -562,10 +591,7 @@ export default class Migrator {
 					data = BurgerType.contentExport($txtImg.get(0)!);
 				} else if ($targetContent.hasClass('cb-editor-block-container')) {
 					data = {
-						path: ($txtImg.find('.cbe-image-url').val() as string)
-							.replace('cbeditor', 'bgeditor') // cspell:disable-line
-							.replace('cb-noimage.gif', 'bg-noimage.gif')
-							.replace('cb-sample.png', 'bg-sample.png'),
+						path: Migrator.convertCbePath($txtImg.find('.cbe-image-url').val()),
 						popup: $txtImg.find('.cbe-image-popup').val() === '1',
 						caption: $txtImg.find('.cbe-image-caption').html(),
 						alt: $txtImg.find('.cbe-image-caption').text(),
@@ -573,7 +599,7 @@ export default class Migrator {
 					};
 				} else {
 					data = {
-						path: $txtImg.find('.bge-image-url').val() as string,
+						path: $txtImg.find('.bge-image-url').val(),
 						popup: $txtImg.find('.bge-image-popup').val() === '1',
 						caption: $txtImg.find('.bge-image-caption').html(),
 						alt: $txtImg.find('.bge-image-caption').text(),
@@ -627,10 +653,7 @@ export default class Migrator {
 					data = BurgerType.contentExport($txtImg.get(0)!);
 				} else if ($targetContent.hasClass('cb-editor-block-container')) {
 					data = {
-						path: ($txtImg.find('.cbe-image-url').val() as string)
-							.replace('cbeditor', 'bgeditor') // cspell:disable-line
-							.replace('cb-noimage.gif', 'bg-noimage.gif')
-							.replace('cb-sample.png', 'bg-sample.png'),
+						path: Migrator.convertCbePath($txtImg.find('.cbe-image-url').val()),
 						popup: $txtImg.find('.cbe-image-popup').val() === '1',
 						caption: $txtImg.find('.cbe-image-caption').html(),
 						alt: $txtImg.find('.cbe-image-caption').text(),
@@ -638,7 +661,7 @@ export default class Migrator {
 					};
 				} else {
 					data = {
-						path: $txtImg.find('.bge-image-url').val() as string,
+						path: $txtImg.find('.bge-image-url').val(),
 						popup: $txtImg.find('.bge-image-popup').val() === '1',
 						caption: $txtImg.find('.bge-image-caption').html(),
 						alt: $txtImg.find('.bge-image-caption').text(),
@@ -734,8 +757,8 @@ export default class Migrator {
 					data = BurgerType.contentExport($txtImg.get(0)!);
 				} else {
 					data = {
-						path: $txtImg.find('.bge-image-link-url').val() as string,
-						link: $txtImg.find('.bge-image-link-link').val() as string,
+						path: $txtImg.find('.bge-image-link-url').val(),
+						link: $txtImg.find('.bge-image-link-link').val(),
 						caption: $txtImg.find('.bge-image-link-caption').html(),
 						alt: $txtImg.find('.bge-image-link-caption').text(),
 						ckeditor: $txtImg.find('.TypeCKEditor .bge-ckeditor').html(),

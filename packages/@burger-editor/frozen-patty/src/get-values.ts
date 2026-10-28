@@ -101,10 +101,7 @@ function getAttribute(el: Element, keyAttr: string, typeConvert: boolean) {
 		case 'disabled': {
 			return (
 				el as
-					| HTMLInputElement
-					| HTMLSelectElement
-					| HTMLTextAreaElement
-					| HTMLButtonElement
+					HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement
 			).disabled;
 		}
 		case 'download': {
