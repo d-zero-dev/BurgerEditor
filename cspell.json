@@ -7,12 +7,15 @@
 
 		// Dependencies
 		"jaco",
+		"jqueryui",
 
 		// Project specific
 		"bgeconfig",
 
 		// v3 (移植元由来)
 		"psycle",
+		"cbeditor",
+		"bgeditor",
 		"gmap",
 		"noimage",
 		"mqdefault",
