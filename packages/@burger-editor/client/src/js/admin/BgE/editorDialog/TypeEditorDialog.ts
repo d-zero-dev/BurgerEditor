@@ -311,6 +311,6 @@ export function extractFormData(node: Element) {
 			extractedNames.push(name);
 		}
 	});
-	const data = Util.dataOptimize(raws) as BgE.IBurgerTypeContentData;
+	const data = Util.dataOptimize(raws);
 	return data;
 }

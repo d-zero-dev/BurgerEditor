@@ -54,9 +54,9 @@ abstract class EditorDialog {
 		}
 		this.$el = $(el);
 		const configAndMethods: IEditorDialogOption = $.extend({}, options);
-		configAndMethods.open = this._open.bind(this) as JQueryUI.DialogEvent;
-		configAndMethods.close = this._close.bind(this) as JQueryUI.DialogEvent;
-		configAndMethods.create = this._create.bind(this) as JQueryUI.DialogEvent;
+		configAndMethods.open = this._open.bind(this);
+		configAndMethods.close = this._close.bind(this);
+		configAndMethods.create = this._create.bind(this);
 
 		configAndMethods.buttons = {};
 
