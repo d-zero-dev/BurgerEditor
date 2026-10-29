@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.5.0](https://github.com/d-zero-dev/BurgerEditor/compare/v3.5.0-alpha.3...v3.5.0) (2026-10-29)
+
+### Bug Fixes
+
+- **client:** derive BgE.version from package.json ([4d51f69](https://github.com/d-zero-dev/BurgerEditor/commit/4d51f69cd2ccf7139ac330671042e97abe3c8ff1)), closes [#1081](https://github.com/d-zero-dev/BurgerEditor/issues/1081)
+
 # [3.5.0-alpha.1](https://github.com/d-zero-dev/BurgerEditor/compare/v0.10.0...v3.5.0-alpha.1) (2026-05-28)
 
 ### Features
