@@ -1,5 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
+import clientPkg from './packages/@burger-editor/client/package.json' with { type: 'json' };
+
 const jsdomConfig = {
 	environment: 'jsdom',
 	environmentOptions: {
@@ -28,6 +30,7 @@ export default defineConfig({
 				},
 				define: {
 					__DEBUG__: false,
+					__BGE_VERSION__: JSON.stringify(clientPkg.version),
 				},
 			},
 			{

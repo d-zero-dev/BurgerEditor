@@ -30,6 +30,9 @@ for (const [output, input] of Object.entries(entries)) {
 	await build({
 		configFile: false,
 		logLevel: 'warn',
+		define: {
+			__BGE_VERSION__: JSON.stringify(pkg.version),
+		},
 		build: {
 			outDir: jsOutDir,
 			emptyOutDir: false,
@@ -43,6 +46,11 @@ for (const [output, input] of Object.entries(entries)) {
 	});
 	const file = path.join(jsOutDir, `${output}.js`);
 	const script = await fs.readFile(file, 'utf8');
+	// tsc は define.d.ts の宣言で通り、テストは vitest.config.ts の define で通るため、
+	// ここの define が漏れたことは成果物を見ないと検出できない
+	if (script.includes('__BGE_VERSION__')) {
+		throw new Error(`${file}: __BGE_VERSION__ is not replaced`);
+	}
 	await fs.writeFile(file, `${banner}\n${header}${script}${footer}`);
 }
 

@@ -35,9 +35,10 @@ import TypeEditorDialog from './BgE/editorDialog/TypeEditorDialog.js';
 import BurgerEditor from './BurgerEditor.js';
 
 /**
- * バージョン
+ * `@burger-editor/client` の版数（`package.json` の `version`）。
+ * baserCMS プラグインの版数とは一致せず、`3.5.0-alpha.3` のようなプレリリース表記を含みうる
  */
-export const version = '3.4.0';
+export const version = __BGE_VERSION__;
 
 /**
  * frozen-patty が data-bge 属性から抽出する値のプリミティブ型。
