@@ -8,12 +8,14 @@
 		// Dependencies
 		"jaco",
 		"jqueryui",
+		"unstub",
 
 		// Project specific
 		"bgeconfig",
 
 		// v3 (移植元由来)
 		"psycle",
+		"cbox",
 		"cbeditor",
 		"bgeditor",
 		"gmap",

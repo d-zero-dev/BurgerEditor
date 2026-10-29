@@ -2,6 +2,6 @@
 	"extends": "../../../tsconfig.json",
 	"compilerOptions": {
 		"noEmit": true,
-		"types": ["node", "google.maps", "jquery.colorbox"]
+		"types": ["node", "google.maps"]
 	}
 }

@@ -19,13 +19,13 @@
 
 ## パッケージ構成
 
-| パッケージ                    | 役割                                                                                                                                                                 |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@burger-editor/blocks`       | ブロック・タイプ定義（`src/block/`・`src/type/`）                                                                                                                    |
-| `@burger-editor/client`       | 管理画面 UI。admin の JS/CSS をビルド（`dist/js/admin/`・`dist/css/admin/`）                                                                                         |
-| `@burger-editor/runtime`      | 公開側 JS ランタイム（`bge_functions.min.js`：gallery=Psycle / google-maps / youtube / colorbox migration）。IIFE で`window.BgE`を生やし DOMContentLoaded で自動実行 |
-| `@burger-editor/css`          | 公開側スタイルの配布（`bge_style_default.css`）                                                                                                                      |
-| `@burger-editor/frozen-patty` | HTML↔JSON 双方向変換。client(admin) のみが利用                                                                                                                       |
+| パッケージ                    | 役割                                                                                                                                                                                                     |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@burger-editor/blocks`       | ブロック・タイプ定義（`src/block/`・`src/type/`）                                                                                                                                                        |
+| `@burger-editor/client`       | 管理画面 UI。admin の JS/CSS をビルド（`dist/js/admin/`・`dist/css/admin/`）                                                                                                                             |
+| `@burger-editor/runtime`      | 公開側 JS ランタイム（`bge_functions.min.js`：画像ポップアップ / gallery / google-maps / youtube / migration）。ライブラリ非依存（jQuery 不要）。IIFE で`window.BgE`を生やし DOMContentLoaded で自動実行 |
+| `@burger-editor/css`          | 公開側スタイルの配布（`bge_style_default.css`）                                                                                                                                                          |
+| `@burger-editor/frozen-patty` | HTML↔JSON 双方向変換。client(admin) のみが利用                                                                                                                                                           |
 
 > [!IMPORTANT]
 > **`@burger-editor/frozen-patty`は 0.11.0 のソースに固定する。** `package.json`の`version`はモノレポ統一の 3.x 系の版数だが、中身は 0.11.0。v4 版はフィールド名の camelCase 正規化・`innerHTML`の trim などで v3 と非互換になるため、**v3 では v4 版へ上げない**（renovate / `yarn upgrade`での更新に注意）。固定するのは挙動であり、`yarn lint`による整形は受け入れる。

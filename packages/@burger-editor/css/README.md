@@ -35,6 +35,10 @@ baserCMS プラグインとして利用する場合、`setting.php`で`Bge.loadC
 - `--bge-options-border-thin: solid 1px currentcolor;`枠線の細い値（ブロックオプション）
 - `--bge-options-border-dotted: dotted 1px currentcolor;`枠線の点線の値（ブロックオプション）
 - `--bge-options-padding-with-border-or-bg: 1.5em;`ブロックオプションで背景色や枠線を使用した時のパディング
+- `--bge-popup-max-inline-size: 95%;`画像タイプのポップアップで画像に使える最大の幅（CSS の長さ。`%`は画面に対する割合）
+- `--bge-popup-max-block-size: 95%;`画像タイプのポップアップで画像に使える最大の高さ（CSS の長さ。`%`は画面に対する割合）
+
+画像タイプの「クリックでポップアップ」の拡大表示（`<dialog class="bgt-popup">`）のスタイルもこのファイルに含まれます。このファイルを読み込まない場合は、`.bgt-popup`のスタイルを自前で用意してください。生成される要素とクラスの一覧は`@burger-editor/runtime`の README にあります。以前の`window.BgE.options.colorbox`（`maxWidth`/`maxHeight`）は無くなったので、上限は上記のカスタムプロパティで指定します。
 
 ### `bge_style.css`（コンテンツスタイルのサンプル）
 

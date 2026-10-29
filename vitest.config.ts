@@ -30,6 +30,13 @@ export default defineConfig({
 					__DEBUG__: false,
 				},
 			},
+			{
+				test: {
+					name: 'runtime',
+					include: ['packages/@burger-editor/runtime/**/*.spec.ts'],
+					...jsdomConfig,
+				},
+			},
 		],
 	},
 });

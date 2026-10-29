@@ -1,0 +1,279 @@
+// ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- /
+//
+// 画像タイプのポップアップ（公開側ランタイムが生成する <dialog class="bgt-popup">）
+//
+// 見た目は BurgerEditor が長く同梱してきた colorbox 用スタイルを写している。
+// 保存済みページの拡大表示が置き換え前と同じに見えるようにするため。写し元は
+// baserCMS プラグイン BurgerEditor の `webroot/css/colorbox.css`（colorbox 配布物の
+// example スタイルを元に矢印と閉じるボタンを CSS で描くよう調整したもの）。
+// 寸法のうち枠（.bgt-popup__loaded）の幅と高さはランタイムが画像に合わせて決める。
+// 画像に使える上限のカスタムプロパティ（--bge-popup-max-*）は settings.scss の :root にある。
+//
+// ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- /
+
+@keyframes bge-popup-backdrop {
+	from {
+		opacity: 0;
+	}
+}
+
+:where(.bgt-popup) {
+	box-sizing: content-box;
+	max-inline-size: none;
+	max-block-size: none;
+	padding: 0;
+	margin: auto;
+	overflow: visible;
+	color: #fff;
+	background: transparent;
+	border: none;
+
+	@media screen and (max-width: $breakPoint) {
+		:where(.bgt-popup__close) {
+			inset-block-start: -50px;
+			inline-size: 35px;
+			block-size: 35px;
+		}
+
+		:where(.bgt-popup__prev, .bgt-popup__next) {
+			inset-block: auto -60px;
+		}
+
+		:where(.bgt-popup__prev) {
+			inset-inline-start: 0;
+
+			&::after {
+				inset-inline-start: 12%;
+			}
+		}
+
+		:where(.bgt-popup__next) {
+			inset-inline-end: 0;
+
+			&::after {
+				inset-inline-start: 25%;
+			}
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		&[open]::backdrop {
+			animation: none;
+		}
+
+		:where(.bgt-popup__loaded) {
+			transition: none;
+		}
+	}
+
+	&::backdrop {
+		background: rgb(10 10 10 / 85%);
+		opacity: 0.9;
+	}
+
+	&[open]::backdrop {
+		animation: bge-popup-backdrop 300ms;
+	}
+
+	// ボタン等に display を当てているので、ランタイムが付ける hidden 属性（UA の
+	// `[hidden] { display: none }`）が負けないようにする
+	[hidden] {
+		display: none;
+	}
+
+	:where(.bgt-popup__box) {
+		box-sizing: content-box;
+		padding: 50px;
+		// 開いたときのフォーカス先。colorbox の #colorbox と同じく輪郭は出さない
+		outline: 0;
+
+		@media screen and (max-width: $breakPoint) {
+			padding: 50px 0;
+		}
+	}
+
+	:where(.bgt-popup__content) {
+		position: relative;
+		background: #000;
+	}
+
+	:where(.bgt-popup__loaded) {
+		position: relative;
+		box-sizing: content-box;
+		overflow: hidden;
+		background: #fff;
+		border: 2px solid #fff;
+		transition:
+			width 300ms cubic-bezier(0.37, 0, 0.63, 1),
+			height 300ms cubic-bezier(0.37, 0, 0.63, 1);
+	}
+
+	:where(.bgt-popup__photo) {
+		float: inline-start;
+		display: block;
+		// 寸法はランタイムが width / height 属性で決める。サイト共通の
+		// `img { max-width: 100% }` で縮まないようにする
+		max-inline-size: none;
+		margin: auto;
+		border: 0;
+	}
+
+	// 読み込み中と枠が広がる間は内容を出さない（colorbox はリサイズが終わってから表示していた）
+	&:where(.bgt-popup--loading)
+		:where(
+			.bgt-popup__photo,
+			.bgt-popup__title,
+			.bgt-popup__current,
+			.bgt-popup__prev,
+			.bgt-popup__next
+		) {
+		visibility: hidden;
+	}
+
+	:where(.bgt-popup__loading) {
+		position: absolute;
+		inset-block-start: 0;
+		inset-inline-start: 0;
+		display: none;
+		inline-size: 100%;
+		block-size: 100%;
+
+		&::after {
+			position: absolute;
+			inset-block-start: calc(50% - 16px);
+			inset-inline-start: calc(50% - 16px);
+			inline-size: 32px;
+			block-size: 32px;
+			content: '';
+			border: 3px solid rgb(0 0 0 / 20%);
+			border-block-start-color: #000;
+			border-radius: 50%;
+			animation: bge-popup-spin 1000ms linear infinite;
+		}
+	}
+
+	&:where(.bgt-popup--loading) :where(.bgt-popup__loading) {
+		display: block;
+	}
+
+	:where(.bgt-popup__error) {
+		padding: 50px;
+		margin: 0;
+		color: #000;
+		border: 1px solid #fff;
+	}
+
+	:where(.bgt-popup__title) {
+		position: absolute;
+		inset-block-start: -20px;
+		inset-inline-start: 0;
+		margin: 0;
+		color: #fff;
+	}
+
+	:where(.bgt-popup__current) {
+		position: absolute;
+		inset-block-end: -40px;
+		inset-inline-start: 47.5%;
+		line-height: 1;
+		color: #fff;
+	}
+
+	:where(.bgt-popup__prev, .bgt-popup__next, .bgt-popup__close) {
+		inline-size: auto;
+		padding: 0;
+		margin: 0;
+		overflow: visible;
+		cursor: pointer;
+		background: none;
+		border: 0;
+
+		&:active {
+			outline: 0;
+		}
+
+		&:hover {
+			opacity: 0.7;
+		}
+	}
+
+	:where(.bgt-popup__prev, .bgt-popup__next) {
+		position: absolute;
+		inset-block-start: 45%;
+		inline-size: 40px;
+		block-size: 40px;
+		text-indent: -9999px;
+		outline: none;
+		border: none;
+
+		&::after {
+			position: absolute;
+			inset-block-start: 0;
+			inset-inline-start: 0;
+			display: block;
+			inline-size: 25px;
+			block-size: 25px;
+			content: '';
+			border-block-start: solid 2px #fff;
+			border-inline-end: solid 2px #fff;
+		}
+	}
+
+	:where(.bgt-popup__prev) {
+		inset-inline-start: -40px;
+
+		&::after {
+			transform: rotate(225deg);
+		}
+	}
+
+	:where(.bgt-popup__next) {
+		inset-inline-end: -50px;
+
+		&::after {
+			transform: rotate(45deg);
+		}
+	}
+
+	:where(.bgt-popup__close) {
+		position: absolute;
+		inset-block-start: -50px;
+		inset-inline-end: 0;
+		display: block;
+		inline-size: 25px;
+		block-size: 25px;
+		padding: 18px;
+		text-indent: -9999px;
+		outline: none;
+		background: rgb(0 0 0 / 10%);
+		border: 2px solid #fff;
+		border-radius: 50%;
+
+		&::before,
+		&::after {
+			position: absolute;
+			inset-block-start: 6px;
+			inset-inline-end: 17px;
+			display: inline-block;
+			inline-size: 2px;
+			block-size: 25px;
+			content: '';
+			background: #fff;
+			transition: all 300ms;
+		}
+
+		&::before {
+			transform: rotate(45deg);
+		}
+
+		&::after {
+			transform: rotate(135deg);
+		}
+	}
+}
+
+@keyframes bge-popup-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
