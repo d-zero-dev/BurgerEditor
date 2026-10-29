@@ -244,11 +244,10 @@ $breakPoint: 768px;
 	$span11: 91.6666%;
 	$span12: 100%;
 
-	&::after {
-		clear: both;
-		display: block;
-		content: '';
-	}
+	// float 画像をブロック自身の整形コンテキストに閉じ込め、後続ブロックへの回り込みを防ぐ。
+	// ::after の clearfix を使わないのは、flow-root と併用してもブロックの高さが clearfix 単独と同じだけ増え、
+	// 管理画面では公開期限アイコンが ::after を使うため回り込みを解除できないから
+	display: flow-root;
 
 	/*
 	# 2カラムの幅調整用のグリッドシステム
