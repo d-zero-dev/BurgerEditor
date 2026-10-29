@@ -118,7 +118,15 @@
 		border: 0;
 	}
 
-	&:where(.bgt-popup--loading) :where(.bgt-popup__photo) {
+	// 読み込み中と枠が広がる間は内容を出さない（colorbox はリサイズが終わってから表示していた）
+	&:where(.bgt-popup--loading)
+		:where(
+			.bgt-popup__photo,
+			.bgt-popup__title,
+			.bgt-popup__current,
+			.bgt-popup__prev,
+			.bgt-popup__next
+		) {
 		visibility: hidden;
 	}
 
