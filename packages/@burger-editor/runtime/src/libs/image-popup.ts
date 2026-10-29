@@ -41,6 +41,10 @@ interface Popup {
 	readonly box: HTMLElement;
 	readonly loaded: HTMLElement;
 	readonly measure: HTMLElement;
+	/**
+	 * 表示を切り替えるたびに進める番号。前の画像の読み込み完了が後から届いても無視する
+	 */
+	revision: number;
 	readonly photo: HTMLImageElement;
 	readonly error: HTMLElement;
 	readonly title: HTMLElement;
@@ -152,6 +156,7 @@ function show(popup: Popup, index: number) {
 	popup.photo.alt = item.querySelector('img')?.alt ?? '';
 	popup.photo.removeAttribute('width');
 	popup.photo.removeAttribute('height');
+	popup.revision++;
 	popup.photo.src = src;
 
 	if (multiple) {
@@ -169,6 +174,22 @@ function preload(popup: Popup, index: number) {
 	if (src) {
 		new Image().src = src;
 	}
+}
+
+/**
+ * 枠の寸法のトランジション（CSS が付ける）が終わるのを待つ。トランジションが無い環境
+ * （`prefers-reduced-motion`、寸法が変わらない、API の無いブラウザ）ではすぐに解決する
+ * @param el
+ */
+function whenFrameSettled(el: HTMLElement): Promise<void> {
+	if (typeof el.getAnimations !== 'function') {
+		return Promise.resolve();
+	}
+	// 寸法を変えた直後はまだトランジションが作られていないので、スタイルを計算させてから集める
+	void el.offsetWidth;
+	return Promise.all(
+		el.getAnimations().map((animation) => animation.finished.catch(() => {})),
+	).then(() => {});
 }
 
 /**
@@ -295,6 +316,7 @@ function getPopup(doc: Document): Popup {
 		next,
 		items: [],
 		index: 0,
+		revision: 0,
 		opener: null,
 	};
 
@@ -307,8 +329,15 @@ function getPopup(doc: Document): Popup {
 		}
 	});
 	photo.addEventListener('load', () => {
-		dialog.classList.remove(LOADING_CLASS);
+		const revision = popup.revision;
 		fit(popup);
+		// 枠が広がり終わるまでは読み込み表示のまま（画像やタイトルは出さない）。colorbox も
+		// リサイズのアニメーションが終わってから内容を表示していた
+		void whenFrameSettled(popup.loaded).then(() => {
+			if (popup.revision === revision) {
+				dialog.classList.remove(LOADING_CLASS);
+			}
+		});
 	});
 	photo.addEventListener('error', () => {
 		dialog.classList.remove(LOADING_CLASS);

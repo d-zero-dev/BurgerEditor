@@ -367,12 +367,53 @@ describe('image popup: closing', () => {
 });
 
 describe('image popup: loading state', () => {
-	it('marks the dialog as loading until the image loads', () => {
+	it('marks the dialog as loading until the image loads', async () => {
 		setup(GROUP);
 		click('a');
 		expect(dialog()?.classList.contains('bgt-popup--loading')).toBe(true);
 		photo()?.dispatchEvent(new Event('load'));
-		expect(dialog()?.classList.contains('bgt-popup--loading')).toBe(false);
+		await vi.waitFor(() =>
+			expect(dialog()?.classList.contains('bgt-popup--loading')).toBe(false),
+		);
+	});
+
+	it('keeps the loading state until the frame has finished growing', async () => {
+		setup(GROUP);
+		click('a');
+		let finish!: () => void;
+		const finished = new Promise<void>((resolve) => {
+			finish = resolve;
+		});
+		Object.defineProperty(loaded(), 'getAnimations', {
+			value: () => [{ finished }],
+			configurable: true,
+		});
+		photo()?.dispatchEvent(new Event('load'));
+		await Promise.resolve();
+		expect(dialog()?.classList.contains('bgt-popup--loading')).toBe(true);
+		finish();
+		await vi.waitFor(() =>
+			expect(dialog()?.classList.contains('bgt-popup--loading')).toBe(false),
+		);
+	});
+
+	it('ignores the completion of a previous image once another one is shown', async () => {
+		setup(GROUP);
+		click('a');
+		let finish!: () => void;
+		const finished = new Promise<void>((resolve) => {
+			finish = resolve;
+		});
+		Object.defineProperty(loaded(), 'getAnimations', {
+			value: () => [{ finished }],
+			configurable: true,
+		});
+		photo()?.dispatchEvent(new Event('load'));
+		q('.bgt-popup__next')?.click();
+		finish();
+		await Promise.resolve();
+		await Promise.resolve();
+		expect(dialog()?.classList.contains('bgt-popup--loading')).toBe(true);
 	});
 
 	it('shows the colorbox error text when the image fails to load', () => {
