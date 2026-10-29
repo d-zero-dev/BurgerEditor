@@ -2866,13 +2866,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@markuplint/ml-ast@npm:4.18.0":
-  version: 4.18.0
-  resolution: "@markuplint/ml-ast@npm:4.18.0"
-  checksum: 10c0/22ea5d49144e25edecbd5d110a3bf4c12e6efa05b5d8529801bbfbd5f98525c955f6e76edfee66851251aaabc5c855d81852d9d8cbca18022665f871b653c065
-  languageName: node
-  linkType: hard
-
 "@markuplint/ml-ast@npm:4.18.4":
   version: 4.18.4
   resolution: "@markuplint/ml-ast@npm:4.18.4"
@@ -2919,19 +2912,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@markuplint/ml-spec@npm:4.18.0":
-  version: 4.18.0
-  resolution: "@markuplint/ml-spec@npm:4.18.0"
-  dependencies:
-    "@markuplint/ml-ast": "npm:4.18.0"
-    "@markuplint/types": "npm:4.18.0"
-    dom-accessibility-api: "npm:0.7.1"
-    is-plain-object: "npm:5.0.0"
-    type-fest: "npm:5.6.0"
-  checksum: 10c0/1ba14231547fa8462ee54fdf90eab317b7d5330f584d40e279f2d92a932d84a635f545219d72f1bb30f23285f8ca147a3f5e5b53d329b83402e02c4767116b1f
-  languageName: node
-  linkType: hard
-
 "@markuplint/ml-spec@npm:4.18.4":
   version: 4.18.4
   resolution: "@markuplint/ml-spec@npm:4.18.4"
@@ -2974,12 +2954,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@markuplint/react-spec@npm:4.18.0":
-  version: 4.18.0
-  resolution: "@markuplint/react-spec@npm:4.18.0"
+"@markuplint/react-spec@npm:4.18.4":
+  version: 4.18.4
+  resolution: "@markuplint/react-spec@npm:4.18.4"
   dependencies:
-    "@markuplint/ml-spec": "npm:4.18.0"
-  checksum: 10c0/763d13f17c8a91cb66dd6e5ac4a0bc790d7a415d5f2eed9a5387846ff4f6939a434dc93ff3dfe24bdb60d0d67019bf20b6b95766da8d4d2917755c814264c10c
+    "@markuplint/ml-spec": "npm:4.18.4"
+  checksum: 10c0/a40d32b2e2d4e8d0b81ef4a8e494416aa01a577fc13fecda1eb519ca1f36598e5e7a494ebc8a19f9c97776138c1e9d35aada2bd46e4c4b4183d2d5bef7c1035f
   languageName: node
   linkType: hard
 
@@ -3022,24 +3002,6 @@ __metadata:
   dependencies:
     html-entities: "npm:2.6.0"
   checksum: 10c0/c2f12ed4ccecbff4509e9a568398747d1220096a1ea328c1087aabc9a4dbe5652ed7e91ea5812f6b31bf6c407a5daf8c7d0f7758d96f81b8bfd348110e03e1a6
-  languageName: node
-  linkType: hard
-
-"@markuplint/types@npm:4.18.0":
-  version: 4.18.0
-  resolution: "@markuplint/types@npm:4.18.0"
-  dependencies:
-    "@markuplint/shared": "npm:4.18.0"
-    "@types/css-tree": "npm:2.3.11"
-    "@types/debug": "npm:4.1.13"
-    "@types/whatwg-mimetype": "npm:5.0.0"
-    bcp-47: "npm:2.1.0"
-    css-tree: "npm:3.2.1"
-    debug: "npm:4.4.3"
-    leven: "npm:4.1.0"
-    type-fest: "npm:5.6.0"
-    whatwg-mimetype: "npm:5.0.0"
-  checksum: 10c0/9acc026441f2476f8dfd80b863b52535f6028de0af18eec00dc8dc51c8f0a3ccaa8dd2c3f44815f7a29ba0b03f0c39258f5eb70d5eb0b7117104652a0a86c32c
   languageName: node
   linkType: hard
 
@@ -6498,17 +6460,6 @@ __metadata:
   bin:
     baseline-browser-mapping: dist/cli.cjs
   checksum: 10c0/769e7a09a43babb7436f6c78c45323580f7fdf8c846ef97b93895f31a95adc1898168415e3a7ff1091610d74b96a826aceddaa4ed7f2bfe95caa453bbb331e60
-  languageName: node
-  linkType: hard
-
-"bcp-47@npm:2.1.0":
-  version: 2.1.0
-  resolution: "bcp-47@npm:2.1.0"
-  dependencies:
-    is-alphabetical: "npm:^2.0.0"
-    is-alphanumerical: "npm:^2.0.0"
-    is-decimal: "npm:^2.0.0"
-  checksum: 10c0/0b461b6d5bad215665e59bc57c4e1489312da541612558629e4f3d3538b16ce6c2709a4b62ec9ed6fca7a339740c27df6a454d5821a849b3df5ff7e697372885
   languageName: node
   linkType: hard
 
@@ -10183,13 +10134,6 @@ __metadata:
   version: 4.1.0
   resolution: "is-plain-obj@npm:4.1.0"
   checksum: 10c0/32130d651d71d9564dc88ba7e6fda0e91a1010a3694648e9f4f47bb6080438140696d3e3e15c741411d712e47ac9edc1a8a9de1fe76f3487b0d90be06ac9975e
-  languageName: node
-  linkType: hard
-
-"is-plain-object@npm:5.0.0":
-  version: 5.0.0
-  resolution: "is-plain-object@npm:5.0.0"
-  checksum: 10c0/893e42bad832aae3511c71fd61c0bf61aa3a6d853061c62a307261842727d0d25f761ce9379f7ba7226d6179db2a3157efa918e7fe26360f3bf0842d9f28942c
   languageName: node
   linkType: hard
 
@@ -14030,7 +13974,7 @@ __metadata:
     "@d-zero/textlint-config": "npm:5.1.2"
     "@d-zero/tsconfig": "npm:2.0.0"
     "@markuplint/jsx-parser": "npm:4.18.4"
-    "@markuplint/react-spec": "npm:4.18.0"
+    "@markuplint/react-spec": "npm:4.18.4"
     "@vitest/browser": "npm:4.1.12"
     "@vitest/browser-playwright": "npm:4.1.12"
     eslint-plugin-react-hooks: "npm:7.1.1"
@@ -15650,15 +15594,6 @@ __metadata:
   dependencies:
     tagged-tag: "npm:^1.0.0"
   checksum: 10c0/313c5d0e37a3f1cc82e942f3228f897623c8b54a63a8a95532d0c2c21ab200793caa70bd8904a83fd713eb28d87ba32468b09b345ef6efa25cecb345b467226f
-  languageName: node
-  linkType: hard
-
-"type-fest@npm:5.6.0":
-  version: 5.6.0
-  resolution: "type-fest@npm:5.6.0"
-  dependencies:
-    tagged-tag: "npm:^1.0.0"
-  checksum: 10c0/5468a8ffda7f3904e6f7bbd8069eb8b6dd4bd9156e206df7a01d09a73e28cd1afedf74ead9d0fc12841c8c90074194859feca240511c50800962fde1bd9ddcbc
   languageName: node
   linkType: hard
 
