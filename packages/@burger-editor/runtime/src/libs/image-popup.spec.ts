@@ -323,7 +323,7 @@ describe('image popup: group', () => {
 });
 
 describe('image popup: closing', () => {
-	it('closes with the close button and returns focus to the opener', () => {
+	it('closes with the close button and returns focus to the opener when nothing moved', () => {
 		setup(GROUP);
 		const a = document.querySelector<HTMLElement>('#a')!;
 		a.focus();
@@ -331,6 +331,17 @@ describe('image popup: closing', () => {
 		q('.bgt-popup__close')?.click();
 		expect(dialog()?.open).toBe(false);
 		expect(document.activeElement).toBe(a);
+	});
+
+	it('returns focus to the link of the image shown last, not the opener', () => {
+		setup(GROUP);
+		const a = document.querySelector<HTMLElement>('#a')!;
+		a.focus();
+		click('a');
+		q('.bgt-popup__next')?.click();
+		q('.bgt-popup__next')?.click();
+		q('.bgt-popup__close')?.click();
+		expect(document.activeElement).toBe(document.querySelector('#c'));
 	});
 
 	it('closes with Escape', () => {

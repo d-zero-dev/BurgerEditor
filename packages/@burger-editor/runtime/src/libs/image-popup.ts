@@ -349,7 +349,9 @@ function getPopup(doc: Document): Popup {
 		// 次に開くとき前回の大きさから縮むアニメーションにならないよう、枠の寸法を消す
 		popup.loaded.style.width = '';
 		popup.loaded.style.height = '';
-		popup.opener?.focus();
+		// フォーカスは最後に表示していた画像のリンクへ戻す（colorbox の returnFocus と同じ。
+		// 開いたリンクではない）。ブラウザが戻した先を上書きする
+		(popup.items[popup.index] ?? popup.opener)?.focus();
 		popup.opener = null;
 	});
 
