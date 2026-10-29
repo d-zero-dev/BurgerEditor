@@ -14,15 +14,13 @@ export async function googleMaps(el: HTMLElement) {
 	// @ts-ignore
 	google.maps.marker = await google.maps.importLibrary('marker');
 
-	const $el = $(el);
-
 	const defaultLat = 35.681_382;
 	const defaultLng = 139.766_084;
 	const defaultZoom = 14;
 
-	const mapCenterLat = +$el.data('lat') || defaultLat;
-	const mapCenterLng = +$el.data('lng') || defaultLng;
-	const zoom = +$el.data('zoom') || defaultZoom;
+	const mapCenterLat = number(el.dataset.lat, defaultLat);
+	const mapCenterLng = number(el.dataset.lng, defaultLng);
+	const zoom = number(el.dataset.zoom, defaultZoom);
 
 	const letLng = new google.maps.LatLng(mapCenterLat, mapCenterLng);
 
@@ -42,4 +40,17 @@ export async function googleMaps(el: HTMLElement) {
 		position: letLng,
 		map,
 	});
+}
+
+/**
+ * data 属性の数値。無い・数値でないときだけ既定値にする（`0` は正当な値として通す）
+ * @param value
+ * @param fallback
+ */
+function number(value: string | undefined, fallback: number): number {
+	if (value == null || value.trim() === '') {
+		return fallback;
+	}
+	const n = Number(value);
+	return Number.isFinite(n) ? n : fallback;
 }

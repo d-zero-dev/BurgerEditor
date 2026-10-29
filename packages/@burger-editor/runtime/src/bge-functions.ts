@@ -1,7 +1,8 @@
 /**
  * 公開側（フロントエンド表示）のエントリポイント。
- * BurgerEditor で作成したコンテンツに含まれる Google Maps・YouTube・ギャラリーを
- * DOMContentLoaded で初期化する。管理画面のエディタコードとは完全に独立。
+ * BurgerEditor で作成したコンテンツに含まれる画像のポップアップ・Google Maps・YouTube・ギャラリーを
+ * DOMContentLoaded で初期化する。管理画面のエディタコードとは完全に独立で、
+ * jQuery などのライブラリをページに読み込む必要はない。
  * window.BgE.execute() として外部からも呼べるようにしている。
  * @module
  */
@@ -18,26 +19,35 @@ namespace BurgerFunctions {
 		root: Document | HTMLElement,
 		options?: BurgerFunctionsOptions,
 	) => {
-		const $root = $(root);
-
-		migration($root);
+		migration(root);
 
 		/**
 		 * Use Google Maps
 		 *
 		 */
-		$root.find('.bgt-google-maps').each((_, el) => void googleMaps(el));
+		for (const el of root.querySelectorAll<HTMLElement>('.bgt-google-maps')) {
+			void googleMaps(el);
+		}
 
 		/**
 		 * Use YouTube
 		 *
 		 */
-		$root.find('.bgt-youtube').each((_, el) => youtube(el));
+		for (const el of root.querySelectorAll<HTMLElement>('.bgt-youtube')) {
+			youtube(el);
+		}
 
 		/**
 		 * Use Gallery
 		 */
-		$root.find('[data-bgt="gallery"]').each(options?.gallery || gallery);
+		const initGallery = options?.gallery || gallery;
+		const galleries = root.querySelectorAll<HTMLElement>('[data-bgt="gallery"]');
+		for (const [i, el] of galleries.entries()) {
+			// 差し替えた処理が false を返したら以降を処理しない
+			if (initGallery.call(el, i, el) === false) {
+				break;
+			}
+		}
 	};
 }
 
@@ -49,5 +59,3 @@ window.addEventListener('DOMContentLoaded', () =>
 	// @ts-ignore
 	BurgerFunctions.execute(document, window['BgE'].options),
 );
-
-export { options } from './options.js';

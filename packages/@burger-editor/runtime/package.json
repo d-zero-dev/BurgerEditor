@@ -22,14 +22,8 @@
 	"scripts": {
 		"build": "tsc && node build.mjs"
 	},
-	"dependencies": {
-		"jquery": "3.7.1",
-		"psycle": "1.0.0-beta.4"
-	},
 	"devDependencies": {
 		"@types/google.maps": "3.64.1",
-		"@types/jquery": "3.5.34",
-		"@types/jquery.colorbox": "1.4.36",
 		"@types/youtube": "0.2.0",
 		"typescript": "6.0.3",
 		"vite": "8.3.5"

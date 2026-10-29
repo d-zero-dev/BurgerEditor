@@ -171,11 +171,7 @@ __metadata:
   resolution: "@burger-editor/runtime@workspace:packages/@burger-editor/runtime"
   dependencies:
     "@types/google.maps": "npm:3.64.1"
-    "@types/jquery": "npm:3.5.34"
-    "@types/jquery.colorbox": "npm:1.4.36"
     "@types/youtube": "npm:0.2.0"
-    jquery: "npm:3.7.1"
-    psycle: "npm:1.0.0-beta.4"
     typescript: "npm:6.0.3"
     vite: "npm:8.3.5"
   languageName: unknown
@@ -3215,15 +3211,6 @@ __metadata:
   dependencies:
     "@types/unist": "npm:^2"
   checksum: 10c0/16daac35d032e656defe1f103f9c09c341a6dc553c7ec17b388274076fa26e904a71ea5ea41fd368a6d5f1e9e53be275c80af7942b9c466d8511d261c9529c7e
-  languageName: node
-  linkType: hard
-
-"@types/jquery.colorbox@npm:1.4.36":
-  version: 1.4.36
-  resolution: "@types/jquery.colorbox@npm:1.4.36"
-  dependencies:
-    "@types/jquery": "npm:*"
-  checksum: 10c0/16a6f63e5f3529838dab4ed04993c90a0a4b3d849df8cfac8bfdacde19daac6a0d289c79b586edebe937108d2681981293a068356f98dad377e38508013d6509
   languageName: node
   linkType: hard
 
@@ -10277,13 +10264,6 @@ __metadata:
     kerberos:
       optional: true
   checksum: 10c0/e1c89e46b739a790335555c8182ed919f6fa16ca244cd4c01a9806a1c471af785b3beff8bd8a891422bedfffb0f43115333d98ad426f9bc82e7cd20c6a15ceb0
-  languageName: node
-  linkType: hard
-
-"psycle@npm:1.0.0-beta.4":
-  version: 1.0.0-beta.4
-  resolution: "psycle@npm:1.0.0-beta.4"
-  checksum: 10c0/66fc2cb7079209e618d5dc49a05e9a7f39aead26e6a3fcd852405924fc7d8d9cc0bcbc0b8caba00b43c99e7f3f4c0f2184f11a5df13b0284f7baac17a051b29d
   languageName: node
   linkType: hard
 
