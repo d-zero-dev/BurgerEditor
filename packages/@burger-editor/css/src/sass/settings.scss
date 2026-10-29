@@ -41,6 +41,10 @@ $breakPoint: 768px;
 	--bge-options-padding-none: 0;
 	--bge-options-padding-with-border-or-bg: 1.5em;
 	--bge-options-padding: var(--bge-options-padding-none);
+
+	/* 画像タイプのポップアップで画像に使える最大の大きさ（CSS の長さ。% は画面に対する割合） */
+	--bge-popup-max-inline-size: 95%;
+	--bge-popup-max-block-size: 95%;
 }
 
 /** ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- *
