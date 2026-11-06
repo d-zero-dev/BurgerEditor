@@ -7,9 +7,11 @@ import '@burger-editor/file-io';
 import { describe, expect, test } from 'vitest';
 
 import {
+	type BlockSpec,
 	buildBlockData,
 	findCatalogDefinition,
 	renderBlockHtml,
+	toCoreConfig,
 } from './block-builder.js';
 
 const SMALL_CATALOG: BlockCatalog = {
@@ -161,5 +163,84 @@ describe('renderBlockHtml', () => {
 			makeConfig(defaultCatalog),
 		);
 		expect(html).toContain('my-block');
+	});
+
+	describe('image block with a second image and an empty media', () => {
+		// An empty `media` matches every viewport, so the second image would be
+		// shown on a wide screen too. The same normalization the editor applies
+		// must also apply to block_insert / block_replace / page_create.
+		const spec = {
+			name: 'image',
+			containerProps: { type: 'grid', columns: 1 },
+			items: [
+				[
+					{
+						name: 'image',
+						data: {
+							path: ['/img/pc.png', '/img/sp.png'],
+							width: [400, 300],
+							height: [300, 200],
+							media: ['', ''],
+							alt: ['説明'],
+							loading: ['eager'],
+						},
+					},
+				],
+			],
+		} satisfies BlockSpec;
+
+		test('fills the empty media with the default media query', async () => {
+			const html = await renderBlockHtml(spec, makeConfig(defaultCatalog));
+
+			expect(html).toContain('media="(max-width: 767px)"');
+		});
+
+		test('fills it with the first entry of config.mediaQueries', async () => {
+			const html = await renderBlockHtml(spec, {
+				...makeConfig(defaultCatalog),
+				mediaQueries: ['(max-width: 599px)', '(max-width: 1023px)'],
+			});
+
+			expect(html).toContain('media="(max-width: 599px)"');
+		});
+
+		test('keeps a media query that was supplied', async () => {
+			const html = await renderBlockHtml(
+				{
+					...spec,
+					items: [
+						[
+							{
+								name: 'image',
+								data: { ...spec.items[0]![0]!.data, media: ['', '(min-width: 1024px)'] },
+							},
+						],
+					],
+				},
+				makeConfig(defaultCatalog),
+			);
+
+			expect(html).toContain('media="(min-width: 1024px)"');
+			expect(html).not.toContain('media="(max-width: 767px)"');
+		});
+	});
+});
+
+describe('toCoreConfig', () => {
+	test('carries mediaQueries over from the project config', () => {
+		expect(
+			toCoreConfig({
+				...makeConfig(defaultCatalog),
+				mediaQueries: ['(max-width: 599px)'],
+			}).mediaQueries,
+		).toStrictEqual(['(max-width: 599px)']);
+	});
+
+	test('fills the required keys when no config is given', () => {
+		expect(toCoreConfig()).toMatchObject({
+			classList: [],
+			stylesheets: [],
+			googleMapsApiKey: null,
+		});
 	});
 });

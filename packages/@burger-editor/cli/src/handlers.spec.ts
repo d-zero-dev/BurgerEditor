@@ -756,6 +756,63 @@ describe('block handlers', () => {
 		});
 	});
 
+	describe('image item: an empty media of the second image', () => {
+		// An empty `media` matches every viewport, so the second image would be
+		// shown on a wide screen too. The editor fills it in on save; an agent's
+		// block_insert / item_update must get the same result.
+		const imageBlockSpec = (data: Record<string, unknown>) => ({
+			name: 'image',
+			containerProps: { type: 'grid' as const, columns: 1 },
+			items: [[{ name: 'image', data }]],
+		});
+		const onePicture = {
+			path: ['/img/pc.png'],
+			width: [400],
+			height: [300],
+			alt: ['説明'],
+			loading: ['eager'],
+		};
+		const secondImage = {
+			path: ['/img/pc.png', '/img/sp.png'],
+			width: [400, 300],
+			height: [300, 200],
+		};
+
+		test('blockInsert fills the empty media with the default media query', async () => {
+			await blockInsert(
+				ctx,
+				'about.html',
+				0,
+				imageBlockSpec({ ...onePicture, ...secondImage, media: ['', ''] }),
+			);
+
+			const saved = await fs.readFile(path.join(docRoot, 'about.html'), 'utf8');
+			expect(saved).toContain('media="(max-width: 767px)"');
+		});
+
+		test('itemUpdate fills it when a second image is added to an existing item', async () => {
+			await blockInsert(ctx, 'about.html', 0, imageBlockSpec(onePicture));
+
+			await itemUpdate(ctx, 'about.html', { index: 0 }, 0, secondImage);
+
+			const saved = await fs.readFile(path.join(docRoot, 'about.html'), 'utf8');
+			expect(saved).toContain('media="(max-width: 767px)"');
+		});
+
+		test('itemUpdate fills it with the first entry of config.mediaQueries', async () => {
+			ctx = {
+				...ctx,
+				config: makeConfig(docRoot, assetsRoot, { mediaQueries: ['(max-width: 599px)'] }),
+			};
+			await blockInsert(ctx, 'about.html', 0, imageBlockSpec(onePicture));
+
+			await itemUpdate(ctx, 'about.html', { index: 0 }, 0, secondImage);
+
+			const saved = await fs.readFile(path.join(docRoot, 'about.html'), 'utf8');
+			expect(saved).toContain('media="(max-width: 599px)"');
+		});
+	});
+
 	test('itemUpdate throws when itemIndex is out of range', async () => {
 		await expect(itemUpdate(ctx, 'about.html', { index: 0 }, 5, {})).rejects.toThrow(
 			/Item index 5 out of range/,

@@ -7,7 +7,7 @@ import type {
 import type { BurgerEditorConfig } from '@burger-editor/file-io';
 
 import { items as defaultItems } from '@burger-editor/blocks';
-import { render } from '@burger-editor/core';
+import { render, withConfigDefaults } from '@burger-editor/core';
 
 export interface BlockSpec {
 	readonly catalog?: string;
@@ -64,6 +64,52 @@ export function buildBlockData(spec: BlockSpec, catalog: BlockCatalog): BlockDat
 }
 
 /**
+ * The keys of the project config that `render()` and an item's
+ * `normalizeItemData` read. Callers that only have a part of the config (the
+ * pure-HTML block operations) can pass just these.
+ * @example
+ * ```ts
+ * const source: CoreConfigSource = { mediaQueries: ['(max-width: 599px)'] };
+ * const config = toCoreConfig(source);
+ * ```
+ */
+export type CoreConfigSource = Partial<
+	Pick<
+		BurgerEditorConfig,
+		| 'classList'
+		| 'stylesheets'
+		| 'sampleImagePath'
+		| 'sampleFilePath'
+		| 'googleMapsApiKey'
+		| 'mediaQueries'
+	>
+>;
+
+/**
+ * Build the core `Config` that `render()` and an item's `normalizeItemData`
+ * read, from the project config. Keys that are missing become empty values, so
+ * the settings with a default (such as `mediaQueries`) fall back to it.
+ * @param config - The project config, or just the keys the caller has
+ * @example
+ * ```ts
+ * toCoreConfig({ mediaQueries: ['(max-width: 599px)'] }).mediaQueries;
+ * // ['(max-width: 599px)']
+ * ```
+ */
+export function toCoreConfig(config: CoreConfigSource | undefined): Config {
+	// The empty defaults live in core's withConfigDefaults (the values render()
+	// uses). Only stylesheets differ in shape here (paths → { path } objects).
+	return withConfigDefaults({
+		classList: config?.classList,
+		stylesheets: config?.stylesheets?.map((path) => ({ path })),
+		sampleImagePath: config?.sampleImagePath,
+		sampleFilePath: config?.sampleFilePath,
+		googleMapsApiKey: config?.googleMapsApiKey,
+		mediaQueries: config?.mediaQueries,
+	});
+}
+
+/**
  *
  * @param spec
  * @param config
@@ -73,13 +119,6 @@ export async function renderBlockHtml(
 	config: BurgerEditorConfig,
 ): Promise<string> {
 	const data = buildBlockData(spec, config.catalog);
-	const renderConfig: Partial<Config> = {
-		classList: config.classList,
-		stylesheets: config.stylesheets.map((path) => ({ path })),
-		sampleImagePath: config.sampleImagePath,
-		sampleFilePath: config.sampleFilePath,
-		googleMapsApiKey: config.googleMapsApiKey,
-	};
-	const el = await render(data, { items: defaultItems, config: renderConfig as Config });
+	const el = await render(data, { items: defaultItems, config: toCoreConfig(config) });
 	return el.outerHTML;
 }

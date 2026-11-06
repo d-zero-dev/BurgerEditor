@@ -1,4 +1,4 @@
-export type { BlockSpec } from './block-builder.js';
+export type { BlockSpec, CoreConfigSource } from './block-builder.js';
 export {
 	buildBlockData,
 	findCatalogDefinition,

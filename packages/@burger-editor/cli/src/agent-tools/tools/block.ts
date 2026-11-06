@@ -305,7 +305,7 @@ export const pageUpdateTool = defineAgentTool({
 			// no separate response field to carry that guarantee.
 			let next: string | NoEditableAreaError;
 			try {
-				next = applyBlockOpToHtml(html, op);
+				next = applyBlockOpToHtml(html, op, ctx.config);
 			} catch (error) {
 				throw new AgentError(
 					toAgentError(error).code,
