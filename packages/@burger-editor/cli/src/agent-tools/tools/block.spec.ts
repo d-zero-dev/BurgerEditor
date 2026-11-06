@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import * as h from '../../handlers.js';
 import { type AgentToolFixture, makeFixture } from '../__tests__/fixture.js';
-import { AgentError } from '../errors.js';
+import { AgentError, toAgentError } from '../errors.js';
 
 import {
 	blockDeleteTool,
@@ -391,5 +391,122 @@ describe('page_update', () => {
 		expect(result.diff.after).toContain('本文1');
 		const after = await fs.readFile(path.join(fixture.docRoot, 'about.html'), 'utf8');
 		expect(after).toBe(before);
+	});
+});
+
+describe('a write that leaves a link or a slide without a name is refused with `invalid`', () => {
+	const ALT_EMPTY = /代替テキスト\(alt\)が空です/;
+	const imageSpec = {
+		name: 'image',
+		containerProps: { type: 'grid' as const, columns: 1 },
+		items: [
+			[
+				{
+					name: 'image',
+					data: { path: ['/img/a.png'], alt: ['説明'], width: [400], height: [300] },
+				},
+			],
+		],
+	};
+	const unnamedLinkHtml =
+		'<div data-bge-name="image" data-bge-container="grid:1">' +
+		'<div data-bge-container-frame><div data-bge-group><div data-bge-item>' +
+		`<div data-bgi="image" data-bgi-ver="0.0.0">${itemImport(items['image']!.template, {
+			path: ['/img/a.png'],
+			alt: [''],
+			width: [400],
+			height: [300],
+			node: 'a',
+			href: 'https://example.com/',
+		})}</div>` +
+		'</div></div></div></div>';
+
+	test('item_update writes nothing and the error carries the invalid code and the reason', async () => {
+		await h.blockInsert(fixture.ctx, 'about.html', 0, imageSpec);
+		const before = await fs.readFile(path.join(fixture.docRoot, 'about.html'), 'utf8');
+		const token = await readToken();
+
+		const error = await itemUpdateTool
+			.run(fixture.ctx, {
+				path: 'about.html',
+				target: { index: 0 },
+				itemIndex: 0,
+				data: { node: 'a', href: 'https://example.com/', alt: [''] },
+				readToken: token,
+			})
+			.catch((error_: unknown) => error_);
+
+		expect((error as Error).message).toMatch(ALT_EMPTY);
+		expect(toAgentError(error).code).toBe('invalid');
+		expect(await fs.readFile(path.join(fixture.docRoot, 'about.html'), 'utf8')).toBe(
+			before,
+		);
+	});
+
+	test.each([false, true])(
+		'block_insert is refused the same way (dryRun: %s)',
+		async (dryRun) => {
+			const token = await readToken();
+			const spec = {
+				...imageSpec,
+				items: [
+					[
+						{
+							name: 'image',
+							data: {
+								path: ['/img/a.png'],
+								alt: [''],
+								node: 'a',
+								href: 'https://example.com/',
+							},
+						},
+					],
+				],
+			};
+
+			const error = await blockInsertTool
+				.run(fixture.ctx, {
+					path: 'about.html',
+					index: 0,
+					spec,
+					readToken: token,
+					dryRun,
+				})
+				.catch((error_: unknown) => error_);
+
+			// The message reaches the item itself: this is the refusal, not some other failure
+			expect((error as Error).message).toMatch(
+				/^Nothing was written\. item index 0 \("image"\): /,
+			);
+			expect((error as Error).message).toMatch(ALT_EMPTY);
+			expect(toAgentError(error).code).toBe('invalid');
+		},
+	);
+
+	test('page_update rejects the whole call, says which op failed, and persists nothing', async () => {
+		const before = await fs.readFile(path.join(fixture.docRoot, 'about.html'), 'utf8');
+		const token = await readToken();
+
+		const error = await pageUpdateTool
+			.run(fixture.ctx, {
+				path: 'about.html',
+				ops: [
+					{ op: 'delete', index: 0 },
+					{ op: 'insert', index: 0, blockHtml: unnamedLinkHtml },
+				],
+				readToken: token,
+			})
+			.catch((error_: unknown) => error_);
+
+		expect(error).toBeInstanceOf(AgentError);
+		expect((error as AgentError).code).toBe('invalid');
+		expect((error as AgentError).message).toMatch(/op 1 \(insert\) failed/);
+		expect((error as AgentError).message).toMatch(ALT_EMPTY);
+		expect((error as AgentError).message).toContain(
+			'nothing from this call was persisted',
+		);
+		expect(await fs.readFile(path.join(fixture.docRoot, 'about.html'), 'utf8')).toBe(
+			before,
+		);
 	});
 });

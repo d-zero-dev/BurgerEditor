@@ -207,6 +207,52 @@ describe('registerTools — v3 compat + agent tools coexist', () => {
 		expect(typeof payload.message).toBe('string');
 	});
 
+	test('block_insert of a link image without an alt, through the full MCP transport, returns isError `invalid` with the reason and writes nothing', async () => {
+		const before = await fs.readFile(path.join(docRoot, 'index.html'), 'utf8');
+		const first = textPayload(
+			await client.callTool({ name: 'page_blocks', arguments: { path: 'index.html' } }),
+		) as { readToken: string };
+		const second = textPayload(
+			await client.callTool({
+				name: 'page_blocks',
+				arguments: { path: 'index.html', readToken: first.readToken },
+			}),
+		) as { readToken: string };
+
+		const result = await client.callTool({
+			name: 'block_insert',
+			arguments: {
+				path: 'index.html',
+				index: 0,
+				spec: {
+					catalog: 'image',
+					items: [
+						[
+							{
+								name: 'image',
+								data: {
+									path: ['/img/a.png'],
+									alt: [''],
+									node: 'a',
+									href: 'https://example.com/',
+								},
+							},
+						],
+					],
+				},
+				readToken: second.readToken,
+			},
+		});
+
+		expect(result.isError).toBe(true);
+		const text =
+			(result.content as Array<{ type: string; text?: string }>)[0]?.text ?? '';
+		const payload = JSON.parse(text) as { error: string; message: string };
+		expect(payload.error).toBe('invalid');
+		expect(payload.message).toContain('代替テキスト(alt)が空です');
+		expect(await fs.readFile(path.join(docRoot, 'index.html'), 'utf8')).toBe(before);
+	});
+
 	test('v3 compat tools are unaffected — get_block_type still resolves', async () => {
 		const list = await client.listTools();
 		const v3 = list.tools.find((t) => t.name === 'get_block_type');

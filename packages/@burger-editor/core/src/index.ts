@@ -11,6 +11,7 @@ export { applyBlockOptions } from './block/apply-block-options.js';
 export { dataToHtml as itemImport } from './item/data-to-html.js';
 export { dataFromHtml as itemExport } from './item/data-from-html.js';
 export { normalizeItemData } from './item/normalize-item-data.js';
+export { validateItemData, validateItemHtml } from './item/validate-item-data.js';
 export { importItemHtml } from './item/import-item-html.js';
 export { normalizeItemHtml } from './item/normalize-item-html.js';
 export { render } from './render.js';

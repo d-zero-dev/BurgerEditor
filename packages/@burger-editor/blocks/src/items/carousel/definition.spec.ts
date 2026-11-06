@@ -962,6 +962,180 @@ describe('carouselItemSeed', () => {
 	});
 });
 
+describe('carouselItemSeed: エージェントの書き込み（toItemData を通らない保存）', () => {
+	const named = { ...DEFAULT_SLIDE, path: ['/a.png'], alt: ['桜'], caption: '' };
+
+	describe('validateItemData', () => {
+		test('名前の無いスライドは、編集画面の「決定」と同じ理由を、スライドの番号つきで返す', () => {
+			const data = withSlidesOf(named, { ...named, alt: [''], caption: '' });
+
+			const [message, ...rest] = carouselItemSeed.validateItemData!(data, testConfig);
+
+			expect(message).toMatch(/^スライド2: キャプションも代替テキスト\(alt\)も空です/);
+			expect(rest).toStrictEqual([]);
+		});
+
+		test('リンクのスライドで alt が空なら、キャプションがあっても理由を返す', () => {
+			const data = withSlidesOf(named, {
+				...named,
+				node: 'a',
+				href: 'https://example.com/',
+				alt: [''],
+				caption: '春の庭',
+			});
+
+			expect(carouselItemSeed.validateItemData!(data, testConfig)[0]).toMatch(
+				/^スライド2: 代替テキスト\(alt\)が空です/,
+			);
+		});
+
+		test('すべてのスライドに名前があれば、理由を返さない', () => {
+			const data = withSlidesOf(named, { ...named, alt: [''], caption: '春の庭' });
+
+			expect(carouselItemSeed.validateItemData!(data, testConfig)).toStrictEqual([]);
+		});
+
+		test('node だけが button でポップアップでないスライドは、装飾的な画像として扱う（正規化が div にそろえる）', () => {
+			const data = withSlidesOf(named, {
+				...named,
+				node: 'button',
+				command: null,
+				alt: [''],
+				caption: '春の庭',
+			});
+
+			expect(carouselItemSeed.validateItemData!(data, testConfig)).toStrictEqual([]);
+		});
+
+		test('エージェントの item_update 相当: 平らな path で 2 枚に増やすと、足したスライドが名前無しとして拒まれる', () => {
+			const item = createItem();
+			const merged = { ...item.export(), path: ['/img/a.png', '/img/b.png'] as never };
+			const normalized = carouselItemSeed.normalizeItemData!(merged, testConfig);
+
+			expect(carouselItemSeed.validateItemData!(normalized, testConfig)[0]).toMatch(
+				/^スライド2: /,
+			);
+		});
+
+		test('テンプレートのままのアイテムは、名前があるので拒まない', () => {
+			expect(
+				carouselItemSeed.validateItemData!(createItem().export(), testConfig),
+			).toStrictEqual([]);
+		});
+
+		test('形が不正な値でも throw せず、文字列でない alt・caption は空として、名前の無いスライドを 1 件返す', () => {
+			const result = carouselItemSeed.validateItemData!(
+				{ path: '' as never, alt: 5 as never, node: {} as never },
+				testConfig,
+			);
+
+			expect(result).toHaveLength(1);
+			expect(result[0]).toMatch(/^スライド1: キャプションも代替テキスト\(alt\)も空です/);
+		});
+
+		test('正規化の前でも後でも、同じ理由を返す（検査は保存された node ではなくポップアップとリンク先から導く）', () => {
+			const inputs = [
+				withSlidesOf(named, {
+					...named,
+					node: 'button',
+					command: null,
+					alt: [''],
+					caption: '春の庭',
+				}),
+				withSlidesOf(named, {
+					...named,
+					node: 'a',
+					href: 'https://example.com/',
+					alt: [''],
+					caption: '春の庭',
+				}),
+				withSlidesOf(named, { ...named, node: 'div', alt: [''], caption: '' }),
+			];
+
+			for (const data of inputs) {
+				const normalized = carouselItemSeed.normalizeItemData!(
+					data,
+					testConfig,
+				) as CarouselData;
+
+				expect(carouselItemSeed.validateItemData!(normalized, testConfig)).toStrictEqual(
+					carouselItemSeed.validateItemData!(data, testConfig),
+				);
+			}
+		});
+	});
+
+	describe('normalizeItemData: スライドごとに、画像を包む要素（node / command / target）をそろえる', () => {
+		test('ポップアップでない button のスライドは div、href の無い a も div にする', () => {
+			const data = {
+				...createItem().export(),
+				path: [['/a.png'], ['/b.png']],
+				alt: [['a'], ['b']],
+				node: ['button', 'a'],
+				href: ['', ''],
+				command: [null, null],
+				target: [null, '_blank'],
+			} as never;
+
+			const result = carouselItemSeed.normalizeItemData!(data, testConfig);
+
+			expect(result.node).toStrictEqual(['div', 'div']);
+			expect(result.command).toStrictEqual([null, null]);
+			expect(result.target).toStrictEqual([null, null]);
+		});
+
+		test('ポップアップとリンクのスライドは、button と show-modal、a にそろえる', () => {
+			const data = {
+				...createItem().export(),
+				path: [['/a.png'], ['/b.png']],
+				alt: [['a'], ['b']],
+				node: ['button', 'div'],
+				href: ['', 'https://example.com/'],
+				command: ['show-modal', null],
+				target: [null, '_blank'],
+			} as never;
+
+			const result = carouselItemSeed.normalizeItemData!(data, testConfig);
+
+			expect(result.node).toStrictEqual(['button', 'a']);
+			expect(result.command).toStrictEqual(['show-modal', null]);
+			expect(result.target).toStrictEqual([null, '_blank']);
+		});
+
+		test('すでにそろっていれば、同じオブジェクトを返す', () => {
+			const data = createItem().export();
+
+			expect(carouselItemSeed.normalizeItemData!(data, testConfig)).toBe(data);
+		});
+
+		test('node の配列が path より短くても、穴を作らず、足りない分は既定値（div）で埋める', () => {
+			const data = {
+				...createItem().export(),
+				path: [['/a.png'], ['/b.png']],
+				alt: [['a'], ['b']],
+				node: ['button'],
+			} as never;
+
+			const result = carouselItemSeed.normalizeItemData!(data, testConfig);
+
+			expect(result.node).toStrictEqual(['div', 'div']);
+			expect(result.command).toStrictEqual([null, null]);
+			expect(result.target).toStrictEqual([null, null]);
+		});
+
+		test('冪等: かけ直しても結果が変わらない', () => {
+			const data = {
+				...createItem().export(),
+				node: ['button'],
+				command: [null],
+			} as never;
+			const once = carouselItemSeed.normalizeItemData!(data, testConfig);
+
+			expect(carouselItemSeed.normalizeItemData!(once, testConfig)).toBe(once);
+		});
+	});
+});
+
 /**
  * スライドを並べた、保存前の状態（全体設定は既定値）を作る
  * @param slides

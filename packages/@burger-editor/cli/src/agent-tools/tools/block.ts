@@ -3,9 +3,8 @@ import { loadContent, resolvePathInput, saveContent } from '@burger-editor/file-
 import { z } from 'zod';
 
 import * as h from '../../handlers.js';
-import { applyBlockOpToHtml } from '../apply-block-op.js';
+import { applyBlockOps } from '../apply-block-op.js';
 import { blockOpSchema } from '../block-op.js';
-import { AgentError, toAgentError } from '../errors.js';
 import { buildBlockDiff, finalizeMutation } from '../mutation-result.js';
 import { issueReadToken, requireReadToken } from '../read-token.js';
 import {
@@ -16,6 +15,15 @@ import {
 	readTokenArg,
 } from '../schemas.js';
 import { defineAgentTool } from '../types.js';
+
+/**
+ * Said in the descriptions of the tools that write items, so that an agent that
+ * never loaded the BurgerEditor skill still learns why a write was refused.
+ */
+const UNNAMED_NOTE =
+	'A write that would leave a link or popup image without an `alt`, or a carousel ' +
+	'slide with neither caption nor `alt`, is refused with `invalid` (nothing is written); ' +
+	'fix the data named in the message and send it again.';
 
 export const blockGetTool = defineAgentTool({
 	name: 'block_get',
@@ -34,7 +42,8 @@ export const blockInsertTool = defineAgentTool({
 	name: 'block_insert',
 	description:
 		'Insert a new block at `index` (0 prepends, a value >= the block count appends). ' +
-		'Requires readToken from page_blocks.',
+		'Requires readToken from page_blocks. ' +
+		UNNAMED_NOTE,
 	input: z.object({
 		path: pathArg,
 		index: z.number().int().nonnegative(),
@@ -65,7 +74,8 @@ export const blockInsertTool = defineAgentTool({
 export const blockReplaceTool = defineAgentTool({
 	name: 'block_replace',
 	description:
-		'Replace a block at target ({index} or {id}) with a new one. Requires readToken.',
+		'Replace a block at target ({index} or {id}) with a new one. Requires readToken. ' +
+		UNNAMED_NOTE,
 	input: z.object({
 		path: pathArg,
 		target: blockTargetSchema,
@@ -227,7 +237,8 @@ export const itemUpdateTool = defineAgentTool({
 	name: 'item_update',
 	description:
 		'Merge new data into one item within a block (target + itemIndex, DOM order). Shallow-' +
-		"merges with the item's current data — omit fields you want unchanged. Requires readToken.",
+		"merges with the item's current data — omit fields you want unchanged. Requires readToken. " +
+		UNNAMED_NOTE,
 	input: z.object({
 		path: pathArg,
 		target: blockTargetSchema,
@@ -274,7 +285,8 @@ export const pageUpdateTool = defineAgentTool({
 		'/ block_replace individually instead. Ops run in order against the state left by the ' +
 		'previous one — indexes shift as you insert/delete/move. All ops succeed and are ' +
 		'written together, or none are: a failing op rejects the whole call and nothing is ' +
-		'persisted. Requires readToken.',
+		'persisted. Requires readToken. ' +
+		UNNAMED_NOTE,
 	input: z.object({
 		path: pathArg,
 		ops: z.array(blockOpSchema).min(1),
@@ -294,34 +306,9 @@ export const pageUpdateTool = defineAgentTool({
 			throw result;
 		}
 		const before = result.editableContent;
-		let html = before;
-		for (const [i, op] of args.ops.entries()) {
-			// A failing op throws (via AgentError, like every other agent
-			// tool — see register-agent-tools.ts) rather than returning a
-			// success-shaped "partial failure" object. page_update never
-			// calls saveContent until every op in the batch has applied
-			// cleanly in memory, so a mid-batch failure genuinely persists
-			// nothing; the thrown message says so explicitly since there is
-			// no separate response field to carry that guarantee.
-			let next: string | NoEditableAreaError;
-			try {
-				next = applyBlockOpToHtml(html, op, ctx.config);
-			} catch (error) {
-				throw new AgentError(
-					toAgentError(error).code,
-					`page_update op ${i} (${op.op}) failed: ${toAgentError(error).message} ` +
-						'page_update is all-or-nothing — nothing from this call was persisted.',
-				);
-			}
-			if (next instanceof NoEditableAreaError) {
-				throw new AgentError(
-					'no-such-area',
-					`page_update op ${i} (${op.op}) failed: ${next.message} ` +
-						'page_update is all-or-nothing — nothing from this call was persisted.',
-				);
-			}
-			html = next;
-		}
+		// page_update never calls saveContent until every op in the batch has applied
+		// cleanly in memory, so a failing op persists nothing (see applyBlockOps).
+		const html = applyBlockOps(before, args.ops, ctx.config);
 		if (args.dryRun) {
 			return { path: args.path, dryRun: true, diff: { before, after: html } };
 		}

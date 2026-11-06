@@ -94,6 +94,6 @@ export {
 export type { ReadTokenPayload, ReadTokenVerifyResult } from './read-token.js';
 export { blockOpSchema } from './block-op.js';
 export type { BlockOp } from './block-op.js';
-export { applyBlockOpToHtml, normalizeBlockOp } from './apply-block-op.js';
+export { applyBlockOps, applyBlockOpToHtml, normalizeBlockOp } from './apply-block-op.js';
 export { summarizeBlock } from './block-summary.js';
 export type { BlockHeadingSummary, BlockSummary } from './block-summary.js';

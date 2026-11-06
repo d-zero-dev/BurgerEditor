@@ -4,6 +4,7 @@ import { Item } from '@burger-editor/core';
 import { test, expect, describe, beforeEach } from 'vitest';
 
 import imageItemSeed, {
+	ALT_REQUIRED_MESSAGE,
 	DEFAULT_MEDIA_QUERIES,
 	mediaQueriesOf,
 	mediaQueryOrDefault,
@@ -950,6 +951,196 @@ describe('imageItemSeed', () => {
 			const source = item.el.querySelector('source');
 			expect(source?.getAttribute('srcset')).toBe('/img/sp.png');
 			expect(source?.getAttribute('media')).toBe('(max-width: 767px)');
+		});
+	});
+});
+
+describe('imageItemSeed: 画像を包む要素（エージェントの書き込みでもそろえる）', () => {
+	describe('normalizeItemData', () => {
+		test('ポップアップでない button は、編集画面の往復と同じく通常の画像（div）にする', () => {
+			const result = imageItemSeed.normalizeItemData?.(
+				{ node: 'button', command: null, alt: ['拡大'] },
+				testConfig,
+			);
+
+			// 他のキーは、そのまま残る
+			expect(result).toStrictEqual({ node: 'div', command: null, alt: ['拡大'] });
+		});
+
+		test('node の無い部分データでも、command だけがあればポップアップにせず、command を外す', () => {
+			expect(
+				imageItemSeed.normalizeItemData?.({ command: 'show-modal' }, testConfig),
+			).toStrictEqual({ command: null });
+		});
+
+		test('node の無い部分データでも、href があれば a を足す', () => {
+			expect(
+				imageItemSeed.normalizeItemData?.({ href: 'https://example.com/' }, testConfig),
+			).toStrictEqual({ href: 'https://example.com/', node: 'a' });
+		});
+
+		test('command だけが show-modal の div は、ポップアップにしない（画像モーダルは button だけを探す）', () => {
+			const result = imageItemSeed.normalizeItemData?.(
+				{ node: 'div', command: 'show-modal', href: '' },
+				testConfig,
+			);
+
+			expect(result).toMatchObject({ node: 'div', command: null });
+		});
+
+		test('href が空の a は、装飾的な画像（div）にし、_blank も外す', () => {
+			const result = imageItemSeed.normalizeItemData?.(
+				{ node: 'a', href: '', target: '_blank' },
+				testConfig,
+			);
+
+			expect(result).toMatchObject({ node: 'div', target: null });
+		});
+
+		test('href があれば a にそろえ、_blank は a のときだけ残す', () => {
+			expect(
+				imageItemSeed.normalizeItemData?.(
+					{ node: 'div', href: 'https://example.com/', target: '_blank' },
+					testConfig,
+				),
+			).toMatchObject({ node: 'a', target: '_blank' });
+			expect(
+				imageItemSeed.normalizeItemData?.(
+					{
+						node: 'button',
+						command: 'show-modal',
+						href: 'https://example.com/',
+						target: '_blank',
+					},
+					testConfig,
+				),
+			).toMatchObject({ node: 'button', command: 'show-modal', target: null });
+		});
+
+		test('すでにそろっていれば、同じオブジェクトを返す', () => {
+			const link = {
+				node: 'a',
+				href: 'https://example.com/',
+				target: null,
+				command: null,
+			} as const;
+			const popup = {
+				node: 'button',
+				href: '',
+				target: null,
+				command: 'show-modal',
+			} as const;
+			const plain = { node: 'div', href: '', target: null, command: null } as const;
+
+			expect(imageItemSeed.normalizeItemData?.(link, testConfig)).toBe(link);
+			expect(imageItemSeed.normalizeItemData?.(popup, testConfig)).toBe(popup);
+			expect(imageItemSeed.normalizeItemData?.(plain, testConfig)).toBe(plain);
+		});
+
+		test('空文字の command / target は、null と同じ意味として、そのまま返す', () => {
+			const data = { node: 'div', href: '', command: '', target: '' } as never;
+
+			expect(imageItemSeed.normalizeItemData?.(data, testConfig)).toBe(data);
+		});
+
+		test('これらのキーを持たない部分データには、何も足さない', () => {
+			const data = { alt: ['説明'] };
+
+			expect(imageItemSeed.normalizeItemData?.(data, testConfig)).toBe(data);
+		});
+
+		test('冪等: かけ直しても結果が変わらない', () => {
+			const once = imageItemSeed.normalizeItemData?.(
+				{
+					node: 'div',
+					command: 'show-modal',
+					href: 'https://example.com/',
+					target: '_blank',
+				},
+				testConfig,
+			);
+			const twice = imageItemSeed.normalizeItemData?.(once ?? {}, testConfig);
+
+			expect(twice).toBe(once);
+		});
+
+		test('文字列でない値が来ても、throw せず、空として通常の画像（div）にそろえる', () => {
+			const data = { node: 5, href: 7, command: {}, target: [] } as never;
+
+			expect(imageItemSeed.normalizeItemData?.(data, testConfig)).toMatchObject({
+				node: 'div',
+				command: null,
+				target: null,
+			});
+		});
+	});
+
+	describe('validateItemData（toItemData を通らない保存の検査）', () => {
+		test('リンクで alt が空なら、編集画面の「決定」と同じ理由を返す', () => {
+			expect(
+				imageItemSeed.validateItemData?.(
+					{ node: 'a', href: 'https://example.com/', alt: [''] },
+					testConfig,
+				),
+			).toStrictEqual([ALT_REQUIRED_MESSAGE]);
+		});
+
+		test('ポップアップで alt が空白だけなら、理由を返す', () => {
+			expect(
+				imageItemSeed.validateItemData?.(
+					{ node: 'button', command: 'show-modal', alt: [' 　\n'] },
+					testConfig,
+				),
+			).toStrictEqual([ALT_REQUIRED_MESSAGE]);
+		});
+
+		test('alt が無い（キーが無い・空配列）リンクも、理由を返す', () => {
+			expect(
+				imageItemSeed.validateItemData?.(
+					{ node: 'a', href: 'https://example.com/' },
+					testConfig,
+				),
+			).toStrictEqual([ALT_REQUIRED_MESSAGE]);
+			expect(
+				imageItemSeed.validateItemData?.(
+					{ node: 'a', href: 'https://example.com/', alt: [] },
+					testConfig,
+				),
+			).toStrictEqual([ALT_REQUIRED_MESSAGE]);
+		});
+
+		test('alt があるリンク・ポップアップと、装飾的な画像（div）は、理由を返さない', () => {
+			expect(
+				imageItemSeed.validateItemData?.(
+					{ node: 'a', href: 'https://example.com/', alt: ['詳細'] },
+					testConfig,
+				),
+			).toStrictEqual([]);
+			expect(
+				imageItemSeed.validateItemData?.(
+					{ node: 'button', command: 'show-modal', alt: ['拡大'] },
+					testConfig,
+				),
+			).toStrictEqual([]);
+			expect(
+				imageItemSeed.validateItemData?.({ node: 'div', alt: [''] }, testConfig),
+			).toStrictEqual([]);
+			expect(imageItemSeed.validateItemData?.({}, testConfig)).toStrictEqual([]);
+		});
+
+		test('エージェントの任意の JSON でも throw せず、alt が配列でなければ空として扱う', () => {
+			expect(
+				imageItemSeed.validateItemData?.(
+					{ node: 'a', href: 'https://example.com/', alt: [5] } as never,
+					testConfig,
+				),
+			).toStrictEqual([ALT_REQUIRED_MESSAGE]);
+			expect(
+				imageItemSeed.validateItemData?.(
+					{ node: 'a', href: 'https://example.com/', alt: 'x' } as never,
+					testConfig,
+				),
+			).toStrictEqual([ALT_REQUIRED_MESSAGE]);
 		});
 	});
 });

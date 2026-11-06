@@ -740,6 +740,155 @@ describe('POST /api/agent/invoke — with a tab open', () => {
 		expect(res.status).toBe(200);
 	});
 
+	describe('a write that leaves a link or a slide without a name never reaches the tab', () => {
+		// The editor's "OK" refuses these (`toItemData`); an agent's write skips it.
+		// An `update-item` is merged with the item's data inside the tab, so the server
+		// checks what it would produce before it sends anything.
+		const IMAGE_BLOCK =
+			'<div data-bge-name="image" data-bge-container="grid:1" id="bge-1">' +
+			'<div data-bge-container-frame><div data-bge-group><div data-bge-item>' +
+			`<div data-bgi="image" data-bgi-ver="0.0.0">${itemImport(items['image']!.template, {
+				path: ['/img/a.png'],
+				width: [400],
+				height: [300],
+				alt: ['説明'],
+				loading: ['eager'],
+			})}</div>` +
+			'</div></div></div></div>';
+		const ALT_EMPTY = /代替テキスト\(alt\)が空です/;
+		const toLink = { node: 'a', href: 'https://example.com/', alt: [''] };
+
+		/**
+		 * Seed `a.html` with the image block, and connect a tab that shows it.
+		 */
+		async function openImagePage() {
+			const html = `<html><body><div class="content">${IMAGE_BLOCK}</div></body></html>`;
+			await fs.writeFile(path.join(documentRoot, 'a.html'), html, 'utf8');
+			const { app, hub } = await buildApp(makeConfig(documentRoot));
+			const tab = connectPrimaryTab(hub);
+			return { app, hub, ...tab, html, token: await readToken(app, '/a.html') };
+		}
+
+		test('item_update is refused with 400 invalid and the file and the tab are untouched', async () => {
+			const { app, sent, token } = await openImagePage();
+			const before = await fs.readFile(path.join(documentRoot, 'a.html'), 'utf8');
+
+			const res = await postJson(app, '/api/agent/invoke', {
+				tool: 'item_update',
+				args: {
+					path: '/a.html',
+					target: { index: 0 },
+					itemIndex: 0,
+					data: toLink,
+					readToken: token,
+				},
+			});
+
+			expect(res.status).toBe(400);
+			const body = (await res.json()) as { error: string; message: string };
+			expect(body.error).toBe('invalid');
+			expect(body.message).toMatch(ALT_EMPTY);
+			expect(sent.map((m) => (m as { type: string }).type)).toEqual(['welcome']);
+			expect(await fs.readFile(path.join(documentRoot, 'a.html'), 'utf8')).toBe(before);
+		});
+
+		test("page_update's update-item is refused the same way, naming the op, before any op reaches the tab", async () => {
+			const { app, sent, token } = await openImagePage();
+
+			const res = await postJson(app, '/api/agent/invoke', {
+				tool: 'page_update',
+				args: {
+					path: '/a.html',
+					ops: [
+						{ op: 'duplicate', index: 0 },
+						{ op: 'update-item', index: 0, itemIndex: 0, data: toLink },
+					],
+					readToken: token,
+				},
+			});
+
+			expect(res.status).toBe(400);
+			const body = (await res.json()) as { error: string; message: string };
+			expect(body.error).toBe('invalid');
+			expect(body.message).toMatch(/op 1 \(update-item\) failed/);
+			expect(body.message).toMatch(ALT_EMPTY);
+			// The duplicate before it was never sent either: nothing to roll back
+			expect(sent.map((m) => (m as { type: string }).type)).toEqual(['welcome']);
+		});
+
+		test("page_update's insert of raw block HTML with a link image that has no alt is refused before the tab is asked", async () => {
+			const { app, sent, token } = await openImagePage();
+			const blockHtml =
+				'<div data-bge-name="image" data-bge-container="grid:1">' +
+				'<div data-bge-container-frame><div data-bge-group><div data-bge-item>' +
+				`<div data-bgi="image" data-bgi-ver="0.0.0">${itemImport(
+					items['image']!.template,
+					{
+						path: ['/img/b.png'],
+						...toLink,
+					},
+				)}</div>` +
+				'</div></div></div></div>';
+
+			const res = await postJson(app, '/api/agent/invoke', {
+				tool: 'page_update',
+				args: {
+					path: '/a.html',
+					ops: [{ op: 'insert', index: 0, blockHtml }],
+					readToken: token,
+				},
+			});
+
+			expect(res.status).toBe(400);
+			const body = (await res.json()) as { error: string; message: string };
+			expect(body.error).toBe('invalid');
+			expect(body.message).toMatch(ALT_EMPTY);
+			expect(sent.map((m) => (m as { type: string }).type)).toEqual(['welcome']);
+		});
+
+		test('block_insert of a link image with no alt is refused before the tab is asked', async () => {
+			const { app, sent, token } = await openImagePage();
+
+			const res = await postJson(app, '/api/agent/invoke', {
+				tool: 'block_insert',
+				args: {
+					path: '/a.html',
+					index: 0,
+					spec: {
+						name: 'image',
+						containerProps: { type: 'grid', columns: 1 },
+						items: [[{ name: 'image', data: { path: ['/img/b.png'], ...toLink } }]],
+					},
+					readToken: token,
+				},
+			});
+
+			expect(res.status).toBe(400);
+			expect(((await res.json()) as { error: string }).error).toBe('invalid');
+			expect(sent.map((m) => (m as { type: string }).type)).toEqual(['welcome']);
+		});
+
+		test('an item_update that keeps the image named still reaches the tab', async () => {
+			const { app, hub, sessionId, sent, token } = await openImagePage();
+
+			const invokePromise = postJson(app, '/api/agent/invoke', {
+				tool: 'item_update',
+				args: {
+					path: '/a.html',
+					target: { index: 0 },
+					itemIndex: 0,
+					data: { node: 'a', href: 'https://example.com/' },
+					readToken: token,
+				},
+			});
+			const apply = await waitForApply(sent);
+			hub.tabHub.resolveAck(sessionId, apply.id, 2, PAGE_INNER);
+
+			const res = await invokePromise;
+			expect(res.status).toBe(200);
+		});
+	});
+
 	test('malformed args are rejected with 400 invalid before anything reaches the tab', async () => {
 		const { app, hub } = await buildApp(makeConfig(documentRoot));
 		const { sent } = connectPrimaryTab(hub);

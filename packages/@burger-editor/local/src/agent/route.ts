@@ -11,6 +11,8 @@ import {
 	agentInstructions,
 	agentTools,
 	AgentError,
+	applyBlockOps,
+	applyBlockOpToHtml,
 	computeContentHash,
 	issueReadToken,
 	renderBlockHtml,
@@ -802,6 +804,30 @@ async function runViaBrowserOrDisk(
 			blockHtml = await renderBlockHtml(args.spec, ctx.config);
 		}
 		const ops = buildBrowserOps(toolName, args, blocks, pathInput, blockHtml, ctx.config);
+
+		// An `update-item` is merged with the item's own data inside the tab, so the
+		// server cannot tell from the op whether the item would be saved in a state the
+		// editor's "OK" refuses (a link image without an alt, a carousel slide without a
+		// name). Run the ops on the page as it is on disk — the tab's content, since
+		// its hash was just checked; a tab with unsaved edits is made to reload first,
+		// above — and refuse before anything is sent: the tab is never touched, so there
+		// is nothing to roll back. The result is thrown away: the batch is deliberately
+		// applied twice, here on the HTML and then in the tab, because the tab's own
+		// result is what gets saved. `insert` / `replace` are checked when their HTML is
+		// built (`renderBlockHtml`, `normalizeBlockOp`).
+		if (ops.some((op) => op.op === 'update-item')) {
+			if (toolName === 'page_update') {
+				// Names the failing op ("page_update op 1 (update-item) failed …")
+				applyBlockOps(loaded.editableContent, ops, ctx.config);
+			} else {
+				// `item_update` is one op: a message that names a `page_update` batch
+				// would be wrong for it, so it gets the item's own message
+				const next = applyBlockOpToHtml(loaded.editableContent, ops[0]!, ctx.config);
+				if (next instanceof NoEditableAreaError) {
+					throw next;
+				}
+			}
+		}
 
 		let lastHtml = loaded.editableContent;
 		let applied = 0;
