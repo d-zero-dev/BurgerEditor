@@ -105,6 +105,12 @@ export function setComponent(
 	}
 
 	for (const listRoot of el.querySelectorAll(`[data-${attr}-list]`)) {
+		// The list was collected before any list was rebuilt: a list nested in an
+		// item of a list rebuilt above is no longer in `el` (its clones were
+		// filled by the recursive call below), so skip the detached original
+		if (!el.contains(listRoot)) {
+			continue;
+		}
 		const reverse = isReverseListElement(listRoot);
 		const decendants = listRoot.querySelectorAll('*');
 		const definedFieldsOfDecendants = new Set(

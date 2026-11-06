@@ -97,6 +97,38 @@ frozenPatty(html)
   - データが多い場合: **最初の要素をテンプレート**として複製追加（`picture`など DOM 順と配列順が逆になる要素では**末尾の要素**を雛形にする。後述）
   - データが少ない場合: 余分な要素を削除
 
+### 入れ子のリスト
+
+`data-field-list`の項目の中に、さらに`data-field-list`があると、内側のリストのフィールドは**外側の項目ごとの配列の配列**になる。
+
+```html
+<div data-field-list>
+	<section>
+		<p data-field="title">A</p>
+		<ul data-field-list>
+			<li data-field="label">a1</li>
+			<li data-field="label">a2</li>
+		</ul>
+	</section>
+	<section>
+		<p data-field="title">B</p>
+		<ul data-field-list>
+			<li data-field="label">b1</li>
+		</ul>
+	</section>
+</div>
+```
+
+→
+
+```json
+{ "title": ["A", "B"], "label": [["a1", "a2"], ["b1"]] }
+```
+
+- 抽出: 内側のリストに値の無い外側の項目は`[]`になり、後ろの項目の位置はずれない。深さに制限はない（3 段なら配列の配列の配列）
+- 適用: 外側の項目ごとに配列を 1 段剥がして、内側のリストに渡す。`merge()`に一部のキーだけを渡しても、残りのキーは`toJSON()`で入れ子のまま読み直されるので、内側のリストは崩れない
+- 同じキーを別の深さに置くこと、兄弟のリストが内側のキーを共有することには対応しない（適用時にどちらも区別できず、往復しないため）
+
 ### `picture`要素の特別処理
 
 `picture`は HTML 仕様（`source`が先、`img`が最後）と配列順序（`img`が先頭、`source`が後）が**逆**になる点に注意。
@@ -141,6 +173,8 @@ frozenPatty(html)
 
 雛形にバインドされていない静的属性は、生成要素にそのまま引き継がれる。ただし生成要素で HTML 仕様上無効になる属性は落とす（雛形`img`の静的な`alt`が`source`に付く、など）。既に無効な属性を持つ保存済み HTML も、再度`merge`すれば取り除かれる。
 
+リストの項目の中にある`picture`（入れ子のリスト）でも同じ規則で、外側の項目ごとの配列の index 0 が`img`になる。
+
 適用時の雛形（複製元の要素）は、DOM 末尾の要素（＝配列 index 0、この場合`img`）から取る。`source`を雛形にすると`alt`/`loading`のバインドを持たない状態で`img`に変換されてしまい、一度保存された HTML を再度テンプレートとして`merge`した際（`Item.import`の2回目以降の呼び出し等）に`img`から`alt`/`loading`が失われる。抽出時の「DOM 末尾 = 配列 index 0」という読み取り規則と対称にすることで、この劣化を防いでいる。
 
 ## Options
@@ -173,12 +207,12 @@ script, style, template, object, embed, iframe, frame, frameset, applet
 
 ## API
 
-| Method              | 戻り値    | 説明                                                                   |
-| ------------------- | --------- | ---------------------------------------------------------------------- |
-| `merge(data)`       | `this`    | JSON データを HTML にマージ                                            |
-| `toJSON(filtering)` | `object`  | HTML → JSON。`filtering = false`で`valueFilter`をスキップ（既定 true） |
-| `toHTML()`          | `string`  | 結果を HTML 文字列で取得                                               |
-| `toDOM()`           | `Element` | 結果を DOM 要素で取得                                                  |
+| Method              | 戻り値    | 説明                                                                                               |
+| ------------------- | --------- | -------------------------------------------------------------------------------------------------- |
+| `merge(data)`       | `this`    | JSON データを HTML にマージ                                                                        |
+| `toJSON(filtering)` | `object`  | HTML → JSON。`filtering = false`で`valueFilter`をスキップ（既定 true）。入れ子のリストは配列の配列 |
+| `toHTML()`          | `string`  | 結果を HTML 文字列で取得                                                                           |
+| `toDOM()`           | `Element` | 結果を DOM 要素で取得                                                                              |
 
 ## 要素再生成に関する注意
 
