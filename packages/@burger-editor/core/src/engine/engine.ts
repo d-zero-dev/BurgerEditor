@@ -33,6 +33,7 @@ import { EditableContent } from '../editable-content.js';
 import { createBgeEvent } from '../event/create-bge-event.js';
 import { HealthMonitor } from '../health-monitor.js';
 import { Item } from '../item/item.js';
+import { normalizeItemHtml } from '../item/normalize-item-html.js';
 
 import { copyEditableArea } from './copy-editable-area.js';
 import { createDefaultView } from './default-view.js';
@@ -194,7 +195,8 @@ export class BurgerEditorEngine implements Disposable {
 	}
 	/**
 	 * Replace an editable area's content with hand-edited HTML source and
-	 * save. Used when leaving HTML-source editing mode, or whenever the UI
+	 * save. Each item's `normalizeItemData` is applied to what was written (an
+	 * image's second `<source>` never keeps an empty `media`, for example). Used when leaving HTML-source editing mode, or whenever the UI
 	 * layer wants to commit an in-progress edit (e.g. the source textarea
 	 * losing focus). A no-op when the area doesn't exist (e.g. no draft).
 	 * @param type - The editable area to commit into
@@ -210,6 +212,23 @@ export class BurgerEditorEngine implements Disposable {
 			return;
 		}
 		await content.replaceContents(html);
+		// Hand-written item HTML never went through `Item.import`, so apply each
+		// item's `normalizeItemData` here (as every other write does). Only an
+		// item whose data the seed changes is rendered again; the rest keep the
+		// markup as written. Not done in `replaceContents`, which also loads the
+		// page on open and copies main/draft, where nothing must be rewritten
+		for (const el of content.containerElement.querySelectorAll<HTMLElement>(
+			'[data-bgi]',
+		)) {
+			const item = Item.getInstance(el);
+			if (!item) {
+				continue;
+			}
+			const html = normalizeItemHtml(item.el.innerHTML, item.seed, this.config);
+			if (html !== null) {
+				item.el.innerHTML = html;
+			}
+		}
 		this.save();
 	}
 	/**

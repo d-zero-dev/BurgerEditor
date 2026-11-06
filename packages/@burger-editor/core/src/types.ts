@@ -136,6 +136,24 @@ export interface Config {
 	readonly sampleFilePath: string;
 	readonly googleMapsApiKey: string | null;
 	/**
+	 * Media queries that switch a `<picture>`'s `<source>` to its second and
+	 * later images. core only carries the value; the items read it. The
+	 * standard `image` and `carousel` items (`@burger-editor/blocks`) give the
+	 * first entry to a second image whose media query is empty (an empty
+	 * `media` matches every viewport, so the second image would replace the
+	 * first one even on a wide screen), whoever saves it, and their editor lists
+	 * every entry as a choice next to an "other" choice for typing a value by
+	 * hand. They trim entries, drop blank ones and collapse duplicates; if
+	 * nothing is left (or it is omitted), they use `['(max-width: 767px)']`.
+	 * @example
+	 * ```ts
+	 * const config: Partial<Config> = {
+	 * 	mediaQueries: ['(max-width: 599px)', '(max-width: 1023px)'],
+	 * };
+	 * ```
+	 */
+	readonly mediaQueries?: readonly string[];
+	/**
 	 * Opt-in features whose API is not settled yet. Every option here is off
 	 * when omitted, and leaving it off must keep the editor's behavior
 	 * exactly as if the option did not exist. Shapes may change or be removed

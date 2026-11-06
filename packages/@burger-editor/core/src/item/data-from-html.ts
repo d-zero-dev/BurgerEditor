@@ -14,5 +14,7 @@ export function dataFromHtml(html: string): ItemData {
 		typeConvert: true,
 		valueFilter,
 	}).toJSON();
-	return data;
+	// frozen-patty reads any nesting depth; item templates nest at most two
+	// levels (see the Why not on ItemDataValue)
+	return data as ItemData;
 }
