@@ -477,11 +477,35 @@ describe('applyBlockOpToHtml update-item on a carousel item', () => {
 	});
 
 	test('keeps an <img> in every slide when the agent sends a flat path like the image item', () => {
+		// Behavior change: the slide the flat path adds has neither a caption nor an alt, so the write is refused
+		expect(() =>
+			applyBlockOpToHtml(carouselBlock, {
+				op: 'update-item',
+				index: 0,
+				itemIndex: 0,
+				data: { path: ['/img/a.png', '/img/b.png'] },
+			}),
+		).toThrow(/スライド2: キャプションも代替テキスト\(alt\)も空です/);
+		// const result = applyBlockOpToHtml(carouselBlock, { // previous
+		// 	op: 'update-item', // previous
+		// 	index: 0, // previous
+		// 	itemIndex: 0, // previous
+		// 	data: { path: ['/img/a.png', '/img/b.png'] }, // previous
+		// }) as string; // previous
+		// const doc = new DOMParser().parseFromString(result, 'text/html'); // previous
+		// const figures = [...doc.querySelectorAll('figure')]; // previous
+		// expect(figures.map((f) => f.querySelector('img')?.getAttribute('src'))).toStrictEqual( // previous
+		// 	['/img/a.png', '/img/b.png'], // previous
+		// ); // previous
+		// expect(doc.querySelector('source')).toBeNull(); // previous
+	});
+
+	test('keeps an <img> in every slide when the agent sends a flat path and names each slide', () => {
 		const result = applyBlockOpToHtml(carouselBlock, {
 			op: 'update-item',
 			index: 0,
 			itemIndex: 0,
-			data: { path: ['/img/a.png', '/img/b.png'] },
+			data: { path: ['/img/a.png', '/img/b.png'], alt: [['A'], ['B']] },
 		}) as string;
 
 		const doc = new DOMParser().parseFromString(result, 'text/html');
@@ -490,6 +514,212 @@ describe('applyBlockOpToHtml update-item on a carousel item', () => {
 			['/img/a.png', '/img/b.png'],
 		);
 		expect(doc.querySelector('source')).toBeNull();
+	});
+});
+
+describe('a write that leaves a link or a slide without a name is refused', () => {
+	const ALT_EMPTY = /代替テキスト\(alt\)が空です/;
+	const unnamedLink = {
+		path: ['/img/a.png'],
+		alt: [''],
+		width: [400],
+		height: [300],
+		node: 'a',
+		href: 'https://example.com/',
+	};
+
+	/**
+	 * A block holding one image item rendered from `data`.
+	 * @param data
+	 */
+	function imageBlockOf(data: Record<string, unknown>): string {
+		return (
+			'<div data-bge-name="image" data-bge-container="grid:1">' +
+			'<div data-bge-container-frame><div data-bge-group><div data-bge-item>' +
+			`<div data-bgi="image" data-bgi-ver="0.0.0">${itemImport(items['image']!.template, data)}</div>` +
+			'</div></div></div></div>'
+		);
+	}
+
+	const plainImage = imageBlockOf({
+		...unnamedLink,
+		node: 'div',
+		href: '',
+		alt: ['説明'],
+	});
+
+	test('insert with raw block HTML whose link image has no alt', () => {
+		expect(() =>
+			applyBlockOpToHtml(THREE_BLOCKS, {
+				op: 'insert',
+				index: 0,
+				blockHtml: imageBlockOf(unnamedLink),
+			}),
+		).toThrow(ALT_EMPTY);
+	});
+
+	test('replace with raw block HTML whose popup image has no alt', () => {
+		expect(() =>
+			applyBlockOpToHtml(THREE_BLOCKS, {
+				op: 'replace',
+				index: 1,
+				blockHtml: imageBlockOf({
+					...unnamedLink,
+					node: 'button',
+					command: 'show-modal',
+					href: '',
+				}),
+			}),
+		).toThrow(ALT_EMPTY);
+	});
+
+	test('normalizeBlockOp (what the browser relay runs on page_update ops) refuses it too', () => {
+		expect(() =>
+			normalizeBlockOp({
+				op: 'insert',
+				index: 0,
+				blockHtml: imageBlockOf(unnamedLink),
+			}),
+		).toThrow(ALT_EMPTY);
+	});
+
+	test('update-item that makes an image a link without an alt', () => {
+		expect(() =>
+			applyBlockOpToHtml(plainImage, {
+				op: 'update-item',
+				index: 0,
+				itemIndex: 0,
+				data: { node: 'a', href: 'https://example.com/', alt: [''] },
+			}),
+		).toThrow(ALT_EMPTY);
+	});
+
+	test('update-item that links an image whose alt is already set is written', () => {
+		const result = applyBlockOpToHtml(plainImage, {
+			op: 'update-item',
+			index: 0,
+			itemIndex: 0,
+			data: { node: 'a', href: 'https://example.com/' },
+		}) as string;
+
+		expect(result).toContain('href="https://example.com/"');
+	});
+
+	test('a decorative image (no link) may keep an empty alt', () => {
+		const html = applyBlockOpToHtml(THREE_BLOCKS, {
+			op: 'insert',
+			index: 0,
+			blockHtml: imageBlockOf({ ...unnamedLink, node: 'div', href: '' }),
+		}) as string;
+
+		expect(listBlocks(html, null)).toHaveLength(4);
+	});
+
+	test('an unnamed link another block already holds does not stop the other ops', () => {
+		const html = imageBlockOf(unnamedLink) + THREE_BLOCKS;
+
+		const kinds = (result: string | NoEditableAreaError) =>
+			(listBlocks(result as string, null) as { html: string }[]).map((b) =>
+				b.html.includes('data-bgi="image"')
+					? 'image'
+					: /<p>([^<]*)<\/p>/.exec(b.html)![1]!,
+			);
+
+		expect(kinds(html)).toStrictEqual(['image', 'A', 'B', 'C']);
+		expect(kinds(applyBlockOpToHtml(html, { op: 'delete', index: 0 }))).toStrictEqual([
+			'A',
+			'B',
+			'C',
+		]);
+		expect(kinds(applyBlockOpToHtml(html, { op: 'move', from: 0, to: 1 }))).toStrictEqual(
+			['A', 'image', 'B', 'C'],
+		);
+		expect(kinds(applyBlockOpToHtml(html, { op: 'duplicate', index: 0 }))).toStrictEqual([
+			'image',
+			'image',
+			'A',
+			'B',
+			'C',
+		]);
+		expect(
+			applyBlockOpToHtml(html, { op: 'set-id', index: 0, id: 'x' }) as string,
+		).toContain('id="x"');
+		expect(
+			kinds(
+				applyBlockOpToHtml(html, {
+					op: 'update-item',
+					index: 1,
+					itemIndex: 0,
+					data: { wysiwyg: '<p>更新</p>' },
+				}),
+			),
+		).toStrictEqual(['image', '更新', 'B', 'C']);
+	});
+
+	test('a refused write names the item and its 0-based position in the block', () => {
+		expect(() =>
+			applyBlockOpToHtml(THREE_BLOCKS, {
+				op: 'insert',
+				index: 0,
+				blockHtml: imageBlockOf(unnamedLink),
+			}),
+		).toThrow(/item index 0 \("image"\)/);
+	});
+
+	describe('a carousel slide that has neither a caption nor an alt', () => {
+		const unnamedSlide = {
+			path: [['/img/a.png'], ['/img/b.png']],
+			alt: [['桜'], ['']],
+			width: [[400], [400]],
+			height: [[300], [300]],
+			caption: ['', ''],
+		};
+
+		/**
+		 * A block holding one carousel item rendered from `data`.
+		 * @param data
+		 */
+		function carouselBlockOf(data: Record<string, unknown>): string {
+			return (
+				'<div data-bge-name="carousel" data-bge-container="grid:1">' +
+				'<div data-bge-container-frame><div data-bge-group><div data-bge-item>' +
+				`<div data-bgi="carousel" data-bgi-ver="0.0.0">${itemImport(items['carousel']!.template, data)}</div>` +
+				'</div></div></div></div>'
+			);
+		}
+
+		test.each(['insert', 'replace'] as const)(
+			'%s with raw block HTML is refused, naming the slide',
+			(op) => {
+				expect(() =>
+					applyBlockOpToHtml(THREE_BLOCKS, {
+						op,
+						index: 0,
+						blockHtml: carouselBlockOf(unnamedSlide),
+					}),
+				).toThrow(/スライド2: キャプションも代替テキスト\(alt\)も空です/);
+			},
+		);
+
+		test('normalizeBlockOp refuses it too', () => {
+			expect(() =>
+				normalizeBlockOp({
+					op: 'insert',
+					index: 0,
+					blockHtml: carouselBlockOf(unnamedSlide),
+				}),
+			).toThrow(/スライド2/);
+		});
+
+		test('every slide named: the block is written', () => {
+			const html = applyBlockOpToHtml(THREE_BLOCKS, {
+				op: 'insert',
+				index: 0,
+				blockHtml: carouselBlockOf({ ...unnamedSlide, caption: ['', '春の庭'] }),
+			}) as string;
+
+			expect(listBlocks(html, null)).toHaveLength(4);
+		});
 	});
 });
 

@@ -9,6 +9,8 @@ import type { BurgerEditorConfig } from '@burger-editor/file-io';
 import { items as defaultItems } from '@burger-editor/blocks';
 import { render, withConfigDefaults } from '@burger-editor/core';
 
+import { assertItemsValid } from './assert-items-valid.js';
+
 export interface BlockSpec {
 	readonly catalog?: string;
 	readonly name?: string;
@@ -110,15 +112,26 @@ export function toCoreConfig(config: CoreConfigSource | undefined): Config {
 }
 
 /**
- *
- * @param spec
- * @param config
+ * Render a block spec to HTML, refusing a block whose items would be saved in a
+ * state the editor's "OK" refuses (a link or popup image without an alt, a
+ * carousel slide without a name). `block_insert` / `block_replace` / `page_create`
+ * and the browser relay of the first two all go through this.
+ * @param spec - The block an agent described
+ * @param config - The project config
+ * @throws {Error} When an item of the block must not be saved (see `assertItemsValid`)
+ * @example
+ * ```ts
+ * const blockHtml = await renderBlockHtml({ catalog: 'carousel' }, ctx.config);
+ * ```
  */
 export async function renderBlockHtml(
 	spec: BlockSpec,
 	config: BurgerEditorConfig,
 ): Promise<string> {
 	const data = buildBlockData(spec, config.catalog);
-	const el = await render(data, { items: defaultItems, config: toCoreConfig(config) });
+	const coreConfig = toCoreConfig(config);
+	const el = await render(data, { items: defaultItems, config: coreConfig });
+	// Checked on what was rendered (after `normalizeItemData`)
+	assertItemsValid(el.querySelectorAll<HTMLElement>('[data-bgi]'), coreConfig);
 	return el.outerHTML;
 }

@@ -101,10 +101,21 @@ export interface PageCreateOptions {
 }
 
 /**
+ * Create a page from `newFileContent`, with optional Front Matter and initial blocks.
  *
- * @param ctx
- * @param pathInput
- * @param options
+ * The blocks are rendered and checked before the file is created: a block that
+ * must not be saved (a link image without an alt, a carousel slide without a name;
+ * see `renderBlockHtml`) rejects the call and leaves no empty page behind. A page
+ * that already exists is reported before any block is looked at.
+ * @param ctx - The CLI context
+ * @param pathInput - The page's path, resolved against `documentRoot`
+ * @param options - Front Matter and initial blocks
+ * @throws {PageAlreadyExistsError} When the page exists
+ * @throws {Error} When a block must not be saved
+ * @example
+ * ```ts
+ * await pageCreate(ctx, 'about.html', { blocks: [{ catalog: 'wysiwyg' }] });
+ * ```
  */
 export async function pageCreate(
 	ctx: CliContext,
@@ -113,6 +124,35 @@ export async function pageCreate(
 ) {
 	const filePath = expectPath(pathInput, ctx);
 	const template = ctx.config.newFileContent || '';
+
+	// A page that already exists is reported before any block is looked at (the
+	// atomic reservation below still decides a race between two calls). Any error
+	// other than "not there" (EACCES, …) counts as not existing here: the
+	// reservation below then fails with the real error.
+	const alreadyExists = await fs
+		.access(filePath)
+		.then(() => true)
+		.catch(() => false);
+	if (alreadyExists) {
+		throw new PageAlreadyExistsError(pathInput);
+	}
+
+	// Render (and so check) the blocks before the file is reserved: a block that
+	// is refused must not leave an empty page behind.
+	const rendered = await Promise.all(
+		(options.blocks ?? []).map(async (spec, index) => {
+			try {
+				return await renderBlockHtml(spec, ctx.config);
+			} catch (error) {
+				// The message of a refused item counts items inside one block, so say
+				// which of the call's blocks it was
+				throw new Error(
+					`blocks[${index}]: ${error instanceof Error ? error.message : String(error)}`,
+					{ cause: error },
+				);
+			}
+		}),
+	);
 
 	// Atomically reserve the file: fs.writeFile with `wx` either creates it
 	// (when missing) or rejects with EEXIST. This closes the race window
@@ -137,10 +177,7 @@ export async function pageCreate(
 	}
 	const frontMatter = { ...result.frontMatter, ...options.frontMatter };
 	let editableHtml = result.editableContent;
-	if (options.blocks && options.blocks.length > 0) {
-		const rendered = await Promise.all(
-			options.blocks.map((spec) => renderBlockHtml(spec, ctx.config)),
-		);
+	if (rendered.length > 0) {
 		editableHtml = (editableHtml ? editableHtml + '\n' : '') + rendered.join('\n');
 	}
 	await saveContent(

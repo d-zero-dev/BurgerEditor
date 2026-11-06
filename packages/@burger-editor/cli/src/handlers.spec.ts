@@ -5,7 +5,8 @@ import type { BurgerEditorConfig } from '@burger-editor/file-io';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { defaultCatalog } from '@burger-editor/blocks';
+import { defaultCatalog, items } from '@burger-editor/blocks';
+import { itemImport } from '@burger-editor/core';
 import { mkdtempDisposable } from '@d-zero/shared/mkdtemp-disposable';
 // dom-shim side-effect — must come before any handler call that touches DOMParser.
 import '@burger-editor/file-io';
@@ -863,6 +864,233 @@ describe('block handlers', () => {
 		await expect(itemUpdate(ctx, 'mixed.html', { index: 0 }, 0, {})).rejects.toThrow(
 			/no data-bgi wrapper/,
 		);
+	});
+});
+
+describe('a write that leaves a link or a slide without a name is refused', () => {
+	// The editor's "OK" refuses these (`toItemData`); an agent's write skips it,
+	// so the handlers refuse them instead, with the same reason.
+	const imageBlockSpec = (data: Record<string, unknown>) => ({
+		name: 'image',
+		containerProps: { type: 'grid' as const, columns: 1 },
+		items: [[{ name: 'image', data }]],
+	});
+	const carouselBlockSpec = (data: Record<string, unknown>) => ({
+		name: 'carousel',
+		containerProps: { type: 'grid' as const, columns: 1 },
+		items: [[{ name: 'carousel', data }]],
+	});
+	const named = {
+		path: ['/img/a.png'],
+		width: [400],
+		height: [300],
+		alt: ['説明'],
+		loading: ['eager'],
+	};
+	const ALT_EMPTY = /代替テキスト\(alt\)が空です/;
+
+	/**
+	 * The page file as it is on disk.
+	 */
+	async function pageOnDisk() {
+		return await fs.readFile(path.join(docRoot, 'about.html'), 'utf8');
+	}
+
+	test('itemUpdate refuses to turn an image into a link with an empty alt, and leaves the file as it was', async () => {
+		await blockInsert(ctx, 'about.html', 0, imageBlockSpec(named));
+		const before = await pageOnDisk();
+
+		await expect(
+			itemUpdate(ctx, 'about.html', { index: 0 }, 0, {
+				node: 'a',
+				href: 'https://example.com/',
+				alt: [''],
+			}),
+		).rejects.toThrow(ALT_EMPTY);
+
+		expect(await pageOnDisk()).toBe(before);
+		const blocks = await readBlocks(ctx, 'about.html');
+		expect(blocks[0]!.data.items[0]![0]).toMatchObject({
+			name: 'image',
+			data: { alt: ['説明'] },
+		});
+	});
+
+	test('itemUpdate refuses it in a dry run too, as it would when it writes', async () => {
+		await blockInsert(ctx, 'about.html', 0, imageBlockSpec(named));
+
+		await expect(
+			itemUpdate(
+				ctx,
+				'about.html',
+				{ index: 0 },
+				0,
+				{ node: 'a', href: 'https://example.com/', alt: [''] },
+				{ dryRun: true },
+			),
+		).rejects.toThrow(ALT_EMPTY);
+	});
+
+	test('itemUpdate writes a link when the alt is given', async () => {
+		await blockInsert(ctx, 'about.html', 0, imageBlockSpec(named));
+
+		await itemUpdate(ctx, 'about.html', { index: 0 }, 0, {
+			node: 'a',
+			href: 'https://example.com/',
+		});
+
+		const saved = await pageOnDisk();
+		expect(saved).toContain('<a ');
+		expect(saved).toContain('href="https://example.com/"');
+		expect(saved).not.toContain('command=');
+	});
+
+	test('itemUpdate refuses a change of an unrelated key when the merged item would still have no name (the whole updated item is checked)', async () => {
+		const unnamedLinkPage = `<div class="content">
+			<div data-bge-name="image" data-bge-container="grid:1">
+				<div data-bge-container-frame><div data-bge-group><div data-bge-item>
+					<div data-bgi="image" data-bgi-ver="0.0.0">${itemImport(items['image']!.template, {
+						...named,
+						alt: [''],
+						node: 'a',
+						href: 'https://example.com/',
+					})}</div>
+				</div></div></div>
+			</div>
+		</div>`;
+		await fs.writeFile(path.join(docRoot, 'legacy.html'), unnamedLinkPage, 'utf8');
+
+		await expect(
+			itemUpdate(ctx, 'legacy.html', { index: 0 }, 0, { width: [300] }),
+		).rejects.toThrow(ALT_EMPTY);
+		// Giving it a name is how such an item is repaired
+		await itemUpdate(ctx, 'legacy.html', { index: 0 }, 0, { alt: ['詳細'] });
+		expect(await fs.readFile(path.join(docRoot, 'legacy.html'), 'utf8')).toContain(
+			'alt="詳細"',
+		);
+	});
+
+	test('blockInsert and pageCreate refuse a carousel whose second slide has neither a caption nor an alt', async () => {
+		const unnamedSlide = {
+			path: [['/img/a.png'], ['/img/b.png']],
+			alt: [['桜'], ['']],
+			width: [[400], [400]],
+			height: [[300], [300]],
+			caption: ['', ''],
+		};
+
+		await expect(
+			blockInsert(ctx, 'about.html', 0, carouselBlockSpec(unnamedSlide)),
+		).rejects.toThrow(/スライド2: キャプションも代替テキスト\(alt\)も空です/);
+		await expect(
+			pageCreate(ctx, 'created-carousel.html', {
+				blocks: [carouselBlockSpec(unnamedSlide)],
+			}),
+		).rejects.toThrow(/スライド2/);
+		await expect(
+			fs.access(path.join(docRoot, 'created-carousel.html')),
+		).rejects.toThrow();
+	});
+
+	test('pageCreate says which of its blocks was refused', async () => {
+		await expect(
+			pageCreate(ctx, 'which.html', {
+				blocks: [
+					imageBlockSpec(named),
+					imageBlockSpec({
+						...named,
+						alt: [''],
+						node: 'a',
+						href: 'https://example.com/',
+					}),
+				],
+			}),
+		).rejects.toThrow(/^blocks\[1\]: Nothing was written\. item index 0 \("image"\)/);
+	});
+
+	test('pageCreate reports an existing page before it looks at the blocks', async () => {
+		await expect(
+			pageCreate(ctx, 'about.html', {
+				blocks: [
+					imageBlockSpec({
+						...named,
+						alt: [''],
+						node: 'a',
+						href: 'https://example.com/',
+					}),
+				],
+			}),
+		).rejects.toBeInstanceOf(PageAlreadyExistsError);
+	});
+
+	test('blockInsert refuses a link image with an empty alt and writes nothing', async () => {
+		const before = await pageOnDisk();
+
+		await expect(
+			blockInsert(
+				ctx,
+				'about.html',
+				0,
+				imageBlockSpec({
+					...named,
+					alt: [''],
+					node: 'a',
+					href: 'https://example.com/',
+				}),
+			),
+		).rejects.toThrow(ALT_EMPTY);
+
+		expect(await pageOnDisk()).toBe(before);
+	});
+
+	test('blockReplace refuses a popup image with an empty alt', async () => {
+		await expect(
+			blockReplace(
+				ctx,
+				'about.html',
+				{ index: 0 },
+				imageBlockSpec({ ...named, alt: [''], node: 'button', command: 'show-modal' }),
+			),
+		).rejects.toThrow(ALT_EMPTY);
+	});
+
+	test('blockInsert accepts a decorative image (no link) with an empty alt', async () => {
+		await blockInsert(ctx, 'about.html', 0, imageBlockSpec({ ...named, alt: [''] }));
+
+		expect(await readBlocks(ctx, 'about.html')).toHaveLength(3);
+	});
+
+	test('itemUpdate refuses a carousel slide that has neither a caption nor an alt, naming the slide', async () => {
+		await blockInsert(ctx, 'about.html', 0, carouselBlockSpec({}));
+
+		await expect(
+			itemUpdate(ctx, 'about.html', { index: 0 }, 0, {
+				path: ['/img/a.png', '/img/b.png'],
+			}),
+		).rejects.toThrow(/スライド2: キャプションも代替テキスト\(alt\)も空です/);
+	});
+
+	test('blockInsert accepts the default carousel (its sample slide has an alt)', async () => {
+		await blockInsert(ctx, 'about.html', 0, { catalog: 'carousel' });
+
+		expect(await readBlocks(ctx, 'about.html')).toHaveLength(3);
+	});
+
+	test('pageCreate refuses a block that has an unnamed link, and does not create the page', async () => {
+		await expect(
+			pageCreate(ctx, 'created.html', {
+				blocks: [
+					imageBlockSpec({
+						...named,
+						alt: [''],
+						node: 'a',
+						href: 'https://example.com/',
+					}),
+				],
+			}),
+		).rejects.toThrow(ALT_EMPTY);
+
+		await expect(fs.access(path.join(docRoot, 'created.html'))).rejects.toThrow();
 	});
 });
 

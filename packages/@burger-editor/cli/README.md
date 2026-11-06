@@ -83,13 +83,13 @@ BGE_CONFIG=./burgereditor.child.config.js npx @burger-editor/cli page-list
 { "error": "not-found", "message": "ENOENT: no such file or directory, open '...'" }
 ```
 
-| フィールド      | 型         | 説明                                                                                                                |
-| --------------- | ---------- | ------------------------------------------------------------------------------------------------------------------- |
-| `error`         | `string`   | 機械可読な短いコード（`invalid` / `not-found` / `exists` / `range` / `no-such-area` / `stale` / `read-required` …） |
-| `message`       | `string`   | 何が起きたか + 次に何をすべきかを 1 文で                                                                            |
-| `next`          | `string[]` | 任意。復旧のための次アクション                                                                                      |
-| `readToken`     | `string`   | 任意。`readToken`検証で失敗したとき同梱される新しいトークン                                                         |
-| `currentBlocks` | `object[]` | 任意。`{ index, id, text }`の先頭ブロック要約（再試行の手がかり）                                                   |
+| フィールド      | 型         | 説明                                                                                                                                                                                                                     |
+| --------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `error`         | `string`   | 機械可読な短いコード（`invalid` / `not-found` / `exists` / `range` / `no-such-area` / `stale` / `read-required` …）。`invalid`は、名前の無いリンク画像・カルーセルのスライドを書こうとしたときにも返る（何も書かれない） |
+| `message`       | `string`   | 何が起きたか + 次に何をすべきかを 1 文で                                                                                                                                                                                 |
+| `next`          | `string[]` | 任意。復旧のための次アクション                                                                                                                                                                                           |
+| `readToken`     | `string`   | 任意。`readToken`検証で失敗したとき同梱される新しいトークン                                                                                                                                                              |
+| `currentBlocks` | `object[]` | 任意。`{ index, id, text }`の先頭ブロック要約（再試行の手がかり）                                                                                                                                                        |
 
 ## 保存の補正
 

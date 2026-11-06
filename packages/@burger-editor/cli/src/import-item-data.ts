@@ -1,57 +1,46 @@
 import type { CoreConfigSource } from './block-builder.js';
-import type { Config, ItemData, normalizeItemData } from '@burger-editor/core';
+import type { Config, ItemData } from '@burger-editor/core';
 
 import { items as defaultItems } from '@burger-editor/blocks';
-import { importItemHtml, normalizeItemHtml } from '@burger-editor/core';
+import { importItemHtml, normalizeItemHtml, validateItemHtml } from '@burger-editor/core';
 
 import { toCoreConfig } from './block-builder.js';
+import { seedOf } from './item-seed.js';
+
+let checkedItemNames: readonly string[] | undefined;
 
 /**
- * The item definition for a `[data-bgi]` wrapper, or `undefined` for an item
- * the standard items (`@burger-editor/blocks`) do not define.
- *
- * Why not the project's own items: the cli has no way to load a project's item
- * definitions, so a project-specific item is written without normalization.
- * @param wrapper
- */
-function seedOf(wrapper: HTMLElement): Parameters<typeof normalizeItemData>[0] {
-	const name = wrapper.dataset.bgi ?? '';
-	// Only the items' own keys: `data-bgi="constructor"` must not reach Object.prototype
-	return Object.hasOwn(defaultItems, name)
-		? ((defaultItems as Record<string, unknown>)[name] as Parameters<
-				typeof normalizeItemData
-			>[0])
-		: undefined;
-}
-
-let normalizedItemNames: readonly string[] | undefined;
-
-/**
- * Whether `html` may hold an item whose definition has `normalizeItemData`.
- * A cheap text check that lets a writer skip parsing a block whose items need
- * no normalization (a text-only block, for example). It errs on the side of
- * "may": a name written with character references (`&#105;mage`) also counts.
+ * Whether `html` may hold an item whose definition has `normalizeItemData` or
+ * `validateItemData`. A cheap text check that lets a writer skip parsing a
+ * block whose items need neither (a text-only block, for example). It errs on
+ * the side of "may": a name written with character references (`&#105;mage`)
+ * also counts.
  * @param html - Block HTML an agent wrote
  * @example
  * ```ts
- * if (mayHoldNormalizedItem(blockHtml)) {
- * 	// parse the block and normalize its items
+ * if (mayHoldCheckedItem(blockHtml)) {
+ * 	// parse the block, normalize its items and check them
  * }
  * ```
  */
-export function mayHoldNormalizedItem(html: string): boolean {
-	normalizedItemNames ??= Object.entries(defaultItems as Record<string, unknown>)
-		.filter(
-			([, seed]) =>
-				typeof (seed as { normalizeItemData?: unknown })?.normalizeItemData ===
-				'function',
-		)
+export function mayHoldCheckedItem(html: string): boolean {
+	checkedItemNames ??= Object.entries(defaultItems as Record<string, unknown>)
+		.filter(([, seed]) => {
+			const hooks = seed as {
+				normalizeItemData?: unknown;
+				validateItemData?: unknown;
+			} | null;
+			return (
+				typeof hooks?.normalizeItemData === 'function' ||
+				typeof hooks?.validateItemData === 'function'
+			);
+		})
 		.map(([name]) => name.toLowerCase());
 	const lower = html.toLowerCase();
 	if (!lower.includes('data-bgi')) {
 		return false;
 	}
-	return lower.includes('&#') || normalizedItemNames.some((name) => lower.includes(name));
+	return lower.includes('&#') || checkedItemNames.some((name) => lower.includes(name));
 }
 
 /**
@@ -59,12 +48,17 @@ export function mayHoldNormalizedItem(html: string): boolean {
  * `Item.import(data)`, through the same core `importItemHtml`: the current data
  * is read back from the wrapper's HTML, shallow-merged with `data`, passed
  * through the item's `normalizeItemData` (for example filling the empty
- * `media` of an image's second `<source>`), and re-rendered.
+ * `media` of an image's second `<source>`), and re-rendered. The result is
+ * checked with the item's `validateItemData` before it replaces the wrapper's
+ * content (the editor's "OK" refuses the same input through `toItemData`).
  * @param wrapper - The `[data-bgi]` element whose `innerHTML` holds the item
  * @param data - Arbitrary JSON from an agent call. It is not narrowed to
  * `ItemData` at this boundary: merged over the item's real current data (parsed
  * from its own template), which is what actually gets rendered.
  * @param config - The project config, for settings such as `mediaQueries`
+ * @throws {Error} When the item would be saved in a state the editor refuses
+ * (a link or popup image without an alt, a carousel slide without a name). The
+ * wrapper is left as it was; the message gives the reason, written for the author
  * @example
  * ```ts
  * importItemData(wrapper, { path: ['/a.png', '/b.png'] }, ctx.config);
@@ -75,12 +69,21 @@ export function importItemData(
 	data: Record<string, unknown>,
 	config: CoreConfigSource | undefined,
 ): void {
-	wrapper.innerHTML = importItemHtml(
+	const coreConfig = toCoreConfig(config);
+	const seed = seedOf(wrapper);
+	const html = importItemHtml(
 		wrapper.innerHTML,
 		data as Partial<ItemData>,
-		seedOf(wrapper),
-		toCoreConfig(config),
+		seed,
+		coreConfig,
 	);
+	const reasons = validateItemHtml(html, seed, coreConfig);
+	if (reasons.length > 0) {
+		throw new Error(
+			`Nothing was written. The "${wrapper.dataset.bgi}" item: ${reasons.join(' ')}`,
+		);
+	}
+	wrapper.innerHTML = html;
 }
 
 /**
