@@ -121,6 +121,9 @@ export async function resolveConfig(
 			userConfig.sampleFilePath ??
 			((filesDir.other.clientPath + '/' + 'sample.pdf') as `/${string}`),
 		googleMapsApiKey: userConfig.googleMapsApiKey ?? null,
+		// The default when omitted lives in the image item, so filling it here too
+		// would define it twice.
+		mediaQueries: userConfig.mediaQueries,
 		open: userConfig.open ?? true,
 		healthCheck: {
 			enabled: true,

@@ -22,6 +22,11 @@ export interface BurgerEditorConfig {
 	readonly sampleImagePath: SamplePath;
 	readonly sampleFilePath: SamplePath;
 	readonly googleMapsApiKey: string | null;
+	/**
+	 * Media queries offered for an image's `<source>` and used as its default.
+	 * See `Config.mediaQueries` in `@burger-editor/core`.
+	 */
+	readonly mediaQueries?: readonly string[];
 	readonly open: boolean;
 	readonly newFileContent: string;
 	readonly catalog: BlockCatalog;
