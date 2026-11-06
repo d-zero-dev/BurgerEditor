@@ -1,4 +1,5 @@
-import { listBlocks, NoEditableAreaError } from '@burger-editor/core';
+import { items } from '@burger-editor/blocks';
+import { itemImport, listBlocks, NoEditableAreaError } from '@burger-editor/core';
 import { describe, expect, test } from 'vitest';
 
 import { BROWSER_APPLICABLE_TOOLS, buildBrowserOps } from './block-op-builder.js';
@@ -38,6 +39,53 @@ describe('BROWSER_APPLICABLE_TOOLS', () => {
 				'page_update',
 			].toSorted(),
 		);
+	});
+});
+
+describe('buildBrowserOps — page_update insert / replace', () => {
+	// The browser saves the blockHtml it is sent as it is. Normalizing it here,
+	// where the project config is known, gives the same result as the disk path.
+	const imageBlock =
+		'<div data-bge-name="image" data-bge-container="grid:1"><div data-bge-container-frame=""><div data-bge-group=""><div data-bge-item="">' +
+		`<div data-bgi="image" data-bgi-ver="0.0.0">${itemImport(items['image']!.template, {
+			path: ['/img/pc.png', '/img/sp.png'],
+			width: [400, 300],
+			height: [300, 200],
+			media: ['', ''],
+		})}</div></div></div></div></div>`;
+
+	test('fills the empty media of an image in an insert op with the default media query', () => {
+		const ops = buildBrowserOps(
+			'page_update',
+			{ ops: [{ op: 'insert', index: 0, blockHtml: imageBlock }] },
+			blocks(),
+			'/a.html',
+		);
+
+		expect((ops[0] as { blockHtml: string }).blockHtml).toContain(
+			'media="(max-width: 767px)"',
+		);
+	});
+
+	test('uses the first entry of the given config.mediaQueries for a replace op', () => {
+		const ops = buildBrowserOps(
+			'page_update',
+			{ ops: [{ op: 'replace', index: 0, blockHtml: imageBlock }] },
+			blocks(),
+			'/a.html',
+			undefined,
+			{ mediaQueries: ['(max-width: 599px)'] },
+		);
+
+		expect((ops[0] as { blockHtml: string }).blockHtml).toContain(
+			'media="(max-width: 599px)"',
+		);
+	});
+
+	test('passes the other ops through unchanged', () => {
+		const args = { ops: [{ op: 'delete', index: 1 }] };
+
+		expect(buildBrowserOps('page_update', args, blocks(), '/a.html')).toEqual(args.ops);
 	});
 });
 

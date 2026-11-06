@@ -8,6 +8,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
+import { contentHashOrMissing } from '../helpers/content-hash-or-missing.js';
 import { log } from '../helpers/debug.js';
 import { FileNotFoundError, saveContent } from '../helpers/edit-content.js';
 import { NoEditableAreaError } from '../helpers/no-editable-area-error.js';
@@ -54,6 +55,19 @@ const apiSchema = z.object({
 	frontMatter: z.record(z.string(), z.unknown()).optional(),
 	originalFrontMatter: z.string().optional(),
 	createIfMissing: z.boolean().optional(),
+	/** The saving tab's Agent Hub session (its `welcome` `sessionId`), when it has one. */
+	sessionId: z.string().optional(),
+	/**
+	 * The hash of the file content the edit started from (the page's
+	 * `#content-hash`, then each save's `contentHash`). Checked only when the
+	 * Agent Hub is disabled. With it enabled, the server's own record of the tab
+	 * named by `sessionId` is checked instead, because it also follows the
+	 * agent's writes the tab applied, which the tab's own hash does not.
+	 * Why not fall back to it when the session is unknown (a tab reconnecting):
+	 * after an agent write applied in the tab it would refuse a save from
+	 * current content, and editing while the agent writes is not supported.
+	 */
+	baseHash: z.string().optional(),
 });
 
 // `id` becomes part of the on-disk filename, so we forbid anything that could
@@ -105,6 +119,9 @@ export function createContentApi(ctx: AppContext) {
 				const resolverState = store.getResolverState();
 				let targetFilePath: string;
 				let nextResolverState: ResolverState | null = resolverState;
+				// The page's logical path after this save — another one when the
+				// save changes the Front Matter path key (virtual tree)
+				let logicalPath = normalizedPath;
 				if (virtualTreeEnabled && resolverState) {
 					const diskFile = toDiskPath(resolverState, normalizedPath);
 					if (!diskFile) {
@@ -130,6 +147,11 @@ export function createContentApi(ctx: AppContext) {
 						}
 						try {
 							nextResolverState = setLogicalPath(resolverState, diskFile, newLogical);
+							// Front Matter paths carry no leading slash; tabs and agents use one
+							logicalPath = normalizeLogicalPath(
+								'/' + newLogical.replace(/^\/+/, ''),
+								config.indexFileName,
+							);
 						} catch (error) {
 							if (error instanceof PathConflictError) {
 								return c.json({ error: error.message }, 409);
@@ -155,6 +177,40 @@ export function createContentApi(ctx: AppContext) {
 					return c.json(
 						{ error: `Resolved path escapes documentRoot: ${normalizedPath}` },
 						400,
+					);
+				}
+
+				// A save made from content older than the file would overwrite what was
+				// saved since (another tab, the agent, an external editor), so it is
+				// rejected and the tab asks the user to reload. With the Agent Hub, a
+				// tab known to be behind (told to reload, or showing other content) is
+				// rejected; without it, a `baseHash` that differs from the file is.
+				// With the Agent Hub, a save whose session is unknown (a tab before its
+				// WS `welcome`) is not checked; without it, a save with no `baseHash`
+				// (an older client) is not checked.
+				const savingTab =
+					ctx.agent && data.sessionId !== undefined
+						? ctx.agent.hub.tabHub.get(data.sessionId)
+						: undefined;
+				// The file is read for the check only when there is something to
+				// compare it with
+				let behind = false;
+				if (savingTab?.page === normalizedPath) {
+					behind =
+						savingTab.reloadRequested ||
+						(savingTab.syncedHash !== null &&
+							savingTab.syncedHash !== (await contentHashOrMissing(targetFilePath)));
+				} else if (!ctx.agent && data.baseHash !== undefined) {
+					behind = data.baseHash !== (await contentHashOrMissing(targetFilePath));
+				}
+				if (behind) {
+					return c.json(
+						{
+							error: 'conflict',
+							message:
+								'The page was updated elsewhere (another tab, the agent, or another editor) after this content was loaded. Reload to get the latest content.',
+						},
+						409,
 					);
 				}
 
@@ -185,20 +241,48 @@ export function createContentApi(ctx: AppContext) {
 				// 2-phase commit: only advance resolverState after the file write succeeds.
 				store.setResolverState(nextResolverState);
 
+				const contentHash = await computeContentHash(targetFilePath);
 				if (ctx.agent) {
 					// A human's browser save also moves disk state — keep the agent
-					// hub's view of it current so the next agent invoke's staleness
-					// check (agent/route.ts) doesn't compare against a stale hash.
-					// The saving tab isn't identified here (no session header), so
-					// every tab with this page open is treated as caught up; a tab
-					// that's actually behind still gets a `reload` from the normal
-					// disk-write path further down agent/route.ts on the NEXT invoke.
-					const newHash = await computeContentHash(targetFilePath);
-					ctx.agent.hub.revisions.bump(normalizedPath, newHash);
-					for (const session of ctx.agent.hub.tabHub.snapshotAll()) {
-						if (session.page === normalizedPath) {
-							ctx.agent.hub.tabHub.setSyncedHash(session.id, newHash);
+					// hub's view of it current. Only the tab that saved (named by
+					// `sessionId`) shows what is on disk now; every other tab on the
+					// page is told to reload and is not marked in step, so an agent's
+					// op is never relayed to its older content (agent/route.ts). Without
+					// a `sessionId` naming a tab on this page, no tab is known to have
+					// saved, so every tab on the page reloads (the saving tab, if it
+					// is among them, reloads content it has just saved).
+					const { revisions, tabHub } = ctx.agent.hub;
+					const bumped = revisions.bump(normalizedPath, contentHash);
+					const saver =
+						data.sessionId === undefined ? undefined : tabHub.get(data.sessionId);
+					const saverId = saver?.page === normalizedPath ? saver.id : null;
+					for (const session of tabHub.snapshotAll()) {
+						if (session.page !== normalizedPath) {
+							continue;
 						}
+						if (session.id === saverId) {
+							tabHub.setSyncedHash(session.id, contentHash);
+						} else {
+							// Its open-time normalization was built on the file before
+							// this save; writing it later would undo the save
+							tabHub.discardNormalization(session.id);
+						}
+					}
+					if (logicalPath === normalizedPath) {
+						tabHub.reloadOthers(normalizedPath, saverId, bumped.revision, 'other-tab');
+					} else {
+						// The page moved. Reloading the old path would answer Not Found,
+						// so the other tabs there are only marked behind and get the
+						// notice an agent's page_rename sends; the saving tab follows the
+						// new path itself (client/create-editor.ts), so it is re-keyed
+						// there and gets nothing
+						tabHub.markBehind(normalizedPath, saverId);
+						if (saverId) {
+							tabHub.movePage(saverId, logicalPath);
+						}
+						const target = { from: normalizedPath, to: logicalPath };
+						tabHub.broadcast({ type: 'page-event', kind: 'renamed', ...target }, saverId);
+						ctx.agent.hub.events.append('page-renamed', target);
 					}
 				}
 
@@ -207,6 +291,12 @@ export function createContentApi(ctx: AppContext) {
 					saved: true,
 					path: targetFilePath,
 					hasFrontMatter: !!data.frontMatter,
+					// The hash of what was written — the tab's next `baseHash`, and what
+					// it reports in its next `hello` after a reconnect (client/agent-link.ts)
+					contentHash,
+					// The page's logical path after the save, so a tab whose save moved
+					// the page (virtual tree) can follow it
+					logicalPath,
 				});
 			});
 		})

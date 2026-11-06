@@ -701,3 +701,170 @@ describe('createAgentLink — dispose', () => {
 		expect(sent).toEqual([]);
 	});
 });
+
+describe('createAgentLink — the session and content the tab reports', () => {
+	test('sessionId is null until welcome, then the welcome sessionId, and null again after a reconnect', () => {
+		const { adapter } = fakeAdapter();
+		const { transport } = fakeTransport();
+		const link = createAgentLink({
+			adapter,
+			transport,
+			page: '/a.html',
+			serverSession: 'srv-1',
+		});
+
+		expect(link.sessionId).toBeNull();
+		link.handleOpen();
+		link.handleMessage(
+			JSON.stringify({ type: 'welcome', sessionId: 'tab-1', revision: 1 }),
+		);
+		expect(link.sessionId).toBe('tab-1');
+
+		link.handleOpen();
+		expect(link.sessionId).toBeNull();
+	});
+
+	test('hello carries the contentHash the page was served with', () => {
+		const { adapter } = fakeAdapter();
+		const { transport, sent } = fakeTransport();
+		const link = createAgentLink({
+			adapter,
+			transport,
+			page: '/a.html',
+			serverSession: 'srv-1',
+			contentHash: 'hash-served',
+		});
+
+		link.handleOpen();
+
+		expect(sent).toEqual([
+			{
+				type: 'hello',
+				page: '/a.html',
+				revision: 0,
+				serverSession: 'srv-1',
+				uiState: idleUiState(),
+				contentHash: 'hash-served',
+			},
+		]);
+	});
+
+	test('a human save with a hash replaces the contentHash of the next hello; one without keeps it', () => {
+		const { adapter } = fakeAdapter();
+		const { transport, sent } = fakeTransport();
+		const link = createAgentLink({
+			adapter,
+			transport,
+			page: '/a.html',
+			serverSession: 'srv-1',
+			contentHash: 'hash-served',
+		});
+
+		link.notifyHumanSave('hash-saved');
+		link.handleOpen();
+		link.notifyHumanSave();
+		link.handleOpen();
+
+		const hellos = sent.filter((m) => (m as { type: string }).type === 'hello');
+		expect(hellos.map((m) => (m as { contentHash?: string }).contentHash)).toEqual([
+			'hash-saved',
+			'hash-saved',
+		]);
+		expect(sent.filter((m) => (m as { type: string }).type === 'saved')).toEqual([
+			{ type: 'saved', revision: 0 },
+			{ type: 'saved', revision: 0 },
+		]);
+	});
+});
+
+describe('createAgentLink — a reload that arrives during an edit', () => {
+	test('with onReloadDuringEdit, the tab is not reloaded when the edit ends; the callback is called once instead', () => {
+		const { adapter, setUiState } = fakeAdapter(
+			idleUiState({ openDialog: 'item-editor' }),
+		);
+		const { transport } = fakeTransport();
+		const onReloadDuringEdit = vi.fn();
+		const link = createAgentLink({
+			adapter,
+			transport,
+			page: '/a.html',
+			serverSession: 's',
+			onReloadDuringEdit,
+		});
+
+		link.handleMessage(
+			JSON.stringify({ type: 'reload', revision: 3, reason: 'other-tab' }),
+		);
+		expect(onReloadDuringEdit).not.toHaveBeenCalled();
+		setUiState(idleUiState());
+		setUiState(idleUiState());
+
+		expect(adapter.reload).not.toHaveBeenCalled();
+		expect(onReloadDuringEdit).toHaveBeenCalledOnce();
+	});
+
+	test('with onReloadDuringEdit, a tab that is not editing still reloads right away', () => {
+		const { adapter } = fakeAdapter();
+		const { transport } = fakeTransport();
+		const onReloadDuringEdit = vi.fn();
+		const link = createAgentLink({
+			adapter,
+			transport,
+			page: '/a.html',
+			serverSession: 's',
+			onReloadDuringEdit,
+		});
+
+		link.handleMessage(
+			JSON.stringify({ type: 'reload', revision: 3, reason: 'other-tab' }),
+		);
+
+		expect(adapter.reload).toHaveBeenCalledOnce();
+		expect(onReloadDuringEdit).not.toHaveBeenCalled();
+	});
+});
+
+describe('createAgentLink — a reload after a server restart', () => {
+	test('a server-restart reload during an edit still reloads when the edit ends (the page on disk did not change)', () => {
+		const { adapter, setUiState } = fakeAdapter(
+			idleUiState({ openDialog: 'item-editor' }),
+		);
+		const { transport } = fakeTransport();
+		const onReloadDuringEdit = vi.fn();
+		const link = createAgentLink({
+			adapter,
+			transport,
+			page: '/a.html',
+			serverSession: 's',
+			onReloadDuringEdit,
+		});
+
+		link.handleMessage(
+			JSON.stringify({ type: 'reload', revision: 3, reason: 'server-restart' }),
+		);
+		setUiState(idleUiState());
+
+		expect(adapter.reload).toHaveBeenCalledOnce();
+		expect(onReloadDuringEdit).not.toHaveBeenCalled();
+	});
+});
+
+describe('createAgentLink — a page that moved', () => {
+	test('after notifyPageMoved, hello reports the new page', () => {
+		const { adapter } = fakeAdapter();
+		const { transport, sent } = fakeTransport();
+		const link = createAgentLink({
+			adapter,
+			transport,
+			page: '/about.html',
+			serverSession: 's',
+		});
+
+		link.notifyPageMoved('/company/about.html');
+		link.handleOpen();
+
+		expect(sent).toEqual([
+			expect.objectContaining({ type: 'hello', page: '/company/about.html' }),
+		]);
+	});
+});

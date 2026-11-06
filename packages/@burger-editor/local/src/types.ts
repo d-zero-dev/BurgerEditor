@@ -25,6 +25,7 @@ type LocalKeys =
 	| 'sampleImagePath'
 	| 'sampleFilePath'
 	| 'googleMapsApiKey'
+	| 'mediaQueries'
 	| 'open'
 	| 'newFileContent'
 	| 'catalog'

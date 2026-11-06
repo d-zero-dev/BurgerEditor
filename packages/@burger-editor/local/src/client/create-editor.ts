@@ -25,7 +25,8 @@ import { createAgentLink, type AgentLink } from './agent-link.js';
 import { createEngineAdapter } from './engine-adapter.js';
 import { hydrateNavTree } from './nav-tree.js';
 import { pageGoneBannerFor, showPageGoneBanner } from './page-event-banner.js';
-import { saveContentRequest } from './save-content-request.js';
+import { createPageSaver } from './page-saver.js';
+import { clearSaveFailureBanner, showSaveFailureBanner } from './save-failure-banner.js';
 import { createSaveGate } from './save-gate.js';
 import { createWsTransport } from './ws-transport.js';
 
@@ -95,6 +96,37 @@ export async function createEditor() {
 	) as HTMLInputElement | null;
 	const saveGate = createSaveGate({ isNewFile: isNewFileInput?.value === 'true' });
 
+	// The hash of the file content the page was served from (`routes/pages.tsx`):
+	// the base of this tab's first save, and what the agent hub's `hello` reports
+	const contentHashInput = document.getElementById(
+		'content-hash',
+	) as HTMLInputElement | null;
+	const pageSaver = createPageSaver({
+		post: client.api.content.$post,
+		baseHash: contentHashInput?.value,
+		indexFileName: config.indexFileName,
+		getPathname: () => location.pathname,
+		getSessionId: () => agentLink?.sessionId ?? null,
+		createIfMissing: () => saveGate.createIfMissing,
+		onSaveResult: (saved) => saveGate.recordSave(saved),
+		onHumanSave: (contentHash) => agentLink?.notifyHumanSave(contentHash),
+		showFailure: (reason) => showSaveFailureBanner(reason, () => location.reload()),
+		clearFailure: () => clearSaveFailureBanner(),
+		followMovedPage: (url) => {
+			// Front Matter is saved while the user is still typing the path, so the
+			// tab keeps the page as it is and only takes on the new URL
+			history.replaceState(history.state, '', url);
+			agentLink?.notifyPageMoved(normalizeLogicalPath(url, config.indexFileName));
+			void hydrateNavTree();
+		},
+		log: {
+			// eslint-disable-next-line no-console
+			info: (message) => console.log(message),
+			// eslint-disable-next-line no-console
+			error: (message) => console.error(message),
+		},
+	});
+
 	/**
 	 * Save content to server
 	 * @param content
@@ -106,26 +138,7 @@ export async function createEditor() {
 		frontMatterData?: Record<string, unknown>,
 		originalFrontMatter?: string,
 	) {
-		const saved = await saveContentRequest(
-			client.api.content.$post,
-			{
-				path: location.pathname,
-				content,
-				frontMatter: frontMatterData,
-				originalFrontMatter,
-				createIfMissing: saveGate.createIfMissing,
-			},
-			{
-				// eslint-disable-next-line no-console
-				info: (message) => console.log(message),
-				// eslint-disable-next-line no-console
-				error: (message) => console.error(message),
-			},
-		);
-		saveGate.recordSave(saved);
-		if (saved) {
-			agentLink?.notifyHumanSave();
-		}
+		await pageSaver.save(content, frontMatterData, originalFrontMatter);
 	}
 
 	/**
@@ -316,7 +329,12 @@ export async function createEditor() {
 			transport,
 			page,
 			serverSession: serverSessionInput.value,
+			contentHash: contentHashInput?.value,
 			normalizedHtml: saveGate.normalizedOnOpen,
+			// Another tab or the agent saved while a dialog was open here: keep what
+			// the user sees and say it was not saved, instead of reloading it away
+			onReloadDuringEdit: () =>
+				showSaveFailureBanner('conflict', () => location.reload()),
 			onPageEvent: (message) => {
 				void hydrateNavTree();
 				const banner = pageGoneBannerFor(message, page, config.indexFileName);

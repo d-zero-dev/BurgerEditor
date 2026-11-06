@@ -4,7 +4,9 @@ import type { LocalServerConfig } from '../types.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import { items } from '@burger-editor/blocks';
 import { computeContentHash, encodeReadToken } from '@burger-editor/cli';
+import { itemImport } from '@burger-editor/core';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import {
@@ -14,7 +16,8 @@ import {
 	type TestApp,
 	type TmpRoots,
 } from '../__tests__/fixtures.js';
-import { PAGE_HTML, PAGE_INNER } from '../__tests__/protocol-fixtures.js';
+import { idleUiState, PAGE_HTML, PAGE_INNER } from '../__tests__/protocol-fixtures.js';
+import { MISSING_FILE_CONTENT_HASH } from '../protocol/ws-messages.js';
 
 import { __handleChangeForTest } from './fs-watcher.js';
 
@@ -696,6 +699,47 @@ describe('POST /api/agent/invoke — with a tab open', () => {
 		);
 	});
 
+	test("page_update's insert op reaches the tab with an image's empty media filled in from the project's mediaQueries", async () => {
+		// The browser saves the blockHtml it is sent as it is, so the server
+		// normalizes it, with the project config, before relaying.
+		const { app, hub } = await buildApp(
+			makeLocalServerConfig({ documentRoot, mediaQueries: ['(max-width: 599px)'] }),
+		);
+		const { sessionId, sent } = connectPrimaryTab(hub);
+		const token = await readToken(app, '/a.html');
+		const blockHtml =
+			'<div data-bge-name="image" data-bge-container="grid:1">' +
+			'<div data-bge-container-frame><div data-bge-group><div data-bge-item>' +
+			`<div data-bgi="image" data-bgi-ver="0.0.0">${itemImport(items['image']!.template, {
+				path: ['/img/pc.png', '/img/sp.png'],
+				width: [400, 300],
+				height: [300, 200],
+				media: ['', ''],
+				alt: ['説明'],
+				loading: ['eager'],
+			})}</div>` +
+			'</div></div></div></div>';
+
+		const invokePromise = postJson(app, '/api/agent/invoke', {
+			tool: 'page_update',
+			args: {
+				path: '/a.html',
+				ops: [{ op: 'insert', index: 0, blockHtml }],
+				readToken: token,
+			},
+		});
+		const apply = (await waitForApply(sent)) as unknown as {
+			id: string;
+			op: { blockHtml: string };
+		};
+
+		expect(apply.op.blockHtml).toContain('media="(max-width: 599px)"');
+		expect(apply.op.blockHtml).not.toContain('media=""');
+		hub.tabHub.resolveAck(sessionId, apply.id, 2, PAGE_INNER);
+		const res = await invokePromise;
+		expect(res.status).toBe(200);
+	});
+
 	test('malformed args are rejected with 400 invalid before anything reaches the tab', async () => {
 		const { app, hub } = await buildApp(makeConfig(documentRoot));
 		const { sent } = connectPrimaryTab(hub);
@@ -1158,5 +1202,466 @@ describe('POST /api/agent/invoke — documentRoot containment over HTTP', () => 
 		expect(body.error).toBe('invalid');
 		expect(body.readToken).toBeUndefined();
 		await expect(fs.stat(path.join(tmp!.path, 'victim.html'))).resolves.toBeDefined();
+	});
+});
+
+describe('tabs behind disk never receive an agent op', () => {
+	/** The page content a human saves in the tests below: the seeded block plus a second one. */
+	const SAVED_INNER =
+		PAGE_INNER +
+		PAGE_INNER.replace('id="bge-1"', 'id="bge-2"').replace('hello', 'second');
+
+	/**
+	 * Connect a tab that was served the page with `contentHash`.
+	 * @param hub
+	 * @param options
+	 * @param options.page
+	 * @param options.contentHash
+	 * @param options.normalizedHtml
+	 */
+	function connectTab(
+		hub: Awaited<ReturnType<typeof buildApp>>['hub'],
+		options: { page?: string; contentHash?: string; normalizedHtml?: string } = {},
+	) {
+		const sent: unknown[] = [];
+		const sessionId = hub.tabHub.register({
+			send: (data) => sent.push(JSON.parse(data)),
+			close: () => {},
+		});
+		hub.tabHub.hello(sessionId, {
+			page: options.page ?? '/a.html',
+			revision: 1,
+			serverSession: hub.serverSession,
+			uiState: idleUiState(),
+			...(options.contentHash === undefined ? {} : { contentHash: options.contentHash }),
+			...(options.normalizedHtml === undefined
+				? {}
+				: { normalizedHtml: options.normalizedHtml }),
+		});
+		return {
+			sessionId,
+			sent,
+			types: () => sent.map((m) => (m as { type: string }).type),
+		};
+	}
+
+	const filePath = () => path.join(documentRoot, 'a.html');
+
+	test('a human save in one tab reloads the other tab, and the next agent op goes to the tab that saved', async () => {
+		let now = 0;
+		const { app, hub } = await buildApp(makeConfig(documentRoot), { now: () => now });
+		const served = await computeContentHash(filePath());
+		const saver = connectTab(hub, { contentHash: served });
+		now = 10;
+		// The other tab is the most recently active one
+		const stale = connectTab(hub, { contentHash: served });
+
+		const saveRes = await postJson(app, '/api/content', {
+			path: '/a.html',
+			content: SAVED_INNER,
+			sessionId: saver.sessionId,
+		});
+		expect(saveRes.status).toBe(200);
+		const savedHash = await computeContentHash(filePath());
+		expect(hub.tabHub.get(saver.sessionId)).toMatchObject({
+			syncedHash: savedHash,
+			reloadRequested: false,
+		});
+		expect(stale.sent.at(-1)).toEqual({
+			type: 'reload',
+			revision: 2,
+			reason: 'other-tab',
+		});
+		expect(hub.tabHub.get(stale.sessionId)?.reloadRequested).toBe(true);
+		expect(saver.types()).toEqual(['welcome']);
+
+		const token = await readToken(app, '/a.html');
+		const invokePromise = postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 1 }, readToken: token },
+		});
+		const applyMessage = await waitForApply(saver.sent);
+		hub.tabHub.resolveAck(saver.sessionId, applyMessage.id, 2, PAGE_INNER);
+
+		const res = await invokePromise;
+		expect(res.status).toBe(200);
+		expect(stale.types()).not.toContain('apply');
+	});
+
+	test('a tab served older content than disk is told to reload and the op is answered stale, leaving disk untouched', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const served = await computeContentHash(filePath());
+		// Saved before the tab connected, so the tab never received the reload
+		const saveRes = await postJson(app, '/api/content', {
+			path: '/a.html',
+			content: SAVED_INNER,
+		});
+		expect(saveRes.status).toBe(200);
+		const savedFile = await fs.readFile(filePath(), 'utf8');
+		const behind = connectTab(hub, { contentHash: served });
+
+		const token = await readToken(app, '/a.html');
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 0 }, readToken: token },
+		});
+
+		expect(res.status).toBe(409);
+		expect(((await res.json()) as { error: string }).error).toBe('stale');
+		expect(behind.types()).toEqual(['welcome', 'reload']);
+		expect(await fs.readFile(filePath(), 'utf8')).toBe(savedFile);
+	});
+
+	test('a save without a sessionId marks no tab in step and reloads every tab on the page', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const served = await computeContentHash(filePath());
+		const a = connectTab(hub, { contentHash: served, normalizedHtml: PAGE_INNER });
+		const b = connectTab(hub, { contentHash: served });
+
+		const saveRes = await postJson(app, '/api/content', {
+			path: '/a.html',
+			content: SAVED_INNER,
+		});
+
+		expect(saveRes.status).toBe(200);
+		for (const tab of [a, b]) {
+			expect(tab.sent.at(-1)).toEqual({
+				type: 'reload',
+				revision: 2,
+				reason: 'other-tab',
+			});
+			expect(hub.tabHub.get(tab.sessionId)).toMatchObject({
+				syncedHash: served,
+				reloadRequested: true,
+				normalizedHtml: null,
+			});
+		}
+	});
+
+	test.each([
+		['a tab on another page', 'other-page'],
+		['an id no tab has', 'unknown'],
+	] as const)(
+		'a save whose sessionId names %s is treated as a save without one',
+		async (_label, kind) => {
+			const { app, hub } = await buildApp(makeConfig(documentRoot));
+			const served = await computeContentHash(filePath());
+			const onPage = connectTab(hub, { contentHash: served });
+			const elsewhere = connectTab(hub, { page: '/b.html' });
+
+			const saveRes = await postJson(app, '/api/content', {
+				path: '/a.html',
+				content: SAVED_INNER,
+				sessionId: kind === 'other-page' ? elsewhere.sessionId : 'no-such-session',
+			});
+
+			expect(saveRes.status).toBe(200);
+			expect(onPage.sent.at(-1)).toEqual({
+				type: 'reload',
+				revision: 2,
+				reason: 'other-tab',
+			});
+			expect(elsewhere.types()).toEqual(['welcome']);
+		},
+	);
+
+	test('a newly opened tab served the content on disk receives the op, even before the agent read the page', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const served = await computeContentHash(filePath());
+		const tab = connectTab(hub, { contentHash: served });
+		const token = encodeReadToken({ path: '/a.html', contentHash: served });
+
+		const invokePromise = postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 0 }, readToken: token },
+		});
+		const applyMessage = await waitForApply(tab.sent);
+		hub.tabHub.resolveAck(tab.sessionId, applyMessage.id, 2, '');
+
+		const invokeRes = await invokePromise;
+		expect(invokeRes.status).toBe(200);
+	});
+
+	test("a tab behind disk does not get its unsaved normalization written over another tab's save", async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const served = await computeContentHash(filePath());
+		const saveRes = await postJson(app, '/api/content', {
+			path: '/a.html',
+			content: SAVED_INNER,
+		});
+		expect(saveRes.status).toBe(200);
+		const savedFile = await fs.readFile(filePath(), 'utf8');
+		connectTab(hub, { contentHash: served, normalizedHtml: PAGE_INNER });
+
+		const token = await readToken(app, '/a.html');
+		const res = await postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 0 }, readToken: token },
+		});
+
+		expect(res.status).toBe(409);
+		expect(await fs.readFile(filePath(), 'utf8')).toBe(savedFile);
+	});
+
+	test('a tab that reconnects with the contentHash its save returned receives the op', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const saveRes = await postJson(app, '/api/content', {
+			path: '/a.html',
+			content: SAVED_INNER,
+		});
+		const { contentHash } = (await saveRes.json()) as { contentHash: string };
+		expect(contentHash).toBe(await computeContentHash(filePath()));
+		const tab = connectTab(hub, { contentHash });
+
+		const token = await readToken(app, '/a.html');
+		const invokePromise = postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 0 }, readToken: token },
+		});
+		const applyMessage = await waitForApply(tab.sent);
+		hub.tabHub.resolveAck(tab.sessionId, applyMessage.id, 2, PAGE_INNER);
+
+		const invokeRes = await invokePromise;
+		expect(invokeRes.status).toBe(200);
+	});
+
+	test('POST /api/content rejects a sessionId that is not a string', async () => {
+		const { app } = await buildApp(makeConfig(documentRoot));
+
+		const res = await postJson(app, '/api/content', {
+			path: '/a.html',
+			content: SAVED_INNER,
+			sessionId: 42,
+		});
+
+		expect(res.status).toBe(400);
+	});
+
+	test('the served page carries the hash of the file it was served from, and a fixed value for a missing file', async () => {
+		const { app } = await buildApp(makeConfig(documentRoot));
+
+		const existingRes = await req(app, '/a.html');
+		const missingRes = await req(app, '/missing.html');
+		const existing = await existingRes.text();
+		const missing = await missingRes.text();
+
+		expect(existing).toContain(
+			`<input type="hidden" id="content-hash" value="${await computeContentHash(filePath())}"/>`,
+		);
+		expect(missing).toContain(
+			`<input type="hidden" id="content-hash" value="${MISSING_FILE_CONTENT_HASH}"/>`,
+		);
+	});
+});
+
+describe('a human save from a tab behind disk is rejected', () => {
+	const SAVED_INNER = PAGE_INNER.replace('hello', 'saved first');
+	const LATE_INNER = PAGE_INNER.replace('hello', 'saved from older content');
+
+	/**
+	 * @param hub
+	 * @param contentHash
+	 */
+	function connectTab(
+		hub: Awaited<ReturnType<typeof buildApp>>['hub'],
+		contentHash: string,
+	) {
+		const sent: unknown[] = [];
+		const sessionId = hub.tabHub.register({
+			send: (data) => sent.push(JSON.parse(data)),
+			close: () => {},
+		});
+		hub.tabHub.hello(sessionId, {
+			page: '/a.html',
+			revision: 1,
+			serverSession: hub.serverSession,
+			uiState: idleUiState(),
+			contentHash,
+		});
+		return { sessionId, sent };
+	}
+
+	const filePath = () => path.join(documentRoot, 'a.html');
+
+	test("a tab that was told to reload by another tab's save cannot save over it", async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const served = await computeContentHash(filePath());
+		const first = connectTab(hub, served);
+		const late = connectTab(hub, served);
+		await postJson(app, '/api/content', {
+			path: '/a.html',
+			content: SAVED_INNER,
+			sessionId: first.sessionId,
+		});
+		const savedFile = await fs.readFile(filePath(), 'utf8');
+
+		const res = await postJson(app, '/api/content', {
+			path: '/a.html',
+			content: LATE_INNER,
+			sessionId: late.sessionId,
+		});
+
+		expect(res.status).toBe(409);
+		expect(((await res.json()) as { error: string }).error).toBe('conflict');
+		expect(await fs.readFile(filePath(), 'utf8')).toBe(savedFile);
+	});
+
+	test('the tab that saved can keep saving', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const tab = connectTab(hub, await computeContentHash(filePath()));
+
+		const first = await postJson(app, '/api/content', {
+			path: '/a.html',
+			content: SAVED_INNER,
+			sessionId: tab.sessionId,
+		});
+		const second = await postJson(app, '/api/content', {
+			path: '/a.html',
+			content: LATE_INNER,
+			sessionId: tab.sessionId,
+		});
+
+		expect([first.status, second.status]).toEqual([200, 200]);
+		expect(await fs.readFile(filePath(), 'utf8')).toContain('saved from older content');
+	});
+
+	test('a tab served older content than disk cannot save over it', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const served = await computeContentHash(filePath());
+		await fs.writeFile(
+			filePath(),
+			PAGE_HTML.replace('hello', 'edited elsewhere'),
+			'utf8',
+		);
+		const tab = connectTab(hub, served);
+
+		const res = await postJson(app, '/api/content', {
+			path: '/a.html',
+			content: LATE_INNER,
+			sessionId: tab.sessionId,
+		});
+
+		expect(res.status).toBe(409);
+		expect(await fs.readFile(filePath(), 'utf8')).toContain('edited elsewhere');
+	});
+
+	test('after an agent op acked by the tab, the tab can save', async () => {
+		const { app, hub } = await buildApp(makeConfig(documentRoot));
+		const tab = connectTab(hub, await computeContentHash(filePath()));
+		const token = await readToken(app, '/a.html');
+		const invokePromise = postJson(app, '/api/agent/invoke', {
+			tool: 'block_delete',
+			args: { path: '/a.html', target: { index: 0 }, readToken: token },
+		});
+		const applyMessage = await waitForApply(tab.sent);
+		hub.tabHub.resolveAck(tab.sessionId, applyMessage.id, 2, '');
+		const invokeRes = await invokePromise;
+		expect(invokeRes.status).toBe(200);
+
+		const res = await postJson(app, '/api/content', {
+			path: '/a.html',
+			content: SAVED_INNER,
+			sessionId: tab.sessionId,
+		});
+
+		expect(res.status).toBe(200);
+	});
+});
+
+describe('a human save that moves the page to another logical path (virtual tree)', () => {
+	/**
+	 * Seed `1.html` at the logical path `/about.html` and open it in one tab.
+	 */
+	async function setUp() {
+		await fs.rm(path.join(documentRoot, 'a.html'));
+		await fs.writeFile(
+			path.join(documentRoot, '1.html'),
+			'---\npath: about.html\n---\n' + PAGE_HTML,
+			'utf8',
+		);
+		const { app, hub } = await buildApp(
+			makeLocalServerConfig({
+				documentRoot,
+				virtualTree: { enabled: true, pathKey: 'path' },
+			}),
+		);
+		const sent: unknown[] = [];
+		const sessionId = hub.tabHub.register({
+			send: (data) => sent.push(JSON.parse(data)),
+			close: () => {},
+		});
+		hub.tabHub.hello(sessionId, {
+			page: '/about.html',
+			revision: 1,
+			serverSession: hub.serverSession,
+			uiState: idleUiState(),
+			contentHash: await computeContentHash(path.join(documentRoot, '1.html')),
+		});
+		return { app, hub, sessionId, sent };
+	}
+
+	test('answers the new logical path, and tells the other tabs the page moved (as an agent rename does) without reloading them at the old path', async () => {
+		const { app, hub, sessionId, sent } = await setUp();
+		const otherSent: unknown[] = [];
+		const other = hub.tabHub.register({
+			send: (data) => otherSent.push(JSON.parse(data)),
+			close: () => {},
+		});
+		hub.tabHub.hello(other, {
+			page: '/about.html',
+			revision: 1,
+			serverSession: hub.serverSession,
+			uiState: idleUiState(),
+		});
+
+		const res = await postJson(app, '/api/content', {
+			path: '/about.html',
+			content: PAGE_INNER,
+			frontMatter: { path: 'company/about.html' },
+			sessionId,
+		});
+
+		expect(res.status).toBe(200);
+		expect(((await res.json()) as { logicalPath: string }).logicalPath).toBe(
+			'/company/about.html',
+		);
+		// The tab that saved follows the new path itself, so it gets no notice,
+		// and an agent's op on the new path is relayed to it
+		expect(sent.map((m) => (m as { type: string }).type)).toEqual(['welcome']);
+		expect(hub.tabHub.get(sessionId)?.page).toBe('/company/about.html');
+		// Reloading the old path would answer Not Found, so the other tab is told
+		// the page moved and is marked behind instead
+		expect(otherSent).toEqual([
+			{ type: 'welcome', sessionId: other, revision: 1 },
+			{
+				type: 'page-event',
+				kind: 'renamed',
+				from: '/about.html',
+				to: '/company/about.html',
+			},
+		]);
+		expect(hub.tabHub.get(other)?.reloadRequested).toBe(true);
+		expect(hub.events.since(0).events).toContainEqual(
+			expect.objectContaining({
+				type: 'page-renamed',
+				payload: { from: '/about.html', to: '/company/about.html' },
+			}),
+		);
+	});
+
+	test('a save that keeps the logical path answers it and tells no tab anything', async () => {
+		const { app, sessionId, sent } = await setUp();
+
+		const res = await postJson(app, '/api/content', {
+			path: '/about.html',
+			content: PAGE_INNER,
+			frontMatter: { path: 'about.html' },
+			sessionId,
+		});
+
+		expect(((await res.json()) as { logicalPath: string }).logicalPath).toBe(
+			'/about.html',
+		);
+		expect(sent.map((m) => (m as { type: string }).type)).toEqual(['welcome']);
 	});
 });

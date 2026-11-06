@@ -11,6 +11,8 @@ type Props = {
 	hasFrontMatter?: boolean;
 	/** This server process's Agent Hub session token, or `null` when `agent.enabled` is `false`. Read by `client/create-editor.ts` for the WS `hello` message — see `agent/tab-hub.ts`'s `hello`. */
 	serverSession?: string | null;
+	/** The hash of the file content the page was served from. Read by `client/create-editor.ts` for its saves' `baseHash` and the WS `hello` message — see `routes/content-api.ts` and `agent/tab-hub.ts`'s `TabSessionSnapshot.syncedHash`. */
+	contentHash?: string;
 	/** Whether the page's file didn't exist when it was opened. Read by `client/create-editor.ts` to create the file on its first save. */
 	isNewFile?: boolean;
 };
@@ -25,6 +27,7 @@ type Props = {
  * @param props.frontMatter - Front Matter data
  * @param props.hasFrontMatter - Whether Front Matter exists
  * @param props.serverSession - This server process's Agent Hub session token
+ * @param props.contentHash - The hash of the file content the page was served from
  * @param props.isNewFile - Whether the page's file didn't exist when it was opened
  */
 export function App({
@@ -35,6 +38,7 @@ export function App({
 	frontMatter,
 	hasFrontMatter,
 	serverSession,
+	contentHash,
 	isNewFile,
 }: Props) {
 	return (
@@ -55,6 +59,9 @@ export function App({
 					/>
 					{serverSession != null && (
 						<input type="hidden" id="server-session" value={serverSession} />
+					)}
+					{contentHash !== undefined && (
+						<input type="hidden" id="content-hash" value={contentHash} />
 					)}
 
 					{content instanceof Error ? (

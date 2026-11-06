@@ -30,6 +30,19 @@ const uiStateFieldsSchema = z.object({
 	editingBlockIndex: z.number().int().nonnegative().nullable(),
 });
 
+/**
+ * The `contentHash` of a page whose file did not exist when it was served.
+ * Defined here, next to `hello`'s `contentHash`, because the browser and the
+ * server both use it (`protocol/` is shared and stays free of Node built-ins). It
+ * never equals a real content hash, so such a tab is in step only until the
+ * file is created.
+ * @example
+ * ```ts
+ * const contentHash = fileExists ? await computeContentHash(filePath) : MISSING_FILE_CONTENT_HASH;
+ * ```
+ */
+export const MISSING_FILE_CONTENT_HASH = 'missing';
+
 export const browserToServerMessageSchema = z.discriminatedUnion('type', [
 	z.object({
 		type: z.literal('hello'),
@@ -39,6 +52,14 @@ export const browserToServerMessageSchema = z.discriminatedUnion('type', [
 		uiState: uiStateFieldsSchema,
 		/** Main-area HTML as the editor normalized it on open, sent only while it differs from disk and hasn't been saved — see `agent/tab-hub.ts`'s `TabSessionSnapshot.normalizedHtml`. */
 		normalizedHtml: z.string().optional(),
+		/**
+		 * The hash of the file content the page was served from (`#content-hash`,
+		 * {@link MISSING_FILE_CONTENT_HASH} for a page whose file did not exist).
+		 * The server compares it with the file on disk before relaying an agent's
+		 * op, so an op never lands on a tab showing older content — see
+		 * `agent/tab-hub.ts`'s `TabSessionSnapshot.syncedHash`.
+		 */
+		contentHash: z.string().optional(),
 	}),
 	z.object({ type: z.literal('focus') }),
 	z.object({ type: z.literal('ui-state') }).merge(uiStateFieldsSchema),

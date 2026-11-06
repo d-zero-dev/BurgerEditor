@@ -3,6 +3,7 @@ import type {
 	BlockOp,
 	BrowserToServerMessage,
 	PageEventMessage,
+	ReloadReason,
 	ServerToBrowserMessage,
 	UIState,
 } from '../protocol/ws-messages.js';
@@ -50,8 +51,23 @@ export interface AgentLink {
 	 * can skip re-POSTing content the server already has.
 	 */
 	consumeEcho(): boolean;
-	/** Call when a save for a reason other than an agent-applied op (a human edit) has reached disk — not after a failed one, which leaves the open-time `normalizedHtml` still unsaved. */
-	notifyHumanSave(): void;
+	/**
+	 * Call when a save for a reason other than an agent-applied op (a human edit) has reached disk — not after a failed one, which leaves the open-time `normalizedHtml` still unsaved.
+	 * @param contentHash - The hash of what was written (`POST /api/content`'s `contentHash`). It replaces the `contentHash` the next `hello` reports; omit it to keep the previous one
+	 */
+	notifyHumanSave(contentHash?: string): void;
+	/**
+	 * This tab's Agent Hub session (the `welcome` `sessionId`), or `null` before
+	 * `welcome` arrives (including after a reconnect, which is a new session).
+	 * Sent with a human save so the server marks only this tab in step with disk.
+	 */
+	readonly sessionId: string | null;
+	/**
+	 * Call when this tab's own save moved the page to another path (virtual
+	 * tree); the next `hello` (after a reconnect) reports the new page.
+	 * @param page - The new page, normalized like `AgentLinkOptions.page`
+	 */
+	notifyPageMoved(page: string): void;
 	/** Call when the browser tab regains focus — feeds the server's primary-tab selection with a freshness signal. */
 	notifyFocus(): void;
 	/** Call when the editor switches which content area (main/draft) is visible. */
@@ -77,6 +93,24 @@ export interface AgentLinkOptions {
 	 * agent's op addresses blocks by index — see `agent/route.ts`.
 	 */
 	readonly normalizedHtml?: string;
+	/**
+	 * The hash of the file content the page was served from (`#content-hash`).
+	 * Reported in `hello` so the server relays an agent's op only while this
+	 * tab shows what is on disk — see `agent/tab-hub.ts`'s `syncedHash`.
+	 */
+	readonly contentHash?: string;
+	/**
+	 * Called instead of reloading when a `reload` directive arrives while the
+	 * user is editing (a dialog is open, or source mode), once the edit ends —
+	 * for every reason except `server-restart`, which says nothing about the
+	 * page on disk and still reloads.
+	 * Reloading then would also discard what was just edited, and the save of
+	 * that edit is refused because the tab is behind disk — so the tab is left
+	 * as it is and the caller tells the user (`create-editor.ts` shows the
+	 * save-failure notice with a reload button). Without it, the tab reloads
+	 * once the edit ends. A tab that is not editing always reloads right away.
+	 */
+	readonly onReloadDuringEdit?: () => void;
 	/** Called for every `page-event` frame (a page created/deleted/renamed elsewhere) — wire to `nav-tree.ts`'s `hydrateNavTree()` and any "this page is gone" notification. */
 	readonly onPageEvent?: (message: PageEventMessage) => void;
 }
@@ -102,7 +136,14 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 	let echoPending = false;
 	let disposed = false;
 	let revision = 0;
+	let page = options.page;
 	let normalizedHtml = options.normalizedHtml ?? null;
+	let sessionId: string | null = null;
+	// Not cleared after an acked op: the tab does not learn the hash of what the
+	// server persisted. Keeping the older hash is the safe direction — after a
+	// reconnect the tab is judged behind and reloads once, never judged in step
+	// while it is behind
+	let contentHash = options.contentHash ?? null;
 	/** Timers / subscriptions still waiting on a UI-state change; released by `dispose()`. */
 	const pendingCleanups = new Set<() => void>();
 
@@ -220,7 +261,10 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 	 * A `reload`/`stale` directive during an active edit would blow away
 	 * unsaved dialog state — wait for idle instead of reloading mid-edit.
 	 */
-	function reloadWhenIdle(): void {
+	/**
+	 * @param reason - Why the server asked for the reload
+	 */
+	function reloadWhenIdle(reason: ReloadReason): void {
 		if (!isBusy(adapter.getUIState())) {
 			adapter.reload();
 			return;
@@ -232,7 +276,13 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 		const unsubscribe = adapter.subscribeUIState(() => {
 			if (!isBusy(adapter.getUIState())) {
 				cleanup();
-				adapter.reload();
+				// A server restart says nothing about the page on disk, so the tab
+				// reloads as usual; every other reason means the tab is behind disk
+				if (options.onReloadDuringEdit && reason !== 'server-restart') {
+					options.onReloadDuringEdit();
+				} else {
+					adapter.reload();
+				}
 			}
 		});
 		pendingCleanups.add(cleanup);
@@ -251,11 +301,20 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 			}
 			return false;
 		},
-		notifyHumanSave() {
+		get sessionId() {
+			return sessionId;
+		},
+		notifyHumanSave(savedHash) {
 			normalizedHtml = null;
+			if (savedHash !== undefined) {
+				contentHash = savedHash;
+			}
 			if (!disposed) {
 				send({ type: 'saved', revision });
 			}
+		},
+		notifyPageMoved(movedTo) {
+			page = movedTo;
 		},
 		notifyFocus() {
 			if (!disposed) {
@@ -294,11 +353,12 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 				case 'welcome': {
 					browserLog(LOG_TAG, 'welcome', message);
 					revision = message.revision;
+					sessionId = message.sessionId;
 					break;
 				}
 				case 'reload': {
 					browserLog(LOG_TAG, 'reload requested', message);
-					reloadWhenIdle();
+					reloadWhenIdle(message.reason);
 					break;
 				}
 				case 'committed': {
@@ -318,18 +378,21 @@ export function createAgentLink(options: AgentLinkOptions): AgentLink {
 			}
 		},
 		handleOpen() {
+			// A (re)connection is a new server session; the old id is unknown to it
+			sessionId = null;
 			browserLog(LOG_TAG, 'connection open, sending hello', {
-				page: options.page,
+				page,
 				revision,
 				serverSession: options.serverSession,
 			});
 			send({
 				type: 'hello',
-				page: options.page,
+				page,
 				revision,
 				serverSession: options.serverSession,
 				uiState: adapter.getUIState(),
 				...(normalizedHtml === null ? {} : { normalizedHtml }),
+				...(contentHash === null ? {} : { contentHash }),
 			});
 		},
 		dispose() {

@@ -630,7 +630,11 @@ function notifyPageEvent(hub: AgentHub, toolName: string, result: unknown): void
  * a two-way staleness check before relaying — a
  * `readToken` that matches disk content isn't enough on its own if disk
  * itself has drifted from what `local` last wrote/read (`persistedHash`), or
- * if the primary tab hasn't caught up to that (`syncedHash`).
+ * if the primary tab does not show what is on disk (it was told to reload, or
+ * its `syncedHash` differs from the file's hash). The primary tab is selected
+ * once the disk hash is known so a tab in step wins over a more recently active one
+ * that is behind; when every tab is behind, the op is not relayed: the tab is
+ * told to reload and the call answers `stale`.
  * @param c
  * @param tool
  * @param toolName
@@ -665,15 +669,17 @@ async function runViaBrowserOrDisk(
 	// RevisionRegistry key, or a root-page tab never matches an agent's
 	// fully-qualified path (see create-editor.ts's matching normalization).
 	const normalizedPage = normalizeLogicalPath(pathInput, userConfig.indexFileName);
-	const primary = hub.tabHub.primaryTabFor(normalizedPage);
+	// Only whether some tab has the page open decides browser vs disk here; the
+	// tab to relay to is chosen once, below, when the disk hash is known
+	const tabOpen = hub.tabHub.primaryTabFor(normalizedPage) !== null;
 	log(
-		'invoke %s for %s (normalized: %s): primary tab = %o',
+		'invoke %s for %s (normalized: %s): tab open = %s',
 		toolName,
 		pathInput,
 		normalizedPage,
-		primary,
+		tabOpen,
 	);
-	if (!primary) {
+	if (!tabOpen) {
 		log('no tab has %s open, falling back to disk', normalizedPage);
 		return runOnDisk(c, tool, toolName, args, userConfig, deps, hub, pathInput);
 	}
@@ -716,12 +722,30 @@ async function runViaBrowserOrDisk(
 					'Re-read with page_blocks and retry.',
 			);
 		}
-		if (primary.syncedHash !== null && primary.syncedHash !== entry.persistedHash) {
+		// Now that the disk hash is known, prefer a tab showing it over one that is
+		// behind (a tab told to reload, or served older content), even if the one
+		// behind was more recently active
+		const primary = hub.tabHub.primaryTabFor(normalizedPage, currentHash);
+		if (!primary) {
+			// Every tab on the page disconnected while this call awaited the disk
+			log('no tab has %s open any more, falling back to disk', normalizedPage);
+			return runOnDisk(c, tool, toolName, args, userConfig, deps, hub, pathInput);
+		}
+		log('primary tab for %s = %o', normalizedPage, primary);
+		// Compared with the file on disk, not `persistedHash`: the check above
+		// already made `persistedHash` either null or `currentHash`, and null
+		// (a page the agent has not touched since start-up) would otherwise judge
+		// every tab with a known hash behind
+		if (
+			primary.reloadRequested ||
+			(primary.syncedHash !== null && primary.syncedHash !== currentHash)
+		) {
 			log(
-				'primary tab for %s is behind (syncedHash %s vs persistedHash %s)',
+				'primary tab for %s is behind (reloadRequested %s, syncedHash %s vs disk %s)',
 				normalizedPage,
+				primary.reloadRequested,
 				primary.syncedHash,
-				entry.persistedHash,
+				currentHash,
 			);
 			hub.tabHub.reloadOne(primary.id, entry.revision, 'behind');
 			throw new AgentError(
@@ -777,7 +801,7 @@ async function runViaBrowserOrDisk(
 		if (toolName === 'block_insert' || toolName === 'block_replace') {
 			blockHtml = await renderBlockHtml(args.spec, ctx.config);
 		}
-		const ops = buildBrowserOps(toolName, args, blocks, pathInput, blockHtml);
+		const ops = buildBrowserOps(toolName, args, blocks, pathInput, blockHtml, ctx.config);
 
 		let lastHtml = loaded.editableContent;
 		let applied = 0;

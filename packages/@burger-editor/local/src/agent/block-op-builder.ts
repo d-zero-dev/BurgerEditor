@@ -1,7 +1,7 @@
-import type { BlockOp, BlockTarget } from '@burger-editor/cli';
+import type { BlockOp, BlockTarget, CoreConfigSource } from '@burger-editor/cli';
 import type { ListedBlock } from '@burger-editor/core';
 
-import { resolveIndexInBlocks } from '@burger-editor/cli';
+import { normalizeBlockOp, resolveIndexInBlocks } from '@burger-editor/cli';
 
 /** Agent tool names whose disk implementation this hub can also relay to a live browser tab as `BlockOp`s. */
 export const BROWSER_APPLICABLE_TOOLS = new Set([
@@ -31,6 +31,9 @@ export const BROWSER_APPLICABLE_TOOLS = new Set([
  * @param blocks
  * @param pathInput
  * @param blockHtml
+ * @param config - The project config. `page_update`'s `insert` / `replace` carry
+ * HTML the agent wrote, which the browser saves as it is; it is normalized here,
+ * where the config is known, so the result matches the disk path.
  */
 export function buildBrowserOps(
 	toolName: string,
@@ -39,6 +42,7 @@ export function buildBrowserOps(
 	blocks: readonly ListedBlock[],
 	pathInput: string,
 	blockHtml?: string,
+	config?: CoreConfigSource,
 ): readonly BlockOp[] {
 	switch (toolName) {
 		case 'block_insert': {
@@ -72,7 +76,10 @@ export function buildBrowserOps(
 			];
 		}
 		case 'page_update': {
-			return args.ops as readonly BlockOp[];
+			const ops = args.ops as readonly BlockOp[];
+			const normalized = ops.map((op) => normalizeBlockOp(op, config));
+			// Nothing to normalize: hand back the agent's own array
+			return normalized.every((op, index) => op === ops[index]) ? ops : normalized;
 		}
 		default: {
 			return [];

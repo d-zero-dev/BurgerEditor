@@ -1,3 +1,4 @@
+import type { SaveFailureReason } from './save-failure-banner.js';
 import type { AppType } from '../app.js';
 import type { hc } from 'hono/client';
 
@@ -22,6 +23,42 @@ export type SaveContentParams = {
 	 * reports that as a 404 instead of bringing it back.
 	 */
 	createIfMissing?: boolean;
+	/**
+	 * This tab's Agent Hub session, so the server marks only the saving tab in
+	 * step with disk and reloads the other tabs on the page (`AgentLink.sessionId`).
+	 */
+	sessionId?: string;
+	/**
+	 * The hash of the file content the edit started from (the page's
+	 * `#content-hash`, then each save's `contentHash`). The server rejects the
+	 * save with 409 `conflict` when the file has changed since.
+	 */
+	baseHash?: string;
+};
+
+/** Callbacks for the outcome of a save. */
+export type SaveContentHandlers = {
+	/** Called once the server confirmed the write. */
+	readonly onSaved?: (info: SavedInfo) => void;
+	/**
+	 * Called when the save did not reach disk, with the reason: `conflict` (409
+	 * `conflict`: the page changed after the content was loaded), `not-found`
+	 * (404: the page moved or was deleted elsewhere), `path-taken` (another 409:
+	 * the Front Matter path is used by another page) or `failed` (anything else,
+	 * including a request that never reached the server).
+	 */
+	readonly onFailed?: (reason: SaveFailureReason) => void;
+};
+
+/** What a confirmed save reports back. */
+export type SavedInfo = {
+	/** The hash of what was written. */
+	contentHash: string | undefined;
+	/**
+	 * The page's logical path after the save — another one when the save moved
+	 * the page (a virtual-tree page whose Front Matter path key changed).
+	 */
+	logicalPath: string | undefined;
 };
 
 type ContentPost = ReturnType<typeof hc<AppType>>['api']['content']['$post'];
@@ -43,37 +80,69 @@ type ContentPost = ReturnType<typeof hc<AppType>>['api']['content']['$post'];
  *             can substitute a `Response`-returning fake.
  * @param params
  * @param log
+ * @param handlers
  * @returns whether the server confirmed the write
  */
 export async function saveContentRequest(
 	post: ContentPost,
 	params: SaveContentParams,
 	log: SaveContentLog,
+	handlers: SaveContentHandlers = {},
 ): Promise<boolean> {
-	const res = await post({
-		json: {
-			path: params.path,
-			content: params.content,
-			frontMatter: params.frontMatter,
-			originalFrontMatter: params.originalFrontMatter,
-			createIfMissing: params.createIfMissing,
-		},
-	});
+	let res: Awaited<ReturnType<ContentPost>>;
+	try {
+		res = await post({
+			json: {
+				path: params.path,
+				content: params.content,
+				frontMatter: params.frontMatter,
+				originalFrontMatter: params.originalFrontMatter,
+				createIfMissing: params.createIfMissing,
+				...(params.sessionId === undefined ? {} : { sessionId: params.sessionId }),
+				...(params.baseHash === undefined ? {} : { baseHash: params.baseHash }),
+			},
+		});
+	} catch (error) {
+		// The server is unreachable (stopped, network down): report it like any
+		// other failed save instead of rejecting, so the editor can tell the user
+		log.error(
+			`Failed to save: ${error instanceof Error ? error.message : String(error)}`,
+		);
+		handlers.onFailed?.('failed');
+		return false;
+	}
 
 	if (!res.ok) {
 		const errorBody = (await res.json().catch(() => ({}))) as {
 			error?: string;
 		};
 		log.error(`Failed to save: ${errorBody.error ?? res.statusText}`);
+		// `POST /api/content` answers 409 for two things: a save from older
+		// content (`error: 'conflict'`) and a Front Matter path another page uses
+		// (`PathConflictError`, whose message is the error)
+		handlers.onFailed?.(
+			res.status === 409
+				? errorBody.error === 'conflict'
+					? 'conflict'
+					: 'path-taken'
+				: res.status === 404
+					? 'not-found'
+					: 'failed',
+		);
 		return false;
 	}
 
 	const json = await res.json();
 	if (!('saved' in json) || !json.saved) {
 		log.error('Save did not complete');
+		handlers.onFailed?.('failed');
 		return false;
 	}
 
 	log.info(`Saved: ${json.path}${json.hasFrontMatter ? ' (with Front Matter)' : ''}`);
+	handlers.onSaved?.({
+		contentHash: 'contentHash' in json ? json.contentHash : undefined,
+		logicalPath: 'logicalPath' in json ? json.logicalPath : undefined,
+	});
 	return true;
 }

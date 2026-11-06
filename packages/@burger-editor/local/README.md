@@ -82,28 +82,29 @@ npx bge --config ./burgereditor.child.config.js   # 設定ファイルを指定�
 
 ### オプショナル
 
-| キー                | 型                                                                 | デフォルト                                          | 説明                                         |
-| ------------------- | ------------------------------------------------------------------ | --------------------------------------------------- | -------------------------------------------- |
-| `version`           | `string`                                                           | `'0.0.0-unknown'`                                   | 設定ファイルのバージョン                     |
-| `port`              | `number`                                                           | `5255`                                              | サーバーポート                               |
-| `host`              | `` 'localhost' \| `${number}.${number}.${number}.${number}` ``     | `'localhost'`                                       | ホスト名（`0.0.0.0` / `::`は設定エラー）     |
-| `lang`              | `string`                                                           | `'en'`                                              | エディタ UI 言語                             |
-| `stylesheets`       | `string[]`                                                         | `[]`                                                | 編集領域にロードする CSS                     |
-| `classList`         | `string[]`                                                         | `[]`                                                | 編集領域ルートに付与するクラス               |
-| `editableArea`      | `string \| null`                                                   | `null`                                              | 編集可能エリアのセレクタ                     |
-| `indexFileName`     | `string`                                                           | `'index.html'`                                      | `/`で終わるパスのインデックスファイル名      |
-| `catalog`           | `BlockCatalog`                                                     | `defaultCatalog`                                    | ブロックカタログ                             |
-| `newFileContent`    | `string`                                                           | `''`                                                | 新規ページのひな型。初回保存時に作成         |
-| `filesDir`          | `string \| FileDirSettings \| { image, pdf, video, audio, other }` | `assetsRoot`配下                                    | アップロード先ディレクトリ（タイプ別指定可） |
-| `sampleImagePath`   | `` `/${string}` \| `https://${string}` \| `base64:${string}` ``    | `${filesDir.image.clientPath}/sample.png`           | サンプル画像のパス                           |
-| `sampleFilePath`    | 同上                                                               | `${filesDir.other.clientPath}/sample.pdf`           | サンプルファイルのパス                       |
-| `googleMapsApiKey`  | `string \| null`                                                   | `null`                                              | Google Maps API キー                         |
-| `open`              | `boolean`                                                          | `true`                                              | 起動時にブラウザを自動で開く                 |
-| `enableImportBlock` | `boolean`                                                          | `true`                                              | インポートブロック有効化                     |
-| `healthCheck`       | `{ enabled, interval, retryCount }`                                | `{ enabled: true, interval: 10000, retryCount: 3 }` | クライアント側の自動 health 監視（後述）     |
-| `virtualTree`       | `{ enabled, pathKey }`                                             | `{ enabled: false, pathKey: 'path' }`               | Virtual File Tree（後述）                    |
-| `experimental`      | `{ itemOptions?: { button?, wysiwyg? } }`                          | `undefined`                                         | 実験的機能（後述）                           |
-| `agent`             | `{ enabled }`                                                      | `{ enabled: true }`                                 | Agent Hub（後述）の有効 / 無効               |
+| キー                | 型                                                                 | デフォルト                                             | 説明                                         |
+| ------------------- | ------------------------------------------------------------------ | ------------------------------------------------------ | -------------------------------------------- |
+| `version`           | `string`                                                           | `'0.0.0-unknown'`                                      | 設定ファイルのバージョン                     |
+| `port`              | `number`                                                           | `5255`                                                 | サーバーポート                               |
+| `host`              | `` 'localhost' \| `${number}.${number}.${number}.${number}` ``     | `'localhost'`                                          | ホスト名（`0.0.0.0` / `::`は設定エラー）     |
+| `lang`              | `string`                                                           | `'en'`                                                 | エディタ UI 言語                             |
+| `stylesheets`       | `string[]`                                                         | `[]`                                                   | 編集領域にロードする CSS                     |
+| `classList`         | `string[]`                                                         | `[]`                                                   | 編集領域ルートに付与するクラス               |
+| `editableArea`      | `string \| null`                                                   | `null`                                                 | 編集可能エリアのセレクタ                     |
+| `indexFileName`     | `string`                                                           | `'index.html'`                                         | `/`で終わるパスのインデックスファイル名      |
+| `catalog`           | `BlockCatalog`                                                     | `defaultCatalog`                                       | ブロックカタログ                             |
+| `newFileContent`    | `string`                                                           | `''`                                                   | 新規ページのひな型。初回保存時に作成         |
+| `filesDir`          | `string \| FileDirSettings \| { image, pdf, video, audio, other }` | `assetsRoot`配下                                       | アップロード先ディレクトリ（タイプ別指定可） |
+| `sampleImagePath`   | `` `/${string}` \| `https://${string}` \| `base64:${string}` ``    | `${filesDir.image.clientPath}/sample.png`              | サンプル画像のパス                           |
+| `sampleFilePath`    | 同上                                                               | `${filesDir.other.clientPath}/sample.pdf`              | サンプルファイルのパス                       |
+| `googleMapsApiKey`  | `string \| null`                                                   | `null`                                                 | Google Maps API キー                         |
+| `mediaQueries`      | `string[]`                                                         | 未設定（画像アイテムが`['(max-width: 767px)']`を使う） | 画像2以降のメディアクエリーの候補と既定値    |
+| `open`              | `boolean`                                                          | `true`                                                 | 起動時にブラウザを自動で開く                 |
+| `enableImportBlock` | `boolean`                                                          | `true`                                                 | インポートブロック有効化                     |
+| `healthCheck`       | `{ enabled, interval, retryCount }`                                | `{ enabled: true, interval: 10000, retryCount: 3 }`    | クライアント側の自動 health 監視（後述）     |
+| `virtualTree`       | `{ enabled, pathKey }`                                             | `{ enabled: false, pathKey: 'path' }`                  | Virtual File Tree（後述）                    |
+| `experimental`      | `{ itemOptions?: { button?, wysiwyg? } }`                          | `undefined`                                            | 実験的機能（後述）                           |
+| `agent`             | `{ enabled }`                                                      | `{ enabled: true }`                                    | Agent Hub（後述）の有効 / 無効               |
 
 > `config`はクライアント側にもそのまま埋め込まれるため、シリアライズ可能な値のみ受け付ける。
 
@@ -213,6 +214,10 @@ AI エージェント（`@burger-editor/mcp-server`経由）が、開いてい�
 
 - **エンドポイント**: `GET /api/agent/tools`（ツール定義一覧）、`GET /api/agent/status`（到達確認）、`GET /api/agent/events`（状態変化のロングポーリング）、`POST /api/agent/invoke`（ツール呼び出し）、WebSocket `/ws/editor`（ブラウザタブとの接続）
 - **無効化**: `agent: { enabled: false }`で上記すべてがマウントされなくなる
+- **複数のタブ**: 同じページを複数のタブで開いていると、あるタブで保存したとき、他のタブには再読み込みが指示される。エージェントの操作は、ディスクと同じ内容を表示しているタブにだけ届く。ディスクより古い内容のタブしか無いときは、そのタブに再読み込みを指示して、呼び出しは`stale`で返る（読み直して再実行する）
+- **古い内容からの保存**: タブで読み込んだ後にページが別の場所（別のタブ、エージェント、外部のエディター）で保存されていると、そのタブからの保存は書き込まれない（`POST /api/content`が 409 `conflict`）。先の保存を上書きする手段は用意していない。Agent Hub が有効なときはサーバーが記録しているタブの状態で、無効なときはページが読み込まれたときの内容のハッシュで判定する（Agent Hub が有効で、WebSocket の再接続中のタブからの保存は判定しない）
+- **保存できなかったとき**: 保存が書き込まれなかったときは、理由（別の場所で更新された／ページが移動・削除された／保存できなかった）と「この画面の変更は保存されていません」を、閉じるか次の保存が成功するまで画面に出す。別の場所で更新されたときは「再読み込み」で最新の内容を開き直せる
+- **ページのパスの変更（仮想ファイルツリー）**: 保存で Front Matter のパスを変えると、そのタブは新しいパスで開き直し、他のタブにはページが移動したことが知らされる（エージェントの`page_rename`と同じ）
 - **非ループバック bind 時のトークン**: `host`を LAN IP にすると、起動ごとのトークンが必要になる（エディター画面・`/api/content`・`/api/file`・静的ファイルを含むアプリ全体が対象で、`agent.enabled: false`でも同じ。`/api/health`のみ認証なしで応答する）。起動バナーに`http://<host>:<port>/?token=…`が表示されるので **一度だけそれを開く**と`bge_session` cookie が発行され、以後そのブラウザは認可される。同じトークンは`<configDir>/.burgereditor/agent-token`（`configDir`は読み込んだ設定ファイルのディレクトリ。mode 0600、終了時に削除）にも書かれる。**`.burgereditor/`を`.gitignore`に追加すること**。同じマシンで動く`mcp-server`はこのファイルを自動で読むので設定は不要。ただし`local`を`--config`/`BGE_CONFIG`で起動した場合は、`mcp-server`にも同じ設定ファイルを指定する（そうしないと別のディレクトリのトークンを探してしまう）。別マシンや任意の値を使いたいときは環境変数`BGE_AGENT_TOKEN`で上書きできる。`localhost`/`127.0.0.1`/`::1`に bind している間はトークン不要
 - **Host / Origin 検査（DNS rebinding 対策）**: `hostGuard`はアプリ全体に掛かる。`Host`（と、あれば`Origin`）が`localhost`/ループバック/設定した`host`以外なら、ループバック bind でも 403
 - **認証されていない upgrade の扱い**: 非ループバック bind で cookie/bearer の無い`/ws/editor`の upgrade は HTTP 401、`Host`/`Origin`が許可リストに無い場合は 403 で、いずれもハンドシェイク時点で拒否される（`/api/agent/*`と同じ`hostGuard`/cookie-or-bearer 判定を upgrade 前に通す）。ハンドシェイクを受理してから close するのではなく、`app.request()`で in-process に検証できる
@@ -237,16 +242,16 @@ AI エージェント（`@burger-editor/mcp-server`経由）が、開いてい�
 - HTTP 接続を切ると、サーバー側の待機もその時点で終わる
 - `mcp-server`経由では、`local`が`timeoutMs` + 5 秒以内に応答しない場合、`timedOut: true`の空応答として返る
 
-| イベント種別                                     | 発生するとき                                                                                                         | `payload`                     |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| `session-connected`                              | タブが接続した                                                                                                       | `{ sessionId, page }`         |
-| `session-disconnected`                           | タブの接続が切れた（ping 応答が途絶えた場合を含む）                                                                  | `{ sessionId, page }`         |
-| `ui-state`                                       | タブの UI 状態が届いた                                                                                               | `{ sessionId, uiState }`      |
-| `ui-idle`                                        | タブの UI 状態が busy から idle になった（`ui-state`に加えて発生）                                                   | `{ sessionId }`               |
-| `content-saved`                                  | エージェントのツールでページ内容がタブまたはディスクに書き込まれた（`front_matter_set`とページ構造系ツールを除く）   | `{ page, appliedTo }`         |
-| `content-changed`                                | `local`以外（IDE や別プロセス）がページのファイルを変更したことを検知した                                            | `{ page }`                    |
-| `front-matter-changed`                           | `front_matter_set`が成功した                                                                                         | `{ page, appliedTo: 'disk' }` |
-| `page-created` / `page-deleted` / `page-renamed` | `page_create` / `page_copy` / `page_concat`（created）、`page_delete`（deleted）、`page_rename`（renamed）が成功した | `{ from?, to? }`              |
+| イベント種別                                     | 発生するとき                                                                                                                                                                                                 | `payload`                     |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- |
+| `session-connected`                              | タブが接続した                                                                                                                                                                                               | `{ sessionId, page }`         |
+| `session-disconnected`                           | タブの接続が切れた（ping 応答が途絶えた場合を含む）                                                                                                                                                          | `{ sessionId, page }`         |
+| `ui-state`                                       | タブの UI 状態が届いた                                                                                                                                                                                       | `{ sessionId, uiState }`      |
+| `ui-idle`                                        | タブの UI 状態が busy から idle になった（`ui-state`に加えて発生）                                                                                                                                           | `{ sessionId }`               |
+| `content-saved`                                  | エージェントのツールでページ内容がタブまたはディスクに書き込まれた（`front_matter_set`とページ構造系ツールを除く）                                                                                           | `{ page, appliedTo }`         |
+| `content-changed`                                | `local`以外（IDE や別プロセス）がページのファイルを変更したことを検知した                                                                                                                                    | `{ page }`                    |
+| `front-matter-changed`                           | `front_matter_set`が成功した                                                                                                                                                                                 | `{ page, appliedTo: 'disk' }` |
+| `page-created` / `page-deleted` / `page-renamed` | `page_create` / `page_copy` / `page_concat`（created）、`page_delete`（deleted）、`page_rename`（renamed）が成功した。renamed は、人の保存で Front Matter のパスが変わったとき（仮想ファイルツリー）にも出る | `{ from?, to? }`              |
 
 `content-saved`は、エージェントの操作そのものが成功しなかったときにも発生することがある。開いているタブが、ページを開いた時点でマークアップを正規化して（素の HTML をブロックで包む等）未保存のまま持っている場合、ブロックを操作するツールは先にその内容をディスクへ書き込み、`content-saved`（`appliedTo: 'browser'`）を発生させたうえで`stale`エラーを返す。エージェントの操作は適用されていないので、`content-saved`を操作の成功とみなさず、ツールの応答で判断する。
 
