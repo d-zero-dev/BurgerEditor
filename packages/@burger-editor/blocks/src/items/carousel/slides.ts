@@ -267,13 +267,21 @@ function slideLabels(slides: readonly Slide[]): string[] {
 
 /**
  * スライドにキャプションか alt のどちらかが必須な理由。スライド編集ダイアログの
- * 説明文と、確定を拒むときのメッセージが同じ文言を使う。
+ * 説明文と、確定を拒むときのメッセージ、エージェントの書き込みを拒む理由が同じ文言を
+ * 使う（文言を変えるときは、エージェントが読む理由文でもあることに注意する）。
  */
 export const SLIDE_NAME_NOTE =
 	'キャプションか代替テキストのどちらかが、スライドとドットの名前になるため必須です。';
 
+/**
+ * キャプションも alt も無いスライドを拒むときの理由（編集画面の確定とエージェントの
+ * 書き込みで共通）。
+ */
 const UNNAMED_SLIDE_MESSAGE = `キャプションも代替テキスト(alt)も空です。${SLIDE_NAME_NOTE}`;
 
+/**
+ * リンク・ポップアップのスライドで alt が空のときの理由。image と同じ文言を使う。
+ */
 const UNNAMED_LINK_MESSAGE = ALT_REQUIRED_MESSAGE;
 
 /**
@@ -287,13 +295,15 @@ const UNNAMED_LINK_MESSAGE = ALT_REQUIRED_MESSAGE;
  */
 function unnamedReasonOf(slide: Slide, parser?: DOMParser): string | null {
 	const popup = isPopup(slide.node, slide.command);
-	const alt = slide.alt[0] ?? '';
+	// エージェントは任意の JSON を送る。文字列でない値は、空として扱う
+	const rawAlt: unknown = slide.alt[0];
+	const rawCaption: unknown = slide.caption;
+	const alt = typeof rawAlt === 'string' ? rawAlt : '';
+	const caption = typeof rawCaption === 'string' ? rawCaption : '';
 	if (needsAltForName(wrapperNodeOf(popup, slide.href), alt)) {
 		return UNNAMED_LINK_MESSAGE;
 	}
-	return slideLabelOf({ caption: slide.caption, alt }, parser)
-		? null
-		: UNNAMED_SLIDE_MESSAGE;
+	return slideLabelOf({ caption, alt }, parser) ? null : UNNAMED_SLIDE_MESSAGE;
 }
 
 /**
@@ -302,10 +312,36 @@ function unnamedReasonOf(slide: Slide, parser?: DOMParser): string | null {
  * スライドは操作する要素に名前が付かない。保存済みの HTML を開くだけでは呼ばないので、
  * すでに保存された名前の無いスライドも開ける。そのカルーセルを確定するときは、
  * 名前の無いスライドを直す必要がある。
- * @param slides
+ *
+ * 編集画面の「決定」（`toItemData`）が呼ぶ。エージェントの書き込みは、同じ判定を
+ * {@link unnamedSlidesMessage} から得る（`validateItemData`）。
+ * @param slides - 検査するスライド（{@link getSlides} の結果）
  * @throws {Error} 名前の無いスライドがあるとき。メッセージにスライドの番号（1 始まり）を含む
+ * @example
+ * ```ts
+ * assertSlidesNamed(getSlides(normalizeCarousel(state)));
+ * ```
  */
 export function assertSlidesNamed(slides: readonly Slide[]): void {
+	const message = unnamedSlidesMessage(slides);
+	if (message) {
+		throw new Error(message);
+	}
+}
+
+/**
+ * 名前を持てないスライドがあるとき、その番号（1 始まり）と理由を並べたメッセージ。
+ * すべてのスライドが名前を持つなら `null`。{@link assertSlidesNamed}（編集画面の
+ * 「決定」）と、`validateItemData`（`toItemData` を通らない書き込み）が、同じ文を使う。
+ * @param slides - 検査するスライド（{@link getSlides} の結果）
+ * @example
+ * ```ts
+ * unnamedSlidesMessage(getSlides(data));
+ * // 'スライド2: キャプションも代替テキスト(alt)も空です。…'
+ * // すべてのスライドに名前があれば null
+ * ```
+ */
+export function unnamedSlidesMessage(slides: readonly Slide[]): string | null {
 	const parser = new DOMParser();
 	const byReason = new Map<string, string[]>();
 	for (const [index, slide] of slides.entries()) {
@@ -316,11 +352,12 @@ export function assertSlidesNamed(slides: readonly Slide[]): void {
 			byReason.set(reason, names);
 		}
 	}
-	if (byReason.size > 0) {
-		throw new Error(
-			[...byReason].map(([reason, names]) => `${names.join('、')}: ${reason}`).join(' '),
-		);
+	if (byReason.size === 0) {
+		return null;
 	}
+	return [...byReason]
+		.map(([reason, names]) => `${names.join('、')}: ${reason}`)
+		.join(' ');
 }
 
 /**

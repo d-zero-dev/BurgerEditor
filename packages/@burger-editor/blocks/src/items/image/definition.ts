@@ -60,13 +60,17 @@ export type ImageData = {
 
 /**
  * リンク・ポップアップの画像で代替テキスト（alt）が必須な理由。エディタの説明文と、
- * `toItemData` が確定を拒むときのメッセージ、カルーセルの検査が同じ文言を使う。
+ * `toItemData` が確定を拒むときのメッセージ、エージェントの書き込みを拒む
+ * `validateItemData` の理由、カルーセルの検査が同じ文言を使う（文言を変えるときは、
+ * エージェントが読む理由文でもあることに注意する）。
  */
 export const ALT_FOR_NAME_NOTE =
 	'リンクやポップアップの画像では、代替テキストがリンクやボタンの名前になるため必須です。';
 
 /**
- * `toItemData` が確定を拒むときのメッセージ。カルーセルの確定前の検査も同じ文字列を使う。
+ * 代替テキストが足りないリンク・ポップアップの画像を拒むときの理由。`toItemData`（編集画面の
+ * 確定）と `validateItemData`（エージェントの書き込み）が返し、カルーセルの検査も
+ * 同じ文字列を使う。
  */
 export const ALT_REQUIRED_MESSAGE = `代替テキスト(alt)が空です。${ALT_FOR_NAME_NOTE}`;
 
@@ -246,6 +250,102 @@ export function needsAltForName(node: ImageData['node'], alt: string | undefined
 }
 
 /**
+ * 画像を包む要素にまつわる保存データのキー。{@link fillWrapper} がこの 4 つのどれかを
+ * 持つデータだけを整え、carousel もスライドごとに同じキーを読む（キーを増やすときは
+ * ここだけを直す）。
+ */
+export const WRAPPER_KEYS = ['node', 'href', 'target', 'command'] as const;
+
+/**
+ * 画像を包む要素にまつわる保存データ（{@link WRAPPER_KEYS}）。
+ */
+type WrapperData = Partial<Pick<ImageData, (typeof WRAPPER_KEYS)[number]>>;
+
+/**
+ * 保存データから、編集画面の往復（`toEditorState` → `toItemData`）が導くのと同じ
+ * `node` / `command` / `target` を導く。ポップアップ（`button` と `show-modal` の
+ * 組）とリンク先（`href`）が決め手で、保存された `node` 単体は信用しない
+ * （`button` だけで `command` の無い画像は、画像モーダルが探す
+ * `[command="show-modal"]` に当たらず、何も起きないボタンになる）。
+ *
+ * エージェントは任意の JSON を送るので、文字列でない値は空として扱い、throw しない。
+ * @param data - 保存データ（部分データでもよい）
+ * @example
+ * ```ts
+ * wrapperOf({ node: 'button', command: 'show-modal' })
+ * // { node: 'button', command: 'show-modal', target: null }
+ * wrapperOf({ node: 'a', href: '', target: '_blank' })
+ * // { node: 'div', command: null, target: null }
+ * ```
+ */
+function wrapperOf(data: Readonly<WrapperData>): {
+	node: ImageData['node'];
+	command: ImageData['command'];
+	target: ImageData['target'];
+} {
+	const href = typeof data.href === 'string' ? data.href : '';
+	const node = wrapperNodeOf(isPopup(data.node, data.command), href);
+	return {
+		node,
+		command: node === 'button' ? 'show-modal' : null,
+		target: node === 'a' && data.target === '_blank' ? '_blank' : null,
+	};
+}
+
+/**
+ * 空・未設定を同じものとして扱う（保存した HTML を読み戻すと、属性の無い値は
+ * `null` か空文字になる）。
+ * @param value
+ */
+function isBlank(value: unknown): boolean {
+	return value === undefined || value === null || value === '';
+}
+
+/**
+ * `node` / `command` / `target` を {@link wrapperOf} の導き方にそろえる。そろっていれば、
+ * 同じオブジェクトを返す（`normalizeItemData` は、変えるものが無ければ同じ
+ * オブジェクトを返す約束）。4 つのキー（`href` を含む）のどれも持たない部分データには
+ * 何も足さない。
+ * @param data - 保存データ（部分データでもよい）
+ * @example
+ * ```ts
+ * fillWrapper({ node: 'button', command: null });
+ * // { node: 'div', command: null }
+ * ```
+ */
+export function fillWrapper<T extends WrapperData>(data: T): T {
+	if (!WRAPPER_KEYS.some((key) => key in data)) {
+		return data;
+	}
+	const want = wrapperOf(data);
+	const patch: WrapperData = {};
+	// `node` の無い部分データは、テンプレートの既定（div）と同じとみなす
+	if (data.node !== want.node && !(data.node === undefined && want.node === 'div')) {
+		patch.node = want.node;
+	}
+	if (isBlank(data.command) ? want.command !== null : data.command !== want.command) {
+		patch.command = want.command;
+	}
+	if (isBlank(data.target) ? want.target !== null : data.target !== want.target) {
+		patch.target = want.target;
+	}
+	return Object.keys(patch).length > 0 ? { ...data, ...patch } : data;
+}
+
+/**
+ * 保存してはいけない理由。{@link wrapperOf} が導く包む要素が名前を持てないとき
+ * （リンク・ポップアップで `alt` が空）に、`toItemData` と同じ理由を返す。
+ * `toItemData`（編集画面）と `validateItemData`（エージェントの書き込み）が、
+ * 同じこの関数を使う。
+ * @param data - 保存データ（部分データでもよい）
+ */
+function altProblems(data: Readonly<Partial<ImageData>>): readonly string[] {
+	const first: unknown = Array.isArray(data.alt) ? data.alt[0] : undefined;
+	const alt = typeof first === 'string' ? first : '';
+	return needsAltForName(wrapperOf(data).node, alt) ? [ALT_REQUIRED_MESSAGE] : [];
+}
+
+/**
  * imageアイテムの定義（Editorを含まない）。`index.tsx` がEditorを合成する。
  */
 export const imageDefinition: ItemSeed<string, ImageData> = {
@@ -281,9 +381,15 @@ export const imageDefinition: ItemSeed<string, ImageData> = {
 		};
 	},
 	// 画面の保存・ブラウザ中継・エージェントの書き込み（item_update / block_insert など）の
-	// どれでも、HTML にする直前にかかる。2枚目以降の空の media を埋める（冪等）
+	// どれでも、HTML にする直前にかかる。2枚目以降の空の media を埋め、
+	// 画像を包む要素（node / command / target）を編集画面の往復と同じにそろえる（冪等）
 	normalizeItemData(data, config) {
-		return fillMediaQueries(data, config);
+		return fillWrapper(fillMediaQueries(data, config));
+	},
+	// toItemData を通らない書き込み（エージェント）が、HTML にする前に呼ぶ。
+	// 編集画面の「決定」が拒むものと同じ理由を返す
+	validateItemData(data) {
+		return altProblems(data);
 	},
 	toItemData(state, config) {
 		const loading: ('eager' | 'lazy')[] = [state.lazy ? 'lazy' : 'eager'];
@@ -296,12 +402,15 @@ export const imageDefinition: ItemSeed<string, ImageData> = {
 		// 意味のない値が配列に残る
 		const alt = [state.altEditable ?? ''];
 		const node = wrapperNodeOf(state.popup, state.href);
-		// 失敗は EditorDialog が表示し、ダイアログは開いたままになる
-		if (needsAltForName(node, state.altEditable)) {
-			throw new Error(ALT_REQUIRED_MESSAGE);
-		}
 		const target = node === 'a' && state.targetBlank ? '_blank' : null;
 		const command = node === 'button' ? 'show-modal' : null;
+		// 失敗は EditorDialog が表示し、ダイアログは開いたままになる。検査は
+		// エージェントの書き込みと同じ関数（validateItemData）で、ここで作る
+		// 保存データ（alt・node・command）に対してかける
+		const [problem] = altProblems({ node, alt, href: state.href, command });
+		if (problem) {
+			throw new Error(problem);
+		}
 		const styleValue =
 			state.scaleType === 'container'
 				? //

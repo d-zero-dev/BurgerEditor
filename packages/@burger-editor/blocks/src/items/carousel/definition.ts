@@ -2,7 +2,7 @@ import type { ItemSeed } from '@burger-editor/core';
 
 import { createItem } from '@burger-editor/core';
 
-import { fillMediaQueries } from '../image/definition.js';
+import { fillMediaQueries, fillWrapper, WRAPPER_KEYS } from '../image/definition.js';
 
 import {
 	assertSlidesNamed,
@@ -12,6 +12,7 @@ import {
 	normalizeCarousel,
 	SLIDE_KEYS,
 	toSlideImageValues,
+	unnamedSlidesMessage,
 } from './slides.js';
 import style from './style.css';
 import template from './template.html';
@@ -51,10 +52,10 @@ export type CarouselData = {
 	// 読み戻した値は使わない。CSS だけで表示したとき、標準の `::scroll-marker` の
 	// 名前を `attr()` で付けるために持つ（Chromium は figcaption から figure の名前を
 	// 計算せず、id で指す方法はブロックの複製で重複する）。
-	// `toItemData` は名前の無いスライドを拒むので、編集画面で保存すれば空にならない。
-	// 一方、`toItemData` を通らない保存（エージェント経由、すでに保存された HTML）では、
-	// 空や古いまま残り得る。`@burger-editor/runtime` は実行時にキャプション・alt から
-	// 読み直して上書きする
+	// `toItemData` と、`toItemData` を通らないエージェント経由の保存（`validateItemData`）は
+	// 名前の無いスライドを拒むので、これらの保存では空にならない。一方、すでに保存された
+	// HTML や、`slideLabel` を書き直さない `item_update` では、空や古いまま残り得る。
+	// `@burger-editor/runtime` は実行時にキャプション・alt から読み直して上書きする
 	slideLabel?: string[];
 };
 
@@ -155,7 +156,55 @@ export const carouselDefinition: ItemSeed<string, CarouselData> = {
 				Array.from(media, (value) => (Array.isArray(value) ? value : [])),
 			);
 		}
+		// スライドごとに、画像を包む要素（node / command / target）を image と同じ
+		// 導き方（ポップアップとリンク先から）にそろえる。保存された node だけを信用すると、
+		// 検査が見る要素と、実際に保存される要素が食い違う
+		// （キーは image と共有する WRAPPER_KEYS。スライドごとの配列はここまでに
+		// 同じ長さにそろっている）
+		const columns: Record<(typeof WRAPPER_KEYS)[number], unknown[]> = {
+			node: [],
+			href: [],
+			target: [],
+			command: [],
+		};
+		for (const key of WRAPPER_KEYS) {
+			const value: unknown = next[key];
+			columns[key] = Array.isArray(value) ? value : [];
+		}
+		const wrapperTotal = Math.max(0, ...WRAPPER_KEYS.map((key) => columns[key].length));
+		let rewritten: Record<'node' | 'command' | 'target', unknown[]> | undefined;
+		for (let index = 0; index < wrapperTotal; index++) {
+			const slide = Object.fromEntries(
+				WRAPPER_KEYS.map((key) => [key, columns[key][index]]),
+			) as Parameters<typeof fillWrapper>[0];
+			const filled = fillWrapper(slide);
+			if (filled !== slide) {
+				rewritten ??= {
+					node: [...columns.node],
+					target: [...columns.target],
+					command: [...columns.command],
+				};
+				rewritten.node[index] = filled.node;
+				rewritten.target[index] = filled.target;
+				rewritten.command[index] = filled.command;
+			}
+		}
+		if (rewritten) {
+			set('node', rewritten.node);
+			set('target', rewritten.target);
+			set('command', rewritten.command);
+		}
 		return next;
+	},
+	// toItemData を通らない書き込み（エージェント）が、HTML にする前に呼ぶ。
+	// 編集画面の「決定」が拒むものと同じ理由を返す。形が不正な値（平らな path など）は
+	// getSlides が整え、包む要素はスライドの検査が image と同じ導き方で決めるので、
+	// normalizeItemData の後でも前でも結果は同じ（`normalizeCarousel` は名前の導出で
+	// 文字列を前提にするので通さない）。`toItemData`（`assertSlidesNamed`）と同じ
+	// `unnamedSlidesMessage` から理由を得るので、理由は 2 か所に書かない
+	validateItemData(data) {
+		const message = unnamedSlidesMessage(getSlides(data as CarouselData));
+		return message ? [message] : [];
 	},
 	toItemData(state) {
 		// 失敗はEditorDialogが表示し、ダイアログは開いたままになる。読み込み・
