@@ -118,7 +118,11 @@
 		align-items: center;
 	}
 
-	[data-bge-list] {
+	/*
+	 * スライドのリストだけ（設定の外枠の直下）。スライドの中の <picture> も
+	 * image と同じ data-bge-list なので、子孫セレクタでは画像のリストにも当たる
+	 */
+	> :has(> [data-bge-list]) > [data-bge-list] {
 		display: grid;
 		grid-area: list;
 		grid-auto-columns: calc(

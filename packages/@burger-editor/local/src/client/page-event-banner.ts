@@ -74,14 +74,14 @@ export function showPageGoneBanner(message: PageGoneMessage): void {
 	const text = document.createElement('span');
 	text.textContent =
 		message.kind === 'deleted'
-			? 'This page was deleted elsewhere.'
-			: `This page was renamed elsewhere${message.to ? ` (now ${message.to})` : ''}.`;
+			? 'このページは削除されています。'
+			: `このページは移動しています${message.to ? `（移動先: ${message.to}）` : ''}。`;
 	banner.append(text);
 
 	const dismiss = document.createElement('button');
 	dismiss.type = 'button';
 	dismiss.textContent = '×';
-	dismiss.setAttribute('aria-label', 'Dismiss');
+	dismiss.setAttribute('aria-label', '閉じる');
 	// Invoker Commands API instead of a click handler: the browser dispatches
 	// `command` on the `commandfor` target (`banner`, listened for below), not
 	// on this button — see `command-event.d.ts`'s ambient typing.

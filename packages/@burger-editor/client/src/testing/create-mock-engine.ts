@@ -1,6 +1,6 @@
 import type { BurgerEditorEngine } from '@burger-editor/core';
 
-import { CommandBus, UIStateStore } from '@burger-editor/core';
+import { CommandBus, UIStateStore, withConfigDefaults } from '@burger-editor/core';
 
 /**
  * テストやStorybookでコンポーネントを描画するための最小限のfake engineを作る。
@@ -8,6 +8,9 @@ import { CommandBus, UIStateStore } from '@burger-editor/core';
  * `uiState`/`commandBus`は本物のインスタンスをそのまま使う（`BurgerEditorEngine`は
  * private constructorのため直接`new`できず、キャストで代用する）。コンポーネントが
  * 実際に呼ぶメソッド・プロパティだけを`overrides`で個別に差し込む。
+ *
+ * `config`は必須のキーだけを持つ最小の値を既定にする（エディタが`useEngine().config`を
+ * 読むため）。別の設定を試すときは`overrides`で`config`を渡す。
  *
  * `overrides`にgetterを渡した場合はライブなアクセサとして保持される（単純な
  * オブジェクトスプレッドだとgetterがマージ時点の値へ固定されてしまうため、
@@ -38,6 +41,12 @@ export function createMockEngine(
 		el,
 		uiState: new UIStateStore(),
 		commandBus: new CommandBus(),
+		// アイテムのエディタは`useEngine().config`を読む。差し込み忘れでundefinedを
+		// 読んで落ちないよう、必須キーだけの最小の設定を既定にする
+		config: withConfigDefaults({
+			sampleImagePath: '/img/sample.png',
+			sampleFilePath: '/pdf/sample.pdf',
+		}),
 		content: { type: 'main' },
 		isProcessed: false,
 		serverAPI: {},

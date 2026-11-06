@@ -183,6 +183,53 @@ describe('AgentHub.handleSocketMessage', () => {
 		);
 	});
 
+	test("a `hello` frame's contentHash becomes the session's syncedHash", () => {
+		hub = createAgentHub({ pingIntervalMs: 60_000 });
+		const { socket } = fakeSocket();
+		const sessionId = hub.tabHub.register(socket);
+		hub.handleSocketMessage(
+			sessionId,
+			JSON.stringify({
+				type: 'hello',
+				page: '/a.html',
+				revision: 1,
+				serverSession: hub.serverSession,
+				uiState: {
+					openDialog: null,
+					sourceMode: false,
+					processing: false,
+					editingBlockIndex: null,
+				},
+				contentHash: 'hash-served',
+			}),
+		);
+		expect(hub.tabHub.get(sessionId)?.syncedHash).toBe('hash-served');
+	});
+
+	test('a `hello` frame whose contentHash is not a string is dropped', () => {
+		hub = createAgentHub({ pingIntervalMs: 60_000 });
+		const { socket, sent } = fakeSocket();
+		const sessionId = hub.tabHub.register(socket);
+		hub.handleSocketMessage(
+			sessionId,
+			JSON.stringify({
+				type: 'hello',
+				page: '/a.html',
+				revision: 1,
+				serverSession: hub.serverSession,
+				uiState: {
+					openDialog: null,
+					sourceMode: false,
+					processing: false,
+					editingBlockIndex: null,
+				},
+				contentHash: 42,
+			}),
+		);
+		expect(sent).toEqual([]);
+		expect(hub.tabHub.get(sessionId)?.page).toBeNull();
+	});
+
 	test('an `ack` frame resolves the pending apply with the acked revision and html', async () => {
 		hub = createAgentHub({ pingIntervalMs: 60_000 });
 		const { socket, sent } = fakeSocket();
@@ -466,5 +513,59 @@ describe('AgentHub ping interval', () => {
 		expect(socket.close).toHaveBeenCalledTimes(1);
 		expect(hub.tabHub.get(sessionId)).toBeUndefined();
 		expect(hub.tabHub.snapshotAll()).toEqual([]);
+	});
+});
+
+describe('hello with a contentHash that differs from what local last wrote', () => {
+	/**
+	 * @param hub
+	 * @param contentHash
+	 */
+	function helloFrame(hub: AgentHub, contentHash: string) {
+		return JSON.stringify({
+			type: 'hello',
+			page: '/a.html',
+			revision: 1,
+			serverSession: hub.serverSession,
+			uiState: {
+				openDialog: null,
+				sourceMode: false,
+				processing: false,
+				editingBlockIndex: null,
+			},
+			contentHash,
+		});
+	}
+
+	test('the tab is told to reload right away (it reconnected after missing a write)', () => {
+		hub = createAgentHub({ pingIntervalMs: 60_000 });
+		hub.revisions.bump('/a.html', 'hash-2');
+		const { socket, sent } = fakeSocket();
+		const sessionId = hub.tabHub.register(socket);
+
+		hub.handleSocketMessage(sessionId, helloFrame(hub, 'hash-1'));
+
+		expect(sent.at(-1)).toMatchObject({ type: 'reload', reason: 'behind' });
+	});
+
+	test('a tab whose contentHash matches gets no reload', () => {
+		hub = createAgentHub({ pingIntervalMs: 60_000 });
+		hub.revisions.bump('/a.html', 'hash-2');
+		const { socket, sent } = fakeSocket();
+		const sessionId = hub.tabHub.register(socket);
+
+		hub.handleSocketMessage(sessionId, helloFrame(hub, 'hash-2'));
+
+		expect(sent.map((m) => (m as { type: string }).type)).toEqual(['welcome']);
+	});
+
+	test('a page local has not written yet gets no reload (nothing to compare)', () => {
+		hub = createAgentHub({ pingIntervalMs: 60_000 });
+		const { socket, sent } = fakeSocket();
+		const sessionId = hub.tabHub.register(socket);
+
+		hub.handleSocketMessage(sessionId, helloFrame(hub, 'hash-1'));
+
+		expect(sent.map((m) => (m as { type: string }).type)).toEqual(['welcome']);
 	});
 });

@@ -91,6 +91,10 @@ BGE_CONFIG=./burgereditor.child.config.js npx @burger-editor/cli page-list
 | `readToken`     | `string`   | 任意。`readToken`検証で失敗したとき同梱される新しいトークン                                                         |
 | `currentBlocks` | `object[]` | 任意。`{ index, id, text }`の先頭ブロック要約（再試行の手がかり）                                                   |
 
+## 保存の補正
+
+アイテムのデータを書く`block-insert`/`block-replace`/`item-update`/`page-create`は、画面（エディタ）の保存と同じ補正をかけて保存する。補正に使うのは標準のアイテム（`@burger-editor/blocks`）の定義で、プロジェクト独自のアイテムの定義は読み込まない。画像の 2 枚目以降の空の`media`は、設定の`mediaQueries`の先頭（省略時は`(max-width: 767px)`）で埋まる。
+
 ## spec の渡し方（3-way input）
 
 `block-insert`/`block-replace`/`item-update`/`front-matter-set`/`page-create`は JSON spec を以下の優先順で受け取る:
@@ -244,6 +248,8 @@ npx @burger-editor/cli item-schema image
 ```
 
 **重要**: エディタ UI の入力名ではなく、template HTML 内の`data-bge=*`が真の contract です。`wysiwyg`（カスタム要素）や`image`（`bge-path[]`の配列名）のようなアイテムでも、template 由来のキー集合なら agent が確実にデータキーを得られます。
+
+`dataKeys`はキー名だけで、値の配列の深さは示しません。`data-bge-list`が入れ子になるアイテム（`carousel`のスライドの中の`<picture data-bge-list>`）では、内側のリストにあるキーの値は配列の配列になります。深さは戻り値の`template`の入れ子で判断します。
 
 ## プログラマブル API
 

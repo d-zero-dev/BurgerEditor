@@ -3,8 +3,26 @@ import type { Item } from './item.js';
 
 export type ItemPrimitiveData = string | number | boolean | null | undefined;
 
+/**
+ * An item data value. An array is a `data-bge-list` list; an array of arrays
+ * is a list nested in a list item (one inner array per outer item, e.g. the
+ * `<picture>` images of each carousel slide).
+ *
+ * Why not a recursive type: frozen-patty reads any nesting depth, but a
+ * recursive item data type makes the inferred types of the local server's
+ * routes too deep for TypeScript (TS2589). No item template nests lists
+ * deeper than two levels.
+ * @example
+ * ```ts
+ * const flat: ItemDataValue = ['/a.png', '/a-sp.png'];
+ * const nested: ItemDataValue = [['/a.png', '/a-sp.png'], ['/b.png']];
+ * ```
+ */
+export type ItemDataValue =
+	ItemPrimitiveData | ItemPrimitiveData[] | ItemPrimitiveData[][];
+
 export interface ItemData {
-	[key: string]: ItemPrimitiveData | ItemPrimitiveData[];
+	[key: string]: ItemDataValue;
 }
 
 export interface ItemMataData {
@@ -159,6 +177,38 @@ export interface ItemSeed<
 	 * (agent tools, already saved HTML) are not validated.
 	 */
 	toItemData?: (state: Readonly<E>, config: Config) => T | Promise<T>;
+
+	/**
+	 * Normalize the item data right before it becomes HTML.
+	 *
+	 * Unlike {@link ItemSeed.toItemData}, this runs on every path that turns
+	 * item data into HTML, not only on a save from the editor UI: `Item.import`,
+	 * `render()`, and any other writer (for example an agent tool) that renders
+	 * item data. Use it for a value that must never be saved empty, whoever
+	 * saves it. A writer that is given raw HTML instead of item data can read each
+	 * item back from that HTML (`itemExport`) and run this on it.
+	 *
+	 * It must be idempotent (normalizing normalized data changes nothing): the
+	 * editor UI runs it after `toItemData`, and a saved page runs through it on
+	 * every later save. Return the same object when nothing changes: a writer
+	 * that reads items back from raw HTML re-renders an item only when the
+	 * returned object differs, so the HTML it was given stays as it was. It must
+	 * not throw — validation belongs in `toItemData`.
+	 * @param data - The item data to become HTML: the merged data when updating
+	 * an existing item, or the supplied data (possibly partial) when creating one
+	 * @param config - Engine configuration
+	 * @returns The data to turn into HTML
+	 * @example
+	 * ```ts
+	 * normalizeItemData: (data, config) => ({
+	 * 	...data,
+	 * 	media: (data.media ?? []).map((query, index) =>
+	 * 		index > 0 && !query ? '(max-width: 767px)' : query,
+	 * 	),
+	 * }),
+	 * ```
+	 */
+	normalizeItemData?: (data: Readonly<Partial<T>>, config: Config) => Partial<T>;
 
 	/**
 	 * Non-editor lifecycle hooks.

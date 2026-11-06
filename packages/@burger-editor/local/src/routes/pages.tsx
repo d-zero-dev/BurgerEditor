@@ -6,6 +6,7 @@ import path from 'node:path';
 
 import { Hono } from 'hono';
 
+import { contentHashOrMissing } from '../helpers/content-hash-or-missing.js';
 import { log } from '../helpers/debug.js';
 import { loadContent } from '../helpers/edit-content.js';
 import { NoEditableAreaError } from '../helpers/no-editable-area-error.js';
@@ -50,6 +51,13 @@ async function renderPage(
 		() => false,
 		() => true,
 	);
+	// The hash of the content this page is served from. The tab sends it with its
+	// saves (`baseHash`) and in its `hello`, so a save or an agent's op never
+	// lands on content older than the file (routes/content-api.ts,
+	// agent/route.ts). Taken BEFORE loading: if a write lands
+	// in between, the served content is newer than the hash, which only costs
+	// a needless reload, never marks a tab showing older content as in step
+	const contentHash = await contentHashOrMissing(targetFilePath);
 	const loadResult = await loadContent(
 		targetFilePath,
 		config.editableArea,
@@ -65,6 +73,7 @@ async function renderPage(
 				lang={config.lang}
 				virtualTreeEnabled={config.virtualTree.enabled}
 				serverSession={ctx.agent?.hub.serverSession}
+				contentHash={contentHash}
 			/>,
 		);
 	}
@@ -83,6 +92,7 @@ async function renderPage(
 			frontMatter={loadResult.frontMatter}
 			hasFrontMatter={loadResult.hasFrontMatter}
 			serverSession={ctx.agent?.hub.serverSession}
+			contentHash={contentHash}
 			isNewFile={isNewFile}
 		/>,
 	);

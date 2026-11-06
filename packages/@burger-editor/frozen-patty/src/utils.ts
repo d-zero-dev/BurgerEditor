@@ -355,6 +355,13 @@ const specificProp: Record<string, string[]> = {
 	 * @see https://html.spec.whatwg.org/multipage/embedded-content.html#htmlsourceelement
 	 */
 	source: ['width', 'height'],
+	/*
+	 * JSDOMの未実装対策（Node.js 側の保存で loading を書けるようにする）
+	 * @see https://github.com/jsdom/jsdom/blob/main/lib/jsdom/living/nodes/HTMLImageElement.webidl
+	 * Living Standardでは実装済み
+	 * @see https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-loading
+	 */
+	img: ['loading'],
 };
 
 /**

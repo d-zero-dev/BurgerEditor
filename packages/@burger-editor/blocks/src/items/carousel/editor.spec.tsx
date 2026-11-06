@@ -38,15 +38,12 @@ function createInitialState(): CarouselData {
 			arrows: true,
 			dots: true,
 			effect: 'slide',
-			path: [''],
-			alt: [''],
-			width: [400],
-			height: [300],
-			loading: ['lazy'],
-			spPath: [null],
-			spMedia: [''],
-			spWidth: [null],
-			spHeight: [null],
+			path: [['']],
+			alt: [['']],
+			width: [[400]],
+			height: [[300]],
+			loading: [['lazy']],
+			media: [['']],
 			style: [DEFAULT_SLIDE.style],
 			scale: [100],
 			scaleType: ['container'],
@@ -62,15 +59,12 @@ function createInitialState(): CarouselData {
 	return replaceSlide(
 		{
 			...base,
-			path: ['', ''],
-			alt: ['', ''],
-			width: [400, 400],
-			height: [300, 300],
-			loading: ['lazy', 'lazy'],
-			spPath: [null, null],
-			spMedia: ['', ''],
-			spWidth: [null, null],
-			spHeight: [null, null],
+			path: [[''], ['']],
+			alt: [[''], ['']],
+			width: [[400], [400]],
+			height: [[300], [300]],
+			loading: [['lazy'], ['lazy']],
+			media: [[''], ['']],
 			style: [DEFAULT_SLIDE.style, DEFAULT_SLIDE.style],
 			scale: [100, 100],
 			scaleType: ['container', 'container'],
@@ -439,15 +433,12 @@ describe('CarouselEditor', () => {
 		await act(() => {
 			replace?.({
 				...three,
-				path: ['', '', ''],
-				alt: ['', '', ''],
-				width: [400, 400, 400],
-				height: [300, 300, 300],
-				loading: ['lazy', 'lazy', 'lazy'],
-				spPath: [null, null, null],
-				spMedia: [null, null, null],
-				spWidth: [null, null, null],
-				spHeight: [null, null, null],
+				path: [[''], [''], ['']],
+				alt: [[''], [''], ['']],
+				width: [[400], [400], [400]],
+				height: [[300], [300], [300]],
+				loading: [['lazy'], ['lazy'], ['lazy']],
+				media: [[''], [''], ['']],
 				style: [DEFAULT_SLIDE.style, DEFAULT_SLIDE.style, DEFAULT_SLIDE.style],
 				scale: [100, 100, 100],
 				scaleType: ['container', 'container', 'container'],
@@ -514,9 +505,8 @@ describe('CarouselEditor', () => {
 		engine = createMockEngine();
 		const withSp = replaceSlide(createInitialState(), 0, {
 			...DEFAULT_SLIDE,
-			path: '/pc.png',
-			spPath: '/sp.png',
-			spMedia: '(max-width: 767px)',
+			path: ['/pc.png', '/sp.png'],
+			media: ['', '(max-width: 767px)'],
 			caption: 'A',
 		});
 		render(
@@ -531,6 +521,10 @@ describe('CarouselEditor', () => {
 
 		invokeCommand(screen.getByRole('button', { name: 'スライド1を編集' }));
 		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+		// Behavior change: 候補と同じ値のときは選択欄に出て、入力欄は無効になる。「その他（直接入力）」を選ぶと、いまの値のまま入力欄が有効になる
+		fireEvent.change(screen.getByLabelText('メディアクエリーの候補'), {
+			target: { value: '__bge-other__' },
+		});
 		const media = narrowElement(
 			screen.getByLabelText('メディアクエリー'),
 			HTMLInputElement,
@@ -540,10 +534,45 @@ describe('CarouselEditor', () => {
 
 		fireEvent.change(media, { target: { value: '(max-width: 600px)' } });
 		await clickAndWait(screen.getByRole('button', { name: '決定' }), () => {
+			// Behavior change: スライドの画像の値は、スライドごとに画像の配列になる（SP 画像は 2 枚目）
 			expect(getSlides(latest)[0]).toMatchObject({
-				path: '/pc.png',
-				spPath: '/sp.png',
-				spMedia: '(max-width: 600px)',
+				path: ['/pc.png', '/sp.png'],
+				media: ['', '(max-width: 600px)'],
+			});
+			// expect(getSlides(latest)[0]).toMatchObject({ // previous
+			// 	path: '/pc.png', // previous
+			// 	spPath: '/sp.png', // previous
+			// 	spMedia: '(max-width: 600px)', // previous
+			// }); // previous
+		});
+	});
+
+	test('SP画像だけを選んでメディアクエリーが空のまま決定すると、既定のメディアクエリーが保存される', async () => {
+		// 空の media の <source> は、どの画面幅でも PC 画像より先に採用される
+		cleanup();
+		document.body.innerHTML = '';
+		engine = createMockEngine();
+		const withSp = replaceSlide(createInitialState(), 0, {
+			...DEFAULT_SLIDE,
+			path: ['/pc.png', '/sp.png'],
+			media: ['', ''],
+			caption: 'A',
+		});
+		render(
+			<Harness
+				engine={engine}
+				initial={withSp}
+				onState={(state) => {
+					latest = state;
+				}}
+			/>,
+		);
+
+		invokeCommand(screen.getByRole('button', { name: 'スライド1を編集' }));
+		await clickAndWait(screen.getByRole('button', { name: '決定' }), () => {
+			expect(getSlides(latest)[0]).toMatchObject({
+				path: ['/pc.png', '/sp.png'],
+				media: ['', '(max-width: 767px)'],
 			});
 		});
 	});
@@ -591,7 +620,9 @@ describe('CarouselEditor', () => {
 			target: { value: '春の庭' },
 		});
 		await clickAndWait(screen.getByRole('button', { name: '決定' }), () => {
-			expect(getSlides(latest).map((s) => s.alt)).toStrictEqual(['春の庭', '']);
+			// Behavior change: スライドの画像の値は、スライドごとに画像の配列になる
+			expect(getSlides(latest).map((s) => s.alt)).toStrictEqual([['春の庭'], ['']]);
+			// expect(getSlides(latest).map((s) => s.alt)).toStrictEqual(['春の庭', '']); // previous
 		});
 		expect(getSlides(latest).map((s) => s.caption)).toStrictEqual(['', 'B']);
 	});

@@ -1300,3 +1300,214 @@ test('XSS protection - initial HTML sanitization can be disabled with option', (
 
 	expect(fp.toHTML()).toContain('<script>');
 });
+
+const SLIDES_TEMPLATE = [
+	'<div data-field-list>',
+	'<figure data-field=":scale" data-field-scale="100">',
+	'<picture data-field-list>',
+	'<source srcset="/sp.png" media="(max-width: 767px)" width="300" height="200" data-field="path:srcset, :width, :height, :media">',
+	'<img src="/pc1.png" alt="y1" width="400" height="300" loading="lazy" data-field="path:src, :alt, :width, :height, :loading, :media">',
+	'</picture>',
+	'<figcaption data-field="caption">c1</figcaption>',
+	'</figure>',
+	'<figure data-field=":scale" data-field-scale="50">',
+	'<picture data-field-list>',
+	'<img src="/pc2.png" alt="y2" width="400" height="300" loading="lazy" data-field="path:src, :alt, :width, :height, :loading, :media">',
+	'</picture>',
+	'<figcaption data-field="caption">c2</figcaption>',
+	'</figure>',
+	'</div>',
+].join('');
+
+const SLIDES_DATA = {
+	scale: [100, 50],
+	path: [['/pc1.png', '/sp.png'], ['/pc2.png']],
+	alt: [['y1'], ['y2']],
+	width: [[400, 300], [400]],
+	height: [[300, 200], [300]],
+	loading: [['lazy'], ['lazy']],
+	media: [[null, '(max-width: 767px)'], [null]],
+	caption: ['c1', 'c2'],
+};
+
+/**
+ * スライドごとの picture の子を、要素名・画像（srcset / src）・media の組の並びにする
+ * @param fp
+ */
+function slideShapes(fp) {
+	return [...fp.toDOM().querySelectorAll('figure')].map((figure) =>
+		[...figure.querySelector('picture').children].map((el) => [
+			el.localName,
+			el.getAttribute('srcset') ?? el.getAttribute('src'),
+			el.getAttribute('media'),
+		]),
+	);
+}
+
+test('nested list: リストの中のリストは、外側の項目ごとの配列の配列として読む', () => {
+	const fp = new FrozenPatty(
+		'<div data-field-list><section><p data-field="title"></p><ul data-field-list><li data-field="label"></li></ul></section></div>',
+	);
+	const data = { title: ['A', 'B'], label: [['a1', 'a2'], ['b1']] };
+	fp.merge(data);
+	expect(new FrozenPatty(fp.toHTML()).toJSON()).toStrictEqual(data);
+});
+
+test('nested list: リストの中の picture は、img を index 0 にした配列の配列として読む', () => {
+	const fp = new FrozenPatty(SLIDES_TEMPLATE, { typeConvert: true });
+	expect(fp.toJSON()).toStrictEqual(SLIDES_DATA);
+});
+
+test('nested list: 読み戻した値を merge しても往復する', () => {
+	const fp = new FrozenPatty(SLIDES_TEMPLATE, { typeConvert: true });
+	fp.merge(fp.toJSON());
+	expect(slideShapes(fp)).toStrictEqual([
+		[
+			['source', '/sp.png', '(max-width: 767px)'],
+			['img', '/pc1.png', null],
+		],
+		[['img', '/pc2.png', null]],
+	]);
+	expect(new FrozenPatty(fp.toHTML(), { typeConvert: true }).toJSON()).toStrictEqual(
+		SLIDES_DATA,
+	);
+});
+
+test('nested list: 一部のキーだけ merge しても、内側のリストが崩れない', () => {
+	const fp = new FrozenPatty(SLIDES_TEMPLATE, { typeConvert: true });
+	fp.merge({ caption: ['c1x', 'c2x'] });
+	expect(slideShapes(fp)).toStrictEqual([
+		[
+			['source', '/sp.png', '(max-width: 767px)'],
+			['img', '/pc1.png', null],
+		],
+		[['img', '/pc2.png', null]],
+	]);
+	expect(fp.toJSON()).toStrictEqual({ ...SLIDES_DATA, caption: ['c1x', 'c2x'] });
+});
+
+test('nested list: 入れ子のデータで、外側の項目ごとに画像の枚数を変えられる', () => {
+	const fp = new FrozenPatty(SLIDES_TEMPLATE, { typeConvert: true });
+	fp.merge({
+		scale: [100, 100],
+		path: [['/a.png'], ['/b.png', '/b-sp.png', '/b-tab.png']],
+		alt: [['a'], ['b']],
+		width: [[400], [400, 300, 200]],
+		height: [[300], [300, 200, 100]],
+		loading: [['lazy'], ['eager']],
+		media: [[null], [null, '(max-width: 767px)', '(max-width: 1023px)']],
+		caption: ['', ''],
+	});
+	expect(slideShapes(fp)).toStrictEqual([
+		[['img', '/a.png', null]],
+		[
+			['source', '/b-tab.png', '(max-width: 1023px)'],
+			['source', '/b-sp.png', '(max-width: 767px)'],
+			['img', '/b.png', null],
+		],
+	]);
+	const img = fp.toDOM().querySelectorAll('figure')[1].querySelector('img');
+	expect(img.getAttribute('alt')).toBe('b');
+	expect(img.getAttribute('loading')).toBe('eager');
+});
+
+test('nested list: 内側の値を持たない外側の項目は [] になり、位置がずれない', () => {
+	const fp = new FrozenPatty(
+		[
+			'<div data-field-list>',
+			'<section><p data-field="title">A</p><ul data-field-list><li data-field="label">a1</li></ul></section>',
+			'<section><p data-field="title">B</p><ul data-field-list></ul></section>',
+			'<section><p data-field="title">C</p><ul data-field-list><li data-field="label">c1</li></ul></section>',
+			'<section><p data-field="title">D</p><ul data-field-list></ul></section>',
+			'</div>',
+		].join(''),
+	);
+	expect(fp.toJSON()).toStrictEqual({
+		title: ['A', 'B', 'C', 'D'],
+		label: [['a1'], [], ['c1'], []],
+	});
+});
+
+test('nested list: 1 つの要素の複数フィールドや属性・スタイルの束縛も入れ子になる', () => {
+	const fp = new FrozenPatty(
+		[
+			'<div data-field-list>',
+			'<ul data-field-list>',
+			'<li data-field="label, n:data-n, :k, u:style(--u)" data-n="1" data-field-k="x" style="--u: 2">a</li>',
+			'<li data-field="label, n:data-n, :k, u:style(--u)" data-n="2" data-field-k="y" style="--u: 3">b</li>',
+			'</ul>',
+			'<ul data-field-list>',
+			'<li data-field="label, n:data-n, :k, u:style(--u)" data-n="3" data-field-k="z" style="--u: 4">c</li>',
+			'</ul>',
+			'</div>',
+		].join(''),
+		{ typeConvert: true },
+	);
+	expect(fp.toJSON()).toStrictEqual({
+		label: [['a', 'b'], ['c']],
+		n: [[1, 2], [3]],
+		k: [['x', 'y'], ['z']],
+		u: [[2, 3], [4]],
+	});
+});
+
+test('nested list: 入れ子を含むテンプレートでも、入れ子でないフィールドの読み方は変わらない', () => {
+	const fp = new FrozenPatty(
+		[
+			'<p data-field="scalar">s</p>',
+			'<ol data-field-list><li data-field="flat">f1</li><li data-field="flat">f2</li></ol>',
+			'<ul data-field-list data-field="self:data-self" data-self="me"><li>x</li></ul>',
+			'<div data-field-list><section><p data-field="title">A</p><ul data-field-list><li data-field="label">a1</li></ul></section></div>',
+		].join(''),
+	);
+	expect(fp.toJSON()).toStrictEqual({
+		scalar: 's',
+		flat: ['f1', 'f2'],
+		self: ['me'],
+		title: ['A'],
+		label: [['a1']],
+	});
+});
+
+test('nested list: 3 段以上の入れ子も同じ規則で読み書きする', () => {
+	const fp = new FrozenPatty(
+		[
+			'<div data-field-list>',
+			'<div><div data-field-list><div><ul data-field-list><li data-field="v">a</li></ul></div></div></div>',
+			'<div><div data-field-list><div><ul data-field-list><li data-field="v">b</li></ul></div><div><ul data-field-list><li data-field="v">c</li><li data-field="v">d</li></ul></div></div></div>',
+			'</div>',
+		].join(''),
+	);
+	const data = fp.toJSON();
+	expect(data).toStrictEqual({ v: [[['a']], [['b'], ['c', 'd']]] });
+	fp.merge(data);
+	expect(new FrozenPatty(fp.toHTML()).toJSON()).toStrictEqual(data);
+});
+
+test('nested list: 外側の項目の中にある「自分自身がリストの根」の要素のフィールドは、外側の項目ごとの値として往復する', () => {
+	const fp = new FrozenPatty(
+		[
+			'<div data-field-list>',
+			'<section><ul data-field-list data-field=":data-kind" data-kind="a"><li data-field="label">a1</li><li data-field="label">a2</li></ul></section>',
+			'<section><ul data-field-list data-field=":data-kind" data-kind="b"><li data-field="label">b1</li></ul></section>',
+			'</div>',
+		].join(''),
+	);
+	const data = fp.toJSON();
+	expect(data).toStrictEqual({ dataKind: ['a', 'b'], label: [['a1', 'a2'], ['b1']] });
+	fp.merge(data);
+	expect(new FrozenPatty(fp.toHTML()).toJSON()).toStrictEqual(data);
+});
+
+// 同じキーを別の深さに置くことには対応しない（README の意図的な不在）。読み取りの今の結果を
+// 固定して、黙って変わったときに気づけるようにする
+test('nested list: 同じキーが外側と内側の両方の深さにあるときは、外側の値も内側の配列に入る（対応しない形）', () => {
+	const fp = new FrozenPatty(
+		[
+			'<div data-field-list>',
+			'<section><p data-field="v">x</p><ul data-field-list><li data-field="v">a</li></ul></section>',
+			'</div>',
+		].join(''),
+	);
+	expect(fp.toJSON()).toStrictEqual({ v: [['x', 'a']] });
+});

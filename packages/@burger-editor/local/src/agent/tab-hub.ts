@@ -71,7 +71,23 @@ export interface TabSessionSnapshot {
 	readonly id: string;
 	readonly page: string | null;
 	readonly revision: number;
+	/**
+	 * The hash of the file content the tab shows (`computeContentHash`). It
+	 * comes from `hello`'s `contentHash` (the hash of the file the page was
+	 * served from), then from a human save made in this tab
+	 * (`routes/content-api.ts`), an acked op or {@link TabHub.commit}. `null`
+	 * means unknown: a `hello` without `contentHash` (a client without one).
+	 * `agent/route.ts` relays an op only to a tab whose `syncedHash` matches the
+	 * file on disk (or is unknown), so an op never lands on stale content.
+	 */
 	readonly syncedHash: string | null;
+	/**
+	 * The tab was sent a `reload` and has not reconnected since: its content is
+	 * behind disk even when `syncedHash` is unknown, until it reloads (a new
+	 * session) or is marked in step again ({@link TabHub.setSyncedHash},
+	 * {@link TabHub.commit}).
+	 */
+	readonly reloadRequested: boolean;
 	/**
 	 * The tab's main-area HTML as the editor normalized it on open (raw HTML
 	 * wrapped into a fallback block, legacy markup migrated, …), reported in
@@ -109,6 +125,7 @@ interface TabSessionInternal {
 	page: string | null;
 	revision: number;
 	syncedHash: string | null;
+	reloadRequested: boolean;
 	normalizedHtml: string | null;
 	uiState: UIState | null;
 	lastActiveAt: number;
@@ -121,6 +138,8 @@ export interface HelloPayload {
 	readonly serverSession: string;
 	readonly uiState: UIState;
 	readonly normalizedHtml?: string;
+	/** The hash of the file content the page was served from — becomes the tab's {@link TabSessionSnapshot.syncedHash}. */
+	readonly contentHash?: string;
 }
 
 export interface TabHubOptions {
@@ -150,9 +169,10 @@ export interface TabHubOptions {
  *
  * Deliberately does NOT know about disk state (`RevisionRegistry`) or the
  * `readToken` contract — `agent/route.ts` composes those with this hub. A
- * `TabSession`'s `syncedHash` is written by the caller (on `hello`, after a
- * successful `saved`/`committed`), not computed here, because only the
- * caller can hash the file on disk.
+ * tab's `syncedHash` comes from outside, never computed here, because only the
+ * caller can hash the file on disk: the `contentHash` the tab echoes in
+ * `hello` (hashed when its page was served), a human save from that tab, an
+ * acked op or a commit.
  */
 export class TabHub {
 	#applyTimeoutMs: number;
@@ -224,10 +244,16 @@ export class TabHub {
 	}
 	/**
 	 * @param message
+	 * @param exceptSessionId - A tab not to send it to (the one that caused it)
 	 */
-	broadcast(message: ServerToBrowserMessage): void {
+	broadcast(
+		message: ServerToBrowserMessage,
+		exceptSessionId: string | null = null,
+	): void {
 		for (const session of this.#sessions.values()) {
-			this.#send(session, message);
+			if (session.id !== exceptSessionId) {
+				this.#send(session, message);
+			}
 		}
 	}
 	/**
@@ -243,8 +269,22 @@ export class TabHub {
 			return;
 		}
 		session.syncedHash = syncedHash;
+		session.reloadRequested = false;
 		session.normalizedHtml = null;
 		this.#send(session, { type: 'committed', revision: session.revision });
+	}
+	/**
+	 * Drop the tab's unsaved {@link TabSessionSnapshot.normalizedHtml} without
+	 * marking it in step with disk — for a tab that did not make the save that
+	 * just reached disk: its normalization was built on the file before that
+	 * save, so writing it later would undo the save.
+	 * @param sessionId
+	 */
+	discardNormalization(sessionId: string): void {
+		const session = this.#sessions.get(sessionId);
+		if (session) {
+			session.normalizedHtml = null;
+		}
 	}
 	/**
 	 * @param sessionId
@@ -292,6 +332,9 @@ export class TabHub {
 		session.revision = payload.revision;
 		session.uiState = payload.uiState;
 		session.normalizedHtml = payload.normalizedHtml ?? null;
+		if (payload.contentHash !== undefined) {
+			session.syncedHash = payload.contentHash;
+		}
 		session.lastActiveAt = this.#now();
 		if (payload.serverSession !== this.#serverSession) {
 			log(
@@ -300,6 +343,7 @@ export class TabHub {
 				payload.serverSession,
 				this.#serverSession,
 			);
+			session.reloadRequested = true;
 			this.#send(session, {
 				type: 'reload',
 				revision: payload.revision,
@@ -317,6 +361,34 @@ export class TabHub {
 		this.#send(session, { type: 'welcome', sessionId, revision: payload.revision });
 		return 'accepted';
 	}
+	/**
+	 * Mark every OTHER tab that has `page` open as behind disk, without telling
+	 * it to reload — for a page that moved to another path, where reloading the
+	 * old path would answer Not Found. The tabs stop receiving agent ops and
+	 * their saves are refused until they reconnect.
+	 * @param page
+	 * @param exceptSessionId
+	 */
+	markBehind(page: string, exceptSessionId: string | null): void {
+		for (const session of this.#sessions.values()) {
+			if (session.page === page && session.id !== exceptSessionId) {
+				session.reloadRequested = true;
+			}
+		}
+	}
+	/**
+	 * Record that a tab now shows another page: its own save moved the page to
+	 * another path (virtual tree), and the tab followed it without reloading.
+	 * @param sessionId
+	 * @param page - The new page (normalized like a `hello`'s)
+	 */
+	movePage(sessionId: string, page: string): void {
+		const session = this.#sessions.get(sessionId);
+		if (session) {
+			session.page = normalizeLogicalPath(page, this.#indexFileName);
+		}
+	}
+
 	/**
 	 * Ping every connected tab; disconnect (rejecting any in-flight applies)
 	 * whichever session's socket throws. Callers on a real WebSocket transport
@@ -341,15 +413,18 @@ export class TabHub {
 		return disconnected;
 	}
 	/**
-	 * The tab BurgerEditor should apply an op through: the most recently
-	 * active tab with `page` open that isn't mid-edit (no dialog open, not in
-	 * source mode, not already processing another op). Falls back to the
-	 * most recently active tab for the page if every tab is busy, so
-	 * `apply()` still gets a definite nack instead of silently no-oping.
+	 * The tab BurgerEditor should apply an op through: among the tabs with
+	 * `page` open, those in step with disk (not told to reload, and showing
+	 * `diskHash` when both are known) first, then the most recently active one
+	 * that isn't mid-edit (no dialog open, not in source mode, not already
+	 * processing another op). Falls back to a tab that is behind or busy when
+	 * no other is open, so the caller still answers definitely (`stale`, or a
+	 * nack) instead of silently no-oping.
 	 * @param page
+	 * @param diskHash - The hash of the file on disk, when the caller has it
 	 */
-	primaryTabFor(page: string): TabSessionSnapshot | null {
-		const winner = this.#selectPrimary(page);
+	primaryTabFor(page: string, diskHash?: string): TabSessionSnapshot | null {
+		const winner = this.#selectPrimary(page, diskHash);
 		return winner ? snapshot(winner) : null;
 	}
 	/**
@@ -363,6 +438,7 @@ export class TabHub {
 			page: null,
 			revision: 0,
 			syncedHash: null,
+			reloadRequested: false,
 			normalizedHtml: null,
 			uiState: null,
 			lastActiveAt: this.#now(),
@@ -380,6 +456,7 @@ export class TabHub {
 	reloadOne(sessionId: string, revision: number, reason: ReloadReason): void {
 		const session = this.#sessions.get(sessionId);
 		if (session) {
+			session.reloadRequested = true;
 			this.#send(session, { type: 'reload', revision, reason });
 		}
 	}
@@ -400,6 +477,7 @@ export class TabHub {
 	): void {
 		for (const session of this.#sessions.values()) {
 			if (session.page === page && session.id !== exceptSessionId) {
+				session.reloadRequested = true;
 				this.#send(session, { type: 'reload', revision, reason });
 			}
 		}
@@ -451,6 +529,7 @@ export class TabHub {
 		const session = this.#sessions.get(sessionId);
 		if (session) {
 			session.syncedHash = syncedHash;
+			session.reloadRequested = false;
 			session.normalizedHtml = null;
 		}
 	}
@@ -483,24 +562,46 @@ export class TabHub {
 
 	/**
 	 * The single primary-tab selection rule, shared by `primaryTabFor()` and
-	 * `apply()`: among tabs on `page`, prefer idle ones, then the most
-	 * recently active. Kept private so callers cannot end up computing the
-	 * target twice with two different answers.
+	 * `apply()`: among tabs on `page`, prefer tabs in step with disk (not told
+	 * to reload, and showing `diskHash` when both are known), then idle ones,
+	 * then the most recently active. Kept private so callers cannot end up
+	 * computing the target twice with two different answers. A tab that is
+	 * behind can still win when it is the only one — `agent/route.ts` then
+	 * answers `stale` instead of relaying.
 	 * @param page
+	 * @param diskHash - The hash of the file on disk, when the caller has it
 	 */
-	#selectPrimary(page: string): TabSessionInternal | null {
+	#selectPrimary(page: string, diskHash?: string): TabSessionInternal | null {
 		const candidates = [...this.#sessions.values()].filter((s) => s.page === page);
 		if (candidates.length === 0) {
 			return null;
 		}
-		const idle = candidates.filter((s) => isIdle(s.uiState));
-		const pool = idle.length > 0 ? idle : candidates;
-		return mostRecentlyActive(pool);
+		const inStep = candidates.filter((s) => isInStep(s, diskHash));
+		const pool = inStep.length > 0 ? inStep : candidates;
+		const idle = pool.filter((s) => isIdle(s.uiState));
+		return mostRecentlyActive(idle.length > 0 ? idle : pool);
 	}
 
 	#send(session: TabSessionInternal, message: ServerToBrowserMessage): void {
 		session.socket.send(JSON.stringify(message));
 	}
+}
+
+/**
+ * Whether a tab shows the content on disk as far as the hub knows: it was not
+ * told to reload, and its content hash matches `diskHash` when both are known.
+ * @param session
+ * @param diskHash
+ */
+function isInStep(session: TabSessionInternal, diskHash: string | undefined): boolean {
+	if (session.reloadRequested) {
+		return false;
+	}
+	return (
+		session.syncedHash === null ||
+		diskHash === undefined ||
+		session.syncedHash === diskHash
+	);
 }
 
 /**
@@ -539,6 +640,7 @@ function snapshot(session: TabSessionInternal): TabSessionSnapshot {
 		page: session.page,
 		revision: session.revision,
 		syncedHash: session.syncedHash,
+		reloadRequested: session.reloadRequested,
 		normalizedHtml: session.normalizedHtml,
 		uiState: session.uiState,
 		lastActiveAt: session.lastActiveAt,

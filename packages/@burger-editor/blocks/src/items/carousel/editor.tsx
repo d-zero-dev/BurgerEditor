@@ -218,11 +218,11 @@ export function CarouselEditor({ state, setState }: ItemEditorProps<CarouselData
 							{/* 画像を押すとそのスライドの編集が開く。画像が未選択でも同じ大きさの
 							プレースホルダーを出し、行の高さが変わらないようにする */}
 							<ThumbnailButton
-								src={slide.path}
+								src={slide.path[0] ?? ''}
 								label="編集"
 								aria-label={
-									slide.alt
-										? `スライド${index + 1}「${slide.alt}」を編集`
+									slide.alt[0]
+										? `スライド${index + 1}「${slide.alt[0]}」を編集`
 										: `スライド${index + 1}を編集`
 								}
 								command="--carousel-edit"
@@ -231,8 +231,8 @@ export function CarouselEditor({ state, setState }: ItemEditorProps<CarouselData
 							/>
 							{/* alt はそのスライドを見分ける一番の手がかりなので名前に使う。
 							並べ替えても位置が分かるよう番号は残し、alt が空なら「スライドN」 */}
-							<span data-bge-slide-name="" title={slide.alt || undefined}>
-								{slide.alt ? `${index + 1}. ${slide.alt}` : `スライド${index + 1}`}
+							<span data-bge-slide-name="" title={slide.alt[0] || undefined}>
+								{slide.alt[0] ? `${index + 1}. ${slide.alt[0]}` : `スライド${index + 1}`}
 							</span>
 							<span data-bge-slide-actions="">
 								<button

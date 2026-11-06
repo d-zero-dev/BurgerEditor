@@ -598,3 +598,13 @@ describe('setContent', () => {
 		expect(checkbox.checked).toBe(true); // Boolean values are set directly regardless of value attribute
 	});
 });
+
+test('<img> の loading は、DOM がプロパティを実装していなくても書ける（Node.js の jsdom）', () => {
+	const el = document.createElement('img');
+	el.setAttribute('loading', 'lazy');
+	el.dataset.field = ':loading';
+
+	setValue(el, 'loading', 'eager');
+
+	expect(el.getAttribute('loading')).toBe('eager');
+});

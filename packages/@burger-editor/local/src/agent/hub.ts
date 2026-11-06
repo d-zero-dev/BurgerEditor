@@ -113,6 +113,22 @@ export function createAgentHub(options: AgentHubOptions = {}): AgentHub {
 					const outcome = tabHub.hello(sessionId, message);
 					if (outcome === 'accepted') {
 						events.append('session-connected', { sessionId, page: message.page });
+						// A tab that reconnects reports the hash of the content it was
+						// served or last saved itself; it does not learn the hash of an
+						// agent write it applied, nor of a write it missed while
+						// disconnected. When that differs from what local last wrote,
+						// reload it now (its content is current or behind, and reloading
+						// is right for both), instead of leaving it judged behind until
+						// a save of the user's is refused
+						const page = tabHub.get(sessionId)?.page;
+						const entry = page ? revisions.get(page) : undefined;
+						if (
+							message.contentHash !== undefined &&
+							entry?.persistedHash != null &&
+							entry.persistedHash !== message.contentHash
+						) {
+							tabHub.reloadOne(sessionId, entry.revision, 'behind');
+						}
 					}
 					break;
 				}

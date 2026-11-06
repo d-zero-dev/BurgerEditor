@@ -8,18 +8,32 @@ import {
 	FileUploader,
 	Preview,
 	RadioGroup,
+	SelectField,
 	Tabs,
 	TextField,
+	useEngine,
 	useExternalFileSelection,
 	useFileBrowser,
 	useMountEffect,
 } from '@burger-editor/client/ui';
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 
-import { ALT_FOR_NAME_NOTE, wrapperNodeOf } from './definition.js';
+import {
+	ALT_FOR_NAME_NOTE,
+	mediaQueriesOf,
+	mediaQueryOrDefault,
+	wrapperNodeOf,
+} from './definition.js';
 import { createWidthState } from './width.js';
 
 const tabLabel = (index: number) => `画像${index + 1}`;
+
+/**
+ * メディアクエリーの選択欄で「その他（直接入力）」を表す値。メディアクエリーとして
+ * 有効な文字列ではないので、正しく設定された候補とは衝突しない（設定の候補は
+ * 検査されないので、同じ文字列を候補に書けば衝突する）
+ */
+const OTHER_MEDIA_QUERY = '__bge-other__';
 
 type LoadedImage = {
 	width: number;
@@ -49,6 +63,10 @@ export type ImageEditorProps = Omit<ItemEditorProps<ImageData>, 'item'> &
  *
  * `item` に依存しないので、カルーセルのスライド編集ダイアログのように、
  * アイテムを介さず `ImageData` だけを持つ呼び出し元からも `item` なしで使える。
+ *
+ * 画像2のメディアクエリーは、`config.mediaQueries` の候補から選ぶか、「その他（直接入力）」
+ * を選んで入力欄で入力する。入力欄は常に表示し、「その他」のときだけ有効にする。
+ * 画像2を選んだのに空なら、候補の先頭（既定値）を入れる。
  * @param root0
  * @param root0.state
  * @param root0.setState
@@ -56,6 +74,12 @@ export type ImageEditorProps = Omit<ItemEditorProps<ImageData>, 'item'> &
  */
 export function ImageEditor({ state, setState, slideName }: ImageEditorProps) {
 	const fileBrowser = useFileBrowser();
+	// 2枚目以降の画像のメディアクエリー。選択欄の選択肢になり、先頭が既定値になる
+	const { config } = useEngine();
+	const mediaQueries = mediaQueriesOf(config);
+	// 選択欄で「その他（直接入力）」を選んだか。候補にある値を直接入力に切り替えるために、
+	// 値だけからは導けない（候補と同じ値のまま入力欄を有効にする）
+	const [otherChosen, setOtherChosen] = useState(false);
 	// 同一documentに複数のimageアイテムエディタが同時に開いてもhtmlFor/
 	// aria-*の参照先が混線しないよう、ハードコードIDではなくuseIdで一意化する
 	const uid = useId();
@@ -93,9 +117,9 @@ export function ImageEditor({ state, setState, slideName }: ImageEditorProps) {
 		}));
 	};
 
-	const updateImage = ($src: LoadedImage) => {
-		const index = currentIndexRef.current;
-
+	// index は読み込みを始めたときのタブ。読み込みは非同期なので、終わった時点の
+	// タブを読むと、読み込み中にタブを移ったときに別の画像の欄へ書いてしまう
+	const updateImage = ($src: LoadedImage, index: number) => {
 		setState((prev) => {
 			const path = [...(prev.path ?? [])];
 			path[index] = $src.src;
@@ -106,10 +130,16 @@ export function ImageEditor({ state, setState, slideName }: ImageEditorProps) {
 			const height = [...(prev.height ?? [])];
 			height[index] = $src.height;
 
+			// 2枚目以降の画像を選んだのにメディアクエリーが空だと、保存される <source> が
+			// どの画面幅でも条件に合い、PC 幅でも2枚目が表示される。欄にも既定値を入れて、
+			// 利用者が値を見て変えられるようにする（保存時にも toItemData が埋める）
+			const mediaQuery = mediaQueryOrDefault(index, prev.media?.[index], config);
 			const media = [...(prev.media ?? [])];
-			media[index] = prev.mediaInput ?? '';
+			media[index] = mediaQuery;
 
-			return { ...prev, path, width, height, media };
+			// 入力欄（mediaInput）は、いま開いているタブの値だけを映す
+			const mediaInput = index === currentIndexRef.current ? mediaQuery : prev.mediaInput;
+			return { ...prev, path, width, height, media, mediaInput };
 		});
 
 		// Update max number
@@ -129,11 +159,12 @@ export function ImageEditor({ state, setState, slideName }: ImageEditorProps) {
 			return;
 		}
 
+		const index = currentIndexRef.current;
 		setFieldsetDisabled(true);
 		setLoadError(null);
 		try {
 			const $src = await loadImage(path);
-			updateImage($src);
+			updateImage($src, index);
 		} catch {
 			// 失敗（読み込みエラー・タイムアウト）はUIに表示し、
 			// サイズ入力欄は必ず復帰させる
@@ -158,6 +189,7 @@ export function ImageEditor({ state, setState, slideName }: ImageEditorProps) {
 	const selectTab = (index: number) => {
 		currentIndexRef.current = index;
 		setCurrentIndex(index);
+		setOtherChosen(false);
 		fileSelect(index);
 		void _updateImage(stateRef.current.path?.[index] ?? '');
 
@@ -201,6 +233,20 @@ export function ImageEditor({ state, setState, slideName }: ImageEditorProps) {
 	// 入力したmediaごと）無言で破棄される（set-component.tsのusedPaths判定）。
 	// UI側で先に画像選択を促すことでこの経路を回避する
 	const mediaLocked = currentIndex > 0 && !currentPath;
+	const mediaValue = state.mediaInput ?? '';
+	// 候補にない値（保存済みの値や空）と、「その他」を選んだあとは、入力欄で編集する。
+	// 入力欄は出し入れせず、常に値を見せたまま、編集できるときだけ有効にする
+	// （出し入れすると、欄を離れたときなどにフォーカスと位置が飛ぶ）。画像1は
+	// 選択欄を出さず、無効な入力欄だけを出す
+	const mediaIsCustom = otherChosen || !mediaQueries.includes(mediaValue);
+	const changeMedia = (mediaInput: string) => {
+		const index = currentIndexRef.current;
+		setState((prev) => {
+			const media = [...(prev.media ?? [])];
+			media[index] = mediaInput;
+			return { ...prev, mediaInput, media };
+		});
+	};
 	// リンク・ポップアップでは、altが包む要素の名前になる（toItemDataが空を拒む）。
 	// 入力欄で先に伝えるため、確定を押す前から必須として示す
 	const altRequired = wrapperNodeOf(state.popup ?? false, state.href ?? '') !== 'div';
@@ -236,19 +282,55 @@ export function ImageEditor({ state, setState, slideName }: ImageEditorProps) {
 						<Preview path={currentPath} />
 						{loadError ? <p role="alert">{loadError}</p> : null}
 						<div>
+							{currentIndex > 0 ? (
+								<SelectField
+									label="メディアクエリーの候補"
+									name="bge-media-preset"
+									value={mediaIsCustom ? OTHER_MEDIA_QUERY : mediaValue}
+									options={[
+										...mediaQueries.map((query) => ({ value: query, label: query })),
+										{ value: OTHER_MEDIA_QUERY, label: 'その他（直接入力）' },
+									]}
+									disabled={mediaLocked}
+									describedBy={mediaLocked ? `${uid}-media-desc` : undefined}
+									onChange={(value) => {
+										if (value === OTHER_MEDIA_QUERY) {
+											setOtherChosen(true);
+											return;
+										}
+										setOtherChosen(false);
+										changeMedia(value);
+									}}
+								/>
+							) : null}
 							<TextField
 								label="メディアクエリー"
 								name="bge-media-input"
-								value={state.mediaInput ?? ''}
-								disabled={currentIndex === 0 || mediaLocked}
+								value={mediaValue}
+								disabled={currentIndex === 0 || mediaLocked || !mediaIsCustom}
 								describedBy={mediaLocked ? `${uid}-media-desc` : undefined}
 								onChange={(mediaInput) => {
-									const index = currentIndexRef.current;
-									setState((prev) => {
-										const media = [...(prev.media ?? [])];
-										media[index] = mediaInput;
-										return { ...prev, mediaInput, media };
-									});
+									// 打ち込んだ値がたまたま候補と同じになっても、「その他」のまま
+									// 編集を続けられるようにする
+									setOtherChosen(true);
+									changeMedia(mediaInput);
+								}}
+								onBlur={() => {
+									// 空のまま欄を離れたら既定値に戻し、選択欄でその候補を示す。空を
+									// 残すと、保存される <source> がどの画面幅でも条件に合う。入力中
+									// （消して打ち直す間）は空を許す。値がある間は「その他」のまま
+									// （欄を離れただけで編集できなくならない）。前後の空白は取り除く
+									const next = mediaQueryOrDefault(
+										currentIndexRef.current,
+										mediaValue,
+										config,
+									);
+									if (!mediaValue.trim()) {
+										setOtherChosen(false);
+									}
+									if (next !== mediaValue) {
+										changeMedia(next);
+									}
 								}}
 							/>
 							{mediaLocked ? (

@@ -430,3 +430,130 @@ describe('TabHub — normalizedHtml', () => {
 		expect(sent).toEqual([]);
 	});
 });
+
+describe('TabHub — the content a tab is in step with', () => {
+	/**
+	 * @param hub
+	 * @param options
+	 * @param options.contentHash
+	 * @param options.uiState
+	 */
+	function connect(
+		hub: TabHub,
+		options: { contentHash?: string; uiState?: ReturnType<typeof idleUiState> } = {},
+	) {
+		const { socket, sent } = fakeSocket();
+		const id = hub.register(socket);
+		hub.hello(id, {
+			page: '/a.html',
+			revision: 1,
+			serverSession: 'srv-1',
+			uiState: options.uiState ?? idleUiState(),
+			...(options.contentHash === undefined ? {} : { contentHash: options.contentHash }),
+		});
+		return { id, sent };
+	}
+
+	test('hello with contentHash records it as the content the tab is in step with', () => {
+		const hub = new TabHub({ serverSession: 'srv-1' });
+		const { id } = connect(hub, { contentHash: 'hash-served' });
+
+		expect(hub.get(id)?.syncedHash).toBe('hash-served');
+	});
+
+	test('hello without contentHash leaves syncedHash unknown (null)', () => {
+		const hub = new TabHub({ serverSession: 'srv-1' });
+		const { id } = connect(hub);
+
+		expect(hub.get(id)?.syncedHash).toBeNull();
+	});
+
+	test('reloadOne and reloadOthers mark the tabs they reload; setSyncedHash and commit clear it', () => {
+		const hub = new TabHub({ serverSession: 'srv-1' });
+		const a = connect(hub);
+		const b = connect(hub);
+		const c = connect(hub);
+
+		hub.reloadOne(a.id, 2, 'behind');
+		hub.reloadOthers('/a.html', a.id, 2, 'other-tab');
+
+		expect([a, b, c].map(({ id }) => hub.get(id)?.reloadRequested)).toEqual([
+			true,
+			true,
+			true,
+		]);
+
+		hub.setSyncedHash(a.id, 'hash-2');
+		hub.commit(b.id, 'hash-2');
+
+		expect([a, b, c].map(({ id }) => hub.get(id)?.reloadRequested)).toEqual([
+			false,
+			false,
+			true,
+		]);
+	});
+
+	test('discardNormalization drops the unsaved normalization without marking the tab in step', () => {
+		const hub = new TabHub({ serverSession: 'srv-1' });
+		const { socket } = fakeSocket();
+		const id = hub.register(socket);
+		hub.hello(id, {
+			page: '/a.html',
+			revision: 1,
+			serverSession: 'srv-1',
+			uiState: idleUiState(),
+			normalizedHtml: '<p>normalized</p>',
+		});
+
+		hub.discardNormalization(id);
+
+		expect(hub.get(id)).toMatchObject({ normalizedHtml: null, syncedHash: null });
+	});
+
+	test('primaryTabFor prefers a tab in step with the disk hash over a more recently active one that is behind', () => {
+		let now = 0;
+		const hub = new TabHub({ serverSession: 'srv-1', now: () => now });
+		const inStep = connect(hub, { contentHash: 'hash-2' });
+		now = 10;
+		connect(hub, { contentHash: 'hash-1' });
+
+		expect(hub.primaryTabFor('/a.html', 'hash-2')?.id).toBe(inStep.id);
+	});
+
+	test('primaryTabFor prefers a tab that was not told to reload over a more recently active one that was', () => {
+		let now = 0;
+		const hub = new TabHub({ serverSession: 'srv-1', now: () => now });
+		const kept = connect(hub);
+		now = 10;
+		const reloaded = connect(hub);
+		hub.reloadOne(reloaded.id, 2, 'behind');
+
+		expect(hub.primaryTabFor('/a.html')?.id).toBe(kept.id);
+	});
+
+	test('primaryTabFor still returns a tab that is behind when it is the only one (the caller answers stale)', () => {
+		const hub = new TabHub({ serverSession: 'srv-1' });
+		const behind = connect(hub, { contentHash: 'hash-1' });
+
+		expect(hub.primaryTabFor('/a.html', 'hash-2')?.id).toBe(behind.id);
+	});
+});
+
+describe('TabHub — movePage', () => {
+	test('re-keys a tab to the page its save moved to', () => {
+		const hub = new TabHub({ serverSession: 'srv-1' });
+		const { socket } = fakeSocket();
+		const id = hub.register(socket);
+		hub.hello(id, {
+			page: '/about.html',
+			revision: 1,
+			serverSession: 'srv-1',
+			uiState: idleUiState(),
+		});
+
+		hub.movePage(id, '/company/about.html');
+
+		expect(hub.get(id)?.page).toBe('/company/about.html');
+		expect(hub.primaryTabFor('/company/about.html')?.id).toBe(id);
+	});
+});

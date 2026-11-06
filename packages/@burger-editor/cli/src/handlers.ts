@@ -17,7 +17,6 @@ import {
 	getRepeatMinInlineSizeVariants,
 	insertBlock,
 	itemExport,
-	itemImport,
 	listBlocks,
 	moveBlock,
 	parseFrontMatter,
@@ -34,6 +33,7 @@ import {
 import { parseFields } from '@burger-editor/frozen-patty/parse-fields';
 
 import { renderBlockHtml } from './block-builder.js';
+import { importItemData } from './import-item-data.js';
 
 /**
  *
@@ -937,9 +937,7 @@ export async function itemUpdate(
 					`Item ${itemIndex} in this block has no data-bgi wrapper and cannot be updated via item_update.`,
 				);
 			}
-			const currentData = itemExport(wrapper.innerHTML);
-			const merged: ItemData = { ...currentData, ...data } as ItemData;
-			wrapper.innerHTML = itemImport(wrapper.innerHTML, merged);
+			importItemData(wrapper, data, ctx.config);
 			return replaceBlock(html, null, index, blockEl.outerHTML);
 		},
 		options,

@@ -198,3 +198,181 @@ describe('saveContentRequest', () => {
 		});
 	});
 });
+
+describe('saveContentRequest — the saving tab', () => {
+	test('sends sessionId only when it is given', async () => {
+		const post = vi
+			.fn<FakePost>()
+			.mockResolvedValue(
+				jsonResponse({ saved: true, path: '/x', hasFrontMatter: false }),
+			);
+
+		await saveContentRequest(
+			post as unknown as SaveContentPost,
+			{ path: '/x.html', content: '<p>x</p>', sessionId: 'tab-1' },
+			makeLog(),
+		);
+
+		expect(post.mock.calls[0]?.[0]).toStrictEqual({
+			json: {
+				path: '/x.html',
+				content: '<p>x</p>',
+				frontMatter: undefined,
+				originalFrontMatter: undefined,
+				createIfMissing: undefined,
+				sessionId: 'tab-1',
+			},
+		});
+	});
+
+	test('reports the contentHash of what was written to onSaved', async () => {
+		const post = vi.fn<FakePost>().mockResolvedValue(
+			jsonResponse({
+				saved: true,
+				path: '/x',
+				hasFrontMatter: false,
+				contentHash: 'h2',
+			}),
+		);
+		const onSaved = vi.fn();
+
+		const saved = await saveContentRequest(
+			post as unknown as SaveContentPost,
+			{ path: '/x.html', content: '<p>x</p>' },
+			makeLog(),
+			{ onSaved },
+		);
+
+		expect(saved).toBe(true);
+		expect(onSaved).toHaveBeenCalledWith({ contentHash: 'h2', logicalPath: undefined });
+	});
+
+	test('reports an undefined contentHash when the server sends none, and does not call onSaved on a failure', async () => {
+		const onSaved = vi.fn();
+		const ok = vi
+			.fn<FakePost>()
+			.mockResolvedValue(
+				jsonResponse({ saved: true, path: '/x', hasFrontMatter: false }),
+			);
+		const failing = vi
+			.fn<FakePost>()
+			.mockResolvedValue(jsonResponse({ error: 'no' }, { status: 400 }));
+
+		await saveContentRequest(
+			ok as unknown as SaveContentPost,
+			{ path: '/x.html', content: '' },
+			makeLog(),
+			{ onSaved },
+		);
+		await saveContentRequest(
+			failing as unknown as SaveContentPost,
+			{ path: '/x.html', content: '' },
+			makeLog(),
+			{ onSaved },
+		);
+
+		expect(onSaved.mock.calls).toEqual([
+			[{ contentHash: undefined, logicalPath: undefined }],
+		]);
+	});
+});
+
+describe('saveContentRequest — a save that did not reach disk', () => {
+	test.each([
+		[
+			'a 409 conflict',
+			'conflict',
+			jsonResponse({ error: 'conflict', message: 'x' }, { status: 409 }),
+		],
+		[
+			'a 404',
+			'not-found',
+			jsonResponse({ error: 'Unknown logical path: /a.html' }, { status: 404 }),
+		],
+		[
+			'a 409 for a path another page uses',
+			'path-taken',
+			jsonResponse({ error: 'Logical path "/a.html" is already used' }, { status: 409 }),
+		],
+		['a 500', 'failed', jsonResponse({}, { status: 500 })],
+		['a 200 that did not save', 'failed', jsonResponse({ saved: false })],
+	] as const)(
+		'%s calls onFailed with %s, returns false and does not call onSaved',
+		async (_label, reason, response) => {
+			const post = vi.fn<FakePost>().mockResolvedValue(response);
+			const onSaved = vi.fn();
+			const onFailed = vi.fn();
+
+			const saved = await saveContentRequest(
+				post as unknown as SaveContentPost,
+				{ path: '/x.html', content: '' },
+				makeLog(),
+				{ onSaved, onFailed },
+			);
+
+			expect(saved).toBe(false);
+			expect(onFailed.mock.calls).toEqual([[reason]]);
+			expect(onSaved).not.toHaveBeenCalled();
+		},
+	);
+
+	test('a request that cannot reach the server calls onFailed("failed") and returns false instead of throwing', async () => {
+		const post = vi.fn<FakePost>().mockRejectedValue(new TypeError('Failed to fetch'));
+		const onFailed = vi.fn();
+		const log = makeLog();
+
+		const saved = await saveContentRequest(
+			post as unknown as SaveContentPost,
+			{ path: '/x.html', content: '' },
+			log,
+			{ onFailed },
+		);
+
+		expect(saved).toBe(false);
+		expect(onFailed.mock.calls).toEqual([['failed']]);
+		expect(log.error).toHaveBeenCalledOnce();
+	});
+
+	test('sends baseHash only when it is given', async () => {
+		const post = vi
+			.fn<FakePost>()
+			.mockResolvedValue(
+				jsonResponse({ saved: true, path: '/x', hasFrontMatter: false }),
+			);
+
+		await saveContentRequest(
+			post as unknown as SaveContentPost,
+			{ path: '/x.html', content: '', baseHash: 'h1' },
+			makeLog(),
+		);
+
+		expect(post.mock.calls[0]?.[0]).toMatchObject({ json: { baseHash: 'h1' } });
+	});
+});
+
+describe('saveContentRequest — the page path after the save', () => {
+	test('reports the logicalPath the server answered to onSaved', async () => {
+		const post = vi.fn<FakePost>().mockResolvedValue(
+			jsonResponse({
+				saved: true,
+				path: '/x',
+				hasFrontMatter: true,
+				contentHash: 'h2',
+				logicalPath: '/company/about.html',
+			}),
+		);
+		const onSaved = vi.fn();
+
+		await saveContentRequest(
+			post as unknown as SaveContentPost,
+			{ path: '/about.html', content: '' },
+			makeLog(),
+			{ onSaved },
+		);
+
+		expect(onSaved).toHaveBeenCalledWith({
+			contentHash: 'h2',
+			logicalPath: '/company/about.html',
+		});
+	});
+});

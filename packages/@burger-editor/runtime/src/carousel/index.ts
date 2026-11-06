@@ -202,6 +202,8 @@ export function setupCarousels(
 
 	const cleanups: (() => void)[] = [];
 	for (const item of root.querySelectorAll<HTMLElement>(selector)) {
+		// The first match in document order is the slide list: each slide's
+		// <picture data-bge-list> (its images) comes after it, inside a slide
 		const list = item.querySelector<HTMLElement>('[data-bge-list]');
 		const el = list?.parentElement;
 		if (!list || !el) {

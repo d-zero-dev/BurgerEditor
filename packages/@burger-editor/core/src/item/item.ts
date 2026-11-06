@@ -6,6 +6,7 @@ import { replacePlaceholders } from '../utils/replace-placeholders.js';
 import { createUnknownContentItem } from './create-item.js';
 import { dataFromHtml } from './data-from-html.js';
 import { dataToHtml } from './data-to-html.js';
+import { importItemHtml } from './import-item-html.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const elMap = new WeakMap<HTMLElement, Item<any, any>>();
@@ -47,14 +48,25 @@ export class Item<
 		return dataFromHtml(this.el.innerHTML) as T;
 	}
 
+	/**
+	 * Write data into the item: the current data is read back from the item's
+	 * HTML, merged with `newData`, passed through the seed's `normalizeItemData`,
+	 * and rendered again. The saved HTML can therefore differ from `newData`
+	 * where the seed normalizes it (for example, an image's second `<source>` never
+	 * keeps an empty `media`).
+	 * @param newData - The keys to change; the others keep their current values
+	 * @example
+	 * ```ts
+	 * item.import({ path: ['/a.png', '/b.png'] });
+	 * ```
+	 */
 	import(newData: Partial<T>) {
-		const currentData = this.export();
-		const data: T = {
-			...currentData,
-			...newData,
-		};
-
-		this.el.innerHTML = Item.createElement(this.el.innerHTML, data);
+		this.el.innerHTML = importItemHtml(
+			this.el.innerHTML,
+			newData,
+			this.seed,
+			this.config,
+		);
 	}
 
 	isDisable() {

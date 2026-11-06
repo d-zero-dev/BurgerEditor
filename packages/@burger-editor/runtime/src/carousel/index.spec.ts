@@ -95,7 +95,7 @@ async function mount(settings: Settings = {}) {
 		dots,
 		effect,
 		caption: [...captions],
-		alt: [...alts],
+		alt: alts.map((alt) => [alt]),
 		...(popup
 			? {
 					node: Array.from({ length: slides }, () => 'button'),

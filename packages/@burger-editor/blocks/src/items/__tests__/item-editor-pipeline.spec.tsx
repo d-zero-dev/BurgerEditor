@@ -196,12 +196,61 @@ describe('itemエディタのパイプライン統合（開く→編集→保存
 		expect(uiState.getSnapshot().openDialog).toBeNull();
 	});
 
+	test('image: 2枚目の media が空のまま決定すると、engine.config の mediaQueries の先頭で保存される', async () => {
+		class SilentImage extends EventTarget {
+			naturalHeight = 100;
+			naturalWidth = 100;
+			set src(_value: string) {
+				// 画像の読み込みを起こさない
+			}
+		}
+		vi.stubGlobal('Image', SilentImage);
+		try {
+			// item の config には mediaQueries を渡さず、engine の config にだけ渡す。
+			// 保存される値が engine.config 由来なら、ItemEditorHost が toItemData へ
+			// engine.config を渡していることになる。image のエディタは FileList が
+			// getFileList を待つので、解決済みのものを渡す
+			const { engine, item } = createHarness(
+				'image',
+				{
+					path: ['/img/pc.png', '/img/sp.png'],
+					width: [400, 300],
+					height: [300, 200],
+					media: ['', '(min-width: 1px)'],
+					alt: ['説明'],
+					loading: ['eager'],
+				},
+				{
+					config: { ...testConfig, mediaQueries: ['(max-width: 599px)'] },
+					serverAPI: { getFileList: () => resolvedFileList() },
+				},
+			);
+			// 過去に保存された、空の media の <source> を持つページを開いた状態にする
+			item.el.querySelector('source')?.setAttribute('media', '');
+
+			renderWithEngine(engine, <ItemEditorHost item={item as never} />);
+			const form = narrowElement(
+				document.querySelector('form') ?? document.body,
+				HTMLFormElement,
+			);
+			fireEvent.submit(form);
+
+			await waitFor(() => {
+				expect(item.el.querySelector('source')?.getAttribute('media')).toBe(
+					'(max-width: 599px)',
+				);
+			});
+		} finally {
+			vi.unstubAllGlobals(); // cspell:disable-line
+		}
+	});
+
 	test('carousel: 内側のスライド編集の決定は外側を閉じず、外側の決定でHTMLに反映される', async () => {
 		const base = carouselSeed.toEditorState!(
 			Item.create('carousel', itemSeeds, testConfig).export() as never,
 			testConfig,
 		);
-		const data = appendSlide(base, { ...defaultSlide(), path: '/b.png', caption: 'B' });
+		const data = appendSlide(base, { ...defaultSlide(), path: ['/b.png'], caption: 'B' });
 		const { engine, item, uiState } = createHarness('carousel', data, {
 			serverAPI: { getFileList: () => resolvedFileList() },
 		});
@@ -313,7 +362,7 @@ describe('itemエディタのパイプライン統合（開く→編集→保存
 			testConfig,
 		);
 		// 2 枚目はキャプションも alt も無い
-		const data = appendSlide(base, { ...defaultSlide(), path: '/b.png' });
+		const data = appendSlide(base, { ...defaultSlide(), path: ['/b.png'] });
 		const { engine, item, uiState } = createHarness('carousel', data, {
 			serverAPI: { getFileList: () => resolvedFileList() },
 		});

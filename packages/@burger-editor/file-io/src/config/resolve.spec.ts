@@ -87,6 +87,24 @@ describe('resolveConfig', () => {
 		expect(config.catalog).toBeDefined();
 	});
 
+	test('passes mediaQueries through, and leaves it undefined when omitted', async () => {
+		const withQueries = await makeFixture(
+			'media-queries',
+			`export default { mediaQueries: ['(max-width: 599px)', '(max-width: 1023px)'] };`,
+		);
+		const omitted = await makeFixture('media-queries-omitted', `export default {};`);
+
+		const { config } = await resolveConfig(withQueries);
+		const { config: defaults } = await resolveConfig(omitted);
+
+		expect(config.mediaQueries).toStrictEqual([
+			'(max-width: 599px)',
+			'(max-width: 1023px)',
+		]);
+		// The default when omitted lives in the image item, not here.
+		expect(defaults.mediaQueries).toBeUndefined();
+	});
+
 	test('walks up parent directories to locate a config', async () => {
 		const dir = await makeFixture(
 			'parent',

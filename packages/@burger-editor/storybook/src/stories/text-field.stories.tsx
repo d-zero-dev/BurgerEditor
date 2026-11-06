@@ -53,6 +53,20 @@ export const Required: Story = {
 	},
 };
 
+/**
+ * 入力欄からフォーカスが外れたときに呼ばれる。空のまま離れたら既定値に戻すなど、
+ * 入力が終わった時点で値を整えるときに使う（キー入力のたびではない）
+ */
+export const WithOnBlur: Story = {
+	args: {
+		...Default.args,
+		label: 'メディアクエリー',
+		name: 'bge-media-input',
+		value: '',
+		onBlur: fn(),
+	},
+};
+
 export const Disabled: Story = {
 	args: {
 		...Default.args,

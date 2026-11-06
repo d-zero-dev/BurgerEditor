@@ -28,12 +28,16 @@ afterEach(() => {
 describe('showPageGoneBanner', () => {
 	test('renders a "deleted" message', () => {
 		showPageGoneBanner({ kind: 'deleted' });
-		expect(document.body.textContent).toContain('deleted elsewhere');
+		// Behavior change: 編集画面の他の文言と同じく日本語にそろえた
+		expect(document.body.textContent).toContain('このページは削除されています');
+		// expect(document.body.textContent).toContain('deleted elsewhere'); // previous
 	});
 
 	test('renders a "renamed" message including the destination', () => {
 		showPageGoneBanner({ kind: 'renamed', to: '/new-name.html' });
-		expect(document.body.textContent).toContain('renamed elsewhere');
+		// Behavior change: 編集画面の他の文言と同じく日本語にそろえた
+		expect(document.body.textContent).toContain('このページは移動しています');
+		// expect(document.body.textContent).toContain('renamed elsewhere'); // previous
 		expect(document.body.textContent).toContain('/new-name.html');
 	});
 
@@ -41,7 +45,9 @@ describe('showPageGoneBanner', () => {
 		showPageGoneBanner({ kind: 'deleted' });
 		showPageGoneBanner({ kind: 'renamed', to: '/b.html' });
 		expect(document.querySelectorAll('#bge-page-event-banner')).toHaveLength(1);
-		expect(document.body.textContent).toContain('renamed elsewhere');
+		// Behavior change: 編集画面の他の文言と同じく日本語にそろえた
+		expect(document.body.textContent).toContain('このページは移動しています');
+		// expect(document.body.textContent).toContain('renamed elsewhere'); // previous
 	});
 
 	test('the dismiss button removes the banner', () => {

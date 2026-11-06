@@ -78,3 +78,16 @@ describe('carousel の style.css（JS なしのレイアウト）', () => {
 		expect(list.getAttribute('tabindex')).toBe('0');
 	});
 });
+
+describe('carousel の style.css（スライドの中の画像のリスト）', () => {
+	test('スライドの中の <picture>（画像のリスト）には、スライドのリストのレイアウトが当たらない', async () => {
+		const { figures } = await mount('');
+		const picture = figures[0]!.querySelector('picture')!;
+		const style = getComputedStyle(picture);
+
+		expect(Object.hasOwn(picture.dataset, 'bgeList')).toBe(true);
+		expect(style.display).not.toBe('grid');
+		expect(style.overflowX).toBe('visible');
+		expect(style.scrollSnapType).toBe('none');
+	});
+});

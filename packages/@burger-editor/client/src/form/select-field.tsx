@@ -14,6 +14,8 @@ import type { SelectableValue } from '@burger-editor/core';
  * @param root0.options
  * @param root0.name
  * @param root0.disabled
+ * @param root0.describedBy - The ID of the element that describes the select
+ * (for example, why it is disabled), wired through `aria-describedby`.
  * @example
  * ```tsx
  * <SelectField
@@ -35,6 +37,7 @@ export function SelectField({
 	options,
 	name,
 	disabled,
+	describedBy,
 }: {
 	readonly label: string;
 	readonly value: string;
@@ -42,6 +45,7 @@ export function SelectField({
 	readonly options: readonly SelectableValue[];
 	readonly name?: string;
 	readonly disabled?: boolean;
+	readonly describedBy?: string;
 }) {
 	return (
 		<label>
@@ -50,6 +54,7 @@ export function SelectField({
 				name={name}
 				value={value}
 				disabled={disabled}
+				aria-describedby={describedBy}
 				onChange={(e) => onChange(e.currentTarget.value)}>
 				{options.map((option) => (
 					<option key={option.value} value={option.value}>

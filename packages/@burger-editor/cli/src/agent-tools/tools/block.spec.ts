@@ -4,6 +4,8 @@ import '@burger-editor/file-io';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import { items } from '@burger-editor/blocks';
+import { itemImport } from '@burger-editor/core';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import * as h from '../../handlers.js';
@@ -291,6 +293,67 @@ describe('page_update', () => {
 
 		const blocks = await h.readBlocks(fixture.ctx, 'about.html');
 		expect(blocks.map((b) => b.data.name)).toEqual(['wysiwyg', 'wysiwyg']);
+	});
+
+	describe("fills an image's empty media with the project's mediaQueries", () => {
+		// The tool must hand the project config to the normalization, or the
+		// project's `mediaQueries` silently falls back to the default.
+		const withMediaQueries = () => ({
+			...fixture.ctx,
+			config: { ...fixture.ctx.config, mediaQueries: ['(max-width: 599px)'] },
+		});
+		const imageData = {
+			path: ['/img/pc.png', '/img/sp.png'],
+			width: [400, 300],
+			height: [300, 200],
+			media: ['', ''],
+			alt: ['説明'],
+			loading: ['eager'],
+		};
+
+		test('an insert op with raw block HTML', async () => {
+			const token = await readToken();
+			const blockHtml =
+				'<div data-bge-name="image" data-bge-container="grid:1">' +
+				'<div data-bge-container-frame><div data-bge-group><div data-bge-item>' +
+				`<div data-bgi="image" data-bgi-ver="0.0.0">${itemImport(items['image']!.template, imageData)}</div>` +
+				'</div></div></div></div>';
+
+			await pageUpdateTool.run(withMediaQueries(), {
+				path: 'about.html',
+				ops: [{ op: 'insert', index: 0, blockHtml }],
+				readToken: token,
+			});
+
+			const saved = await fs.readFile(path.join(fixture.docRoot, 'about.html'), 'utf8');
+			expect(saved).toContain('media="(max-width: 599px)"');
+			expect(saved).not.toContain('media=""');
+		});
+
+		test('an update-item op', async () => {
+			await h.blockInsert(fixture.ctx, 'about.html', 0, {
+				name: 'image',
+				containerProps: { type: 'grid', columns: 1 },
+				items: [
+					[
+						{
+							name: 'image',
+							data: { ...imageData, path: ['/img/pc.png'], media: [''] },
+						},
+					],
+				],
+			});
+			const token = await readToken();
+
+			await pageUpdateTool.run(withMediaQueries(), {
+				path: 'about.html',
+				ops: [{ op: 'update-item', index: 0, itemIndex: 0, data: imageData }],
+				readToken: token,
+			});
+
+			const saved = await fs.readFile(path.join(fixture.docRoot, 'about.html'), 'utf8');
+			expect(saved).toContain('media="(max-width: 599px)"');
+		});
 	});
 
 	test('a failing op rejects the whole call and persists nothing — all-or-nothing, not partial', async () => {

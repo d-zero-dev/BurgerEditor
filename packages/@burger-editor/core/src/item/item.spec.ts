@@ -144,5 +144,63 @@ describe('Item', () => {
 			expect(exported.path).toStrictEqual(['/img/a.png', '/img/b.png']);
 			expect(exported.media).toStrictEqual([null, '(min-width: 1024px)']);
 		});
+
+		describe('normalizeItemData', () => {
+			// 画面の保存・ブラウザ中継・エージェントの書き込みはどれも import() を通る。
+			// seed の normalizeItemData が、HTML にする直前に、マージ後のデータへかかる
+			const normalizingSeed = {
+				...pictureSeed,
+				normalizeItemData: (
+					data: { media?: string[]; path?: string[] },
+					config: Config,
+				) => ({
+					...data,
+					media: (data.path ?? []).map((_, index) =>
+						index > 0 && !data.media?.[index]
+							? `(config:${config.sampleImagePath})`
+							: (data.media?.[index] ?? ''),
+					),
+				}),
+			};
+			const normalizingSeeds = new Map([['responsive-image', normalizingSeed]]);
+
+			test('import() はマージ後のデータを seed の normalizeItemData に通してから HTML にする', () => {
+				const item = Item.create(
+					'responsive-image',
+					normalizingSeeds,
+					{ ...testConfig, sampleImagePath: '/img/sample.png' },
+					{
+						path: ['/img/a.png', '/img/b.png'],
+						width: [400, 800],
+						height: [300, 600],
+						alt: ['代替テキスト'],
+						loading: ['lazy'],
+					},
+				);
+
+				expect(item.el.querySelector('source')?.getAttribute('media')).toBe(
+					'(config:/img/sample.png)',
+				);
+
+				// 部分更新でも、既存のデータとマージした結果に対して働く
+				item.import({ media: ['', '(min-width: 1024px)'] });
+				expect(item.el.querySelector('source')?.getAttribute('media')).toBe(
+					'(min-width: 1024px)',
+				);
+			});
+
+			test('normalizeItemData を持たない seed は、データを変えずにそのまま HTML にする', () => {
+				const item = Item.create('responsive-image', pictureSeeds, testConfig, {
+					path: ['/img/a.png', '/img/b.png'],
+					width: [400, 800],
+					height: [300, 600],
+					media: ['', ''],
+					alt: ['代替テキスト'],
+					loading: ['lazy'],
+				});
+
+				expect(item.el.querySelector('source')?.getAttribute('media')).toBe('');
+			});
+		});
 	});
 });

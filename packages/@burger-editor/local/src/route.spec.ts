@@ -497,6 +497,29 @@ describe('POST /api/content (virtual mode, path change)', () => {
 		expect(body.tree.map((n) => n.name)).not.toContain('about.html');
 	});
 
+	test('answers the new logical path when the save moves the page, so the tab can follow it', async () => {
+		await fs.writeFile(
+			path.join(documentRoot, '1.html'),
+			'---\npath: about.html\n---\n<h1>About</h1>\n',
+			'utf8',
+		);
+		const app = await buildApp(documentRoot, assetsRoot, { virtualTreeEnabled: true });
+
+		const saveRes = await app.request('/api/content', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({
+				path: 'about.html',
+				content: '<h1>About</h1>',
+				frontMatter: { path: 'company/about.html' },
+			}),
+		});
+
+		expect(saveRes.status).toBe(200);
+		const body = (await saveRes.json()) as { logicalPath: string };
+		expect(body.logicalPath).toBe('/company/about.html');
+	});
+
 	test('keeps state unchanged when frontmatter omits the pathKey', async () => {
 		await fs.writeFile(
 			path.join(documentRoot, '1.html'),
@@ -1063,5 +1086,118 @@ describe('GET /:page (non-virtual fallthrough)', () => {
 		const res = await app.request('/home.html');
 		expect(res.status).toBe(200);
 		expect(res.headers.get('content-type') ?? '').toMatch(/html/i);
+	});
+});
+
+describe('POST /api/content — a save from older content (Agent Hub disabled)', () => {
+	let documentRoot: string;
+	let assetsRoot: string;
+	let tmp: ({ path: string } & AsyncDisposable) | undefined;
+
+	beforeEach(async () => {
+		({ documentRoot, assetsRoot, tmp } = await makeTmpDocumentRoot());
+		await fs.writeFile(
+			path.join(documentRoot, 'index.html'),
+			'<!doctype html><html><body><h1>Home</h1></body></html>',
+			'utf8',
+		);
+	});
+
+	afterEach(async () => {
+		await tmp?.[Symbol.asyncDispose]();
+	});
+
+	/**
+	 * @param app
+	 * @param body
+	 */
+	function save(app: Pick<TestApp, 'request'>, body: Record<string, unknown>) {
+		return app.request('/api/content', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ path: '/index.html', ...body }),
+		});
+	}
+
+	/**
+	 * @param app
+	 */
+	async function servedHash(app: Pick<TestApp, 'request'>) {
+		const res = await app.request('/');
+		const html = await res.text();
+		return /id="content-hash" value="([^"]+)"/.exec(html)?.[1];
+	}
+
+	test('the page carries the hash of the content it was served from', async () => {
+		const app = await buildApp(documentRoot, assetsRoot, {
+			virtualTreeEnabled: false,
+			editableArea: 'body',
+		});
+
+		expect(await servedHash(app)).toMatch(/^[0-9a-f]+$/);
+	});
+
+	test('a save whose baseHash matches disk is written and returns the new hash', async () => {
+		const app = await buildApp(documentRoot, assetsRoot, {
+			virtualTreeEnabled: false,
+			editableArea: 'body',
+		});
+		const baseHash = await servedHash(app);
+
+		const res = await save(app, { content: '<h1>Saved</h1>', baseHash });
+
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { contentHash?: string };
+		expect(body.contentHash).toMatch(/^[0-9a-f]+$/);
+		expect(body.contentHash).not.toBe(baseHash);
+	});
+
+	test('a save whose baseHash no longer matches disk is rejected, leaving disk untouched', async () => {
+		const app = await buildApp(documentRoot, assetsRoot, {
+			virtualTreeEnabled: false,
+			editableArea: 'body',
+		});
+		const baseHash = await servedHash(app);
+		const first = await save(app, { content: '<h1>Saved first</h1>' });
+		expect(first.status).toBe(200);
+		const savedFile = await fs.readFile(path.join(documentRoot, 'index.html'), 'utf8');
+
+		const res = await save(app, {
+			content: '<h1>Saved from older content</h1>',
+			baseHash,
+		});
+
+		expect(res.status).toBe(409);
+		expect(((await res.json()) as { error: string }).error).toBe('conflict');
+		expect(await fs.readFile(path.join(documentRoot, 'index.html'), 'utf8')).toBe(
+			savedFile,
+		);
+	});
+
+	test('a file that cannot be read is not reported as changed elsewhere (no 409)', async () => {
+		const app = await buildApp(documentRoot, assetsRoot, {
+			virtualTreeEnabled: false,
+			editableArea: 'body',
+		});
+		const baseHash = await servedHash(app);
+		await fs.chmod(path.join(documentRoot, 'index.html'), 0o000);
+
+		try {
+			const res = await save(app, { content: '<h1>Saved</h1>', baseHash });
+
+			expect(res.status).not.toBe(409);
+		} finally {
+			await fs.chmod(path.join(documentRoot, 'index.html'), 0o644);
+		}
+	});
+
+	test('a save without a baseHash is written as before', async () => {
+		const app = await buildApp(documentRoot, assetsRoot, {
+			virtualTreeEnabled: false,
+			editableArea: 'body',
+		});
+
+		const res = await save(app, { content: '<h1>Saved</h1>' });
+		expect(res.status).toBe(200);
 	});
 });
