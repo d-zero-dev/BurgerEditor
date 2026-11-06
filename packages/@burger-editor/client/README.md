@@ -71,14 +71,15 @@ const { engine } = await createBurgerEditorClient({
 
 ### `config`配下のキー
 
-| キー               | 型                                               | 説明                                                                                                                                      |
-| ------------------ | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `classList`        | `string[]`                                       | ブロックに適用する CSS クラスの配列                                                                                                       |
-| `stylesheets`      | `(string \| { path: string; layer?: string })[]` | 読み込むスタイルシート。`CSS_LAYER`でレイヤー指定可（core より緩い受容形式： `string`を許す。内部で`{ path, layer? }`形式に正規化される） |
-| `sampleImagePath`  | `string`                                         | サンプル画像のパス                                                                                                                        |
-| `sampleFilePath`   | `string`                                         | サンプルファイルのパス                                                                                                                    |
-| `googleMapsApiKey` | `string \| null`                                 | Google Maps API キー（マップ機能を使う場合のみ）                                                                                          |
-| `experimental`     | `object`                                         | 実験的な機能の設定（オプション）                                                                                                          |
+| キー               | 型                                               | 説明                                                                                                                                                   |
+| ------------------ | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `classList`        | `string[]`                                       | ブロックに適用する CSS クラスの配列                                                                                                                    |
+| `stylesheets`      | `(string \| { path: string; layer?: string })[]` | 読み込むスタイルシート。`CSS_LAYER`でレイヤー指定可（core より緩い受容形式： `string`を許す。内部で`{ path, layer? }`形式に正規化される）              |
+| `sampleImagePath`  | `string`                                         | サンプル画像のパス                                                                                                                                     |
+| `sampleFilePath`   | `string`                                         | サンプルファイルのパス                                                                                                                                 |
+| `googleMapsApiKey` | `string \| null`                                 | Google Maps API キー（マップ機能を使う場合のみ）                                                                                                       |
+| `mediaQueries`     | `string[]`                                       | 画像2以降のメディアクエリーの候補（オプション）。先頭が既定値。正規化の規則と省略時の値は、`@burger-editor/core`の`Config.mediaQueries`の JSDoc を参照 |
+| `experimental`     | `object`                                         | 実験的な機能の設定（オプション）                                                                                                                       |
 
 ## その他のエクスポート
 

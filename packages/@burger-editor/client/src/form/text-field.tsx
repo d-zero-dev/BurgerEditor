@@ -19,6 +19,9 @@
  * used: `type` is dynamic here, so markup linting cannot tell it is valid.
  * The dialog form is `noValidate`, so the browser never blocks submission;
  * the item's `toItemData` is what rejects an empty value.
+ * @param root0.onBlur - Called when focus leaves the input. Use it to
+ * normalize a value (for example, to restore a default when the field was
+ * left empty) once the user has finished typing, not on every keystroke.
  * @example
  * ```tsx
  * <TextField
@@ -39,6 +42,7 @@ export function TextField({
 	placeholder,
 	describedBy,
 	required,
+	onBlur,
 }: {
 	readonly label: string;
 	readonly value: string;
@@ -49,6 +53,7 @@ export function TextField({
 	readonly placeholder?: string;
 	readonly describedBy?: string;
 	readonly required?: boolean;
+	readonly onBlur?: () => void;
 }) {
 	return (
 		<label>
@@ -62,6 +67,7 @@ export function TextField({
 				placeholder={placeholder}
 				aria-describedby={describedBy}
 				onChange={(e) => onChange(e.currentTarget.value)}
+				onBlur={onBlur}
 			/>
 		</label>
 	);
