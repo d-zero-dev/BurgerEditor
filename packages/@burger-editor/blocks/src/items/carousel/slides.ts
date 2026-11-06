@@ -13,20 +13,29 @@ import {
 import { templateDefaults } from './defaults.js';
 
 /**
+ * スライドの `<picture data-bge-list>` の中にあるキー。スライドごとの値が、
+ * image アイテムと同じ画像ごとの配列になる（0 が `<img>`、1 以降が `<source>`）。
+ * @example
+ * ```ts
+ * // スライド 1 枚目に PC 画像と SP 画像、2 枚目に画像 1 枚
+ * const data: Pick<CarouselData, (typeof IMAGE_KEYS)[number]> = {
+ * 	path: [['/pc1.png', '/sp1.png'], ['/pc2.png']],
+ * 	alt: [['説明1'], ['説明2']],
+ * 	width: [[400, 300], [400]],
+ * 	height: [[300, 200], [300]],
+ * 	loading: [['lazy'], ['lazy']],
+ * 	media: [['', '(max-width: 767px)'], ['']],
+ * };
+ * ```
+ */
+export const IMAGE_KEYS = ['path', 'alt', 'width', 'height', 'loading', 'media'] as const;
+
+/**
  * カルーセルのデータのうち、スライドごとに 1 要素ずつ持つ配列のキー。
- * frozen-patty はリストの入れ子に対応しないため、スライドごとの
- * 「PC画像 + SP画像」は `spPath` などの固定スロットで持つ。
+ * {@link IMAGE_KEYS} の値は、さらに画像ごとの配列（frozen-patty の入れ子のリスト）。
  */
 export const SLIDE_KEYS = [
-	'path',
-	'alt',
-	'width',
-	'height',
-	'loading',
-	'spPath',
-	'spMedia',
-	'spWidth',
-	'spHeight',
+	...IMAGE_KEYS,
 	'style',
 	'scale',
 	'scaleType',
@@ -40,27 +49,76 @@ export const SLIDE_KEYS = [
 
 type SlideKey = (typeof SLIDE_KEYS)[number];
 
+type ImageKey = (typeof IMAGE_KEYS)[number];
+
+/**
+ * @param key - A key of {@link CarouselData}
+ */
+function isImageKey(key: string): key is ImageKey {
+	return (IMAGE_KEYS as readonly string[]).includes(key);
+}
+
 /**
  * スライド 1 枚分の値。{@link CarouselData} の配列を index ごとに切り出したもの。
  */
 export type Slide = { [K in SlideKey]: CarouselData[K][number] };
 
 /**
- * SP 用の値の「無い」を `null` に揃える。frozen-patty は属性が無い `<source>` を
- * `null` として読むが、image エディタ（`slideToImageData` が空の SP を `''` / `0` で
- * 渡す）を経由した値や、属性が空・`0` で保存された HTML は `''` / `0` で届く。
- * それを書き戻すと `media=""` `width="0"` が `<source>` に残るので、`null` に
- * 揃えて属性ごと取り除く。
- * @param slide
+ * スライド 1 枚分の画像の値を、画像ごとの配列に揃える。配列でない値は 1 枚の画像
+ * として包み、無い値と空の配列は `fallback` にする。frozen-patty は内側の配列が
+ * 空だと `<picture>` の中身を描かず、次の保存の雛形にする `<img>` も失うので、
+ * 空のままにしない。
+ * @param value
+ * @param fallback
  */
-function normalizeSp<T extends Record<string, unknown>>(slide: T): T {
-	return {
-		...slide,
-		spPath: slide['spPath'] || null,
-		spMedia: slide['spMedia'] || null,
-		spWidth: slide['spWidth'] || null,
-		spHeight: slide['spHeight'] || null,
-	};
+function toImageValues<T>(value: unknown, fallback: readonly T[]): T[] {
+	if (Array.isArray(value)) {
+		return value.length > 0 ? (value as T[]) : [...fallback];
+	}
+	return value == null ? [...fallback] : [value as T];
+}
+
+/**
+ * 保存データの画像のキー 1 つ分を、スライドごとの配列（配列の配列）に揃える。
+ * エージェントは image と同じ平らな配列（`path: ['/a.png', '/b.png']`）や、
+ * カタログの雛形のスカラー（`path: ''`）を送り得る。そのまま書くと、frozen-patty は
+ * 内側の `<picture>` を空にして `<img>` を失う。平らな値はスライド 1 枚に画像 1 枚
+ * として包み、`path` の空の配列は空の画像 1 枚にする。無い値（部分データ）と、
+ * すでに揃っている値は、同じ参照を返す。
+ * @param key - 画像のキー（`path` の空の配列だけを、空の画像 1 枚にする）
+ * @param value - エージェントが送った値（任意の JSON）
+ * @returns 揃えた値。変える必要が無ければ `value` そのもの
+ * @example
+ * ```ts
+ * toSlideImageValues('path', ['/a.png', '/b.png']); // [['/a.png'], ['/b.png']]
+ * toSlideImageValues('path', ''); // [['']]
+ * toSlideImageValues('path', [[]]); // [['']]
+ * toSlideImageValues('media', [['', '(max-width: 767px)']]); // 同じ参照
+ * toSlideImageValues('path', undefined); // undefined（部分データ）
+ * ```
+ */
+export function toSlideImageValues(key: ImageKey, value: unknown): unknown {
+	if (value === undefined) {
+		return value;
+	}
+	if (!Array.isArray(value)) {
+		return [[value]];
+	}
+	let next: unknown[] | undefined;
+	for (const [index, item] of value.entries()) {
+		const fixed = Array.isArray(item)
+			? key === 'path' && item.length === 0
+				? ['']
+				: item
+			: item === undefined
+				? item
+				: [item];
+		if (fixed !== item) {
+			next ??= [...value];
+			next[index] = fixed;
+		}
+	}
+	return next ?? value;
 }
 
 /**
@@ -71,9 +129,11 @@ export function defaultSlide(): Slide {
 	const template = templateDefaults();
 	const slide: Record<string, unknown> = {};
 	for (const key of SLIDE_KEYS) {
-		slide[key] = template[key][0] ?? null;
+		const value: unknown = template[key][0];
+		// 内側の配列はテンプレートの読み取り結果（キャッシュ）と共有しない
+		slide[key] = Array.isArray(value) ? [...value] : (value ?? null);
 	}
-	return { ...normalizeSp(slide), path: '', alt: '' } as Slide;
+	return { ...slide, path: [''], alt: [''] } as Slide;
 }
 
 /**
@@ -83,24 +143,27 @@ export function defaultSlide(): Slide {
  * 雛形にする要素が失われる）。
  * 足りない値は {@link defaultSlide} で埋める。frozen-patty は配列の
  * 足りない index を index 0 の値で埋めてしまうため、必ず全配列を同じ長さに
- * 揃えてから保存する。
- *
- * SP 用の値は「無い」ことを `null` に揃える。frozen-patty は属性が無い
- * `<source>` を `null` として読むが、image エディタ（`slideToImageData` が
- * 空の SP を `''` / `0` で渡す）を経由した値や、属性が空・`0` で保存された
- * HTML は `''` / `0` で届く。それを書き戻すと `media=""` `width="0"` が
- * `<source>` に残るので、ここで `null` に揃えて属性ごと取り除く。
+ * 揃えてから保存する。画像の値（{@link IMAGE_KEYS}）は画像ごとの配列に揃える
+ * （配列でない値は 1 枚の画像、空の配列は既定値）。
  * @param data
  */
 export function getSlides(data: Readonly<CarouselData>): Slide[] {
-	const count = Math.max(1, ...SLIDE_KEYS.map((key) => data[key]?.length ?? 0));
+	const lengthOf = (key: SlideKey) => {
+		const value: unknown = data[key];
+		return Array.isArray(value) ? value.length : 0;
+	};
+	const count = Math.max(1, ...SLIDE_KEYS.map((key) => lengthOf(key)));
 	const fallback = defaultSlide();
 	return Array.from({ length: count }, (_, index) => {
 		const slide: Record<string, unknown> = {};
 		for (const key of SLIDE_KEYS) {
-			slide[key] = data[key]?.[index] ?? fallback[key];
+			const values: unknown = data[key];
+			const value: unknown = Array.isArray(values) ? values[index] : undefined;
+			slide[key] = isImageKey(key)
+				? toImageValues<unknown>(value, fallback[key])
+				: (value ?? fallback[key]);
 		}
-		return normalizeSp(slide) as Slide;
+		return slide as Slide;
 	});
 }
 
@@ -140,10 +203,7 @@ export function withSlides(
 		width: slides.map((s) => s.width),
 		height: slides.map((s) => s.height),
 		loading: slides.map((s) => s.loading),
-		spPath: slides.map((s) => s.spPath),
-		spMedia: slides.map((s) => s.spMedia),
-		spWidth: slides.map((s) => s.spWidth),
-		spHeight: slides.map((s) => s.spHeight),
+		media: slides.map((s) => s.media),
 		style: slides.map((s) => s.style),
 		scale: slides.map((s) => s.scale),
 		scaleType: slides.map((s) => s.scaleType),
@@ -170,7 +230,9 @@ const LABEL_BOUNDARIES =
  * Node.js から呼ばれるときも `@burger-editor/file-io` が `DOMParser` を用意する。
  * 改行やブロック要素の境目は空白にする（textContent はそのまま連結し、
  * 「春の<br>庭」が「春の庭」になるため）
- * @param slide
+ * @param slide - 名前の元
+ * @param slide.caption - キャプション（HTML）
+ * @param slide.alt - 画像1の代替テキスト
  * @param parser - 複数枚を続けて導くときに使い回す
  * @example
  * ```ts
@@ -180,7 +242,7 @@ const LABEL_BOUNDARIES =
  * ```
  */
 export function slideLabelOf(
-	slide: Pick<Slide, 'caption' | 'alt'>,
+	slide: { readonly caption: string; readonly alt: string },
 	parser = new DOMParser(),
 ): string {
 	const normalize = (text: string) => text.replaceAll(/\s+/g, ' ').trim();
@@ -198,7 +260,9 @@ export function slideLabelOf(
  */
 function slideLabels(slides: readonly Slide[]): string[] {
 	const parser = new DOMParser();
-	return slides.map((slide) => slideLabelOf(slide, parser));
+	return slides.map((slide) =>
+		slideLabelOf({ caption: slide.caption, alt: slide.alt[0] ?? '' }, parser),
+	);
 }
 
 /**
@@ -223,10 +287,13 @@ const UNNAMED_LINK_MESSAGE = ALT_REQUIRED_MESSAGE;
  */
 function unnamedReasonOf(slide: Slide, parser?: DOMParser): string | null {
 	const popup = isPopup(slide.node, slide.command);
-	if (needsAltForName(wrapperNodeOf(popup, slide.href), slide.alt)) {
+	const alt = slide.alt[0] ?? '';
+	if (needsAltForName(wrapperNodeOf(popup, slide.href), alt)) {
 		return UNNAMED_LINK_MESSAGE;
 	}
-	return slideLabelOf(slide, parser) ? null : UNNAMED_SLIDE_MESSAGE;
+	return slideLabelOf({ caption: slide.caption, alt }, parser)
+		? null
+		: UNNAMED_SLIDE_MESSAGE;
 }
 
 /**
@@ -349,7 +416,7 @@ export function replaceSlide(
 
 /**
  * スライド 1 枚を、image アイテムのデータ（`ImageData` の保存形）に直す。
- * SP 画像は 2 枚目（`path[1]`）になる。
+ * スライドの画像の値は image と同じ形なので、そのまま渡す。
  *
  * `fileSize` `mediaInput` `cssWidth` `cssWidthNumber` `cssWidthUnit` `lazy`
  * `popup` `targetBlank` `altEditable` は、image の `toEditorState` が保存形
@@ -358,62 +425,35 @@ export function replaceSlide(
  * @param slide
  */
 function slideToImageData(slide: Slide): ImageData {
-	const sp = slide.spPath;
 	return {
-		path: sp ? [slide.path, sp] : [slide.path],
-		alt: [slide.alt],
-		width: sp ? [slide.width, slide.spWidth ?? 0] : [slide.width],
-		height: sp ? [slide.height, slide.spHeight ?? 0] : [slide.height],
-		media: sp ? ['', slide.spMedia ?? ''] : [''],
-		loading: [slide.loading],
+		...slide,
 		fileSize: '0',
 		mediaInput: '',
-		style: slide.style,
 		cssWidth: '100cqi',
-		scaleType: slide.scaleType,
-		scale: slide.scale,
-		aspectRatio: slide.aspectRatio,
 		cssWidthNumber: 100,
 		cssWidthUnit: 'cqi',
-		lazy: slide.loading === 'lazy',
-		caption: slide.caption,
-		altEditable: slide.alt,
-		node: slide.node,
-		href: slide.href,
+		lazy: slide.loading[0] === 'lazy',
+		altEditable: slide.alt[0] ?? '',
 		popup: slide.node === 'button',
-		target: slide.target,
 		targetBlank: slide.target === '_blank',
-		command: slide.command,
 	};
 }
 
 /**
- * image アイテムの保存形（`toItemData` の結果）を、スライド 1 枚に直す。
+ * image アイテムの保存形（`toItemData` の結果）から、スライドの値だけを拾う
+ * （編集専用の値は保存しない）。
  * @param data
  */
 function imageDataToSlide(data: Readonly<ImageData>): Slide {
-	const sp = data.path?.[1] || null;
 	const fallback = defaultSlide();
-	return {
-		path: data.path?.[0] ?? fallback.path,
-		alt: data.alt?.[0] ?? fallback.alt,
-		width: data.width?.[0] ?? fallback.width,
-		height: data.height?.[0] ?? fallback.height,
-		loading: data.loading?.[0] ?? fallback.loading,
-		spPath: sp,
-		spMedia: sp ? data.media?.[1] || null : null,
-		spWidth: sp ? data.width?.[1] || null : null,
-		spHeight: sp ? data.height?.[1] || null : null,
-		style: data.style ?? fallback.style,
-		scale: data.scale ?? fallback.scale,
-		scaleType: data.scaleType ?? fallback.scaleType,
-		aspectRatio: data.aspectRatio ?? fallback.aspectRatio,
-		caption: data.caption ?? fallback.caption,
-		node: data.node ?? fallback.node,
-		href: data.href ?? fallback.href,
-		target: data.target ?? fallback.target,
-		command: data.command ?? fallback.command,
-	};
+	const slide: Record<string, unknown> = {};
+	for (const key of SLIDE_KEYS) {
+		const value: unknown = data[key];
+		slide[key] = isImageKey(key)
+			? toImageValues<unknown>(value, fallback[key])
+			: (value ?? fallback[key]);
+	}
+	return slide as Slide;
 }
 
 /**

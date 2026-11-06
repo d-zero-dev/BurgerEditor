@@ -52,21 +52,21 @@ import { items } from '@burger-editor/blocks/editor';
 
 `items`から個別に import するか、`defaultCatalog`経由でブロックの構成要素として利用する。実装は`src/items/*`を参照。
 
-| key             | 用途                                                                            |
-| --------------- | ------------------------------------------------------------------------------- |
-| `button`        | ボタン                                                                          |
-| `carousel`      | カルーセル（複数のスライド画像。各スライドは`image`と同じ項目）                 |
-| `details`       | 折りたたみ要素                                                                  |
-| `download-file` | ダウンロードファイル                                                            |
-| `google-maps`   | Google Maps 埋め込み                                                            |
-| `hr`            | 水平線                                                                          |
-| `image`         | 画像                                                                            |
-| `import`        | 他ファイルから HTML を取り込むインポートブロック用（`enableImportBlock`で制御） |
-| `table`         | テーブル                                                                        |
-| `title-h2`      | 大見出し（h2）                                                                  |
-| `title-h3`      | 中見出し（h3）                                                                  |
-| `wysiwyg`       | リッチテキストエディタ                                                          |
-| `youtube`       | YouTube 動画埋め込み                                                            |
+| key             | 用途                                                                                                                                          |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `button`        | ボタン                                                                                                                                        |
+| `carousel`      | カルーセル（複数のスライド画像。各スライドは`image`と同じ項目で、画像は`image`と同じ`<picture>`のリスト。保存データでは画像の値が配列の配列） |
+| `details`       | 折りたたみ要素                                                                                                                                |
+| `download-file` | ダウンロードファイル                                                                                                                          |
+| `google-maps`   | Google Maps 埋め込み                                                                                                                          |
+| `hr`            | 水平線                                                                                                                                        |
+| `image`         | 画像                                                                                                                                          |
+| `import`        | 他ファイルから HTML を取り込むインポートブロック用（`enableImportBlock`で制御）                                                               |
+| `table`         | テーブル                                                                                                                                      |
+| `title-h2`      | 大見出し（h2）                                                                                                                                |
+| `title-h3`      | 中見出し（h3）                                                                                                                                |
+| `wysiwyg`       | リッチテキストエディタ                                                                                                                        |
+| `youtube`       | YouTube 動画埋め込み                                                                                                                          |
 
 `carousel`の全体設定（自動再生・ループ・矢印・ドット・切り替え効果）は、ラッパーの`data-bge-*`属性として保存する。表示枚数だけは、CSS が計算に使えるよう、ラッパーの`style`の`--per-view`として保存する（サイトの CSS で上書きすると、runtime もその値に従う）。同梱の CSS だけで、スライドが横に並び、1 枚ずつスナップしてスクロールする。`::scroll-button()`/`::scroll-marker`に対応したブラウザでは、矢印とドットも CSS だけで表示する。自動再生・ループ・フェードと、未対応ブラウザの矢印・ドットは[`@burger-editor/runtime`](../runtime/README.md)が補う。
 

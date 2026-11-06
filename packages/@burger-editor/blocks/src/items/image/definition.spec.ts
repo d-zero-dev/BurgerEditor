@@ -3,7 +3,11 @@ import type { Config } from '@burger-editor/core';
 import { Item } from '@burger-editor/core';
 import { test, expect, describe, beforeEach } from 'vitest';
 
-import imageItemSeed from './definition.js';
+import imageItemSeed, {
+	DEFAULT_MEDIA_QUERIES,
+	mediaQueriesOf,
+	mediaQueryOrDefault,
+} from './definition.js';
 
 type ImageItemData = typeof imageItemSeed._;
 
@@ -665,6 +669,287 @@ describe('imageItemSeed', () => {
 
 			expect(result?.node).toBe('div');
 			expect(result?.alt).toStrictEqual(['']);
+		});
+	});
+
+	describe('mediaQueriesOf関数', () => {
+		test('省略すると既定の候補になる', () => {
+			expect(mediaQueriesOf({})).toStrictEqual(DEFAULT_MEDIA_QUERIES);
+		});
+
+		test('config そのものが無いときも既定の候補になる', () => {
+			// config を持たないエンジン（テスト用のモックなど）でエディタが落ちないようにする
+			expect(mediaQueriesOf()).toStrictEqual(DEFAULT_MEDIA_QUERIES);
+		});
+
+		// 設定ファイルの値は検査されずに届く。補正は throw しない約束なので、
+		// 配列でない値は無いものとし、文字列でない候補は捨てる
+		test('設定の mediaQueries が配列でないときは既定の候補になり、throw しない', () => {
+			expect(
+				mediaQueriesOf({ mediaQueries: '(max-width: 599px)' as never }),
+			).toStrictEqual(DEFAULT_MEDIA_QUERIES);
+			expect(mediaQueriesOf({ mediaQueries: null as never })).toStrictEqual(
+				DEFAULT_MEDIA_QUERIES,
+			);
+		});
+
+		test('文字列でない候補は捨てる', () => {
+			expect(
+				mediaQueriesOf({ mediaQueries: [600, '(max-width: 599px)'] as never }),
+			).toStrictEqual(['(max-width: 599px)']);
+		});
+
+		test('空配列と、空白だけの候補しかないときも既定の候補になる', () => {
+			expect(mediaQueriesOf({ mediaQueries: [] })).toStrictEqual(DEFAULT_MEDIA_QUERIES);
+			expect(mediaQueriesOf({ mediaQueries: ['', '  '] })).toStrictEqual(
+				DEFAULT_MEDIA_QUERIES,
+			);
+		});
+
+		test('候補の前後の空白を取り除き、空白だけの候補は捨てる', () => {
+			// 前後に空白が残ると、保存される media と、入力欄の候補・入力値が食い違う
+			expect(
+				mediaQueriesOf({
+					mediaQueries: [' (max-width: 599px)\n', '', '(max-width: 1023px)'],
+				}),
+			).toStrictEqual(['(max-width: 599px)', '(max-width: 1023px)']);
+		});
+
+		test('重複した候補は 1 つにまとめる（先頭の順序を保つ）', () => {
+			expect(
+				mediaQueriesOf({
+					mediaQueries: [
+						'(max-width: 599px)',
+						'(max-width: 1023px)',
+						' (max-width: 599px)',
+					],
+				}),
+			).toStrictEqual(['(max-width: 599px)', '(max-width: 1023px)']);
+		});
+	});
+
+	describe('mediaQueryOrDefault関数', () => {
+		test('2枚目以降で空・空白だけ・未設定なら、既定の候補の先頭を返す', () => {
+			expect(mediaQueryOrDefault(1, '', {})).toBe('(max-width: 767px)');
+			expect(mediaQueryOrDefault(1, ' 　\n', {})).toBe('(max-width: 767px)');
+			expect(mediaQueryOrDefault(1, undefined, {})).toBe('(max-width: 767px)');
+			expect(mediaQueryOrDefault(2, null, {})).toBe('(max-width: 767px)');
+			expect(mediaQueryOrDefault(1, '', { mediaQueries: ['(max-width: 599px)'] })).toBe(
+				'(max-width: 599px)',
+			);
+		});
+
+		test('値があればそのまま返し、画像1（index 0）は触らない', () => {
+			expect(mediaQueryOrDefault(1, '(min-width: 1024px)', {})).toBe(
+				'(min-width: 1024px)',
+			);
+			expect(mediaQueryOrDefault(0, '', {})).toBe('');
+			expect(mediaQueryOrDefault(0, undefined, {})).toBe('');
+		});
+
+		// 候補は前後の空白を取り除くので、直接入力の値も揃えないと、保存される media と
+		// 候補が食い違い、同じ値が「その他」扱いになる
+		test('2枚目以降の値は、前後の空白を取り除いて返す', () => {
+			expect(mediaQueryOrDefault(1, ' (max-width: 600px) ', {})).toBe(
+				'(max-width: 600px)',
+			);
+		});
+	});
+
+	describe('normalizeItemData（画面・ブラウザ中継・エージェントのどの保存でも補う）', () => {
+		const spData = {
+			path: ['/img/pc.png', '/img/sp.png'],
+			width: [400, 300],
+			height: [300, 200],
+			media: ['', ''],
+			alt: ['説明'],
+			loading: ['eager'],
+		} satisfies Partial<ImageItemData>;
+
+		test('画像2があって media が空なら、既定値で埋める', () => {
+			const result = imageItemSeed.normalizeItemData?.(
+				{ ...spData, media: ['', ''] },
+				testConfig,
+			);
+
+			expect(result?.media).toStrictEqual(['', '(max-width: 767px)']);
+		});
+
+		test('config の mediaQueries の先頭で埋める', () => {
+			const result = imageItemSeed.normalizeItemData?.(
+				{ ...spData, media: [''] },
+				{ ...testConfig, mediaQueries: ['(max-width: 599px)'] },
+			);
+
+			expect(result?.media).toStrictEqual(['', '(max-width: 599px)']);
+		});
+
+		test('入力済みの media は触らない。補う必要が無ければ同じオブジェクトを返す', () => {
+			const data = { ...spData, media: ['', '(min-width: 1024px)'] };
+
+			expect(imageItemSeed.normalizeItemData?.(data, testConfig)).toBe(data);
+		});
+
+		test('画像が無い部分データには media を足さない', () => {
+			const data = { alt: ['説明'] };
+
+			expect(imageItemSeed.normalizeItemData?.(data, testConfig)).toBe(data);
+		});
+
+		test('画像2が空で画像3だけを選んだときも、media に穴を残さない', () => {
+			const result = imageItemSeed.normalizeItemData?.(
+				{ ...spData, path: ['/img/a.png', '', '/img/c.png'], media: [''] },
+				testConfig,
+			);
+
+			expect(result?.media).toStrictEqual(['', '', '(max-width: 767px)']);
+		});
+
+		// エージェントは任意の JSON を送る。補正は throw しない約束なので、
+		// 形が不正な値は、補正せずにそのまま返す（または空として扱う）
+		test('path が配列でないときは、throw せず、そのまま返す', () => {
+			const data = { ...spData, path: '/img/pc.png' as never };
+
+			expect(imageItemSeed.normalizeItemData?.(data, testConfig)).toBe(data);
+		});
+
+		test('media の要素が文字列でないときは、空として既定値で埋め、throw しない', () => {
+			const result = imageItemSeed.normalizeItemData?.(
+				{ ...spData, media: [null, 123] as never },
+				testConfig,
+			);
+
+			expect(result?.media).toStrictEqual(['', '(max-width: 767px)']);
+		});
+
+		test('冪等: かけ直しても結果が変わらない', () => {
+			const once = imageItemSeed.normalizeItemData?.({ ...spData }, testConfig);
+			const twice = imageItemSeed.normalizeItemData?.(once ?? {}, testConfig);
+
+			expect(twice).toStrictEqual(once);
+		});
+
+		test('エージェントの item_update 相当（Item.import に部分データ）でも、<source> に media が付く', () => {
+			const seeds = new Map([['image', imageItemSeed as never]]);
+			const item = Item.create('image', seeds, testConfig);
+
+			item.import({
+				path: ['/img/pc.png', '/img/sp.png'],
+				width: [400, 300],
+				height: [300, 200],
+			});
+
+			expect(item.el.querySelector('source')?.getAttribute('media')).toBe(
+				'(max-width: 767px)',
+			);
+		});
+	});
+
+	describe('画像2以降を選んだのにメディアクエリーが空のまま確定する', () => {
+		// 空の media の <source> はどの画面幅でも条件に合うため、<img>（画像1）より先に
+		// 採用され、PC 幅でも画像2が表示される。保存前に候補の先頭で埋める
+		const withSecondImage = {
+			path: ['/img/sample.png', '/img/sp.png'],
+			alt: ['サンプル画像'],
+			width: [400, 300],
+			height: [300, 200],
+			media: ['', ''],
+			fileSize: '0',
+			mediaInput: '',
+			style: '',
+			cssWidth: '100px',
+			scaleType: 'original',
+			scale: 100,
+			aspectRatio: 'revert',
+			cssWidthNumber: 100,
+			cssWidthUnit: 'px',
+			lazy: false,
+			loading: ['eager'],
+			caption: '',
+			altEditable: 'サンプル画像',
+			node: 'div',
+			href: '',
+			popup: false,
+			target: null,
+			targetBlank: false,
+			command: null,
+		} as const satisfies Readonly<ImageItemData>;
+
+		test('config に候補が無ければ (max-width: 767px) で埋める', async () => {
+			const result = await imageItemSeed.toItemData?.(withSecondImage, testConfig);
+
+			expect(result?.media).toStrictEqual(['', '(max-width: 767px)']);
+		});
+
+		test('空配列の候補も、無いものとして (max-width: 767px) で埋める', async () => {
+			const result = await imageItemSeed.toItemData?.(withSecondImage, {
+				...testConfig,
+				mediaQueries: [],
+			});
+
+			expect(result?.media).toStrictEqual(['', '(max-width: 767px)']);
+		});
+
+		test('config の候補があれば、その先頭で埋める', async () => {
+			const result = await imageItemSeed.toItemData?.(withSecondImage, {
+				...testConfig,
+				mediaQueries: ['(max-width: 599px)', '(max-width: 1023px)'],
+			});
+
+			expect(result?.media).toStrictEqual(['', '(max-width: 599px)']);
+		});
+
+		test('空白だけも空として扱う', async () => {
+			const result = await imageItemSeed.toItemData?.(
+				{ ...withSecondImage, media: ['', ' 　\n'] },
+				testConfig,
+			);
+
+			expect(result?.media).toStrictEqual(['', '(max-width: 767px)']);
+		});
+
+		test('入力済みのメディアクエリーは上書きしない', async () => {
+			const result = await imageItemSeed.toItemData?.(
+				{ ...withSecondImage, media: ['', '(min-width: 1024px)'] },
+				{ ...testConfig, mediaQueries: ['(max-width: 599px)'] },
+			);
+
+			expect(result?.media).toStrictEqual(['', '(min-width: 1024px)']);
+		});
+
+		test('画像1のメディアクエリーは触らない', async () => {
+			const result = await imageItemSeed.toItemData?.(withSecondImage, testConfig);
+
+			expect(result?.media[0]).toBe('');
+		});
+
+		test('画像2が無ければ補完しない', async () => {
+			const result = await imageItemSeed.toItemData?.(
+				{ ...withSecondImage, path: ['/img/sample.png'], media: [''] },
+				testConfig,
+			);
+
+			expect(result?.media).toStrictEqual(['']);
+		});
+
+		test('画像2のパスが空なら補完しない（source が作られない画像に値を足さない）', async () => {
+			const result = await imageItemSeed.toItemData?.(
+				{ ...withSecondImage, path: ['/img/sample.png', ''] },
+				testConfig,
+			);
+
+			expect(result?.media).toStrictEqual(['', '']);
+		});
+
+		test('保存した HTML の <source> に media が付く', async () => {
+			const seeds = new Map([['image', imageItemSeed as never]]);
+			const item = Item.create('image', seeds, testConfig);
+
+			item.import(await imageItemSeed.toItemData!(withSecondImage, testConfig));
+
+			const source = item.el.querySelector('source');
+			expect(source?.getAttribute('srcset')).toBe('/img/sp.png');
+			expect(source?.getAttribute('media')).toBe('(max-width: 767px)');
 		});
 	});
 });

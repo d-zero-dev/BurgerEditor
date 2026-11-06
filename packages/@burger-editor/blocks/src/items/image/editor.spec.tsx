@@ -212,6 +212,29 @@ describe('ImageEditor', () => {
 		expect(screen.getByRole('tabpanel', { name: '画像1' })).toBeTruthy();
 	});
 
+	test('画像1の media が候補と同じ値でも、画像1のタブには無効な入力欄を出す（タブで欄が消えない）', () => {
+		/**
+		 * 画像1の media に既定の候補を持つ状態
+		 */
+		function WithCandidateMedia() {
+			const [state, setState] = useState<ImageData>(() => ({
+				...createInitialState(),
+				media: ['(max-width: 767px)', ''],
+				mediaInput: '(max-width: 767px)',
+			}));
+			return (
+				<EngineProvider engine={createMockEngine()}>
+					<ImageEditor state={state} setState={setState} item={{} as never} />
+				</EngineProvider>
+			);
+		}
+		render(<WithCandidateMedia />);
+
+		const mediaInput = getInput('メディアクエリー');
+		expect(mediaInput.disabled).toBe(true);
+		expect(screen.queryByLabelText('メディアクエリーの候補')).toBeNull();
+	});
+
 	test('タブ2ではalt欄が無効化され、画像1で編集する旨の注記が表示される', () => {
 		render(<Harness engine={createMockEngine()} initialPath={['', '/img/sp.png']} />);
 
@@ -506,6 +529,458 @@ describe('engine単位で共有されるFileBrowserStoreの残留選択（regres
 			await Promise.resolve();
 		});
 		expect(latestB?.path?.[0]).toBe('/img/b.png');
+	});
+});
+
+/**
+ * srcを代入すると、次のマイクロタスクでloadを発火する`Image`スタブ。
+ * `loadImage` は `src` の代入後にリスナーを付けるので、同期で発火すると取りこぼす
+ */
+class LoadingImage extends EventTarget {
+	naturalHeight = 200;
+	naturalWidth = 300;
+
+	set src(_value: string) {
+		queueMicrotask(() => {
+			this.dispatchEvent(new Event('load'));
+		});
+	}
+}
+
+/**
+ * 画像の読み込みが終わり、state が反映されるまで待つ
+ */
+async function settle() {
+	await act(async () => {
+		await new Promise((resolve) => setTimeout(resolve, 0));
+	});
+}
+
+/**
+ * 2枚の画像を持ち、メディアクエリーを指定できるハーネス。`createInitialState` の
+ * 既定（画像2に入力済みのメディアクエリー）を、空にして確かめるために使う
+ * @param root0
+ * @param root0.mediaQueries - config の `mediaQueries`
+ * @param root0.media - 初期の `media`
+ * @param root0.onState
+ * @param root0.engineOverrides - エンジンに重ねる値（`{ config: undefined }` で config を持たないエンジン）
+ * @param root0.path - 初期の画像（既定はどちらも選択済み）
+ */
+function MediaHarness({
+	mediaQueries,
+	media,
+	onState,
+	engineOverrides = {},
+	path = ['/img/pc.png', '/img/sp.png'],
+}: {
+	readonly mediaQueries?: readonly string[];
+	readonly media: string[];
+	readonly onState?: (state: ImageData) => void;
+	readonly engineOverrides?: Record<string, unknown>;
+	readonly path?: string[];
+}) {
+	const [engine] = useState(() =>
+		createBaseMockEngine({
+			serverAPI: { getFileList: () => resolvedFileList() },
+			config: { ...testConfig, mediaQueries },
+			...engineOverrides,
+		}),
+	);
+	const [state, setState] = useState<ImageData>(() => ({
+		...createInitialState(path),
+		media,
+	}));
+	onState?.(state);
+	return (
+		<EngineProvider engine={engine}>
+			<ImageEditor state={state} setState={setState} item={{} as never} />
+		</EngineProvider>
+	);
+}
+
+/**
+ * label文字列からselect要素を型安全に取得する
+ * @param label
+ */
+function getSelect(label: string): HTMLSelectElement {
+	return narrowElement(screen.getByLabelText(label), HTMLSelectElement, label);
+}
+
+describe('画像2のメディアクエリーの既定値と選択', () => {
+	// 空の media の <source> はどの画面幅でも条件に合い、<img> より先に採用される。
+	// 画像2を選んだ時点で値を入れ、利用者が値を見て変えられるようにする
+	beforeEach(() => {
+		document.body.innerHTML = '';
+		vi.stubGlobal('Image', LoadingImage);
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals(); // cspell:disable-line
+	});
+
+	test('画像の読み込み中にタブを移っても、読み込んだ値は読み込みを始めたタブの画像に入る', async () => {
+		// 読み込みの完了を手で起こす Image。画像1の読み込みが終わる前に画像2のタブへ移る
+		const pending: EventTarget[] = [];
+		class DeferredImage extends EventTarget {
+			naturalHeight = 200;
+			naturalWidth = 300;
+
+			set src(_value: string) {
+				pending.push(this);
+			}
+		}
+		vi.stubGlobal('Image', DeferredImage);
+		let latest: ImageData | undefined;
+		render(
+			<MediaHarness
+				media={['', '']}
+				path={['/img/pc.png', '']}
+				onState={(s) => (latest = s)}
+			/>,
+		);
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+
+		await act(async () => {
+			for (const image of pending) {
+				image.dispatchEvent(new Event('load'));
+			}
+			await new Promise((resolve) => setTimeout(resolve, 0));
+		});
+
+		expect(pending.length).toBeGreaterThan(0);
+		expect(latest?.path).toStrictEqual(['/img/pc.png', '']);
+		expect(latest?.media).toStrictEqual(['', '']);
+		expect(latest?.width?.[0]).toBe(300);
+	});
+
+	test('画像2を読み込んだとき、メディアクエリーが空なら (max-width: 767px) が選択欄と state に入る', async () => {
+		let latest: ImageData | undefined;
+		render(<MediaHarness media={['', '']} onState={(s) => (latest = s)} />);
+		await settle();
+
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+		await settle();
+
+		expect(getSelect('メディアクエリーの候補').value).toBe('(max-width: 767px)');
+		expect(getInput('メディアクエリー').disabled).toBe(true);
+		expect(latest?.mediaInput).toBe('(max-width: 767px)');
+		expect(latest?.media).toStrictEqual(['', '(max-width: 767px)']);
+	});
+
+	test('config の mediaQueries があれば、その先頭が入る', async () => {
+		let latest: ImageData | undefined;
+		render(
+			<MediaHarness
+				media={['', '']}
+				mediaQueries={['(max-width: 599px)', '(max-width: 1023px)']}
+				onState={(s) => (latest = s)}
+			/>,
+		);
+		await settle();
+
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+		await settle();
+
+		expect(getSelect('メディアクエリーの候補').value).toBe('(max-width: 599px)');
+		expect(latest?.media).toStrictEqual(['', '(max-width: 599px)']);
+	});
+
+	test('候補にない入力済みのメディアクエリーは上書きせず、「その他」の入力欄に出す', async () => {
+		let latest: ImageData | undefined;
+		render(
+			<MediaHarness
+				media={['', '(min-width: 1024px)']}
+				mediaQueries={['(max-width: 599px)']}
+				onState={(s) => (latest = s)}
+			/>,
+		);
+		await settle();
+
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+		await settle();
+
+		expect(getSelect('メディアクエリーの候補').selectedOptions[0]?.textContent).toBe(
+			'その他（直接入力）',
+		);
+		expect(getInput('メディアクエリー').value).toBe('(min-width: 1024px)');
+		expect(latest?.media).toStrictEqual(['', '(min-width: 1024px)']);
+	});
+
+	test('画像1を読み込んだだけでは、メディアクエリーは入らず欄は無効のまま', async () => {
+		let latest: ImageData | undefined;
+		render(<MediaHarness media={['', '']} onState={(s) => (latest = s)} />);
+		await settle();
+
+		// 画像1のメディアクエリーは <source> に出ない。選択欄は出さず、無効な入力欄だけが残る
+		expect(screen.queryByLabelText('メディアクエリーの候補')).toBeNull();
+		expect(getInput('メディアクエリー').disabled).toBe(true);
+		expect(getInput('メディアクエリー').value).toBe('');
+		expect(latest?.media).toStrictEqual(['', '']);
+	});
+
+	test('選択肢は config の候補と「その他（直接入力）」で、候補が無ければ (max-width: 767px) だけ', async () => {
+		const { unmount } = render(
+			<MediaHarness
+				media={['', '']}
+				mediaQueries={['(max-width: 599px)', '(max-width: 1023px)']}
+			/>,
+		);
+		await settle();
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+		await settle();
+		expect(
+			[...getSelect('メディアクエリーの候補').options].map((o) => o.textContent),
+		).toStrictEqual(['(max-width: 599px)', '(max-width: 1023px)', 'その他（直接入力）']);
+		unmount();
+
+		render(<MediaHarness media={['', '']} />);
+		await settle();
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+		await settle();
+		expect(
+			[...getSelect('メディアクエリーの候補').options].map((o) => o.textContent),
+		).toStrictEqual(['(max-width: 767px)', 'その他（直接入力）']);
+	});
+
+	test('config を持たないエンジンでも落ちず、既定のメディアクエリーが入る', async () => {
+		let latest: ImageData | undefined;
+		render(
+			<MediaHarness
+				media={['', '']}
+				engineOverrides={{ config: undefined }}
+				onState={(s) => (latest = s)}
+			/>,
+		);
+		await settle();
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+		await settle();
+
+		expect(getSelect('メディアクエリーの候補').value).toBe('(max-width: 767px)');
+		expect(latest?.media).toStrictEqual(['', '(max-width: 767px)']);
+	});
+
+	test('候補を選ぶと state に入り、「その他」を選ぶと入力欄が有効になって自由に入力できる', async () => {
+		let latest: ImageData | undefined;
+		render(
+			<MediaHarness
+				media={['', '']}
+				mediaQueries={['(max-width: 599px)', '(max-width: 1023px)']}
+				onState={(s) => (latest = s)}
+			/>,
+		);
+		await settle();
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+		await settle();
+
+		fireEvent.change(getSelect('メディアクエリーの候補'), {
+			target: { value: '(max-width: 1023px)' },
+		});
+		expect(latest?.media).toStrictEqual(['', '(max-width: 1023px)']);
+		expect(getInput('メディアクエリー').disabled).toBe(true);
+
+		// 「その他」に切り替えると、いまの値のまま入力欄が有効になる
+		fireEvent.change(getSelect('メディアクエリーの候補'), {
+			target: { value: '__bge-other__' },
+		});
+		expect(getInput('メディアクエリー').value).toBe('(max-width: 1023px)');
+
+		fireEvent.change(getInput('メディアクエリー'), {
+			target: { value: '(min-width: 1440px)' },
+		});
+		expect(latest?.media).toStrictEqual(['', '(min-width: 1440px)']);
+	});
+
+	test('直接入力の値が候補と一致しても、欄を離れても「その他」のまま編集を続けられる', async () => {
+		let latest: ImageData | undefined;
+		render(
+			<MediaHarness
+				media={['', '(min-width: 1024px)']}
+				mediaQueries={['(max-width: 599px)']}
+				onState={(s) => (latest = s)}
+			/>,
+		);
+		await settle();
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+		await settle();
+
+		// 打ち込んだ値がたまたま候補と同じになっても、入力中に欄が消えてフォーカスを失わない
+		fireEvent.change(getInput('メディアクエリー'), {
+			target: { value: '(max-width: 599px)' },
+		});
+		expect(getInput('メディアクエリー').value).toBe('(max-width: 599px)');
+		expect(latest?.media).toStrictEqual(['', '(max-width: 599px)']);
+
+		// 欄を離れても「その他」のまま、続けて編集できる
+		fireEvent.blur(getInput('メディアクエリー'));
+		expect(getSelect('メディアクエリーの候補').value).toBe('__bge-other__');
+		expect(getInput('メディアクエリー').disabled).toBe(false);
+	});
+
+	test('候補と同じ値のまま「その他」を選び、空にして欄を離れると、選択欄が既定値を示して入力欄は無効になる', async () => {
+		let latest: ImageData | undefined;
+		render(
+			<MediaHarness
+				media={['', '(max-width: 1023px)']}
+				mediaQueries={['(max-width: 599px)', '(max-width: 1023px)']}
+				onState={(s) => (latest = s)}
+			/>,
+		);
+		await settle();
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+		await settle();
+
+		fireEvent.change(getSelect('メディアクエリーの候補'), {
+			target: { value: '__bge-other__' },
+		});
+		fireEvent.change(getInput('メディアクエリー'), { target: { value: '' } });
+		fireEvent.blur(getInput('メディアクエリー'));
+
+		expect(latest?.media).toStrictEqual(['', '(max-width: 599px)']);
+		expect(getSelect('メディアクエリーの候補').value).toBe('(max-width: 599px)');
+		expect(getInput('メディアクエリー').disabled).toBe(true);
+	});
+
+	test('候補と同じ値のまま「その他」を選び、編集せずに欄を離れても、値を変えずに「その他」のまま編集を続けられる', async () => {
+		let latest: ImageData | undefined;
+		render(
+			<MediaHarness
+				media={['', '(max-width: 1023px)']}
+				mediaQueries={['(max-width: 599px)', '(max-width: 1023px)']}
+				onState={(s) => (latest = s)}
+			/>,
+		);
+		await settle();
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+		await settle();
+
+		fireEvent.change(getSelect('メディアクエリーの候補'), {
+			target: { value: '__bge-other__' },
+		});
+		fireEvent.blur(getInput('メディアクエリー'));
+
+		expect(latest?.media).toStrictEqual(['', '(max-width: 1023px)']);
+		expect(getSelect('メディアクエリーの候補').value).toBe('__bge-other__');
+		expect(getInput('メディアクエリー').disabled).toBe(false);
+	});
+
+	test('前後に空白のある値で欄を離れると、空白を取り除き、「その他」のまま編集を続けられる', async () => {
+		let latest: ImageData | undefined;
+		render(
+			<MediaHarness
+				media={['', '(max-width: 1023px)']}
+				mediaQueries={['(max-width: 599px)', '(max-width: 1023px)']}
+				onState={(s) => (latest = s)}
+			/>,
+		);
+		await settle();
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+		await settle();
+
+		fireEvent.change(getSelect('メディアクエリーの候補'), {
+			target: { value: '__bge-other__' },
+		});
+		fireEvent.change(getInput('メディアクエリー'), {
+			target: { value: ' (max-width: 599px) ' },
+		});
+		fireEvent.blur(getInput('メディアクエリー'));
+
+		expect(latest?.media).toStrictEqual(['', '(max-width: 599px)']);
+		expect(getSelect('メディアクエリーの候補').value).toBe('__bge-other__');
+		expect(getInput('メディアクエリー').value).toBe('(max-width: 599px)');
+		expect(getInput('メディアクエリー').disabled).toBe(false);
+	});
+
+	test('画像2で「その他」を選んでも、タブを移ると、候補と同じ値の画像では入力欄が無効に戻る', async () => {
+		render(
+			<MediaHarness
+				media={['', '(max-width: 767px)']}
+				mediaQueries={['(max-width: 767px)']}
+			/>,
+		);
+		await settle();
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+		await settle();
+		fireEvent.change(getSelect('メディアクエリーの候補'), {
+			target: { value: '__bge-other__' },
+		});
+		expect(getInput('メディアクエリー').value).toBe('(max-width: 767px)');
+
+		// 画像1 → 画像2 と移ると、選んだ「その他」は引き継がれず、値から導き直される
+		invokeCommand(screen.getByRole('tab', { name: '画像1' }));
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+		await settle();
+
+		expect(getSelect('メディアクエリーの候補').value).toBe('(max-width: 767px)');
+		expect(getInput('メディアクエリー').disabled).toBe(true);
+	});
+
+	test('画像2が未選択の間は、選択欄も無効になり、入力欄と同じ注記に結び付く', async () => {
+		render(<MediaHarness media={['', '']} path={['', '']} />);
+		await settle();
+
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+
+		const select = getSelect('メディアクエリーの候補');
+		expect(select.disabled).toBe(true);
+		const note = screen.getByText(/先に画像を選択/);
+		expect(select.getAttribute('aria-describedby')).toBe(note.id);
+		expect(getInput('メディアクエリー').getAttribute('aria-describedby')).toBe(note.id);
+	});
+
+	test('「その他」で空にしたまま欄を離れると、その場で既定値（候補の先頭）に戻る', async () => {
+		let latest: ImageData | undefined;
+		render(
+			<MediaHarness
+				media={['', '(min-width: 1024px)']}
+				mediaQueries={['(max-width: 599px)', '(max-width: 1023px)']}
+				onState={(s) => (latest = s)}
+			/>,
+		);
+		await settle();
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+		await settle();
+
+		// 入力中（消して打ち直す間）は、空のままにできる
+		const input = getInput('メディアクエリー');
+		fireEvent.change(input, { target: { value: '' } });
+		expect(latest?.media).toStrictEqual(['', '']);
+		expect(getInput('メディアクエリー').value).toBe('');
+
+		// 空のまま欄を離れると、既定値（候補の先頭）に戻り、選択欄がそれを示す
+		fireEvent.blur(getInput('メディアクエリー'));
+		expect(latest?.media).toStrictEqual(['', '(max-width: 599px)']);
+		expect(getSelect('メディアクエリーの候補').value).toBe('(max-width: 599px)');
+		expect(getInput('メディアクエリー').disabled).toBe(true);
+	});
+
+	test('空白だけの値も、空と同じく欄を離れると既定値に戻る', async () => {
+		let latest: ImageData | undefined;
+		render(
+			<MediaHarness media={['', '(min-width: 1024px)']} onState={(s) => (latest = s)} />,
+		);
+		await settle();
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+		await settle();
+
+		fireEvent.change(getInput('メディアクエリー'), { target: { value: '  ' } });
+		fireEvent.blur(getInput('メディアクエリー'));
+
+		expect(latest?.media).toStrictEqual(['', '(max-width: 767px)']);
+	});
+
+	test('値が入っている欄を離れても、値は変わらない', async () => {
+		let latest: ImageData | undefined;
+		render(
+			<MediaHarness media={['', '(min-width: 1024px)']} onState={(s) => (latest = s)} />,
+		);
+		await settle();
+		invokeCommand(screen.getByRole('tab', { name: '画像2' }));
+		await settle();
+
+		fireEvent.blur(getInput('メディアクエリー'));
+
+		expect(latest?.media).toStrictEqual(['', '(min-width: 1024px)']);
+		expect(getInput('メディアクエリー').value).toBe('(min-width: 1024px)');
 	});
 });
 
