@@ -599,6 +599,25 @@ describe('setContent', () => {
 	});
 });
 
+test('<button> の command は、DOM がプロパティを実装していなくても書ける（Node.js の jsdom）', () => {
+	const el = document.createElement('button');
+	el.dataset.field = ':command';
+
+	setValue(el, 'command', 'show-modal');
+
+	expect(el.getAttribute('command')).toBe('show-modal');
+});
+
+test('<button> の command に null を渡すと、属性ごと取り除く', () => {
+	const el = document.createElement('button');
+	el.setAttribute('command', 'show-modal');
+	el.dataset.field = ':command';
+
+	setValue(el, 'command', null);
+
+	expect(el.hasAttribute('command')).toBe(false);
+});
+
 test('<img> の loading は、DOM がプロパティを実装していなくても書ける（Node.js の jsdom）', () => {
 	const el = document.createElement('img');
 	el.setAttribute('loading', 'lazy');

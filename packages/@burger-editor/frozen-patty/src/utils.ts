@@ -362,6 +362,17 @@ const specificProp: Record<string, string[]> = {
 	 * @see https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-loading
 	 */
 	img: ['loading'],
+	/*
+	 * JSDOMの未実装対策（Node.js 側の保存で、ポップアップの `command="show-modal"` を書けるようにする。
+	 * 書けないと、保存した `<button>` は何も起こさず、公開ページの画像モーダルも開かない）
+	 * JSDOM が `HTMLButtonElement.command` を実装したら（`'command' in button` が
+	 * 真になったら）、この行は消せる。`commandfor` は保存データを持たず、画像モーダルが
+	 * 実行時に付けるので、ここには要らない。
+	 * @see https://github.com/jsdom/jsdom/blob/main/lib/jsdom/living/nodes/HTMLButtonElement.webidl
+	 * Living Standardでは実装済み
+	 * @see https://html.spec.whatwg.org/multipage/form-elements.html#dom-button-command
+	 */
+	button: ['command'],
 };
 
 /**
