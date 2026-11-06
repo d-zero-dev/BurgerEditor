@@ -173,8 +173,10 @@ export interface ItemSeed<
 	 * @throws {Error} When the state must not be saved (e.g. a required value is empty).
 	 * The submit is cancelled: the editor dialog stays open and shows the error
 	 * message, so write the message as a description of the state for the author.
-	 * Note this runs only for edits made in the editor UI; writes that skip it
-	 * (agent tools, already saved HTML) are not validated.
+	 * Note this runs only for edits made in the editor UI. Writes that skip it
+	 * (agent tools) are checked by {@link ItemSeed.validateItemData} instead. Derive
+	 * the reasons of both from one function (or have this call the other), so that a
+	 * reason is written once; already saved HTML is not validated.
 	 */
 	toItemData?: (state: Readonly<E>, config: Config) => T | Promise<T>;
 
@@ -193,7 +195,7 @@ export interface ItemSeed<
 	 * every later save. Return the same object when nothing changes: a writer
 	 * that reads items back from raw HTML re-renders an item only when the
 	 * returned object differs, so the HTML it was given stays as it was. It must
-	 * not throw — validation belongs in `toItemData`.
+	 * not throw — validation belongs in {@link ItemSeed.validateItemData}.
 	 * @param data - The item data to become HTML: the merged data when updating
 	 * an existing item, or the supplied data (possibly partial) when creating one
 	 * @param config - Engine configuration
@@ -209,6 +211,31 @@ export interface ItemSeed<
 	 * ```
 	 */
 	normalizeItemData?: (data: Readonly<Partial<T>>, config: Config) => Partial<T>;
+
+	/**
+	 * Check item data that is about to be saved, on every path that skips
+	 * {@link ItemSeed.toItemData} (the agent tools). A writer calls it after
+	 * {@link ItemSeed.normalizeItemData}, on the data that would become HTML, and
+	 * refuses to save when it returns a reason. Use it for a value that must never
+	 * be saved in a state the editor UI would refuse (a link without a name, for
+	 * example), whoever saves it.
+	 *
+	 * Pure, and it runs in Node.js: it must not import React or the browser UI, and
+	 * the only DOM it may use is what Node gets from the DOM shim that the writer
+	 * loads (`DOMParser`, to read a caption's text, for example). Write each reason
+	 * for the author (the agent that reads it fixes its input from it). It must not
+	 * throw — an agent sends arbitrary JSON, so treat a value of the wrong type as
+	 * empty. Already saved HTML is not validated: it is opened as it is.
+	 * @param data - The item data that would become HTML (possibly partial)
+	 * @param config - Engine configuration
+	 * @returns The reasons the data must not be saved. Empty when it may be saved
+	 * @example
+	 * ```ts
+	 * validateItemData: (data) =>
+	 * 	data.node !== 'div' && !data.alt?.[0]?.trim() ? ['alt is required'] : [],
+	 * ```
+	 */
+	validateItemData?: (data: Readonly<Partial<T>>, config: Config) => readonly string[];
 
 	/**
 	 * Non-editor lifecycle hooks.

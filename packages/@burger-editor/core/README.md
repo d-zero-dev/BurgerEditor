@@ -184,17 +184,18 @@ export default createItem<{
 
 ### `createItem`の引数
 
-| プロパティ          | 型 / 役割                                                                                                                                                                   |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `version`           | `string` — アイテムのバージョン                                                                                                                                             |
-| `name`              | `string` — アイテムの一意な名前                                                                                                                                             |
-| `template`          | `string` — 表示用 HTML テンプレート（`data-bge`バインディング）                                                                                                             |
-| `style`             | `string` — アイテム専用 CSS（オプション）                                                                                                                                   |
-| `Editor`            | React コンポーネント — エディタ UI（controlled form）。props は`{state, setState, item}`のみ（`engine`/`config`は`useEngine()`）                                            |
-| `toEditorState`     | `(data, config) => E` — エディタを開く際に保存データをエディタ状態へ変換する純関数                                                                                          |
-| `toItemData`        | `(state, config) => T` — 保存時にエディタ状態を保存データへ変換する純関数                                                                                                   |
-| `normalizeItemData` | `(data, config) => Partial<T>` — データを HTML にする直前に、保存経路（画面・ブラウザ中継・`render()`・エージェントのツール）でかかる補正（冪等・throw しない。オプション） |
-| `editorOptions`     | オブジェクト — 非エディタ系フック（現在は`isDisable(item): string`のみ）                                                                                                    |
+| プロパティ          | 型 / 役割                                                                                                                                                                                                           |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `version`           | `string` — アイテムのバージョン                                                                                                                                                                                     |
+| `name`              | `string` — アイテムの一意な名前                                                                                                                                                                                     |
+| `template`          | `string` — 表示用 HTML テンプレート（`data-bge`バインディング）                                                                                                                                                     |
+| `style`             | `string` — アイテム専用 CSS（オプション）                                                                                                                                                                           |
+| `Editor`            | React コンポーネント — エディタ UI（controlled form）。props は`{state, setState, item}`のみ（`engine`/`config`は`useEngine()`）                                                                                    |
+| `toEditorState`     | `(data, config) => E` — エディタを開く際に保存データをエディタ状態へ変換する純関数                                                                                                                                  |
+| `toItemData`        | `(state, config) => T` — 保存時にエディタ状態を保存データへ変換する純関数                                                                                                                                           |
+| `normalizeItemData` | `(data, config) => Partial<T>` — データを HTML にする直前に、保存経路（画面・ブラウザ中継・`render()`・エージェントのツール）でかかる補正（冪等・throw しない。オプション）                                         |
+| `validateItemData`  | `(data, config) => readonly string[]` — `toItemData`を通らない保存（エージェントのツール）が、`normalizeItemData`の後に呼ぶ検査。保存してはいけない理由文を返す（空配列なら保存してよい。throw しない。オプション） |
+| `editorOptions`     | オブジェクト — 非エディタ系フック（現在は`isDisable(item): string`のみ）                                                                                                                                            |
 
 ### アイテムのライフサイクル
 
@@ -202,13 +203,30 @@ export default createItem<{
 2. **初期化**: `init()`で初期データ反映
 3. **エディタを開く**: UI 層が`engine.uiState.openItemEditor(item)` → `toEditorState(data, config)`で初期状態を導出し`Editor`をレンダリング
 4. **編集**: controlled inputs で`state`を更新
-5. **保存**: 決定ボタン（フォーム submit）→ `toItemData(state, config)` → `item.import(data)` → 保存。`toItemData`が throw すると確定は取り消され、ダイアログは開いたままエラーメッセージを表示する（必須の入力を検査するならここで throw する。`Editor`側に同じ検査を重ねて書かない）。エージェント経由の書き込みや、すでに保存された HTML は`toItemData`を通らないので、検査されない。保存する値を経路によらずそろえるなら、`normalizeItemData(data, config)`を定義する。`item.import()`・`render()`・エージェントのディスク書き込みが、データを HTML にする直前に呼ぶ（冪等で、throw しない。補正が要らないときは同じオブジェクトを返す。`page_update`の`insert`/`replace`が書く生の HTML は、エージェントのツールがアイテムを読み戻してかける）。v3 互換のツール（`migrator`の`createBlock`）は、この補正を通らない（v3 のテンプレートは`<source>`を作らない）
+5. **保存**: 決定ボタン（フォーム submit）→ `toItemData(state, config)` → `item.import(data)` → 保存。`toItemData`が throw すると確定は取り消され、ダイアログは開いたままエラーメッセージを表示する（必須の入力を検査するならここで throw する。`Editor`側に同じ検査を重ねて書かない）。エージェント経由の書き込みと、すでに保存された HTML は`toItemData`を通らない。経路によらない決まりは、次の 2 つのフックに書く
+   - **保存する値をそろえる**: `normalizeItemData(data, config)`。`item.import()`・`render()`・エージェントのディスク書き込みが、データを HTML にする直前に呼ぶ（冪等で、throw しない。補正が要らないときは同じオブジェクトを返す。`page_update`の`insert`/`replace`が書く生の HTML は、エージェントのツールがアイテムを読み戻してかける）。v3 互換のツール（`migrator`の`createBlock`）は、この補正を通らない（v3 のテンプレートは`<source>`を作らない）
+   - **保存してはいけない状態を拒む**: `validateItemData(data, config)`。保存してはいけない理由文の配列を返す（空配列なら保存してよい）。Node で動く純関数で（React を引き込まない。DOM が要るなら、`file-io`が Node に用意する DOM の範囲で使う）、throw しない。`normalizeItemData`の後にかかり、エージェントのツールが、データを HTML にした結果を読み戻して呼び、理由があれば書き込みを拒む。すでに保存された HTML は検査されない。`toItemData`が拒む理由も同じ関数から導くと、理由を 2 か所に書かずに済む
 
 関数`withConfigDefaults(config)`は、`Config`の必須キーのうち省略された（`undefined`の）ものを空の値（`[]`・`''`・`null`）で埋める。`render()`と同じ既定値なので、エンジンを使わずに HTML を作る書き込みが、設定の一部だけから`Config`を作るときに使う。
 
 関数`importItemHtml(html, newData, seed, config)`は、`item.import()`と同じ手順（今の HTML からデータを読み戻す → `newData`を重ねる → seed の`normalizeItemData`をかける → HTML にする）を HTML 文字列に対して行い、新しい HTML を返す。`Item`を作らずにアイテムの HTML を書き換える書き込み（エージェントのディスク書き込みなど）が、画面の保存と同じ結果を得るために使う。
 
 関数`normalizeItemData(seed, data, config)`も公開している。独自にデータを HTML にする書き込み（CMS の組み込みや、エージェント向けのツール）が、`item.import()`と同じ補正を、seed の`normalizeItemData`を通してかけるために使う。定義の無いアイテム（`seed`が`null`/`undefined`）や、`normalizeItemData`を持たない seed では、データをそのまま返す。
+
+関数`validateItemData(seed, data, config)`と`validateItemHtml(html, seed, config)`も公開している。独自にデータを HTML にする書き込みが、seed の`validateItemData`を通して、保存してはいけない理由文の配列を得るために使う（空配列なら保存してよい）。`validateItemHtml`は、生の HTML で書かれたアイテムを読み戻してから`validateItemData`にかける（フックを持たない seed では、読み戻さずに空配列を返す）。`normalizeItemData`をかけた後のデータ・HTML に使う。
+
+```ts
+import { validateItemData } from '@burger-editor/core';
+
+const reasons = validateItemData(
+	items.image,
+	{ node: 'a', href: 'https://example.com/', alt: [''] },
+	config,
+);
+if (reasons.length > 0) {
+	throw new Error(reasons.join(' '));
+}
+```
 
 ### `dangerouslySetInnerHTML`
 
