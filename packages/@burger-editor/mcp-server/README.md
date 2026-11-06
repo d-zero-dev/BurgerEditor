@@ -233,6 +233,8 @@ Claude は自動的に`create_block_v3`を呼び出す。
 | `item_update`     | ブロック内の 1 アイテムのデータにマージ（省略フィールドは維持）                                        |     ✓     |
 | `page_update`     | レンダリング済み`blockHtml`を使う`BlockOp[]`を順次適用。全 op 成功時のみ 1 回で保存する all-or-nothing |     ✓     |
 
+アイテムのデータを書くツール（`block_insert`/`block_replace`/`item_update`/`page_create`/`page_update`。`page_update`は`insert`/`replace`の`blockHtml`の中のアイテムも）は、画面（エディタ）の保存と同じ補正をかけて保存する（ブラウザのタブを通さずディスクに書くときは、標準のアイテム（`@burger-editor/blocks`）の定義で補正する）。画像の 2 枚目以降の空の`media`は、設定の`mediaQueries`の先頭（省略時は`(max-width: 767px)`）で埋まる。
+
 ### スキーマ参照
 
 | ツール                   | 説明                                                                                             | readToken |
