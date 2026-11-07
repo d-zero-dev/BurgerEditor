@@ -107,6 +107,7 @@ yarn workspace @burger-editor/custom-element add @tiptap/extension-xxx@<他の @
 
 - 見た目に影響する属性は `packages/@burger-editor/blocks/src/general.css`（特定アイテム専用なら各アイテムの `style.css`）にスタイルを追加する。`@burger-editor/css` はビルド時に blocks の CSS を統合するので追加作業は不要
 - `packages/@burger-editor/custom-element/docs/API.md` の `commands` 属性「使用可能なコマンド」にボタン名を追加する
+- `packages/@burger-editor/storybook/src/stories/wysiwyg-field.stories.tsx` に、追加したボタンや書式が表示される story が無ければ足す
 
 ## 検証ループ
 
