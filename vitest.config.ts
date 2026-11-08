@@ -14,6 +14,7 @@ import {
 	createReactCompilerBabelPlugin,
 	reactCompilerDisabled,
 } from './scripts/react-compiler-babel.js';
+import { mediaCommands } from './scripts/vitest-media-commands.ts';
 // @ts-ignore - plain JS module, no ambient types published for it
 import { assertProjectsGrouped } from './scripts/vitest-project-groups.js';
 
@@ -118,6 +119,7 @@ export default defineConfig({
 						headless: true,
 						viewport: { width: 1280, height: 720 },
 						screenshotFailures: false,
+						commands: mediaCommands,
 					},
 					testTimeout: 15_000,
 				},
@@ -177,6 +179,7 @@ export default defineConfig({
 						headless: true,
 						viewport: { width: 1280, height: 720 },
 						screenshotFailures: false,
+						commands: mediaCommands,
 					},
 				},
 			},
