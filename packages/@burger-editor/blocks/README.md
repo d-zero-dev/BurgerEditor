@@ -41,12 +41,12 @@ import { items } from '@burger-editor/blocks/editor';
 
 ## Related Packages
 
-| パッケージ                            | 関係                                               | 使い分け                                               |
-| ------------------------------------- | -------------------------------------------------- | ------------------------------------------------------ |
-| [`@burger-editor/core`](../core/)     | ブロック / アイテムの**仕様**を定義                | 仕様や`createItem`を直接触るなら core も必要           |
-| [`@burger-editor/css`](../css/)       | blocks の CSS を 1 ファイルに統合した CDN 用配布   | 表示専用サイトなら css 単独で足りる（blocks は不要）   |
-| [`@burger-editor/client`](../client/) | エディタ UI。blocks をデフォルトカタログとして利用 | エディタ UI を組み込むなら client が blocks を引き込む |
-| [`@burger-editor/local`](../local/)   | ローカル CMS サーバー                              | サーバー経由で使うなら local が blocks を引き込む      |
+| パッケージ                            | 関係                                                | 使い分け                                               |
+| ------------------------------------- | --------------------------------------------------- | ------------------------------------------------------ |
+| [`@burger-editor/core`](../core/)     | ブロック / アイテムの**仕様**を定義                 | 仕様や`createItem`を直接触るなら core も必要           |
+| [`@burger-editor/css`](../css/)       | blocks の CSS を 1 ファイルに統合した配布パッケージ | 表示専用サイトなら css 単独で足りる（blocks は不要）   |
+| [`@burger-editor/client`](../client/) | エディタ UI。blocks をデフォルトカタログとして利用  | エディタ UI を組み込むなら client が blocks を引き込む |
+| [`@burger-editor/local`](../local/)   | ローカル CMS サーバー                               | サーバー経由で使うなら local が blocks を引き込む      |
 
 ## 提供アイテム
 
@@ -68,7 +68,7 @@ import { items } from '@burger-editor/blocks/editor';
 | `wysiwyg`       | リッチテキストエディタ                                                                                                                        |
 | `youtube`       | YouTube 動画埋め込み                                                                                                                          |
 
-`carousel`の全体設定（自動再生・ループ・矢印・ドット・切り替え効果）は、ラッパーの`data-bge-*`属性として保存する。表示枚数だけは、CSS が計算に使えるよう、ラッパーの`style`の`--per-view`として保存する（サイトの CSS で上書きすると、runtime もその値に従う）。同梱の CSS だけで、スライドが横に並び、1 枚ずつスナップしてスクロールする。`::scroll-button()`/`::scroll-marker`に対応したブラウザでは、矢印とドットも CSS だけで表示する。自動再生・ループ・フェードと、未対応ブラウザの矢印・ドットは[`@burger-editor/runtime`](../runtime/README.md)が補う。
+`carousel`の全体設定（自動再生・ループ・矢印・ドット・切り替え効果）は、ラッパーの`data-bge-*`属性として保存する。表示枚数だけは、CSS が計算に使えるよう、ラッパーの`style`の`--per-view`として保存する（サイトの CSS は`--bge-carousel-max-per-view`で画面幅ごとの上限を与えられ、CSS が計算した`--bge-carousel-per-view`に runtime も従う。詳細は[`@burger-editor/css`の`docs/carousel.md`](../css/docs/carousel.md)）。同梱の CSS だけで、スライドが横に並び、1 枚ずつスナップしてスクロールする。`::scroll-button()`/`::scroll-marker`に対応したブラウザでは、矢印とドットも CSS だけで表示する。自動再生・ループ・フェードと、未対応ブラウザの矢印・ドットは[`@burger-editor/runtime`](../runtime/README.md)が補う。
 
 `image`と`carousel`は、リンクやボタンの名前と、スライド（ドット）の名前を作者の入力から付けるため、次の入力を拒み、理由を表示する。編集画面の「決定」と、エージェント経由の書き込み（`item_update`・`block_insert`・`block_replace`・`page_create`・`page_update`。`invalid`）が、同じ理由文を使う。
 
