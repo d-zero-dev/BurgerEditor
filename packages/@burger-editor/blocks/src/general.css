@@ -287,7 +287,7 @@
 				)
 				*
 		) {
-			--align: baseline;
+			align-items: baseline;
 		}
 
 		&:where(:is([data-bge-container$=':wrap'], [data-bge-container*=':wrap:']) *) {

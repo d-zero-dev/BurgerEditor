@@ -12,6 +12,9 @@
 		"CSSWG",
 		"unlayered",
 
+		// Accessibility
+		"WCAG",
+
 		// Lowercased
 		"attributionsrc",
 		"closedby",

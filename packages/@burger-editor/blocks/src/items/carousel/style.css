@@ -3,10 +3,18 @@
  * 矢印とドットは、対応ブラウザでは `::scroll-button()` / `::scroll-marker` で出し、
  * それ以外のブラウザ・ループ・自動再生・フェードは @burger-editor/runtime が
  * 要素を生成して補う（生成したときはラッパーに `data-bge-carousel-controls` が付く）。
- * 表示枚数は、保存時にラッパーの `style` に書かれる `--per-view` で受け取る。
+ * 表示枚数は、保存時にラッパーの `style` に書かれる `--per-view`（作者の値）と、サイトの CSS が
+ * 画面幅ごとに与える上限 `--bge-carousel-max-per-view` から、`--bge-carousel-per-view` に計算する。
+ * サイトの CSS が `--per-view` 自体を上書きするには `!important` が要る（インラインスタイルなので）
+ * ため、別の変数で受け取る。runtime も計算結果を読む。
  *
  * `data-bge-carousel-*` 属性は runtime が実行時に付けるもので、保存 HTML には無い。
  * 属性の取り決めはこのアイテム（blocks の carousel）が持ち、runtime はそれに従う。
+ *
+ * 矢印とドットの見た目は、CSS だけの疑似要素と runtime が生成する `<button>` の両方が
+ * 同じ `--bge-carousel-*` 変数を参照する。両者を 1 つのセレクタで指すことはできない
+ * （未対応の疑似要素を含むセレクタリストはルールごと無効になり、`:is()` も疑似要素を
+ * 受け付けない）ので、プロジェクトは変数を 1 か所に書いて両方を同じ見た目にする。
  *
  * 参照: CSS Scroll Snap（https://www.w3.org/TR/css-scroll-snap-1/）、
  * CSS Overflow 5 の ::scroll-button() / ::scroll-marker
@@ -25,7 +33,84 @@
 	initial-value: 0;
 }
 
+/*
+ * ドットの大きさに関わる変数を長さとして登録する。単位なしの `0`（枠線なし）や数値だけの
+ * 値を書かれても、強制カラーモードの `max(1px, …)` や押せる範囲の余白の `calc()` が
+ * 長さと数値の混在で無効にならず、不正な値は下の `initial-value` に戻る。
+ * `initial-value` は、`[data-bgi='carousel']` の宣言と同じ大きさに保つ（相対単位の `rem` は
+ * `initial-value` に使えないので、16px 基準の px で書く）
+ */
+@property --bge-carousel-marker-border-width {
+	syntax: '<length>';
+	inherits: true;
+	initial-value: 1px;
+}
+
+@property --bge-carousel-marker-size {
+	syntax: '<length>';
+	inherits: true;
+	initial-value: 12px;
+}
+
+@property --bge-carousel-marker-target-size {
+	syntax: '<length>';
+	inherits: true;
+	initial-value: 24px;
+}
+
+/*
+ * 実際の表示枚数（作者の値と、サイトの CSS の上限の小さい方。1 未満にはしない）。数値として
+ * 登録するのは、runtime が計算後の数値を読むため（登録しないと `min(...)` の式のまま返る）。
+ * ラッパーで計算し、子のスライドのリストが列幅の計算に使うので継承させる
+ */
+@property --bge-carousel-per-view {
+	syntax: '<number>';
+	inherits: true;
+	initial-value: 1;
+}
+
+/*
+ * 矢印の記号。型を登録しないと、`none` や複数のトークンのような不正な値を書かれたときに
+ * `content: var(...) / '前のスライド'` の宣言ごと無効になり、標準の矢印から名前（代替テキスト）が
+ * 消える。登録すると、不正な値は既定の記号に戻る。`initial-value` は、下の
+ * `[data-bgi='carousel']` の宣言（他の変数と同じ場所で上書きできるようにするため）と同じ値に保つ
+ */
+@property --bge-carousel-previous-icon {
+	syntax: '<string> | <url>';
+	inherits: true;
+	initial-value: '‹';
+}
+
+@property --bge-carousel-next-icon {
+	syntax: '<string> | <url>';
+	inherits: true;
+	initial-value: '›';
+}
+
 [data-bgi='carousel'] {
+	/*
+	 * 矢印・ドットの見た目の既定値。`--bge-options-*` と同じく、アイテムの要素で宣言する。
+	 * プロジェクトは同じ `[data-bgi='carousel']` で上書きする（`:root` に書くとここに負ける）。
+	 * `currentcolor` は参照先の要素（疑似要素や生成したボタン）で解決される
+	 */
+	--bge-carousel-button-size: 2.5rem;
+	--bge-carousel-button-font-size: 1.5rem;
+	--bge-carousel-button-color: currentcolor;
+	--bge-carousel-button-background: transparent;
+	--bge-carousel-button-border: 1px solid currentcolor;
+	--bge-carousel-button-radius: 50%;
+	--bge-carousel-button-disabled-opacity: 0.3;
+	--bge-carousel-previous-icon: '‹';
+	--bge-carousel-next-icon: '›';
+	--bge-carousel-marker-size: 0.75rem;
+	--bge-carousel-marker-target-size: 1.5rem;
+	--bge-carousel-marker-color: currentcolor;
+	--bge-carousel-marker-border-width: 1px;
+	--bge-carousel-marker-border-color: currentcolor;
+	--bge-carousel-marker-radius: 50%;
+	--bge-carousel-marker-current-background: currentcolor;
+	--bge-carousel-marker-gap: 0.5rem;
+
 	/* 標準の矢印とドット（runtime が操作部品を生成していないときだけ） */
 	@supports selector(::scroll-marker) {
 		[data-bge-arrows='true']:not([data-bge-carousel-controls]) > [data-bge-list] {
@@ -34,20 +119,20 @@
 			&::scroll-button(*) {
 				display: inline-grid;
 				place-items: center;
-				min-inline-size: 2.5rem;
-				min-block-size: 2.5rem;
-				font-size: 1.5rem;
+				min-inline-size: var(--bge-carousel-button-size);
+				min-block-size: var(--bge-carousel-button-size);
+				font-size: var(--bge-carousel-button-font-size);
 				line-height: 1;
-				color: inherit;
+				color: var(--bge-carousel-button-color);
 				cursor: pointer;
-				background: transparent;
-				border: 1px solid currentcolor;
-				border-radius: 50%;
+				background: var(--bge-carousel-button-background);
+				border: var(--bge-carousel-button-border);
+				border-radius: var(--bge-carousel-button-radius);
 			}
 
 			&::scroll-button(*):disabled {
 				cursor: default;
-				opacity: 0.3;
+				opacity: var(--bge-carousel-button-disabled-opacity);
 			}
 
 			/* stylelint-disable-next-line selector-type-no-unknown -- `::scroll-button()` の引数（方向）を型セレクタと誤認する */
@@ -55,7 +140,7 @@
 				grid-area: previous;
 
 				/* 代替テキストは runtime の既定の文言（`DEFAULT_OPTIONS.previousLabel`）と揃える */
-				content: '‹' / '前のスライド';
+				content: var(--bge-carousel-previous-icon) / '前のスライド';
 			}
 
 			/* stylelint-disable-next-line selector-type-no-unknown -- `::scroll-button()` の引数（方向）を型セレクタと誤認する */
@@ -63,7 +148,7 @@
 				grid-area: next;
 
 				/* 代替テキストは runtime の既定の文言（`DEFAULT_OPTIONS.nextLabel`）と揃える */
-				content: '›' / '次のスライド';
+				content: var(--bge-carousel-next-icon) / '次のスライド';
 			}
 		}
 
@@ -75,32 +160,52 @@
 				display: flex;
 				flex-wrap: wrap;
 				grid-area: markers;
-				gap: 0.5rem;
+				gap: var(--bge-carousel-marker-gap);
 				justify-content: center;
 			}
 
+			/*
+			 * ドットの描き方は runtime が生成するドット（`[data-bge-carousel-markers]`）と同じ。
+			 * 押せる範囲（`--bge-carousel-marker-target-size`）は透明な枠線で広げ、円の枠線は
+			 * 内側の影で描く（枠線は押せる範囲に使っていて、疑似要素は子要素を持てないため）。
+			 * 塗りは padding-box に限り、透明な枠線に及ばないようにする。外側の角丸は、円の
+			 * 角丸に押せる範囲の分を足して、円と同心にする
+			 */
 			> figure::scroll-marker {
-				inline-size: 0.75rem;
-				block-size: 0.75rem;
-				color: inherit;
+				box-sizing: content-box;
+				inline-size: var(--bge-carousel-marker-size);
+				block-size: var(--bge-carousel-marker-size);
+				color: var(--bge-carousel-marker-color);
 
 				/*
 				 * 名前は保存時にキャプション（空なら alt）から導いた属性から付ける。
 				 * runtime が無いとスライドに名前が無く、ドットが名前なしになるため
 				 */
 				content: '' / attr(data-bge-slide-label);
-				border: 1px solid currentcolor;
-				border-radius: 50%;
+				background-clip: padding-box;
+				border: var(--_marker-pad) solid transparent;
+				border-radius: calc(var(--bge-carousel-marker-radius) + var(--_marker-pad));
+				box-shadow: inset 0 0 0 var(--bge-carousel-marker-border-width)
+					var(--bge-carousel-marker-border-color);
+
+				/*
+				 * 強制カラーモードでは影が消え、円の枠線が見えなくなる。枠線の太さを 0 にした
+				 * プロジェクトでも、現在以外のドットが見えるよう最低 1px にする
+				 */
+				@media (forced-colors: active) {
+					forced-color-adjust: none;
+					box-shadow: inset 0 0 0 max(1px, var(--bge-carousel-marker-border-width))
+						CanvasText;
+				}
 			}
 
 			/* stylelint-disable-next-line selector-pseudo-class-no-unknown -- CSS Overflow 5 の `:target-current` を知らない */
 			> figure::scroll-marker:target-current {
-				background: currentcolor;
+				background-color: var(--bge-carousel-marker-current-background);
 
 				/* 強制カラーモードでは背景色が打ち消され、現在のドットが区別できなくなる */
 				@media (forced-colors: active) {
-					forced-color-adjust: none;
-					background: CanvasText;
+					background-color: CanvasText;
 				}
 			}
 		}
@@ -108,6 +213,18 @@
 
 	> :has(> [data-bge-list]) {
 		--bge-carousel-gap: var(--bge-options-column-gap, var(--bge-options-gap, 0));
+
+		/* 上限が 0 だと列幅の計算がゼロ除算で無効になるので、1 未満にはしない */
+		--bge-carousel-per-view: max(
+			1,
+			min(var(--per-view, 1), var(--bge-carousel-max-per-view, infinity))
+		);
+
+		/* ドットの押せる範囲と円の差（片側）。標準のドットと生成したドットの両方が使う */
+		--_marker-pad: max(
+			0px,
+			calc((var(--bge-carousel-marker-target-size) - var(--bge-carousel-marker-size)) / 2)
+		);
 
 		display: grid;
 		grid-template-areas:
@@ -126,7 +243,8 @@
 		display: grid;
 		grid-area: list;
 		grid-auto-columns: calc(
-			(100% - var(--bge-carousel-gap) * (var(--per-view, 1) - 1)) / var(--per-view, 1)
+			(100% - var(--bge-carousel-gap) * (var(--bge-carousel-per-view) - 1)) /
+				var(--bge-carousel-per-view)
 		);
 		grid-auto-flow: column;
 		column-gap: var(--bge-carousel-gap);
@@ -219,65 +337,102 @@
 		position: relative;
 		display: inline-grid;
 		place-items: center;
-		min-inline-size: 2.5rem;
-		min-block-size: 2.5rem;
+		min-inline-size: var(--bge-carousel-button-size);
+		min-block-size: var(--bge-carousel-button-size);
 		padding: 0;
 		font: inherit;
-		font-size: 1.5rem;
+		font-size: var(--bge-carousel-button-font-size);
 		line-height: 1;
-		color: inherit;
+		color: var(--bge-carousel-button-color);
 		cursor: pointer;
-		background: transparent;
-		border: 1px solid currentcolor;
-		border-radius: 50%;
+		background: var(--bge-carousel-button-background);
+		border: var(--bge-carousel-button-border);
+		border-radius: var(--bge-carousel-button-radius);
 
 		&[aria-disabled='true'] {
 			cursor: default;
-			opacity: 0.3;
+			opacity: var(--bge-carousel-button-disabled-opacity);
 		}
 	}
 
+	/*
+	 * 矢印の記号は、標準の `::scroll-button()` と同じ変数から描画する。描画先は runtime が
+	 * 入れる空の `<span aria-hidden>` の `::before`。ボタン自身の `::before` にしないのは、
+	 * 名前の計算が疑似要素の文字を拾い、記号がボタンの名前（`data-bge-carousel-text` の文字）に
+	 * 混ざるため。`content` の代替テキスト（`/ ''`）を解釈しない名前計算の実装もあるが、
+	 * aria-hidden の中なら実装によらず無視される
+	 */
 	[data-bge-carousel-button='previous'] {
 		grid-area: previous;
+
+		> [aria-hidden='true']::before {
+			content: var(--bge-carousel-previous-icon);
+		}
 	}
 
 	[data-bge-carousel-button='next'] {
 		grid-area: next;
+
+		> [aria-hidden='true']::before {
+			content: var(--bge-carousel-next-icon);
+		}
 	}
 
+	/* 記号（❚❚ / ▶）は矢印の半分の大きさ。矢印の記号の変数に追従する */
 	[data-bge-carousel-button='play'] {
 		grid-area: play;
 		margin-inline-end: 0.5rem;
-		font-size: 0.75rem;
+		font-size: calc(var(--bge-carousel-button-font-size) * 0.5);
 	}
 
 	[data-bge-carousel-markers] {
 		display: flex;
 		flex-wrap: wrap;
 		grid-area: markers;
-		gap: 0.5rem;
+		gap: var(--bge-carousel-marker-gap);
 		justify-content: center;
 
+		/*
+		 * ドットのボタンは押せる範囲だけで、見た目は `::before` が持つ。`::before` の描き方は
+		 * 標準の `::scroll-marker` と同じ（透明な枠線で押せる範囲を広げ、円の枠線は内側の影、
+		 * 塗りは padding-box）。矢印の変数（背景・枠線）がドットに及ばないよう、ここで打ち消す
+		 */
 		> [data-bge-carousel-button] {
-			min-inline-size: 1.5rem;
-			min-block-size: 1.5rem;
+			min-inline-size: var(--bge-carousel-marker-target-size);
+			min-block-size: var(--bge-carousel-marker-target-size);
+			color: var(--bge-carousel-marker-color);
+			background: transparent;
 			border: none;
+			border-radius: calc(var(--bge-carousel-marker-radius) + var(--_marker-pad));
 
 			&::before {
-				inline-size: 0.75rem;
-				block-size: 0.75rem;
+				box-sizing: content-box;
+				inline-size: var(--bge-carousel-marker-size);
+				block-size: var(--bge-carousel-marker-size);
 				content: '';
-				border: 1px solid currentcolor;
-				border-radius: 50%;
+				background-clip: padding-box;
+				border: var(--_marker-pad) solid transparent;
+				border-radius: calc(var(--bge-carousel-marker-radius) + var(--_marker-pad));
+				box-shadow: inset 0 0 0 var(--bge-carousel-marker-border-width)
+					var(--bge-carousel-marker-border-color);
+
+				/*
+				 * 強制カラーモードでは影が消え、円の枠線が見えなくなる。枠線の太さを 0 にした
+				 * プロジェクトでも、現在以外のドットが見えるよう最低 1px にする
+				 */
+				@media (forced-colors: active) {
+					forced-color-adjust: none;
+					box-shadow: inset 0 0 0 max(1px, var(--bge-carousel-marker-border-width))
+						CanvasText;
+				}
 			}
 
 			&[aria-current='true']::before {
-				background: currentcolor;
+				background-color: var(--bge-carousel-marker-current-background);
 
 				/* 強制カラーモードでは背景色が打ち消され、現在のドットが区別できなくなる */
 				@media (forced-colors: active) {
-					forced-color-adjust: none;
-					background: CanvasText;
+					background-color: CanvasText;
 				}
 			}
 		}

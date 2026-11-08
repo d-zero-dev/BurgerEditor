@@ -47,6 +47,29 @@ test('コメントと文字列の中の空の宣言には手を付けない', ()
 	expect(rules[1]!.style.getPropertyValue('content')).toBe('"--c: ;"');
 });
 
+test('@layer の中の @property が、後ろのルールを @layer の外に追い出さない', () => {
+	// jsdom の CSS パーサーは、@property が長いと（この長さでは 100 文字ほど）無効なルールとして
+	// 扱い、その閉じ括弧で囲んでいる @layer を閉じてしまう。スタイルの検出に @property は要らないので、
+	// 読み込む前に取り除く
+	const doc = createStylesheetDocument([
+		`@layer base {
+			@property --bge-carousel-marker-border-width {
+				syntax: '<length>';
+				inherits: true;
+				initial-value: 1px;
+			}
+			[data-bge-container] { --a: 1px; }
+			[data-bge-container] { --b: 2px; }
+		}`,
+	]);
+
+	const layer = doc.styleSheets[0]!.cssRules[0] as CSSGroupingRule;
+	expect(doc.styleSheets[0]!.cssRules).toHaveLength(1);
+	expect([...layer.cssRules].map((rule) => (rule as CSSStyleRule).style.item(0))).toEqual(
+		['--a', '--b'],
+	);
+});
+
 test('グローバルの document には手を付けない', () => {
 	const before = document.head.innerHTML;
 

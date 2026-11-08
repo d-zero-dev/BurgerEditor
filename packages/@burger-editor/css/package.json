@@ -15,13 +15,16 @@
 	"type": "module",
 	"exports": {
 		".": {
-			"import": "./style.css"
+			"style": "./style.css",
+			"import": "./style.css",
+			"default": "./style.css"
 		}
 	},
 	"main": "style.css",
 	"style": "style.css",
 	"files": [
-		"*.css"
+		"*.css",
+		"docs"
 	],
 	"scripts": {
 		"build": "node build.js"

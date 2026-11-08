@@ -30,6 +30,13 @@ autoInit();
 
 Invoker Commands API に対応していないブラウザでは、操作部品と自動再生を出さず、CSS だけの表示のままにする。
 
+`initCarousel()`は、同じ版の`@burger-editor/css`が読み込まれていることを前提にする。
+
+- 表示枚数は、`@burger-editor/css`が計算したラッパーの`--bge-carousel-per-view`を参照する。この値が読めない場合（`@property`に対応しないブラウザ、古い版の`@burger-editor/css`）は、作者が保存した`--per-view`を参照する。どちらも読めない場合は 1 になる
+- 生成する矢印の記号は、`@burger-editor/css`が`--bge-carousel-previous-icon`/`--bge-carousel-next-icon`から描画する。`@burger-editor/css`を読み込んでいない場合、矢印は記号のない空のボタンになる
+- 生成するボタンの見た目は、`--bge-carousel-*`の変数で決まる。変数の一覧は[`@burger-editor/css`の`docs/carousel.md`](../css/docs/carousel.md)を参照
+- `previousLabel`/`nextLabel`を変更する場合は、CSS だけの矢印の代替テキスト（`@burger-editor/css`の`content`）も合わせて変更する
+
 `root`を渡すとその中だけを初期化する。初期化済みのカルーセルは、もう一度呼んでも初期化し直さない。戻り値の`destroy()`で初期化を取り消せる。
 
 ```ts

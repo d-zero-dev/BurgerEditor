@@ -10,9 +10,10 @@ const requireJsdom = createRequire(import.meta.url);
 
 // Comments and strings are matched first and kept as they are, so only a
 // real `--name: ;` declaration is rewritten. `--x:;` (no whitespace) is a
-// parse error in browsers too, so it is left alone.
-const EMPTY_CUSTOM_PROPERTY =
-	/\/\*[\s\S]*?\*\/|"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*'|(--[^\s"'/:;{}]+\s*:)\s+(?=[;}])/g;
+// parse error in browsers too, so it is left alone. A whole `@property`
+// rule is matched last (capture group 2) and dropped; see below.
+const PREPROCESS =
+	/\/\*[\s\S]*?\*\/|"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*'|(--[^\s"'/:;{}]+\s*:)\s+(?=[;}])|(@property\s+--[^\s{]+\s*\{[^{}]*\})/g;
 
 /**
  * Build a standalone jsdom document whose `styleSheets` are the given CSS
@@ -27,6 +28,12 @@ const EMPTY_CUSTOM_PROPERTY =
  * an empty value, which jsdom would drop, gets core's
  * `EMPTY_CUSTOM_PROPERTY_VALUE` instead, so `getCustomProperties` still
  * hides the option it overrides.
+ *
+ * `@property` rules are removed before parsing. The scanners only read
+ * declarations on `[data-bge-container]`, and jsdom's CSS parser treats a
+ * long `@property` inside `@layer` as invalid (it only looks ahead about
+ * 100 characters) and ends the enclosing `@layer` at its closing brace, so
+ * the rules after it escape the layer and win over the project's CSS.
  * @param cssTexts - Stylesheet contents, earliest first
  * @returns A document holding one `<style>` element per text
  * @example
@@ -51,11 +58,15 @@ export function createStylesheetDocument(cssTexts: readonly string[]): Document 
 	for (const css of cssTexts) {
 		const style = doc.createElement('style');
 		style.textContent = css.replaceAll(
-			EMPTY_CUSTOM_PROPERTY,
-			(match, declaration: string | undefined) =>
-				declaration === undefined
+			PREPROCESS,
+			(match, declaration: string | undefined, atProperty: string | undefined) => {
+				if (atProperty !== undefined) {
+					return '';
+				}
+				return declaration === undefined
 					? match
-					: `${declaration} ${EMPTY_CUSTOM_PROPERTY_VALUE}`,
+					: `${declaration} ${EMPTY_CUSTOM_PROPERTY_VALUE}`;
+			},
 		);
 		doc.head.append(style);
 	}
