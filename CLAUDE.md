@@ -55,6 +55,7 @@ yarn commit                   # Commitizen（cz）でコミット
 
 - **ローカル検証は関連プロジェクトのみ**: 変更したパッケージのテストを含むプロジェクトを`yarn test --project <name>`（複数可）で実行する。依存先パッケージを変更した場合は、利用側パッケージのプロジェクトも含める。引数なしの`yarn test`（全プロジェクト）は CI とリリース前（`prerelease`）が担う
 - VR を含まないプロジェクトを素早く回すときは`yarn test:unit --project <name>`（ホスト実行）を使う
+- **UI コンポーネントを追加・変更したら story も合わせる**: `storybook`パッケージに、それに沿った story を同じ変更で足すか直す（1 つの story に 1 つの状態）。story はテストではないので、振る舞いの検査はプロジェクトのテストに書く
 - **UI に関わる変更では`yarn test:vr:docker`も実行する**。UI を意図的に変えたら`yarn test:vr:docker:update`でベースラインを再生成してコミットに含める
 - **Vitest は型チェックしない**。テストが通っても型エラーは`yarn build`でしか出ない
 - `vitest.config.ts`にプロジェクトを追加したら`scripts/vitest-project-groups.js`にも登録する（未登録だと設定の読み込みで失敗する）
