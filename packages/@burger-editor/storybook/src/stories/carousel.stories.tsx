@@ -35,7 +35,41 @@ interface CarouselArgs {
 	 * 画像の alt を入れるか
 	 */
 	readonly alt: boolean;
+	/**
+	 * プロジェクトの CSS の例（`--bge-carousel-*` の変数など）。そのまま `<style>` に入れる
+	 */
+	readonly styles: string;
 }
+
+/**
+ * 矢印とドットの変数を一通り上書きした例（`@burger-editor/css` の `docs/carousel.md`）
+ */
+const THEMED_STYLES = `
+[data-bgi='carousel'] {
+	--bge-carousel-button-color: #fff;
+	--bge-carousel-button-background: #345;
+	--bge-carousel-button-border: none;
+	--bge-carousel-button-radius: 0.5rem;
+	--bge-carousel-previous-icon: '←';
+	--bge-carousel-next-icon: '→';
+	--bge-carousel-marker-size: 1rem;
+	--bge-carousel-marker-border-width: 2px;
+	--bge-carousel-marker-border-color: #345;
+	--bge-carousel-marker-current-background: #e55;
+	--bge-carousel-marker-gap: 1rem;
+}
+`;
+
+/**
+ * 狭い画面で表示枚数を 1 枚に絞る例。ブラウザ幅を 767px 以下にして確かめる
+ */
+const MAX_PER_VIEW_STYLES = `
+@media (max-width: 767px) {
+	[data-bgi='carousel'] {
+		--bge-carousel-max-per-view: 1;
+	}
+}
+`;
 
 const CONFIG: Config = {
 	classList: [],
@@ -144,6 +178,7 @@ function PublishedCarousel(args: CarouselArgs) {
 
 	return (
 		<>
+			{args.styles ? <style>{args.styles}</style> : null}
 			{error ? <p role="alert">{error}</p> : null}
 			<div ref={ref} />
 		</>
@@ -169,6 +204,7 @@ const meta = {
 		node: 'div',
 		caption: true,
 		alt: true,
+		styles: '',
 	},
 	argTypes: {
 		node: {
@@ -222,5 +258,34 @@ export const ThreePerView: Story = {
 	args: {
 		perView: 3,
 		slides: 7,
+	},
+};
+
+/**
+ * プロジェクトの CSS で `--bge-carousel-*` の変数を書いたとき。CSS だけの矢印・ドット
+ * （`CssOnly`）と、runtime が生成する矢印・ドット（`Loop`）に、同じ見た目が適用される
+ */
+export const Themed: Story = {
+	args: {
+		loop: true,
+		styles: THEMED_STYLES,
+	},
+};
+
+export const ThemedCssOnly: Story = {
+	args: {
+		runtime: false,
+		styles: THEMED_STYLES,
+	},
+};
+
+/**
+ * 狭い画面では表示枚数の上限が 1 枚になる
+ */
+export const MaxPerViewOnNarrowScreen: Story = {
+	args: {
+		perView: 3,
+		slides: 7,
+		styles: MAX_PER_VIEW_STYLES,
 	},
 };
