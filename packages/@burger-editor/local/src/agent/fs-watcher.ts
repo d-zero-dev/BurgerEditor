@@ -53,6 +53,18 @@ const FS_WATCH_DEBOUNCE_MS = 50;
  * wiring the store through for a proactive nice-to-have isn't worth the
  * extra coupling. `commands/server.ts`'s `bootLocalServer` only calls
  * {@link createFsWatcher} when `virtualTree.enabled` is `false`.
+ *
+ * **Start-up window**: on macOS `fs.watch` returns before it is actually
+ * watching. libuv starts the FSEvents stream on a separate thread, and the
+ * stream only reports changes from its start onwards, so a change made in
+ * the milliseconds right after this returns can be lost outright rather
+ * than delivered late — most often for the first watcher in a process,
+ * which also starts that thread
+ * (https://github.com/libuv/libuv/blob/v1.x/src/unix/fsevents.c).
+ * Deliberately not closed here: `agent/route.ts`'s pre-flight staleness
+ * check still catches such a change on the next `invoke`, and confirming
+ * the stream has started would mean writing a probe file into the user's
+ * `documentRoot`.
  * @param documentRoot
  * @param options
  */
