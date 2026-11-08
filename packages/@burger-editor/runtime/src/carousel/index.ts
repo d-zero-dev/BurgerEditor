@@ -156,7 +156,8 @@ const DEFAULT_OPTIONS: Options = {
  * Initialize carousel items saved by BurgerEditor
  *
  * Reads the `data-bge-*` settings (autoplay / loop / arrows / dots / effect) and the
- * `--per-view` custom property
+ * `--bge-carousel-per-view` custom property (the slides per view that the blocks CSS
+ * computes from the saved `--per-view` and the site's `--bge-carousel-max-per-view`)
  * of each carousel item and adds what CSS alone cannot provide: arrows and dots on
  * browsers without `::scroll-button()` / `::scroll-marker`, looping, autoplay with a
  * play/pause button, the fade effect and ARIA roles. Without this function the
@@ -245,6 +246,30 @@ function detectEnvironment(): CarouselEnvironment {
 }
 
 /**
+ * 表示枚数を読む。保存 HTML の `style` の `--per-view`（作者の値）と、サイトの CSS が
+ * 画面幅ごとに与える上限 `--bge-carousel-max-per-view` から、blocks の style.css が
+ * ラッパーの `--bge-carousel-per-view`（`@property` で登録した数値）に計算する。
+ * 計算式を 2 か所に持たないよう、runtime はその結果を読む。計算後の値なので、
+ * メディアクエリーで変わる上限（レイアウトに効いている値）に揃う。
+ *
+ * 計算結果が数値で読めないとき（`@property` に対応しないブラウザは `min(...)` の式のまま
+ * 返し、古い版の `@burger-editor/css` には変数が無い）は、作者の `--per-view` に戻す。
+ * 計算式の複製ではなく、作者の保存値を読むだけで、古い CSS は `--per-view` をそのまま
+ * 列幅に使うため、レイアウトと送る枚数が揃う
+ * @param el - スライドの入れ物（`data-bge-list`）の親
+ */
+function readPerView(el: HTMLElement): number {
+	const style = getComputedStyle(el);
+	for (const name of ['--bge-carousel-per-view', '--per-view']) {
+		const value = Number(style.getPropertyValue(name));
+		if (Number.isFinite(value) && style.getPropertyValue(name).trim() !== '') {
+			return Math.max(1, Math.floor(value));
+		}
+	}
+	return 1;
+}
+
+/**
  * 保存時の値は `JSON.parse` できる形（`true` / `false` / 数値 / 文字列）
  * @param el
  */
@@ -260,13 +285,10 @@ function readSettings(el: HTMLElement): Settings {
 			return value;
 		}
 	};
-	// 表示枚数は保存 HTML の `style` の `--per-view` だけが持つ。計算後の値を読むので、
-	// サイトの CSS がメディアクエリーなどで上書きした値（レイアウトに効いている値）に揃う
-	const perView = Number(getComputedStyle(el).getPropertyValue('--per-view'));
 	return {
 		autoplay: read('autoplay') === true,
 		loop: read('loop') === true,
-		perView: Number.isFinite(perView) ? Math.max(1, Math.floor(perView)) : 1,
+		perView: readPerView(el),
 		arrows: read('arrows') !== false,
 		dots: read('dots') !== false,
 		effect: read('effect') === 'fade' ? 'fade' : 'slide',
@@ -339,7 +361,11 @@ const COMMAND = {
  * @param command
  * @param targetId
  * @param text
- * @param icon - 見た目だけの記号。支援技術からは隠す
+ * @param icon - 見た目だけの記号を入れる span の文字。支援技術からは隠す。矢印は空（`''`）で、
+ * 記号は blocks の `carousel/style.css` が `--bge-carousel-previous-icon` /
+ * `--bge-carousel-next-icon` の変数から span の `::before` に描画する（標準の
+ * `::scroll-button()` と同じ変数で見た目を揃えるため）。再生・停止ボタンは文字を入れ、
+ * 状態で切り替える。`undefined` なら span を作らない（ドット）
  */
 function createButton(
 	area: string,
@@ -353,7 +379,7 @@ function createButton(
 	button.setAttribute('command', command);
 	button.setAttribute('commandfor', targetId);
 	button.dataset.bgeCarouselButton = area;
-	if (icon) {
+	if (icon != null) {
 		const span = document.createElement('span');
 		span.setAttribute('aria-hidden', 'true');
 		span.textContent = icon;
@@ -393,7 +419,7 @@ function setupCarousel(
 	// フェードは重ねて 1 枚ずつ見せるので、表示枚数は 1 扱い
 	const clampPerView = (value: number) =>
 		fade ? 1 : Math.min(value, Math.max(total, 1));
-	// サイトの CSS がメディアクエリーなどで `--per-view` を変えると、表示枚数も変わる。
+	// サイトの CSS がメディアクエリーなどで上限 `--bge-carousel-max-per-view` を変えると、表示枚数も変わる。
 	// 小数は切り捨てる（保存される値は整数。上書きした小数とはスクロール位置がずれる）
 	let perView = clampPerView(settings.perView);
 	let lastStart = Math.max(total - perView, 0);
@@ -598,8 +624,8 @@ function setupCarousel(
 	}
 
 	if (needsControls && settings.arrows) {
-		previous = createButton('previous', COMMAND.previous, id, options.previousLabel, '‹');
-		next = createButton('next', COMMAND.next, id, options.nextLabel, '›');
+		previous = createButton('previous', COMMAND.previous, id, options.previousLabel, '');
+		next = createButton('next', COMMAND.next, id, options.nextLabel, '');
 		previous.setAttribute('aria-controls', listId);
 		next.setAttribute('aria-controls', listId);
 	}
@@ -663,14 +689,13 @@ function setupCarousel(
 		}
 	}
 
-	// 表示枚数を CSS に合わせ直す（メディアクエリーなどで `--per-view` が変わったとき）
+	// 表示枚数を CSS に合わせ直す（メディアクエリーなどで上限 `--bge-carousel-max-per-view` が
+	// 変わったとき）。リストだけでなく先頭のスライドも見張る。コンテナーの幅が最大幅で
+	// 頭打ちのときは、上限が変わってもリストの幅は変わらず、スライドの幅だけが変わるため
 	let resizeObserver: ResizeObserver | null = null;
 	if (!fade && typeof ResizeObserver !== 'undefined') {
 		resizeObserver = new ResizeObserver(() => {
-			const value = Number(getComputedStyle(el).getPropertyValue('--per-view'));
-			const next = clampPerView(
-				Number.isFinite(value) ? Math.max(1, Math.floor(value)) : 1,
-			);
+			const next = clampPerView(readPerView(el));
 			if (next === perView) {
 				return;
 			}
@@ -679,6 +704,9 @@ function setupCarousel(
 			setCurrent(Math.min(current, lastStart));
 		});
 		resizeObserver.observe(list);
+		if (slides[0]) {
+			resizeObserver.observe(slides[0]);
+		}
 	}
 
 	setCurrent(0);

@@ -3,8 +3,8 @@ import type { Config } from '@burger-editor/core';
 
 import { items } from '@burger-editor/blocks';
 import { Item } from '@burger-editor/core';
-import { afterEach, describe, expect, test, vi } from 'vitest';
-import { page, userEvent } from 'vitest/browser';
+import { afterEach, describe, expect, onTestFinished, test, vi } from 'vitest';
+import { commands, page, userEvent } from 'vitest/browser';
 
 import { initImageModal } from '../image-modal/index.js';
 import { initBurgerEditorRuntime } from '../init.js';
@@ -883,6 +883,303 @@ describe('initCarousel', () => {
 		expect(markers()).toHaveLength(0);
 		vi.advanceTimersByTime(3000);
 		expect(current()).toBe(-1);
+	});
+});
+
+describe('スタイル変数（--bge-carousel-*。CSS だけの矢印・ドットと同じ変数を、生成した操作部品も参照する）', () => {
+	/**
+	 * アイテムの要素（`[data-bgi="carousel"]`）に変数を書く。既定値は blocks の
+	 * style.css が同じ要素で宣言しているので、インライン style が優先される
+	 * @param wrapper - `mount()` が返す設定の外枠
+	 * @param vars
+	 */
+	function setVars(wrapper: HTMLElement, vars: Record<string, string>) {
+		const item = wrapper.parentElement!;
+		for (const [name, value] of Object.entries(vars)) {
+			item.style.setProperty(name, value);
+		}
+	}
+
+	test('生成した矢印・再生ボタンは、アイテムに書いた --bge-carousel-button-* の値で描画される', async () => {
+		const { el, button } = await mount({ autoplay: true });
+		setVars(el, {
+			'--bge-carousel-button-size': '48px',
+			'--bge-carousel-button-font-size': '24px',
+			'--bge-carousel-button-color': 'rgb(1, 2, 3)',
+			'--bge-carousel-button-background': 'rgb(4, 5, 6)',
+			'--bge-carousel-button-border': '2px dashed rgb(7, 8, 9)',
+			'--bge-carousel-button-radius': '4px',
+			'--bge-carousel-button-disabled-opacity': '0.5',
+			'--bge-carousel-previous-icon': "'←'",
+			'--bge-carousel-next-icon': "'→'",
+		});
+		handle = setupCarousels({}, POLYFILL);
+		const previous = button('previous')!;
+		const next = button('next')!;
+		const style = getComputedStyle(previous);
+
+		expect(style.minWidth).toBe('48px');
+		expect(style.minHeight).toBe('48px');
+		expect(style.fontSize).toBe('24px');
+		expect(style.color).toBe('rgb(1, 2, 3)');
+		expect(style.backgroundColor).toBe('rgb(4, 5, 6)');
+		expect(style.borderTopWidth).toBe('2px');
+		expect(style.borderTopStyle).toBe('dashed');
+		expect(style.borderTopColor).toBe('rgb(7, 8, 9)');
+		expect(style.borderTopLeftRadius).toBe('4px');
+		// 先頭にいるので「前へ」は無効
+		expect(style.opacity).toBe('0.5');
+		expect(getComputedStyle(next).opacity).toBe('1');
+		// 記号は、runtime が入れた空の aria-hidden の span の ::before に、CSS が変数から描画する
+		const previousIcon = previous.querySelector<HTMLElement>('[aria-hidden]')!;
+		const nextIcon = next.querySelector<HTMLElement>('[aria-hidden]')!;
+		expect(getComputedStyle(previousIcon, '::before').content).toBe('"←"');
+		expect(getComputedStyle(nextIcon, '::before').content).toBe('"→"');
+		expect(previousIcon.textContent).toBe('');
+		expect(getComputedStyle(previousIcon, '::before').fontSize).toBe('24px');
+		// 記号は名前に混ざらない
+		expect(page.getByRole('button', { name: '前のスライド', exact: true }).query()).toBe(
+			previous,
+		);
+		// 再生・停止ボタンも同じ変数で描画される（記号は矢印の半分の大きさ）
+		expect(getComputedStyle(button('play')!).backgroundColor).toBe('rgb(4, 5, 6)');
+		expect(getComputedStyle(button('play')!).fontSize).toBe('12px');
+	});
+
+	test('生成したドットは、アイテムに書いた --bge-carousel-marker-* の値で描画される', async () => {
+		const { el, markers } = await mount();
+		setVars(el, {
+			'--bge-carousel-marker-size': '20px',
+			'--bge-carousel-marker-color': 'rgb(1, 2, 3)',
+			'--bge-carousel-marker-border-width': '3px',
+			'--bge-carousel-marker-border-color': 'rgb(4, 5, 6)',
+			'--bge-carousel-marker-radius': '2px',
+			'--bge-carousel-marker-current-background': 'rgb(7, 8, 9)',
+			'--bge-carousel-marker-gap': '11px',
+			'--bge-carousel-marker-target-size': '40px',
+		});
+		handle = setupCarousels({}, POLYFILL);
+		const [first, second] = markers();
+		const dot = getComputedStyle(first!, '::before');
+
+		expect(dot.width).toBe('20px');
+		expect(dot.height).toBe('20px');
+		// 円の枠線は内側の影。枠線（border）は押せる範囲を広げる透明な帯（CSS だけのドットと同じ構成）
+		expect(dot.boxShadow).toBe('rgb(4, 5, 6) 0px 0px 0px 3px inset');
+		expect(dot.borderLeftWidth).toBe('10px');
+		expect(dot.borderLeftColor).toBe('rgba(0, 0, 0, 0)');
+		// 外側の角丸は、円の角丸に押せる範囲の分を足したもの（2px + 10px）
+		expect(dot.borderTopLeftRadius).toBe('12px');
+		expect(dot.backgroundClip).toBe('padding-box');
+		// 先頭のスライドが現在位置
+		expect(dot.backgroundColor).toBe('rgb(7, 8, 9)');
+		expect(getComputedStyle(second!, '::before').backgroundColor).toBe(
+			'rgba(0, 0, 0, 0)',
+		);
+		expect(getComputedStyle(first!).color).toBe('rgb(1, 2, 3)');
+		expect(getComputedStyle(first!.parentElement!).columnGap).toBe('11px');
+		// ボタン（押せる範囲）の大きさ
+		expect(first!.getBoundingClientRect().width).toBe(40);
+		expect(first!.getBoundingClientRect().height).toBe(40);
+	});
+
+	test('ドットの押せる範囲は、既定で 1.5rem 四方（直径 0.75rem の円を透明な帯で囲む）', async () => {
+		const { markers } = await mount();
+		handle = setupCarousels({}, POLYFILL);
+		const [first] = markers();
+		const dot = getComputedStyle(first!, '::before');
+
+		expect(dot.width).toBe('12px');
+		expect(dot.borderLeftWidth).toBe('6px');
+		expect(first!.getBoundingClientRect().width).toBe(24);
+	});
+
+	test('ドットの色は矢印の色とは別の変数で決まる（CSS だけのドットは矢印の色を継承しないので、生成したドットも継承しない）', async () => {
+		const { el, button, markers } = await mount();
+		setVars(el, { '--bge-carousel-button-color': 'rgb(255, 255, 255)' });
+		handle = setupCarousels({}, POLYFILL);
+
+		expect(getComputedStyle(button('previous')!).color).toBe('rgb(255, 255, 255)');
+		expect(getComputedStyle(markers()[0]!).color).toBe('rgb(0, 0, 0)');
+	});
+
+	test('ドットの押せる範囲は、矢印の背景の変数に影響されない（ドットは ::before だけを描画する）', async () => {
+		const { el, markers } = await mount();
+		setVars(el, { '--bge-carousel-button-background': 'rgb(4, 5, 6)' });
+		handle = setupCarousels({}, POLYFILL);
+
+		expect(getComputedStyle(markers()[0]!).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+	});
+
+	test('ドットには記号の span を入れない（記号の span は矢印だけ）', async () => {
+		const { button, markers } = await mount();
+		handle = setupCarousels({}, POLYFILL);
+
+		expect(markers()[0]!.querySelector('[aria-hidden]')).toBeNull();
+		expect(button('previous')!.querySelector('[aria-hidden]')).not.toBeNull();
+	});
+
+	test('矢印の記号に url() の画像を指定できる', async () => {
+		const svg = "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'/>";
+		const icon = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+		const { el, button } = await mount();
+		setVars(el, { '--bge-carousel-previous-icon': icon });
+		handle = setupCarousels({}, POLYFILL);
+		const iconEl = button('previous')!.querySelector<HTMLElement>('[aria-hidden]')!;
+
+		expect(getComputedStyle(iconEl, '::before').content).toBe(icon);
+	});
+
+	test('ドットの押せる範囲を円より小さくしても、透明な帯は 0 になり円の大きさで表示される', async () => {
+		const { el, markers } = await mount();
+		setVars(el, { '--bge-carousel-marker-target-size': '8px' });
+		handle = setupCarousels({}, POLYFILL);
+		const dot = getComputedStyle(markers()[0]!, '::before');
+
+		expect(dot.width).toBe('12px');
+		expect(dot.borderLeftWidth).toBe('0px');
+		expect(markers()[0]!.getBoundingClientRect().width).toBe(12);
+	});
+
+	test('強制カラーモードでは、円の枠線を 0 にしても 1px の CanvasText で描画し、現在のドットも CanvasText で塗る', async () => {
+		await commands.emulateMedia({ forcedColors: 'active' });
+		onTestFinished(async () => {
+			await commands.emulateMedia({ forcedColors: null });
+		});
+		const { el, markers } = await mount();
+		setVars(el, { '--bge-carousel-marker-border-width': '0' });
+		handle = setupCarousels({}, POLYFILL);
+		const [first, second] = markers();
+		const firstDot = getComputedStyle(first!, '::before');
+		const secondDot = getComputedStyle(second!, '::before');
+
+		expect(firstDot.forcedColorAdjust).toBe('none');
+		expect(secondDot.boxShadow).toMatch(/^rgb\(\d+, \d+, \d+\) 0px 0px 0px 1px inset$/);
+		expect(firstDot.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+		expect(secondDot.backgroundColor).toBe('rgba(0, 0, 0, 0)');
+	});
+});
+
+describe('矢印の記号の変数に不正な値を書いても、既定の記号に戻る（@property で型を登録している）', () => {
+	test('生成した矢印', async () => {
+		const { el, button } = await mount();
+		el.parentElement!.style.setProperty('--bge-carousel-previous-icon', 'none');
+		handle = setupCarousels({}, POLYFILL);
+		const icon = button('previous')!.querySelector<HTMLElement>('[aria-hidden]')!;
+
+		expect(getComputedStyle(icon, '::before').content).toBe('"‹"');
+	});
+});
+
+describe('表示枚数の上限（--bge-carousel-max-per-view。サイトの CSS が画面幅ごとに与える）', () => {
+	test('上限が作者の表示枚数より小さいときは、上限の枚数で表示し、矢印もその枚数ずつ進む', async () => {
+		const { el, list, button, current } = await mount({ perView: 3, slides: 6 });
+		el.parentElement!.style.setProperty('--bge-carousel-max-per-view', '2');
+		handle = setupCarousels({}, POLYFILL);
+
+		// 作者の値は保存されたまま
+		expect(el.style.getPropertyValue('--per-view')).toBe('3');
+		// CSS が計算した実際の枚数（幅 600px で 2 枚なら 1 枚 300px）
+		expect(getComputedStyle(el).getPropertyValue('--bge-carousel-per-view')).toBe('2');
+		expect(list.querySelector('figure')!.getBoundingClientRect().width).toBeCloseTo(
+			300,
+			0,
+		);
+
+		button('next')!.click();
+		expect(current()).toBe(2);
+	});
+
+	test('上限が作者の表示枚数以上なら、作者の値のまま', async () => {
+		const { el, button, current } = await mount({ perView: 3, slides: 6 });
+		el.parentElement!.style.setProperty('--bge-carousel-max-per-view', '5');
+		handle = setupCarousels({}, POLYFILL);
+
+		expect(getComputedStyle(el).getPropertyValue('--bge-carousel-per-view')).toBe('3');
+		button('next')!.click();
+		expect(current()).toBe(3);
+	});
+
+	test('上限が 0 でも、表示枚数は 1 になる（列幅の計算を無効にしない）', async () => {
+		const { el, button, current } = await mount({ perView: 3, slides: 6 });
+		el.parentElement!.style.setProperty('--bge-carousel-max-per-view', '0');
+		handle = setupCarousels({}, POLYFILL);
+
+		expect(getComputedStyle(el).getPropertyValue('--bge-carousel-per-view')).toBe('1');
+		button('next')!.click();
+		expect(current()).toBe(1);
+	});
+
+	test('計算結果（--bge-carousel-per-view）が読めないとき（@property 未対応・古い CSS）は、作者の --per-view に戻る', async () => {
+		const { button, current } = await mount({ perView: 3, slides: 6 });
+		const real = window.getComputedStyle.bind(window);
+		vi.spyOn(window, 'getComputedStyle').mockImplementation((element, pseudo) => {
+			const style = real(element, pseudo);
+			return new Proxy(style, {
+				get(target, property) {
+					if (property === 'getPropertyValue') {
+						return (name: string) =>
+							name === '--bge-carousel-per-view' ? '' : target.getPropertyValue(name);
+					}
+					const value = Reflect.get(target, property) as unknown;
+					return typeof value === 'function' ? value.bind(target) : value;
+				},
+			});
+		});
+		onTestFinished(() => {
+			vi.restoreAllMocks();
+		});
+		handle = setupCarousels({}, POLYFILL);
+
+		button('next')!.click();
+		expect(current()).toBe(3);
+	});
+
+	test('リストの幅が変わらずに上限だけが変わっても、表示枚数を読み直す（スライドの幅の変化で知る）', async () => {
+		const { el, button, current } = await mount({ perView: 3, slides: 6 });
+		handle = setupCarousels({}, POLYFILL);
+		button('next')!.click();
+		expect(current()).toBe(3);
+		expect(button('next')!.getAttribute('aria-disabled')).toBe('true');
+
+		el.parentElement!.style.setProperty('--bge-carousel-max-per-view', '1');
+
+		await vi.waitFor(() => {
+			expect(button('next')!.getAttribute('aria-disabled')).toBe('false');
+		});
+		button('next')!.click();
+		expect(current()).toBe(4);
+	});
+
+	test('スタイルシートで --per-view を !important で上書きしていても、その値に従う', async () => {
+		const { el, button, current } = await mount({ perView: 1, slides: 6 });
+		const style = document.createElement('style');
+		style.textContent = `[data-bgi='carousel'] > :has(> [data-bge-list]) { --per-view: 3 !important; }`;
+		document.head.append(style);
+		onTestFinished(() => style.remove());
+		handle = setupCarousels({}, POLYFILL);
+
+		expect(getComputedStyle(el).getPropertyValue('--bge-carousel-per-view')).toBe('3');
+		button('next')!.click();
+		expect(current()).toBe(3);
+	});
+
+	test('上限が変わって（メディアクエリーなど）リストの大きさが変わると、表示枚数を読み直す', async () => {
+		const { el, button, current } = await mount({ perView: 3, slides: 6 });
+		handle = setupCarousels({}, POLYFILL);
+		button('next')!.click();
+		expect(current()).toBe(3);
+		// 3 枚ずつでは末尾
+		expect(button('next')!.getAttribute('aria-disabled')).toBe('true');
+
+		el.parentElement!.style.setProperty('--bge-carousel-max-per-view', '1');
+		el.parentElement!.style.inlineSize = '500px';
+
+		await vi.waitFor(() => {
+			expect(button('next')!.getAttribute('aria-disabled')).toBe('false');
+		});
+		button('next')!.click();
+		expect(current()).toBe(4);
 	});
 });
 
