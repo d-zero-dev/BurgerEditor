@@ -17,27 +17,18 @@ import { BlockMenuButton } from './block-menu-button.js';
 import styles from './block-menu.module.css';
 
 /**
- * 選択中ブロックの位置・サイズ・下マージン。座標とサイズはドキュメント
- * 座標系のpx。`BlockMenu` が `getBlockAtPosition` の戻り値から算出し、
- * `BlockMenuView` はこれをCSSカスタムプロパティに変換してメニューを
- * ブロックに追従させる。
+ * 選択中ブロックの下マージン表示用。`BlockMenu` がブロック要素の
+ * 算出スタイルから読み取り、余白インジケータ（`.bgeMenuMargin`）に渡す。
+ * 位置とサイズは CSS アンカー配置（`--bge-current-block`）で追従する。
  * @example
  * ```ts
- * const geometry: MenuGeometry = {
- * 	width: 320,
- * 	height: 120,
- * 	x: 0,
- * 	y: 0,
+ * const margin: BlockMenuMargin = {
  * 	marginBlockEnd: 16,
  * 	marginBlockEndValue: '1em',
  * };
  * ```
  */
-export interface MenuGeometry {
-	readonly width: number;
-	readonly height: number;
-	readonly x: number;
-	readonly y: number;
+export interface BlockMenuMargin {
 	/** ブロック要素の `margin-block-end` 算出値（px） */
 	readonly marginBlockEnd: number;
 	/** `margin-block-end` のCSS値そのまま（例: `'1em'`） */
@@ -45,25 +36,42 @@ export interface MenuGeometry {
 }
 
 /**
- * ブロック内の各アイテム（`[data-bgi]`要素）のオーバーレイ矩形。
- * 座標はブロック左上を原点とした相対px。クリックするとそのアイテムの
- * エディタが開く透明ボタンの位置決めに使う。
+ * ブロック内の各アイテム（`[data-bgi]`）に付与した CSS アンカー名。
+ * 対応する DOM 要素の `anchor-name` と一致し、オーバーレイの
+ * `position-anchor` が参照する。
  * @example
  * ```ts
- * const rect: ItemOverlayRect = { x: 8, y: 8, width: 140, height: 40 };
+ * const anchor: ItemOverlayAnchor = { anchorName: '--bge-block-menu-item-0' };
  * ```
  */
-export interface ItemOverlayRect {
+export interface ItemOverlayAnchor {
+	readonly anchorName: string;
+}
+
+/**
+ * @deprecated {@link BlockMenuMargin} に置き換え。位置・サイズはアンカー配置で決まる。
+ */
+export type MenuGeometry = BlockMenuMargin & {
+	readonly width: number;
+	readonly height: number;
+	readonly x: number;
+	readonly y: number;
+};
+
+/**
+ * @deprecated {@link ItemOverlayAnchor} に置き換え。
+ */
+export type ItemOverlayRect = ItemOverlayAnchor & {
 	readonly x: number;
 	readonly y: number;
 	readonly width: number;
 	readonly height: number;
-}
+};
 
 /**
  * `BlockMenu` の描画専用の中身。マウス追跡・`BurgerBlock` 解決・
- * `engine` 接続は一切持たず、位置とアイテム矩形を props で受け取って
- * 並べるだけの純粋なプレゼンテーションコンポーネント。
+ * `engine` 接続は一切持たず、マージンとアイテムアンカーを props で
+ * 受け取って並べるだけの純粋なプレゼンテーションコンポーネント。
  *
  * `BurgerBlock` の実インスタンス生成なしに見た目だけ確認したい用途
  * （Storybook）のために `BlockMenu` から切り出されている。
@@ -72,8 +80,8 @@ export interface ItemOverlayRect {
  * @param root0.menuId
  * @param root0.commandBusId
  * @param root0.visible
- * @param root0.geometry
- * @param root0.itemRects
+ * @param root0.margin
+ * @param root0.itemAnchors
  * @param root0.isMutable
  * @example
  * ```tsx
@@ -82,8 +90,8 @@ export interface ItemOverlayRect {
  * 	menuId="bge-block-menu"
  * 	commandBusId={engine.commandBus.receiverId}
  * 	visible
- * 	geometry={{ width: 100, height: 40, x: 0, y: 0, marginBlockEnd: 0, marginBlockEndValue: '0px' }}
- * 	itemRects={[]}
+ * 	margin={{ marginBlockEnd: 0, marginBlockEndValue: '0px' }}
+ * 	itemAnchors={[{ anchorName: '--bge-block-menu-item-0' }]}
  * 	isMutable
  * />
  * ```
@@ -93,8 +101,8 @@ export function BlockMenuView({
 	menuId,
 	commandBusId,
 	visible,
-	geometry,
-	itemRects,
+	margin,
+	itemAnchors,
 	isMutable,
 }: {
 	readonly rootRef: Ref<HTMLDivElement>;
@@ -102,8 +110,8 @@ export function BlockMenuView({
 	/** 同一documentに複数エンジンが存在する場合の配送先。`engine.commandBus.receiverId` */
 	readonly commandBusId: string;
 	readonly visible: boolean;
-	readonly geometry: MenuGeometry;
-	readonly itemRects: readonly ItemOverlayRect[];
+	readonly margin: BlockMenuMargin;
+	readonly itemAnchors: readonly ItemOverlayAnchor[];
 	readonly isMutable: boolean;
 }) {
 	return (
@@ -114,28 +122,23 @@ export function BlockMenuView({
 			className={styles['bgeMenuBase']}
 			style={
 				{
-					'--width': `${geometry.width}px`,
-					'--height': `${geometry.height}px`,
-					'--x': `${geometry.x}px`,
-					'--y': `${geometry.y}px`,
-					'--margin-block-end': `${geometry.marginBlockEnd ?? '0'}px`,
+					'--margin-block-end': `${margin.marginBlockEnd}px`,
 				} as CSSProperties
 			}>
-			{itemRects.map((rect, index) => (
+			{itemAnchors.map((item, index) => (
 				<button
-					key={index}
+					key={item.anchorName}
 					type="button"
 					className={styles['bgeItemOverlay']}
 					aria-label="コンテンツを編集"
 					command="--open-item-editor"
 					commandfor={menuId}
 					value={index}
-					style={{
-						insetInlineStart: `${rect.x}px`,
-						insetBlockStart: `${rect.y}px`,
-						inlineSize: `${rect.width}px`,
-						blockSize: `${rect.height}px`,
-					}}></button>
+					style={
+						{
+							'--item-anchor': item.anchorName,
+						} as CSSProperties
+					}></button>
 			))}
 			<div className={styles['bgeMenu']}>
 				<div className={styles['bgeMoveGroup']}>
@@ -209,7 +212,7 @@ export function BlockMenuView({
 			</div>
 			<div className={styles['bgeMenuMargin']}>
 				<span>
-					余白: {geometry.marginBlockEndValue} ({geometry.marginBlockEnd}px)
+					余白: {margin.marginBlockEndValue} ({margin.marginBlockEnd}px)
 				</span>
 			</div>
 		</div>
