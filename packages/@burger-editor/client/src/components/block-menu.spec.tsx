@@ -1,6 +1,6 @@
-import type { BurgerBlock } from '@burger-editor/core';
+import type { BurgerBlock, ItemData, Item } from '@burger-editor/core';
 
-import { getBlockAtPosition, UIStateStore } from '@burger-editor/core';
+import { getBlockAtPosition, Item as ItemClass, UIStateStore } from '@burger-editor/core';
 import { cleanup } from '@testing-library/react';
 import { act } from 'react';
 import { test, expect, afterEach, vi } from 'vitest';
@@ -8,6 +8,7 @@ import { test, expect, afterEach, vi } from 'vitest';
 import { createMockEngine as createBaseMockEngine } from '../testing/create-mock-engine.js';
 import { renderWithEngine } from '../testing/render-with-engine.js';
 
+import { BGE_BLOCK_MENU_BLOCK_ANCHOR } from './block-menu-anchors.js';
 import { BlockMenu } from './block-menu.js';
 
 // vi.mock calls are hoisted above these imports by vitest's transform.
@@ -64,9 +65,10 @@ function createMockEngine() {
 
 /**
  * @param isMutable - `currentBlock?.isMutable()`が返す値
+ * @param blockEl - 省略時は新規 `div`。アンカー追従テストでは実DOMを渡す
  */
-function createMockBlock(isMutable = false): BurgerBlock {
-	const el = document.createElement('div');
+function createMockBlock(isMutable = false, blockEl?: HTMLElement): BurgerBlock {
+	const el = blockEl ?? document.createElement('div');
 	const block = {
 		el,
 		isMutable: () => isMutable,
@@ -85,6 +87,19 @@ async function hover(body: HTMLElement) {
 		dispatchMouseMove(body, 10, 10);
 		await new Promise((resolve) => requestAnimationFrame(resolve));
 	});
+}
+
+/**
+ * Chromium の CSS アンカー配置を検証する DOM を用意する。
+ * Vitest Browser Mode のスタイルシートはホスト document に注入されるため、
+ * iframe 内に描画するとモジュール CSS が届かずアンカーが効かない。
+ */
+function createAnchoredMenuHost() {
+	const menuHost = document.createElement('div');
+	menuHost.dataset.bgeComponent = 'block-menu';
+	menuHost.style.position = 'static';
+	document.body.append(menuHost);
+	return menuHost;
 }
 
 test('uiState.processing中はメニューが隠れ、解除後の再ホバーで復帰する', async () => {
@@ -246,56 +261,7 @@ test('processingによる非表示で選択中ブロックがクリアされる'
 	expect(engine.clearCurrentBlock).toHaveBeenCalled();
 });
 
-/**
- * MutationObserverの通知（マイクロタスク）とrAFを1回ずつ消化する
- */
-async function flushObserverAndFrame() {
-	await act(async () => {
-		await Promise.resolve();
-		await new Promise((resolve) => requestAnimationFrame(resolve));
-	});
-}
-
-/**
- * 本番と同じくiframe文書のbodyをコンテナにする。iframe文書のノードは
- * 親ウィンドウとは別realmなので、`instanceof HTMLElement`が偽になる条件まで再現できる
- */
-function createFrameContainer() {
-	const iframe = document.createElement('iframe');
-	document.body.append(iframe);
-	const frameDoc = iframe.contentDocument!;
-	frameDoc.open();
-	frameDoc.write('<!doctype html><html><head></head><body></body></html>');
-	frameDoc.close();
-	return frameDoc.body;
-}
-
-/**
- * `<div>`で包んだimg（ブロック追加時の形）を作る
- * @param img
- */
-function wrapInDiv(img: HTMLImageElement) {
-	const wrapper = img.ownerDocument.createElement('div');
-	wrapper.append(img);
-	return wrapper;
-}
-
-/**
- * コンテナの文書でimgを作って追加し、MutationObserverに拾わせる
- * @param container
- * @param toAddedNode - imgから実際に追加するノードを作る
- */
-async function appendImage(
-	container: HTMLElement,
-	toAddedNode: (img: HTMLImageElement) => Node,
-) {
-	const img = container.ownerDocument.createElement('img');
-	container.append(toAddedNode(img));
-	await flushObserverAndFrame();
-	return img;
-}
-
-test('アンマウント後はマウス移動・bge:savedで位置更新が走らない', async () => {
+test('アンマウント後はマウス移動で位置更新が走らない', async () => {
 	const engine = createMockEngine();
 	const container = document.createElement('div');
 	document.body.append(container);
@@ -305,45 +271,131 @@ test('アンマウント後はマウス移動・bge:savedで位置更新が走�
 	unmount();
 
 	dispatchMouseMove(document.body, 10, 10);
-	engine.el.dispatchEvent(new CustomEvent('bge:saved'));
-	await flushObserverAndFrame();
+	await act(async () => {
+		await new Promise((resolve) => requestAnimationFrame(resolve));
+	});
 
 	expect(getBlockAtPosition).not.toHaveBeenCalled();
 	expect(engine.clearCurrentBlock).not.toHaveBeenCalled();
 });
 
-test.each([
-	{ label: '要素に包まれた画像', toAddedNode: wrapInDiv },
-	{ label: '画像要素そのもの', toAddedNode: (img: HTMLImageElement) => img },
-])(
-	'iframe文書に追加された$labelの読み込み完了で位置が更新される',
-	async ({ toAddedNode }) => {
-		const engine = createMockEngine();
-		const container = createFrameContainer();
-		vi.mocked(getBlockAtPosition).mockReturnValue(null);
-
-		renderWithEngine(engine, <BlockMenu container={container} />);
-		const img = await appendImage(container, toAddedNode);
-
-		img.dispatchEvent(new Event('load'));
-		await flushObserverAndFrame();
-
-		expect(getBlockAtPosition).toHaveBeenCalledTimes(1);
-	},
-);
-
-test('アンマウント後に画像の読み込みが終わっても位置更新が走らない', async () => {
+test('ホバー中にブロック要素へ anchor-name を付与する', async () => {
 	const engine = createMockEngine();
-	const container = createFrameContainer();
-	vi.mocked(getBlockAtPosition).mockReturnValue(null);
+	const menuHost = createAnchoredMenuHost();
+	const content = document.createElement('div');
+	content.id = 'bge-editable-area';
+	const blockEl = document.createElement('div');
+	blockEl.dataset.bgeContainer = '';
+	content.append(blockEl);
+	document.body.prepend(content);
 
-	const { unmount } = renderWithEngine(engine, <BlockMenu container={container} />);
-	const img = await appendImage(container, wrapInDiv);
+	const block = createMockBlock(false, blockEl);
+	vi.mocked(getBlockAtPosition).mockReturnValue({
+		block,
+		rect: blockEl.getBoundingClientRect(),
+		marginBlockEnd: 0,
+	});
 
-	unmount();
-	img.dispatchEvent(new Event('load'));
-	await flushObserverAndFrame();
+	renderWithEngine(engine, <BlockMenu container={document.body} />, {
+		container: menuHost,
+	});
+	await hover(document.body);
 
-	expect(getBlockAtPosition).not.toHaveBeenCalled();
-	expect(engine.clearCurrentBlock).not.toHaveBeenCalled();
+	expect(blockEl.style.getPropertyValue('anchor-name')).toBe(BGE_BLOCK_MENU_BLOCK_ANCHOR);
+});
+
+test('表示中にブロックの高さが変わってもメニューの枠が追従する', async () => {
+	const engine = createMockEngine();
+	const menuHost = createAnchoredMenuHost();
+
+	const content = document.createElement('div');
+	content.id = 'bge-editable-area';
+	const blockEl = document.createElement('div');
+	blockEl.dataset.bgeContainer = '';
+	blockEl.style.setProperty('width', '200px');
+	blockEl.style.setProperty('height', '56px');
+	blockEl.style.setProperty('box-sizing', 'border-box');
+	blockEl.style.setProperty('background', 'lightgray');
+	content.append(blockEl);
+	document.body.prepend(content);
+
+	const block = createMockBlock(false, blockEl);
+	vi.mocked(getBlockAtPosition).mockImplementation(() => ({
+		block,
+		rect: blockEl.getBoundingClientRect(),
+		marginBlockEnd: 0,
+	}));
+
+	const { container: renderedRoot } = renderWithEngine(
+		engine,
+		<BlockMenu container={document.body} />,
+		{ container: menuHost },
+	);
+	const menuEl = renderedRoot.firstElementChild as HTMLElement;
+
+	await hover(document.body);
+	await act(async () => {
+		await new Promise((resolve) => requestAnimationFrame(resolve));
+	});
+
+	const blockHeightBefore = blockEl.getBoundingClientRect().height;
+	const menuHeightBefore = Number.parseFloat(getComputedStyle(menuEl).blockSize);
+	expect(Math.abs(menuHeightBefore - blockHeightBefore)).toBeLessThan(4);
+
+	blockEl.style.setProperty('height', '156px');
+	await act(async () => {
+		await new Promise((resolve) => requestAnimationFrame(resolve));
+	});
+
+	const blockHeightAfter = blockEl.getBoundingClientRect().height;
+	const menuHeightAfter = Number.parseFloat(getComputedStyle(menuEl).blockSize);
+	expect(blockHeightAfter - blockHeightBefore).toBeGreaterThan(90);
+	expect(menuHeightAfter - menuHeightBefore).toBeGreaterThan(90);
+	expect(Math.abs(menuHeightAfter - blockHeightAfter)).toBeLessThan(4);
+});
+
+test('Item未解決の[data-bgi]にはアンカーとオーバーレイを付けない', async () => {
+	const engine = createMockEngine();
+	const container = document.createElement('div');
+	document.body.append(container);
+
+	const blockEl = document.createElement('div');
+	const resolvedEl = document.createElement('div');
+	resolvedEl.dataset.bgi = '';
+	const orphanEl = document.createElement('div');
+	orphanEl.dataset.bgi = '';
+	blockEl.append(resolvedEl, orphanEl);
+
+	const mockItem = { id: 'resolved-item' } as unknown as Item<ItemData, {}>;
+	vi.spyOn(ItemClass, 'getInstance').mockImplementation((el) =>
+		el === resolvedEl ? mockItem : undefined,
+	);
+
+	const block = createMockBlock(false, blockEl);
+	vi.mocked(getBlockAtPosition).mockReturnValue({
+		block,
+		rect: blockEl.getBoundingClientRect(),
+		marginBlockEnd: 0,
+	});
+
+	const openItemEditor = vi.fn();
+	engine.uiState.openItemEditor = openItemEditor;
+
+	const { container: renderedRoot } = renderWithEngine(
+		engine,
+		<BlockMenu container={container} />,
+	);
+	await hover(document.body);
+
+	expect(orphanEl.style.getPropertyValue('anchor-name')).toBe('');
+	expect(resolvedEl.style.getPropertyValue('anchor-name')).toBe(
+		'--bge-block-menu-item-0',
+	);
+	expect(renderedRoot.querySelectorAll('[aria-label="コンテンツを編集"]').length).toBe(1);
+
+	const overlay = renderedRoot.querySelector(
+		'[aria-label="コンテンツを編集"]',
+	) as HTMLButtonElement;
+	overlay.click();
+	expect(openItemEditor).toHaveBeenCalledWith(mockItem);
 });

@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { BlockMenuView } from '@burger-editor/client/ui';
+import { BlockMenuView, BGE_BLOCK_MENU_BLOCK_ANCHOR } from '@burger-editor/client/ui';
 import { useRef } from 'react';
 
 /**
  * `BlockMenu` の描画専用コンポーネント。実際の `BlockMenu` はマウス位置
  * から `BurgerBlock` の実インスタンスを解決して表示するが、この story
- * では位置とアイテム矩形をダミーの props として直接渡すことで、
+ * ではマージンとアイテムアンカーをダミーの props として直接渡すことで、
  * `BurgerBlock` 生成なしに見た目を確認する。
  */
 const meta = {
@@ -18,7 +18,20 @@ const meta = {
 	render: (args) => {
 		// eslint-disable-next-line react-hooks/rules-of-hooks
 		const rootRef = useRef<HTMLDivElement>(null);
-		return <BlockMenuView {...args} rootRef={rootRef} />;
+		return (
+			<>
+				<div
+					style={{
+						anchorName: BGE_BLOCK_MENU_BLOCK_ANCHOR,
+						width: 320,
+						height: 120,
+						marginBlockEnd: 16,
+						background: 'var(--bge-lightest-color, #f5f5f5)',
+					}}
+				/>
+				<BlockMenuView {...args} rootRef={rootRef} />
+			</>
+		);
 	},
 } satisfies Meta<typeof BlockMenuView>;
 
@@ -31,15 +44,11 @@ export const Default: Story = {
 		menuId: 'bge-block-menu-default',
 		commandBusId: 'bge-command-bus-story',
 		visible: true,
-		geometry: {
-			width: 320,
-			height: 120,
-			x: 0,
-			y: 0,
+		margin: {
 			marginBlockEnd: 16,
 			marginBlockEndValue: '1em',
 		},
-		itemRects: [],
+		itemAnchors: [],
 		isMutable: false,
 	},
 };
@@ -53,12 +62,55 @@ export const Mutable: Story = {
 };
 
 export const WithItemOverlays: Story = {
+	render: (args) => {
+		// eslint-disable-next-line react-hooks/rules-of-hooks
+		const rootRef = useRef<HTMLDivElement>(null);
+		return (
+			<>
+				<div
+					style={{
+						anchorName: BGE_BLOCK_MENU_BLOCK_ANCHOR,
+						width: 320,
+						height: 120,
+						marginBlockEnd: 16,
+						background: 'var(--bge-lightest-color, #f5f5f5)',
+						position: 'relative',
+					}}>
+					<div
+						data-bgi=""
+						style={{
+							anchorName: '--bge-block-menu-item-0',
+							position: 'absolute',
+							insetBlockStart: 8,
+							insetInlineStart: 8,
+							width: 140,
+							height: 40,
+							background: 'rgb(12 126 158 / 15%)',
+						}}
+					/>
+					<div
+						data-bgi=""
+						style={{
+							anchorName: '--bge-block-menu-item-1',
+							position: 'absolute',
+							insetBlockStart: 56,
+							insetInlineStart: 8,
+							width: 140,
+							height: 40,
+							background: 'rgb(12 126 158 / 15%)',
+						}}
+					/>
+				</div>
+				<BlockMenuView {...args} rootRef={rootRef} />
+			</>
+		);
+	},
 	args: {
 		...Default.args,
 		menuId: 'bge-block-menu-with-items',
-		itemRects: [
-			{ x: 8, y: 8, width: 140, height: 40 },
-			{ x: 8, y: 56, width: 140, height: 40 },
+		itemAnchors: [
+			{ anchorName: '--bge-block-menu-item-0' },
+			{ anchorName: '--bge-block-menu-item-1' },
 		],
 	},
 };

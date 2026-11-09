@@ -1,8 +1,14 @@
 export { BlockCatalog } from './block-catalog.js';
+export { BGE_BLOCK_MENU_BLOCK_ANCHOR } from './block-menu-anchors.js';
 export { BlockMenu } from './block-menu.js';
 export { BlockMenuButton } from './block-menu-button.js';
 export { BlockMenuView } from './block-menu-view.js';
-export type { MenuGeometry, ItemOverlayRect } from './block-menu-view.js';
+export type {
+	BlockMenuMargin,
+	ItemOverlayAnchor,
+	MenuGeometry,
+	ItemOverlayRect,
+} from './block-menu-view.js';
 export { BlockOptions } from './block-options.js';
 export { DraftSwitcher } from './draft-switcher.js';
 export { EditableAreaView } from './editable-area-view.js';
