@@ -52,6 +52,7 @@ test('experimental mode renders select instead of buttons', () => {
 	);
 
 	expect(modeSelector).toBeTruthy();
+	expect(modeSelector?.getAttribute('aria-label')).toBe('編集モード');
 	expect(htmlModeButton).toBeNull();
 	expect(textOnlyModeButton).toBeNull();
 });
