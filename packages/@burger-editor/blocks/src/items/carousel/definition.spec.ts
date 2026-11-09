@@ -473,9 +473,9 @@ describe('carouselItemSeed', () => {
 		test('全体設定が無い入力は、既定値で埋めて保存形に整える', async () => {
 			const state = carouselItemSeed.toEditorState!({} as never, testConfig);
 			// Behavior change: 名前の無いスライドを含む入力は確定できない（`{}` は既定のスライド 1 枚で、名前が無い）
-			await expect(async () =>
-				carouselItemSeed.toItemData!({} as never, testConfig),
-			).rejects.toThrow('スライド1');
+			await expect(async () => {
+				await carouselItemSeed.toItemData!({} as never, testConfig);
+			}).rejects.toThrow('スライド1');
 			// const saved = await carouselItemSeed.toItemData!({} as never, testConfig); // previous
 
 			// for (const data of [state, saved]) { // previous
