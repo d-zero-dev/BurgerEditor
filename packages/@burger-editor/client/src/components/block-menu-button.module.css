@@ -19,10 +19,10 @@
 		);
 	}
 
+	/* Hint visibility and stacking come from popover="hint" (top layer);
+	   z-index and display toggles are intentionally omitted. */
 	span {
 		position: absolute;
-		z-index: 1000;
-		display: none;
 		inline-size: calc(anchor-size(inline-size) * 2);
 		padding-block: 0.2em;
 		padding-inline: 0.6em;
@@ -33,9 +33,5 @@
 		color: var(--bge-lightest-color);
 		background: var(--bge-tooltip-background-color);
 		border-radius: 0.6em;
-	}
-
-	&:is(:hover, :focus-within) span {
-		display: block;
 	}
 }
