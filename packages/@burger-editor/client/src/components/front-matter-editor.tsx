@@ -22,8 +22,9 @@ export interface FieldDefinition {
 
 /**
  * Owns the Front Matter field list — the actual data, as opposed to the
- * view's own UI-only state (collapsed, add-dialog-open, in-progress JSON
- * drafts). `createFrontMatterEditor`'s handle reads `getData()`/
+ * view's own UI-only state (add-dialog-open, in-progress JSON drafts).
+ * Whether the panel is open is not part of this store.
+ * `createFrontMatterEditor`'s handle reads `getData()`/
  * `getSnapshot()` directly and subscribes to be notified of changes,
  * instead of a mutable closure variable updated from inside a React
  * callback — the handle has no other way to read React state from
@@ -151,9 +152,19 @@ export function createFrontMatterEditor(
 
 /**
  * Front Matterの動的フォーム本体。フィールド一覧は`store`（唯一の
- * データソース）から読み、折りたたみ・追加ダイアログ・JSON下書きは
- * この見た目だけのUI状態としてローカルに持つ。操作は Invoker Commands
- * （`--fm-toggle` / `--fm-add-field` / `--fm-delete-field`）で受ける
+ * データソース）から読み、追加ダイアログとJSON下書きはこの見た目だけの
+ * UI状態としてローカルに持つ。フィールドの追加と削除は Invoker Commands
+ * （`--fm-add-field` / `--fm-delete-field`）で受ける。
+ *
+ * 開閉は `<details>` の `open` に任せる。Invoker Command と React の
+ * state には戻さない。同じ状態をコマンドのハンドラと DOM の属性の両方に
+ * 持つと、再レンダーのたびにどちらかがもう一方を上書きする。
+ *
+ * 「+ 追加」は `summary` の外に置く。`summary` の内容モデルはフレーズ内容
+ * で、ボタンを入れると対話要素の入れ子になり、押すとパネルも開閉する。
+ * 閉じた `details` の中に置くと、閉じている間はボタンが押せなくなる。
+ * 見た目は見出し行の右端だが、DOM 順ではフィールドの後なので、キーボードの
+ * 移動順は見出し、フィールド、追加ボタンになる。
  * @param root0
  * @param root0.store
  * @example
@@ -165,7 +176,6 @@ export function FrontMatterEditorView({ store }: { readonly store: FrontMatterSt
 	const rootId = useId();
 	const dialogId = useId();
 	const fields = useSyncExternalStore(store.subscribe, store.getSnapshot);
-	const [isCollapsed, setIsCollapsed] = useState(false);
 	const [addDialogOpen, setAddDialogOpen] = useState(false);
 	// JSONフィールドの未確定テキスト。パースに失敗している間は確定値を
 	// 変えずに入力中の文字列を保持する（キーはフィールドkey）
@@ -180,9 +190,6 @@ export function FrontMatterEditorView({ store }: { readonly store: FrontMatterSt
 	};
 
 	const rootRef = useCommand<HTMLDivElement>({
-		'--fm-toggle': () => {
-			setIsCollapsed((prev) => !prev);
-		},
 		'--fm-add-field': () => {
 			setAddDialogOpen(true);
 		},
@@ -217,26 +224,8 @@ export function FrontMatterEditorView({ store }: { readonly store: FrontMatterSt
 
 	return (
 		<div ref={rootRef} id={rootId} className="fm-editor">
-			<div className="fm-editor-header">
-				<button
-					type="button"
-					className="fm-editor-toggle"
-					aria-expanded={!isCollapsed}
-					command="--fm-toggle"
-					commandfor={rootId}>
-					<span className="fm-editor-toggle-icon">{isCollapsed ? '▶' : '▼'}</span>
-					<span>Front Matter</span>
-				</button>
-				<button
-					type="button"
-					className="fm-editor-add"
-					title="フィールドを追加"
-					command="--fm-add-field"
-					commandfor={rootId}>
-					{'+ 追加'}
-				</button>
-			</div>
-			{isCollapsed ? null : (
+			<details className="fm-editor-details" open>
+				<summary className="fm-editor-toggle">Front Matter</summary>
 				<div className="fm-editor-fields">
 					{fields.length === 0 ? (
 						<div className="fm-editor-empty">
@@ -274,7 +263,15 @@ export function FrontMatterEditorView({ store }: { readonly store: FrontMatterSt
 						))
 					)}
 				</div>
-			)}
+			</details>
+			<button
+				type="button"
+				className="fm-editor-add"
+				title="フィールドを追加"
+				command="--fm-add-field"
+				commandfor={rootId}>
+				{'+ 追加'}
+			</button>
 			{addDialogOpen ? (
 				<AddFieldDialog
 					dialogId={dialogId}
