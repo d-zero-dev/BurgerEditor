@@ -56,3 +56,11 @@ test('セマンティック要素の変更はselectのstateだけを更新しコ
 	expect(changeFrameSemantics).not.toHaveBeenCalled();
 	expect(select.value).toBe('ul');
 });
+
+test('固定列数の基準列数スライダーにアクセシブルな名前がある', () => {
+	renderWithEngine(createMockEngine(), <BlockOptions block={createMockBlock(vi.fn())} />);
+
+	const slider = screen.getByRole('slider', { name: '基準列数' });
+	expect(screen.getByLabelText('基準列数')).toBe(slider);
+	expect(slider).toHaveAccessibleName('基準列数');
+});
