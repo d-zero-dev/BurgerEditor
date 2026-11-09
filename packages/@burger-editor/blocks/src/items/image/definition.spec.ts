@@ -289,9 +289,9 @@ describe('imageItemSeed', () => {
 			} as const satisfies Readonly<ImageItemData>;
 
 			// Behavior change: ポップアップは代替テキストが空だと確定できない（この入力は altEditable が空）
-			await expect(async () =>
-				imageItemSeed.toItemData?.(data, testConfig),
-			).rejects.toThrow('代替テキスト(alt)');
+			await expect(async () => {
+				await imageItemSeed.toItemData?.(data, testConfig);
+			}).rejects.toThrow('代替テキスト(alt)');
 			// const result = await imageItemSeed.toItemData?.(data, testConfig); // previous
 			// expect(result?.node).toBe('button'); // previous
 			// expect(result?.command).toBe('show-modal'); // previous
@@ -326,9 +326,9 @@ describe('imageItemSeed', () => {
 			} as const satisfies Readonly<ImageItemData>;
 
 			// Behavior change: リンクは代替テキストが空だと確定できない（この入力は altEditable が空）
-			await expect(async () =>
-				imageItemSeed.toItemData?.(data, testConfig),
-			).rejects.toThrow('代替テキスト(alt)');
+			await expect(async () => {
+				await imageItemSeed.toItemData?.(data, testConfig);
+			}).rejects.toThrow('代替テキスト(alt)');
 			// const result = await imageItemSeed.toItemData?.(data, testConfig); // previous
 			// expect(result?.node).toBe('a'); // previous
 			// expect(result?.target).toBe('_blank'); // previous
@@ -604,33 +604,36 @@ describe('imageItemSeed', () => {
 		// toItemData は同期関数でも throw しうる。確定処理は await の内側で呼ぶので、
 		// ここでも async 関数で包んで、拒否として表明する
 		test('リンク先があって代替テキストが空なら、確定できない', async () => {
-			await expect(async () =>
-				imageItemSeed.toItemData?.({ ...base, href: 'https://example.com' }, testConfig),
-			).rejects.toThrow('代替テキスト(alt)');
+			await expect(async () => {
+				await imageItemSeed.toItemData?.(
+					{ ...base, href: 'https://example.com' },
+					testConfig,
+				);
+			}).rejects.toThrow('代替テキスト(alt)');
 		});
 
 		test('ポップアップで代替テキストが空なら、確定できない', async () => {
-			await expect(async () =>
-				imageItemSeed.toItemData?.({ ...base, popup: true }, testConfig),
-			).rejects.toThrow('代替テキスト(alt)');
+			await expect(async () => {
+				await imageItemSeed.toItemData?.({ ...base, popup: true }, testConfig);
+			}).rejects.toThrow('代替テキスト(alt)');
 		});
 
 		test('空白だけの代替テキストも空として扱う', async () => {
-			await expect(async () =>
-				imageItemSeed.toItemData?.(
+			await expect(async () => {
+				await imageItemSeed.toItemData?.(
 					{ ...base, href: 'https://example.com', altEditable: ' 　\n' },
 					testConfig,
-				),
-			).rejects.toThrow('代替テキスト(alt)');
+				);
+			}).rejects.toThrow('代替テキスト(alt)');
 		});
 
 		test('キャプションがあっても、リンクの代替テキストの代わりにはならない', async () => {
-			await expect(async () =>
-				imageItemSeed.toItemData?.(
+			await expect(async () => {
+				await imageItemSeed.toItemData?.(
 					{ ...base, href: 'https://example.com', caption: '春の庭' },
 					testConfig,
-				),
-			).rejects.toThrow('代替テキスト(alt)');
+				);
+			}).rejects.toThrow('代替テキスト(alt)');
 		});
 
 		test('代替テキストがあれば、リンクもポップアップも確定できる', async () => {
