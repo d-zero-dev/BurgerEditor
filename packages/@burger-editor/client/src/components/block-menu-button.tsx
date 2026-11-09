@@ -2,11 +2,14 @@ import type { CSSProperties, ReactNode } from 'react';
 
 import { useId } from 'react';
 
+import '../interest-hints.js';
 import styles from './block-menu-button.module.css';
 
 /**
- * Icon button of the block menu with an anchored tooltip. The action is
- * declared with the Invoker Commands API instead of a click handler.
+ * Icon button of the block menu with an anchored hint tooltip (`interestfor`
+ * + `popover="hint"`). Esc dismisses the tooltip without moving pointer or
+ * focus (WCAG 1.4.13). The action is declared with the Invoker Commands API
+ * instead of a click handler.
  * @param root0
  * @param root0.label
  * @param root0.command
@@ -44,12 +47,15 @@ export function BlockMenuButton({
 			<button
 				type="button"
 				aria-labelledby={uid}
+				interestfor={uid}
 				command={command}
 				commandfor={commandfor}
 				value={value}>
 				{children}
 			</button>
-			<span id={uid}>{label}</span>
+			<span id={uid} popover="hint">
+				{label}
+			</span>
 		</div>
 	);
 }
