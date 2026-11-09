@@ -9,6 +9,7 @@ import { cleanup, fireEvent } from '@testing-library/react';
 import { act } from 'react';
 import { test, expect, afterEach, beforeEach, vi } from 'vitest';
 
+import { BLOCK_SWAP_VIEW_TRANSITION_CSS } from '../block-swap-view-transition-css.js';
 import { createMockEngine as createBaseMockEngine } from '../testing/create-mock-engine.js';
 import { renderWithEngine } from '../testing/render-with-engine.js';
 
@@ -121,7 +122,7 @@ test('iframe文書内にコンテンツコンテナを構築してhostを解決�
 	);
 });
 
-test('iframe文書に注入するblock-menuスタイルがcontaining blockを明示する', () => {
+test('iframe文書に注入するblock-menuスタイルが包含ブロックを作らない', () => {
 	const engine = createMockEngine();
 	const { container } = renderView(engine, 'main', '<p>hello</p>');
 
@@ -130,13 +131,23 @@ test('iframe文書に注入するblock-menuスタイルがcontaining blockを明
 		.map((el) => el.textContent)
 		.join('\n');
 
-	// position: absoluteのみでinsetを指定しないと、DOMフロー上のstatic
-	// position（コンテンツ本体の直後＝ページ最下部）が基準点になり、
-	// BlockMenuViewの--x/--yオフセットがそこへ積み増しされてメニューが
-	// 大きく下にずれる
+	// BlockMenuView は CSS アンカーでブロックを参照する。包む要素が
+	// position: absolute などの包含ブロックを作るとアンカーが解決できない。
 	expect(styleText).toMatch(
-		/\[data-bge-component='block-menu'\]\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0;/,
+		/\[data-bge-component='block-menu'\]\s*\{[^}]*position:\s*static;/,
 	);
+});
+
+test('iframe文書にブロック入れ替え用のView Transitionスタイルを注入する', () => {
+	const engine = createMockEngine();
+	const { container } = renderView(engine, 'main', '<p>hello</p>');
+
+	const iframe = container.querySelector('iframe');
+	const styleText = [...(iframe?.contentDocument?.head.querySelectorAll('style') ?? [])]
+		.map((el) => el.textContent)
+		.join('\n');
+
+	expect(styleText).toContain(BLOCK_SWAP_VIEW_TRANSITION_CSS);
 });
 
 test('再レンダリングしてもiframe要素の同一性が保たれる', () => {

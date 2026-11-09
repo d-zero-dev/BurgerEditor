@@ -1,4 +1,4 @@
-import type { MenuGeometry, ItemOverlayRect } from './block-menu-view.js';
+import type { ItemOverlayAnchor, BlockMenuMargin } from './block-menu-view.js';
 import type { ItemData } from '@burger-editor/core';
 import type { RefObject } from 'react';
 
@@ -9,6 +9,7 @@ import { useEngine } from '../engine-context.js';
 import { useCommand } from '../use-command.js';
 import { useUIState } from '../use-engine.js';
 
+import { applyBlockMenuAnchors, clearBlockMenuAnchors } from './block-menu-anchors.js';
 import { BlockMenuView } from './block-menu-view.js';
 
 /**
@@ -37,13 +38,10 @@ export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 	const menuId = useId();
 	const currentBlock = useUIState((s) => s.currentBlock);
 	const [visible, setVisible] = useState(false);
-	const [itemRects, setItemRects] = useState<readonly ItemOverlayRect[]>([]);
+	const [itemAnchors, setItemAnchors] = useState<readonly ItemOverlayAnchor[]>([]);
 	const itemsRef: RefObject<readonly Item<ItemData, {}>[]> = useRef([]);
-	const [geometry, setGeometry] = useState<MenuGeometry>({
-		width: 0,
-		height: 0,
-		x: 0,
-		y: 0,
+	const anchoredBlockElRef = useRef<HTMLElement | null>(null);
+	const [margin, setMargin] = useState<BlockMenuMargin>({
 		marginBlockEnd: 0,
 		marginBlockEndValue: '0px',
 	});
@@ -64,13 +62,24 @@ export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 		},
 	});
 
+	const clearAnchoredBlock = useCallback(() => {
+		const el = anchoredBlockElRef.current;
+		if (el) {
+			clearBlockMenuAnchors(el);
+			anchoredBlockElRef.current = null;
+		}
+	}, []);
+
 	const hide = useCallback(() => {
 		setVisible(false);
+		clearAnchoredBlock();
+		setItemAnchors([]);
+		itemsRef.current = [];
 		// engine.uiState.currentBlock もここでnullになる — clearCurrentBlock()
 		// が内部でuiState.setCurrentBlock(null)を呼ぶため、ローカルstateの
 		// 二重管理は不要（store一本が真実の源）
 		engine.clearCurrentBlock();
-	}, [engine]);
+	}, [engine, clearAnchoredBlock]);
 
 	// エンジン処理中（ブロック移動・挿入など）はメニューを自律的に隠す。
 	// uiStateストアを購読し、processingへの遷移でReact自身のstateを畳む
@@ -88,8 +97,6 @@ export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 		const body = doc.body;
 		const win = doc.defaultView;
 
-		// 解除はスタックの逆順（observer → リスナー → rAF）。rAFの取り消しを
-		// 最後に置くのは、先に止めたイベント源が新しいrAFを積めないようにするため
 		const stack = new DisposableStack();
 		const listeners = new AbortController();
 		const { signal } = listeners;
@@ -99,6 +106,7 @@ export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 		let raf = 0;
 		stack.defer(() => cancelAnimationFrame(raf));
 		stack.defer(() => listeners.abort());
+		stack.defer(() => clearAnchoredBlock());
 
 		const updatePosition = () => {
 			const selected = getBlockAtPosition(doc, mouseX, mouseY);
@@ -110,48 +118,37 @@ export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 
 			setVisible(true);
 
-			const { block, rect, marginBlockEnd } = selected;
-			// currentBlockはここでは書かない。下のengine.setCurrentBlock()が
-			// uiState（唯一の真実の源）経由でこのコンポーネントへ戻ってくる
-			setGeometry({
-				width: rect.width,
-				height: rect.height,
-				x: rect.left,
-				y: rect.top,
-				marginBlockEnd,
-				marginBlockEndValue: window
-					.getComputedStyle(block.el)
-					.getPropertyValue('--bge-block-margin'),
-			});
-			// rebindされたブロックはblock.itemsを持たないため、要素→Itemは
-			// elMap（Item.getInstance）で解決する。未解決の要素（rebind処理中
-			// など）はオーバーレイを描画せず、次のマウス移動更新で自己回復する
-			const itemEntries = [...block.el.querySelectorAll<HTMLElement>('[data-bgi]')]
+			const { block, marginBlockEnd } = selected;
+			const blockEl = block.el;
+
+			if (anchoredBlockElRef.current !== blockEl) {
+				clearAnchoredBlock();
+				anchoredBlockElRef.current = blockEl;
+			}
+
+			const itemEntries = [...blockEl.querySelectorAll<HTMLElement>('[data-bgi]')]
 				.map((itemEl) => ({ el: itemEl, item: Item.getInstance(itemEl) }))
 				.filter(
 					(entry): entry is { el: HTMLElement; item: Item<ItemData, {}> } =>
 						entry.item != null,
 				);
 			itemsRef.current = itemEntries.map((entry) => entry.item);
-			setItemRects(
-				itemEntries.map(({ el: itemEl }) => {
-					const itemRect = itemEl.getBoundingClientRect();
-					return {
-						x: itemRect.left - rect.left,
-						y: itemRect.top - rect.top,
-						width: itemRect.width,
-						height: itemRect.height,
-					};
-				}),
+
+			const anchorNames = applyBlockMenuAnchors(
+				blockEl,
+				itemEntries.map((entry) => entry.el),
 			);
+			setItemAnchors(anchorNames.map((anchorName) => ({ anchorName })));
+			setMargin({
+				marginBlockEnd,
+				marginBlockEndValue:
+					win?.getComputedStyle(blockEl).getPropertyValue('--bge-block-margin') ?? '0px',
+			});
 
 			engine.setCurrentBlock(block);
 		};
 
 		const scheduleUpdate = () => {
-			// 画像の読み込み待ちはsignalで外さないため（下記）、アンマウント後に
-			// 読み込みが終わってもここで止める。止めないと破棄済みのメニューが
-			// engineの選択中ブロックを書き換える
 			if (signal.aborted) {
 				return;
 			}
@@ -180,36 +177,9 @@ export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 		doc.addEventListener('mouseleave', onHideEvent, { signal });
 		win?.addEventListener('mouseleave', onHideEvent, { signal });
 		globalThis.addEventListener('resize', onHideEvent, { signal });
-		engine.el.addEventListener('bge:saved', scheduleUpdate, { signal });
-
-		// 画像の読み込み待ちにはsignalを渡さない。signalは登録ごとに解除手順を
-		// 抱え、onceで外れた後も手放さないため、削除済みのimgまでeffectの
-		// 寿命いっぱい解放されなくなる
-		const observer = new MutationObserver((mutations) => {
-			for (const mutation of mutations) {
-				for (const node of mutation.addedNodes) {
-					// iframe文書のノードは別realmなのでinstanceof HTMLElementは
-					// 常に偽になる。nodeTypeで判定する
-					if (node.nodeType !== Node.ELEMENT_NODE) {
-						continue;
-					}
-					const element = node as Element;
-					const images = element.matches('img')
-						? [element]
-						: element.querySelectorAll('img');
-					for (const img of images) {
-						img.addEventListener('load', scheduleUpdate, { once: true });
-						img.addEventListener('error', scheduleUpdate, { once: true });
-						img.addEventListener('abort', scheduleUpdate, { once: true });
-					}
-				}
-			}
-		});
-		observer.observe(doc, { childList: true, subtree: true });
-		stack.defer(() => observer.disconnect());
 
 		return () => stack.dispose();
-	}, [engine, container, hide]);
+	}, [engine, container, hide, clearAnchoredBlock]);
 
 	const isMutable = currentBlock?.isMutable() ?? false;
 
@@ -219,8 +189,8 @@ export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 			menuId={menuId}
 			commandBusId={engine.commandBus.receiverId}
 			visible={visible}
-			geometry={geometry}
-			itemRects={itemRects}
+			margin={margin}
+			itemAnchors={itemAnchors}
 			isMutable={isMutable}
 		/>
 	);

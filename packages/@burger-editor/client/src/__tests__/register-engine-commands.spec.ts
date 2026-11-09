@@ -9,10 +9,6 @@ const confirmMock = vi.fn();
 vi.stubGlobal('alert', alertMock);
 vi.stubGlobal('confirm', confirmMock);
 
-// 実アニメーションの実時間経過を待たずにDOM並べ替えだけを検証するため、
-// replaceElementのアニメーションを即時完了扱いにする
-Element.prototype.animate = vi.fn().mockReturnValue({ finished: Promise.resolve() });
-
 beforeEach(() => {
 	alertMock.mockClear();
 	confirmMock.mockReset();
@@ -210,9 +206,26 @@ describe('registerEngineCommands', () => {
 });
 
 describe('block操作コマンド', () => {
+	let originalStartViewTransition: typeof Document.prototype.startViewTransition;
+
 	beforeEach(() => {
 		document.body.innerHTML = '';
 		sessionStorage.clear();
+		// 実 View Transition の待ち時間なしで DOM 並べ替えだけを検証する
+		originalStartViewTransition = Document.prototype.startViewTransition;
+		Document.prototype.startViewTransition = function (updateCallback) {
+			updateCallback();
+			return {
+				finished: Promise.resolve(),
+				ready: Promise.resolve(),
+				updateCallbackDone: Promise.resolve(),
+				skipTransition: () => {},
+			} as ViewTransition;
+		};
+	});
+
+	afterEach(() => {
+		Document.prototype.startViewTransition = originalStartViewTransition;
 	});
 
 	/**

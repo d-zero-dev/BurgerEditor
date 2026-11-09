@@ -147,6 +147,7 @@ export default defineConfig({
 						headless: true,
 						viewport: { width: 1280, height: 720 },
 						screenshotFailures: false,
+						commands: mediaCommands,
 					},
 					testTimeout: 15_000,
 				},

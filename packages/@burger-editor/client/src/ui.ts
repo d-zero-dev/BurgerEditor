@@ -1,6 +1,8 @@
 import './invoker-commands.js';
+import './interest-hints.js';
 
 export type { InvokerCommandAttributes } from './invoker-commands.js';
+export type { InterestHintAttributes } from './interest-hints.js';
 export { EditorDialog } from './editor-dialog.js';
 export { EngineProvider, useEngine } from './engine-context.js';
 export { reactMount } from './mount.js';
