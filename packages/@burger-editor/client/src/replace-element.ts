@@ -1,87 +1,57 @@
+let nextViewTransitionId = 0;
+
 /**
+ * Swap two adjacent sibling blocks with a View Transition, then wait until it
+ * finishes so `beginProcessing()` covers the same window as before.
  *
- * @param elA
- * @param elB
- * @param duration
+ * Animation length and `prefers-reduced-motion: reduce` are controlled by CSS
+ * injected into the editable-area iframe (`editable-area-view.tsx`), not here.
+ * @param elA - First sibling element
+ * @param elB - Second sibling element (same parent as `elA`)
+ * @example
+ * ```ts
+ * await replaceElement(currentBlock.el, currentBlock.el.nextElementSibling as HTMLElement);
+ * // The two blocks have exchanged positions in the DOM.
+ * ```
  */
-export async function replaceElement(elA: HTMLElement, elB: HTMLElement, duration = 600) {
+export async function replaceElement(elA: HTMLElement, elB: HTMLElement): Promise<void> {
 	if (elA.parentElement !== elB.parentElement) {
 		throw new Error('The parent element of the two elements is different.');
 	}
 
-	const lockCSS = {
-		visibility: 'hidden',
-		pointerEvents: 'none',
-	} as const satisfies Partial<CSSStyleDeclaration>;
-
-	const beforeStyleA = elA.style.cssText.trim();
-	const beforeStyleB = elB.style.cssText.trim();
-
-	const boxA = elA.getBoundingClientRect();
-	const boxB = elB.getBoundingClientRect();
-
-	const tmpContainer = elA.ownerDocument.createElement('div');
-	tmpContainer.style.position = 'absolute';
-	tmpContainer.style.top = `0px`;
-	tmpContainer.style.left = `0px`;
-	tmpContainer.style.zIndex = '2147483647';
-
-	const tmpA = elA.cloneNode(true) as HTMLElement;
-	tmpA.style.position = 'absolute';
-	tmpA.style.top = `${boxA.top}px`;
-	tmpA.style.left = `${boxA.left}px`;
-	tmpA.style.width = `${boxA.width}px`;
-	tmpA.style.height = `${boxA.height}px`;
-	tmpA.style.zIndex = '20';
-
-	const tmpB = elB.cloneNode(true) as HTMLElement;
-	tmpB.style.position = 'absolute';
-	tmpB.style.top = `${boxB.top}px`;
-	tmpB.style.left = `${boxB.left}px`;
-	tmpB.style.width = `${boxB.width}px`;
-	tmpB.style.height = `${boxB.height}px`;
-	tmpB.style.zIndex = '10';
-
-	tmpContainer.append(tmpA, tmpB);
-	tmpContainer.ownerDocument.body.append(tmpContainer);
-
-	elB.remove();
-	elA.before(elB);
-
-	elA.style.visibility = lockCSS.visibility;
-	elA.style.pointerEvents = lockCSS.pointerEvents;
-	elB.style.visibility = lockCSS.visibility;
-	elB.style.pointerEvents = lockCSS.pointerEvents;
-
-	const animateA = tmpA.animate(
-		[
-			{ top: tmpA.style.top, left: tmpA.style.left },
-			{ top: `${boxA.top + boxB.height}px`, left: tmpB.style.left },
-		],
-		{
-			duration,
-		},
-	);
-	const animateB = tmpB.animate(
-		[
-			{ top: tmpB.style.top, left: tmpB.style.left },
-			{ top: tmpA.style.top, left: tmpA.style.left },
-		],
-		{
-			duration,
-		},
-	);
-
-	await Promise.all([animateA.finished, animateB.finished]);
-
-	tmpContainer.remove();
-	elA.removeAttribute('style');
-	elB.removeAttribute('style');
-
-	if (beforeStyleA) {
-		elA.style.cssText = beforeStyleA;
+	const doc = elA.ownerDocument;
+	const startViewTransition = doc.startViewTransition?.bind(doc);
+	if (!startViewTransition) {
+		elB.remove();
+		elA.before(elB);
+		return;
 	}
-	if (beforeStyleB) {
-		elB.style.cssText = beforeStyleB;
+
+	const id = ++nextViewTransitionId;
+	const nameA = `bge-block-swap-${id}-a`;
+	const nameB = `bge-block-swap-${id}-b`;
+	const previousNameA = elA.style.viewTransitionName;
+	const previousNameB = elB.style.viewTransitionName;
+
+	elA.style.viewTransitionName = nameA;
+	elB.style.viewTransitionName = nameB;
+
+	try {
+		const transition = startViewTransition(() => {
+			elB.remove();
+			elA.before(elB);
+		});
+		await transition.finished;
+	} finally {
+		if (previousNameA) {
+			elA.style.viewTransitionName = previousNameA;
+		} else {
+			elA.style.removeProperty('view-transition-name');
+		}
+		if (previousNameB) {
+			elB.style.viewTransitionName = previousNameB;
+		} else {
+			elB.style.removeProperty('view-transition-name');
+		}
 	}
 }
