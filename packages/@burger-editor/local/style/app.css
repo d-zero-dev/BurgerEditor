@@ -89,6 +89,9 @@ body {
 
 /* Front Matter Editor */
 .fm-editor {
+	display: grid;
+	grid-template-rows: auto auto;
+	grid-template-columns: minmax(0, 1fr) auto;
 	margin-block-end: 1.5rem;
 	font-family:
 		system-ui,
@@ -100,45 +103,76 @@ body {
 	border-radius: 0.5rem;
 }
 
-.fm-editor-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding-block: 0.625rem;
-	padding-inline: 0.875rem;
-	background-color: var(--bge-dialog-header-background-color, #f3f4f6);
-	border-block-end: 1px solid var(--bge-border-color, #e5e7eb);
-	border-start-start-radius: 0.5rem;
-	border-start-end-radius: 0.5rem;
-	border-end-start-radius: 0;
-	border-end-end-radius: 0;
+/* summary と中身を親の2行に乗せ、追加ボタンを見出し行の右端へ重ねる。
+   details の中身は ::details-content が包むので、フィールド自身は grid item にならない */
+.fm-editor-details {
+	display: grid;
+	grid-template-rows: subgrid;
+	grid-template-columns: subgrid;
+	grid-row: 1 / span 2;
+	grid-column: 1 / -1;
 }
 
 .fm-editor-toggle {
 	display: flex;
+	grid-row: 1;
+	grid-column: 1 / -1;
 	gap: 0.5rem;
 	align-items: center;
-	padding: 0;
+	padding-block: 0.625rem;
+
+	/* 「+ 追加」が見出し行に重なる。ボタンの左右 padding 0.75rem、
+	   0.75rem のラベル、右余白 0.875rem を足した幅だけ文字を避ける */
+	padding-inline: 0.875rem 6.5rem;
 	font-size: 0.875rem;
 	font-weight: 600;
 	color: var(--bge-text-color, #374151);
 	cursor: pointer;
-	background: none;
-	border: none;
+	list-style: none;
+	background-color: var(--bge-dialog-header-background-color, #f3f4f6);
+	border-block-end: 1px solid var(--bge-border-color, #e5e7eb);
+	border-start-start-radius: 0.5rem;
+	border-start-end-radius: 0.5rem;
+}
+
+/* list-style を消しても Chrome は ::marker と ::-webkit-details-marker の
+   どちらかを残す。両方消して ::before の印だけにする */
+.fm-editor-toggle::-webkit-details-marker {
+	display: none;
+}
+
+.fm-editor-toggle::marker {
+	content: none;
+}
+
+/* 印は代替テキストを空にした生成コンテンツ。名前には入らない */
+.fm-editor-toggle::before {
+	font-size: 0.75rem;
+	font-weight: normal;
+	content: '▶' / '';
+}
+
+.fm-editor-details[open] > .fm-editor-toggle::before {
+	content: '▼' / '';
 }
 
 .fm-editor-toggle:hover {
 	color: var(--bge-primary-color, #2563eb);
 }
 
-.fm-editor-toggle-icon {
-	font-size: 0.75rem;
-	transition: transform 0.15s ease;
+.fm-editor-details::details-content {
+	grid-row: 2;
+	grid-column: 1 / -1;
 }
 
 .fm-editor-add {
+	z-index: 1;
+	grid-row: 1;
+	grid-column: 2;
+	place-self: center end;
 	padding-block: 0.375rem;
 	padding-inline: 0.75rem;
+	margin-inline-end: 0.875rem;
 	font-size: 0.75rem;
 	font-weight: 500;
 	color: var(--bge-primary-color, #2563eb);

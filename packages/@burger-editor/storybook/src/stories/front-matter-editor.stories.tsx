@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { FrontMatterEditorView, FrontMatterStore } from '@burger-editor/client/ui';
 import { useState } from 'react';
+import { expect, within } from 'storybook/test';
 
 /**
  * `FrontMatterEditorView` reads its fields from a `FrontMatterStore`
@@ -44,6 +45,22 @@ export const Default: Story = {
 export const Empty: Story = {
 	args: {
 		initialData: {},
+	},
+};
+
+export const Collapsed: Story = {
+	args: {
+		initialData: {
+			title: 'ページタイトル',
+		},
+	},
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		const summary = canvas.getByText('Front Matter');
+		// summary の開閉は UA の click で、Invoker Command ではない。
+		// click() は ESLint が禁止しているので、同じイベントを送る
+		summary.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+		await expect(canvas.getByText('title')).not.toBeVisible();
 	},
 };
 

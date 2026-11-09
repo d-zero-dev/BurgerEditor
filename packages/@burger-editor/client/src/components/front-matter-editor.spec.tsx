@@ -5,6 +5,7 @@ import { fireEvent, screen } from '@testing-library/react';
 import { act } from 'react';
 import { test, expect, beforeEach, afterEach, vi, describe } from 'vitest';
 
+import '../../../local/style/app.css';
 import { createFrontMatterEditor, FrontMatterStore } from './front-matter-editor.js';
 
 let container: HTMLElement;
@@ -73,6 +74,16 @@ function getField(label: string) {
 	return screen.getByLabelText<HTMLInputElement>(label);
 }
 
+/**
+ * 折りたたみの見出し。testing-library の role 計算は summary を button として
+ * 公開しないため、この spec の container から要素を取る
+ */
+function getSummary(): HTMLElement {
+	const summary = container.querySelector('summary');
+	expect(summary).toBeInstanceOf(HTMLElement);
+	return summary as HTMLElement;
+}
+
 describe('レンダリング', () => {
 	test('初期データから型別のinputが描画される', () => {
 		mount({
@@ -103,6 +114,87 @@ describe('レンダリング', () => {
 				'フィールドがありません。「+ 追加」ボタンでフィールドを追加してください。',
 			),
 		).toBeTruthy();
+	});
+});
+
+describe('折りたたみ', () => {
+	test('summaryの活性化でopenが切り替わり、名前はFront Matterで印を含まない', () => {
+		mount({ title: 'A' });
+
+		const summary = getSummary();
+		const details = summary.closest('details');
+		expect(summary.textContent).toBe('Front Matter');
+		expect(getComputedStyle(summary, '::before').content).toBe('"▼" / ""');
+		expect(details?.open).toBe(true);
+
+		act(() => {
+			fireEvent.click(summary);
+		});
+		expect(details?.open).toBe(false);
+		expect(getComputedStyle(summary, '::before').content).toBe('"▶" / ""');
+
+		act(() => {
+			fireEvent.click(summary);
+		});
+		expect(details?.open).toBe(true);
+	});
+
+	test('閉じてもフィールドはDOMに残り、入力中の値は同じ要素に残る', () => {
+		mount({ tags: ['a'] });
+		const textarea = screen.getByLabelText<HTMLTextAreaElement>('tags');
+		fireEvent.change(textarea, { target: { value: '["a",' } });
+
+		const summary = getSummary();
+		act(() => {
+			fireEvent.click(summary);
+		});
+
+		expect(summary.closest('details')?.open).toBe(false);
+		expect(textarea.isConnected).toBe(true);
+		expect(textarea.value).toBe('["a",');
+		expect(textarea.checkVisibility()).toBe(false);
+
+		act(() => {
+			fireEvent.click(summary);
+		});
+		expect(screen.getByLabelText('tags')).toBe(textarea);
+		expect(textarea.value).toBe('["a",');
+	});
+
+	test('閉じたまま再レンダーしてもdetailsは開かない', () => {
+		mount({ title: 'A' });
+		const summary = getSummary();
+		const details = summary.closest('details');
+
+		act(() => {
+			fireEvent.click(summary);
+		});
+		expect(details?.open).toBe(false);
+
+		invokeCommand(screen.getByRole('button', { name: '+ 追加' }));
+
+		expect(details?.open).toBe(false);
+		expect(screen.getByRole('heading', { name: 'フィールドを追加' })).toBeTruthy();
+	});
+
+	test('追加ボタンはsummaryの外にあり、閉じても押せ、開閉しない', () => {
+		mount({});
+		const summary = getSummary();
+		const add = screen.getByRole('button', { name: '+ 追加' });
+		expect(summary.contains(add)).toBe(false);
+
+		act(() => {
+			fireEvent.click(summary);
+		});
+
+		expect(summary.closest('details')?.open).toBe(false);
+		expect(add.isConnected).toBe(true);
+		const rect = add.getBoundingClientRect();
+		expect(
+			document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2),
+		).toBe(add);
+		invokeCommand(add);
+		expect(summary.closest('details')?.open).toBe(false);
 	});
 });
 
