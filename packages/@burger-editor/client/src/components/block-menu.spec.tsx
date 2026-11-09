@@ -368,7 +368,7 @@ test('Item未解決の[data-bgi]にはアンカーとオーバーレイを付け
 
 	const mockItem = { id: 'resolved-item' } as unknown as Item<ItemData, {}>;
 	vi.spyOn(ItemClass, 'getInstance').mockImplementation((el) =>
-		el === resolvedEl ? mockItem : null,
+		el === resolvedEl ? mockItem : undefined,
 	);
 
 	const block = createMockBlock(false, blockEl);
