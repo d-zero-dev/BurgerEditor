@@ -1,9 +1,10 @@
 .bgeMenuBase {
 	position: absolute;
-	inset-block-start: var(--y);
-	inset-inline-start: var(--x);
-	inline-size: var(--width);
-	block-size: calc(var(--height) + var(--margin-block-end));
+	inset-block-start: anchor(start);
+	inset-inline-start: anchor(start);
+	inline-size: anchor-size(width);
+	block-size: calc(anchor-size(height) + var(--margin-block-end));
+	position-anchor: --bge-current-block;
 	pointer-events: none;
 }
 
@@ -67,9 +68,14 @@
 /* アイテム編集用の透明オーバーレイボタン（旧: アイテム要素への直接クリック） */
 .bgeItemOverlay {
 	position: absolute;
+	inset-block-start: anchor(start);
+	inset-inline-start: anchor(start);
 	z-index: 50;
+	inline-size: anchor-size(width);
+	block-size: anchor-size(height);
 	padding: 0;
 	margin: 0;
+	position-anchor: var(--item-anchor);
 	appearance: none;
 	pointer-events: all;
 	cursor: pointer;

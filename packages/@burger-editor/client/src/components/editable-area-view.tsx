@@ -95,19 +95,17 @@ export function EditableAreaView({
 			appendStylesheetTo(frameDoc, path, id);
 		}
 
-		// ポータルで差し込むブロックメニュー層の位置決めと、agentによる
-		// ブロック操作前の注視演出（BurgerBlock.highlight()、実体は
-		// highlightElement()がトグルする[data-bge-highlight]）。client本体の
-		// CSSはiframe文書に読み込まれないため、ここで直接注入する。
-		// insetを省略するとposition: absoluteのcontaining blockがDOMフロー上の
-		// static position（コンテンツ本体の直後＝ページ最下部）になり、子の
-		// BlockMenuViewが計算する--x/--yオフセットがそこへ積み増しされて
-		// メニューが大きく下にずれる
+		// ポータルで差し込むブロックメニュー層と、agentによるブロック操作前の
+		// 注視演出（BurgerBlock.highlight()、実体は highlightElement() が
+		// トグルする [data-bge-highlight]）。client 本体の CSS は iframe 文書に
+		// 読み込まれないため、ここで直接注入する。
+		// BlockMenuView は CSS アンカーでブロック要素を参照する。包む要素が
+		// position: absolute などの包含ブロックを作るとアンカーが解決できないため
+		// static にし、重なり順は z-index のみ指定する。
 		const injectedUiStyle = frameDoc.createElement('style');
 		injectedUiStyle.textContent = `@layer ${CSS_LAYER.ui} {
 			[data-bge-component='block-menu'] {
-				position: absolute;
-				inset: 0;
+				position: static;
 				z-index: 2147483647;
 				pointer-events: none;
 			}
