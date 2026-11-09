@@ -170,6 +170,16 @@
 			list-style: none;
 		}
 
+		/*
+		 * The span is the number of `[data-bge-item]` children so subgrid rows
+		 * line up across columns. A parent cannot read its own child count:
+		 * `sibling-count()` counts siblings of the element it is used on, and
+		 * `children-count()` (`grid-row: span children-count()`) is only a
+		 * proposal (https://github.com/w3c/csswg-drafts/issues/11068).
+		 * Until that function exists, 2–8 items set `--item-count` with
+		 * `:has(:nth-child(N):last-child)`.
+		 */
+
 		/* Subgrid hack 2 items */
 		&[data-bge-group]:has([data-bge-item]:nth-child(2):last-child) {
 			--item-count: 2;
@@ -203,6 +213,20 @@
 		/* Subgrid hack 8 items */
 		&[data-bge-group]:has([data-bge-item]:nth-child(8):last-child) {
 			--item-count: 8;
+		}
+
+		/*
+		 * 9+ items: the enumeration above stops at 8, so the span would stay 1 and
+		 * the items would overlap. Leave subgrid and stack inside the group
+		 * (no cross-column row alignment). Replace this and the enumeration with
+		 * `grid-row: span children-count()` when that function exists.
+		 */
+		&[data-bge-group]:has([data-bge-item]:nth-child(9)) {
+			display: flex;
+			flex-direction: column;
+			grid-template-rows: unset;
+			grid-row: auto;
+			gap: var(--_subgrid-gap) 0;
 		}
 	}
 
