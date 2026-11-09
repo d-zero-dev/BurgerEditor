@@ -86,6 +86,72 @@ const BUTTON_TO_STATE_KEY_MAP: Record<string, keyof EditorState> = {
 	image: 'image',
 } as const;
 
+/** `data-bge-toolbar-button` の値からスクリーンリーダー向けの操作名へ */
+const TOOLBAR_BUTTON_ACCESSIBLE_NAMES: Readonly<Record<string, string>> = {
+	bold: '太字',
+	italic: '斜体',
+	underline: '下線',
+	strikethrough: '取り消し線',
+	subscript: '下付き',
+	superscript: '上付き',
+	code: 'コード',
+	link: 'リンク',
+	'button-like-link': 'ボタン風リンク',
+	blockquote: '引用',
+	'bullet-list': '箇条書き',
+	'ordered-list': '番号付きリスト',
+	note: 'ノートブロック',
+	h1: '見出しレベル1',
+	h2: '見出しレベル2',
+	h3: '見出しレベル3',
+	h4: '見出しレベル4',
+	h5: '見出しレベル5',
+	h6: '見出しレベル6',
+	'flex-box': 'フレックスボックス',
+	'align-start': '左寄せ',
+	'align-center': '中央寄せ',
+	'align-end': '右寄せ',
+} as const;
+
+const MODE_SELECTOR_ACCESSIBLE_NAME = '編集モード';
+
+/**
+ *
+ * @param rawSvg
+ */
+function iconSvgWithAriaHidden(rawSvg: string): string {
+	return rawSvg.replace(/^<svg\b/, '<svg aria-hidden="true"');
+}
+
+/**
+ * アイコンだけのツールバーボタン。client のブロックメニューと同様に
+ * `aria-labelledby` とアンカー配置のツールチップで操作名を示す。
+ * @param editorId
+ * @param toggleCommand
+ * @param command
+ * @param icon
+ * @param innerMarkup
+ */
+function renderIconToolbarButton(
+	editorId: string,
+	toggleCommand: string,
+	command: string,
+	icon: string,
+	innerMarkup?: string,
+): string {
+	const label = TOOLBAR_BUTTON_ACCESSIBLE_NAMES[command];
+	if (!label) {
+		throw new Error(`Missing accessible name for toolbar button: ${command}`);
+	}
+	const labelId = `${editorId}-toolbar-label-${command}`;
+	const anchorName = `--anchor-${editorId}-${command}`;
+	const buttonContent = innerMarkup ?? iconSvgWithAriaHidden(icon);
+	return `<div data-bge-toolbar-button-host style="--name: ${anchorName}">
+		<button type="button" ${toggleCommand} data-bge-toolbar-button="${command}" aria-labelledby="${labelId}">${buttonContent}</button>
+		<span id="${labelId}">${label}</span>
+	</div>`;
+}
+
 export interface BgeWysiwygEditorElementOptions {
 	extensions?: Extensions;
 	wrapperElement?: ElementSeed;
@@ -270,34 +336,34 @@ export class BgeWysiwygEditorElement extends HTMLElement {
 				<legend>${label}</legend>
 				<div data-bge-toolbar>
 					<div data-bge-toolbar-group>
-						${commands.includes('bold') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="bold">${IconBold}</button>` : ''}
-						${commands.includes('italic') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="italic">${IconItalic}</button>` : ''}
-						${commands.includes('strikethrough') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="strikethrough">${IconStrikethrough}</button>` : ''}
-						${commands.includes('underline') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="underline">${IconUnderline}</button>` : ''}
-						${commands.includes('subscript') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="subscript">${IconSubscript}</button>` : ''}
-						${commands.includes('superscript') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="superscript">${IconSuperscript}</button>` : ''}
-						${commands.includes('code') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="code">${IconCode}</button>` : ''}
-						${commands.includes('link') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="link">${IconLink}</button>` : ''}
-						${commands.includes('button-like-link') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="button-like-link">${IconCloud}</button>` : ''}
-						${commands.includes('blockquote') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="blockquote">${IconBlockquote}</button>` : ''}
-						${commands.includes('bullet-list') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="bullet-list">${IconBulletList}</button>` : ''}
-						${commands.includes('ordered-list') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="ordered-list">${IconOrderedList}</button>` : ''}
-						${commands.includes('note') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="note">${IconNotes}</button>` : ''}
-						${commands.includes('h1') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h1">${IconH1}</button>` : ''}
-						${commands.includes('h2') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h2">${IconH2}</button>` : ''}
-						${commands.includes('h3') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h3">${IconH3}</button>` : ''}
-						${commands.includes('h4') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h4">${IconH4}</button>` : ''}
-						${commands.includes('h5') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h5">${IconH5}</button>` : ''}
-						${commands.includes('h6') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="h6">${IconH6}</button>` : ''}
-						${commands.includes('flex-box') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="flex-box"><span data-bge-rotate>${IconAlignBoxCenterStretch}</span></button>` : ''}
-						${commands.includes('align-start') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="align-start">${IconAlignLeft}</button>` : ''}
-						${commands.includes('align-center') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="align-center">${IconAlignCenter}</button>` : ''}
-						${commands.includes('align-end') ? `<button type="button" ${toggleCommand} data-bge-toolbar-button="align-end">${IconAlignRight}</button>` : ''}
+						${commands.includes('bold') ? renderIconToolbarButton(this.id, toggleCommand, 'bold', IconBold) : ''}
+						${commands.includes('italic') ? renderIconToolbarButton(this.id, toggleCommand, 'italic', IconItalic) : ''}
+						${commands.includes('strikethrough') ? renderIconToolbarButton(this.id, toggleCommand, 'strikethrough', IconStrikethrough) : ''}
+						${commands.includes('underline') ? renderIconToolbarButton(this.id, toggleCommand, 'underline', IconUnderline) : ''}
+						${commands.includes('subscript') ? renderIconToolbarButton(this.id, toggleCommand, 'subscript', IconSubscript) : ''}
+						${commands.includes('superscript') ? renderIconToolbarButton(this.id, toggleCommand, 'superscript', IconSuperscript) : ''}
+						${commands.includes('code') ? renderIconToolbarButton(this.id, toggleCommand, 'code', IconCode) : ''}
+						${commands.includes('link') ? renderIconToolbarButton(this.id, toggleCommand, 'link', IconLink) : ''}
+						${commands.includes('button-like-link') ? renderIconToolbarButton(this.id, toggleCommand, 'button-like-link', IconCloud) : ''}
+						${commands.includes('blockquote') ? renderIconToolbarButton(this.id, toggleCommand, 'blockquote', IconBlockquote) : ''}
+						${commands.includes('bullet-list') ? renderIconToolbarButton(this.id, toggleCommand, 'bullet-list', IconBulletList) : ''}
+						${commands.includes('ordered-list') ? renderIconToolbarButton(this.id, toggleCommand, 'ordered-list', IconOrderedList) : ''}
+						${commands.includes('note') ? renderIconToolbarButton(this.id, toggleCommand, 'note', IconNotes) : ''}
+						${commands.includes('h1') ? renderIconToolbarButton(this.id, toggleCommand, 'h1', IconH1) : ''}
+						${commands.includes('h2') ? renderIconToolbarButton(this.id, toggleCommand, 'h2', IconH2) : ''}
+						${commands.includes('h3') ? renderIconToolbarButton(this.id, toggleCommand, 'h3', IconH3) : ''}
+						${commands.includes('h4') ? renderIconToolbarButton(this.id, toggleCommand, 'h4', IconH4) : ''}
+						${commands.includes('h5') ? renderIconToolbarButton(this.id, toggleCommand, 'h5', IconH5) : ''}
+						${commands.includes('h6') ? renderIconToolbarButton(this.id, toggleCommand, 'h6', IconH6) : ''}
+						${commands.includes('flex-box') ? renderIconToolbarButton(this.id, toggleCommand, 'flex-box', IconAlignBoxCenterStretch, `<span data-bge-rotate>${iconSvgWithAriaHidden(IconAlignBoxCenterStretch)}</span>`) : ''}
+						${commands.includes('align-start') ? renderIconToolbarButton(this.id, toggleCommand, 'align-start', IconAlignLeft) : ''}
+						${commands.includes('align-center') ? renderIconToolbarButton(this.id, toggleCommand, 'align-center', IconAlignCenter) : ''}
+						${commands.includes('align-end') ? renderIconToolbarButton(this.id, toggleCommand, 'align-end', IconAlignRight) : ''}
 					</div>
 					<div data-bge-toolbar-group>
 						${
 							BgeWysiwygEditorElement.experimentalTextOnlyMode
-								? `<select data-bge-mode-selector>
+								? `<select data-bge-mode-selector aria-label="${MODE_SELECTOR_ACCESSIBLE_NAME}">
 								<option value="wysiwyg">デザインモード</option>
 								<option value="text-only">テキスト編集モード</option>
 								<option value="html">HTMLモード</option>
