@@ -46,9 +46,8 @@ const preview: Preview = {
 				wrapper === 'none' ? (
 					<Story />
 				) : wrapper === 'block-menu' ? (
-					// BlockMenuView は position: absolute で自身を配置するため、
-					// 基準となる position: relative を明示する
-					<div data-bge-component="block-menu" style={{ position: 'relative' }}>
+					// 本番の iframe 注入 CSS と同様、包含ブロックを作らない
+					<div data-bge-component="block-menu" style={{ position: 'static' }}>
 						<Story />
 					</div>
 				) : (
