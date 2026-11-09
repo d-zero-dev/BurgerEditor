@@ -179,20 +179,24 @@ export function BlockOptions({ block }: { readonly block: BurgerBlock }) {
 								</select>
 							</label>
 							{currentAutoRepeat === 'fixed' ? (
-								<label>
-									<span>基準列数</span>
-									<output>{currentColumns}</output>
-									<input
-										name="bge-options-columns"
-										type="range"
-										value={currentColumns}
-										onChange={(e) => {
-											setCurrentColumns(e.currentTarget.valueAsNumber);
-										}}
-										min="1"
-										max="5"
-									/>
-								</label>
+								<span>
+									<label>
+										<span>基準列数</span>
+										<input
+											id={`${uid}-columns`}
+											name="bge-options-columns"
+											type="range"
+											value={currentColumns}
+											onChange={(e) => {
+												setCurrentColumns(e.currentTarget.valueAsNumber);
+											}}
+											min="1"
+											max="5"
+										/>
+									</label>
+									{/* output を label の内側に置くと implicit label が output に奪われる */}
+									<output htmlFor={`${uid}-columns`}>{currentColumns}</output>
+								</span>
 							) : null}
 							{currentAutoRepeat !== 'fixed' && repeatMinInlineSizeVariants ? (
 								<label>
