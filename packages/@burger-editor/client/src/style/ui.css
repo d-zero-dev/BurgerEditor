@@ -383,6 +383,37 @@
 			align-items: center;
 		}
 
+		[data-bge-toolbar-button-host] {
+			position: relative;
+			display: inline-block;
+
+			[data-bge-toolbar-button] {
+				anchor-name: var(--name);
+			}
+
+			> span {
+				position: absolute;
+				z-index: 1000;
+				display: none;
+				inline-size: calc(anchor-size(inline-size) * 2);
+				padding-block: 0.2em;
+				padding-inline: 0.6em;
+				margin: 0.2em;
+				position-area: block-end;
+				position-anchor: var(--name);
+				font-size: 0.8em;
+				color: var(--bge-lightest-color);
+				white-space: nowrap;
+				pointer-events: none;
+				background: var(--bge-tooltip-background-color);
+				border-radius: 0.6em;
+			}
+
+			&:is(:hover, :focus-within) > span {
+				display: block;
+			}
+		}
+
 		[data-bge-toolbar-button] {
 			--size: 1lh;
 			--stroke-width: 1.5;
