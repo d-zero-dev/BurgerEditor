@@ -27,12 +27,17 @@ export function clearBlockMenuAnchors(blockEl: HTMLElement): void {
 
 /**
  * メニューとアイテムオーバーレイが参照するアンカーをブロック DOM に付与する。
+ * `itemEls` は `Item.getInstance` で解決済みの `[data-bgi]` だけを渡す（オーバーレイの
+ * `value` インデックスと `itemsRef` が同じ並びになる）。
  * @param blockEl - `[data-bge-container]` のブロック要素
+ * @param itemEls - アンカーを付与するアイテム要素（出現順）
  * @returns 付与したアイテムアンカー名の一覧（オーバーレイの `position-anchor` 用）
  */
-export function applyBlockMenuAnchors(blockEl: HTMLElement): readonly string[] {
+export function applyBlockMenuAnchors(
+	blockEl: HTMLElement,
+	itemEls: readonly HTMLElement[],
+): readonly string[] {
 	blockEl.style.setProperty('anchor-name', BGE_BLOCK_MENU_BLOCK_ANCHOR);
-	const itemEls = blockEl.querySelectorAll<HTMLElement>('[data-bgi]');
 	const anchorNames: string[] = [];
 	for (const [index, itemEl] of itemEls.entries()) {
 		const name = bgeBlockMenuItemAnchorName(index);

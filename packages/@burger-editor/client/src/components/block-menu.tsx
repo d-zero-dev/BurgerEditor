@@ -126,14 +126,6 @@ export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 				anchoredBlockElRef.current = blockEl;
 			}
 
-			const anchorNames = applyBlockMenuAnchors(blockEl);
-			setItemAnchors(anchorNames.map((anchorName) => ({ anchorName })));
-			setMargin({
-				marginBlockEnd,
-				marginBlockEndValue:
-					win?.getComputedStyle(blockEl).getPropertyValue('--bge-block-margin') ?? '0px',
-			});
-
 			const itemEntries = [...blockEl.querySelectorAll<HTMLElement>('[data-bgi]')]
 				.map((itemEl) => ({ el: itemEl, item: Item.getInstance(itemEl) }))
 				.filter(
@@ -141,6 +133,17 @@ export function BlockMenu({ container }: { readonly container: HTMLElement }) {
 						entry.item != null,
 				);
 			itemsRef.current = itemEntries.map((entry) => entry.item);
+
+			const anchorNames = applyBlockMenuAnchors(
+				blockEl,
+				itemEntries.map((entry) => entry.el),
+			);
+			setItemAnchors(anchorNames.map((anchorName) => ({ anchorName })));
+			setMargin({
+				marginBlockEnd,
+				marginBlockEndValue:
+					win?.getComputedStyle(blockEl).getPropertyValue('--bge-block-margin') ?? '0px',
+			});
 
 			engine.setCurrentBlock(block);
 		};

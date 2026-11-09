@@ -1,6 +1,6 @@
-import type { BurgerBlock } from '@burger-editor/core';
+import type { BurgerBlock, ItemData, Item } from '@burger-editor/core';
 
-import { getBlockAtPosition, UIStateStore } from '@burger-editor/core';
+import { getBlockAtPosition, Item as ItemClass, UIStateStore } from '@burger-editor/core';
 import { cleanup } from '@testing-library/react';
 import { act } from 'react';
 import { test, expect, afterEach, vi } from 'vitest';
@@ -352,4 +352,50 @@ test('表示中にブロックの高さが変わってもメニューの枠が�
 	expect(blockHeightAfter - blockHeightBefore).toBeGreaterThan(90);
 	expect(menuHeightAfter - menuHeightBefore).toBeGreaterThan(90);
 	expect(Math.abs(menuHeightAfter - blockHeightAfter)).toBeLessThan(4);
+});
+
+test('Item未解決の[data-bgi]にはアンカーとオーバーレイを付けない', async () => {
+	const engine = createMockEngine();
+	const container = document.createElement('div');
+	document.body.append(container);
+
+	const blockEl = document.createElement('div');
+	const resolvedEl = document.createElement('div');
+	resolvedEl.dataset.bgi = '';
+	const orphanEl = document.createElement('div');
+	orphanEl.dataset.bgi = '';
+	blockEl.append(resolvedEl, orphanEl);
+
+	const mockItem = { id: 'resolved-item' } as unknown as Item<ItemData, {}>;
+	vi.spyOn(ItemClass, 'getInstance').mockImplementation((el) =>
+		el === resolvedEl ? mockItem : null,
+	);
+
+	const block = createMockBlock(false, blockEl);
+	vi.mocked(getBlockAtPosition).mockReturnValue({
+		block,
+		rect: blockEl.getBoundingClientRect(),
+		marginBlockEnd: 0,
+	});
+
+	const openItemEditor = vi.fn();
+	engine.uiState.openItemEditor = openItemEditor;
+
+	const { container: renderedRoot } = renderWithEngine(
+		engine,
+		<BlockMenu container={container} />,
+	);
+	await hover(document.body);
+
+	expect(orphanEl.style.getPropertyValue('anchor-name')).toBe('');
+	expect(resolvedEl.style.getPropertyValue('anchor-name')).toBe(
+		'--bge-block-menu-item-0',
+	);
+	expect(renderedRoot.querySelectorAll('[aria-label="コンテンツを編集"]').length).toBe(1);
+
+	const overlay = renderedRoot.querySelector(
+		'[aria-label="コンテンツを編集"]',
+	) as HTMLButtonElement;
+	overlay.click();
+	expect(openItemEditor).toHaveBeenCalledWith(mockItem);
 });
