@@ -116,7 +116,7 @@ BurgerEditor は、ブロックを次の構造で保存する。
 - 固定列数の場合、本パッケージの CSS は列数を`data-bge-container`の数値にする（数値がない場合は 1 列）。本パッケージの CSS は、この数値を`[data-bge-container-frame]`の`--bge-grid-col`に設定する
 - `auto-fit`/`auto-fill`の場合、本パッケージの CSS は`repeat(auto-fit, minmax(最小幅, 1fr))`で列を生成し、列数はブラウザがコンテナ幅から決定する。1 列の最小幅は`--bge-repeat-min-inline-size`の値で、既定は`--medium`（300px）。`--small`は 150px、`--large`は 500px。コンテナ幅が最小幅より狭い場合、本パッケージの CSS は最小幅をコンテナ幅まで縮小する（コンテナからはみ出さない）
 - 本パッケージの CSS は、列の間隔に`--bge-options-column-gap`、行の間隔に`--bge-options-row-gap`の値を適用する
-- 本パッケージの CSS は、各`[data-bge-group]`を subgrid にする。これにより、隣接する列の同じ順番のアイテム（例: 画像の下の見出し）の高さが揃う。揃うのは、1 つのグループのアイテムが 8 個までの場合
+- 1 つのグループに 1〜8 個の`[data-bge-item]`がある場合、本パッケージの CSS は`[data-bge-group]`を subgrid にする。1 個は既定の span 1、2〜8 個は個数ぶん親の行にまたがる。隣接する列の同じ順番のアイテム（例: 画像の下の見出し）の高さが揃う。9 個以上の場合は subgrid を使わず、グループ内で縦に並べる（隣列との行揃えは行わない）
 - 本パッケージの CSS は、`[data-bge-item]`を`bge-item`という名前のコンテナ（`container-type: inline-size`）にする
 
 #### 横並び（`inline`）
@@ -160,6 +160,7 @@ BurgerEditor は、編集画面の「ブロックのスタイル拡張」の選�
 | 軸と変種の宣言（`[data-bge-container]`）                          | (0,1,0) |
 | `ul`/`ol`/`li`のリストのリセット                                  | (0,0,1) |
 | グリッドで各グループが占める行数（`--item-count`）                | (0,4,0) |
+| グリッドで 9 個以上のグループを縦に積む                           | (0,3,0) |
 | `immutable`の横並びで、グループが 2 つの場合の伸縮                | (0,4,0) |
 | Wysiwyg 内の`data-bgc-flex-box`・`data-bgc-align`の値ごとのルール | (0,1,0) |
 
