@@ -6,6 +6,7 @@ import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { animateInsertion } from '../animate-insertion.js';
+import { BLOCK_SWAP_VIEW_TRANSITION_CSS } from '../block-swap-view-transition-css.js';
 import { useEngine } from '../engine-context.js';
 import { useUIState } from '../use-engine.js';
 
@@ -130,7 +131,9 @@ export function EditableAreaView({
 				outline-offset: 2px;
 				animation: bge-highlight-blink 0.5s ease-in-out 2;
 			}
-		}`;
+		}
+
+		${BLOCK_SWAP_VIEW_TRANSITION_CSS}`;
 		frameDoc.head.append(injectedUiStyle);
 
 		frameDoc.body.setAttribute('style', 'margin: 0; border: 0;');
