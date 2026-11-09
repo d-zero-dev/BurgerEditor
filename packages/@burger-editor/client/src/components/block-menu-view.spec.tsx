@@ -6,11 +6,7 @@ import { BlockMenuView } from './block-menu-view.js';
 
 afterEach(cleanup);
 
-const geometry = {
-	width: 100,
-	height: 40,
-	x: 0,
-	y: 0,
+const margin = {
 	marginBlockEnd: 0,
 	marginBlockEndValue: '0px',
 };
@@ -23,8 +19,8 @@ test('visible=falseのときhidden属性が付く', () => {
 			menuId="menu-1"
 			commandBusId="bge-command-bus-test"
 			visible={false}
-			geometry={geometry}
-			itemRects={[]}
+			margin={margin}
+			itemAnchors={[]}
 			isMutable={false}
 		/>,
 	);
@@ -40,8 +36,8 @@ test('visible=trueのときhidden属性が付かない', () => {
 			menuId="menu-2"
 			commandBusId="bge-command-bus-test"
 			visible
-			geometry={geometry}
-			itemRects={[]}
+			margin={margin}
+			itemAnchors={[]}
 			isMutable={false}
 		/>,
 	);
@@ -49,7 +45,7 @@ test('visible=trueのときhidden属性が付かない', () => {
 	expect(menuEl.hidden).toBe(false);
 });
 
-test('itemRectsの数だけアイテムオーバーレイボタンが描画される', () => {
+test('itemAnchorsの数だけアイテムオーバーレイボタンが描画される', () => {
 	const rootRef = createRef<HTMLDivElement>();
 	const { container } = render(
 		<BlockMenuView
@@ -57,10 +53,10 @@ test('itemRectsの数だけアイテムオーバーレイボタンが描画さ�
 			menuId="menu-3"
 			commandBusId="bge-command-bus-test"
 			visible
-			geometry={geometry}
-			itemRects={[
-				{ x: 0, y: 0, width: 10, height: 10 },
-				{ x: 10, y: 10, width: 20, height: 20 },
+			margin={margin}
+			itemAnchors={[
+				{ anchorName: '--bge-block-menu-item-0' },
+				{ anchorName: '--bge-block-menu-item-1' },
 			]}
 			isMutable={false}
 		/>,
@@ -77,8 +73,8 @@ test('isMutable=trueのときグリッド追加・削除ボタンが表示され
 			menuId="menu-4"
 			commandBusId="bge-command-bus-test"
 			visible
-			geometry={geometry}
-			itemRects={[]}
+			margin={margin}
+			itemAnchors={[]}
 			isMutable
 		/>,
 	);
@@ -94,8 +90,8 @@ test('メニュー内のボタンのcommandforはcommandBusId propを指す（�
 			menuId="menu-6"
 			commandBusId="bge-command-bus-from-prop"
 			visible
-			geometry={geometry}
-			itemRects={[]}
+			margin={margin}
+			itemAnchors={[]}
 			isMutable={false}
 		/>,
 	);
@@ -112,8 +108,8 @@ test('isMutable=falseのときグリッド追加・削除ボタンが表示さ�
 			menuId="menu-5"
 			commandBusId="bge-command-bus-test"
 			visible
-			geometry={geometry}
-			itemRects={[]}
+			margin={margin}
+			itemAnchors={[]}
 			isMutable={false}
 		/>,
 	);

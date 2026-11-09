@@ -121,7 +121,7 @@ test('iframe文書内にコンテンツコンテナを構築してhostを解決�
 	);
 });
 
-test('iframe文書に注入するblock-menuスタイルがcontaining blockを明示する', () => {
+test('iframe文書に注入するblock-menuスタイルが包含ブロックを作らない', () => {
 	const engine = createMockEngine();
 	const { container } = renderView(engine, 'main', '<p>hello</p>');
 
@@ -130,12 +130,10 @@ test('iframe文書に注入するblock-menuスタイルがcontaining blockを明
 		.map((el) => el.textContent)
 		.join('\n');
 
-	// position: absoluteのみでinsetを指定しないと、DOMフロー上のstatic
-	// position（コンテンツ本体の直後＝ページ最下部）が基準点になり、
-	// BlockMenuViewの--x/--yオフセットがそこへ積み増しされてメニューが
-	// 大きく下にずれる
+	// BlockMenuView は CSS アンカーでブロックを参照する。包む要素が
+	// position: absolute などの包含ブロックを作るとアンカーが解決できない。
 	expect(styleText).toMatch(
-		/\[data-bge-component='block-menu'\]\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0;/,
+		/\[data-bge-component='block-menu'\]\s*\{[^}]*position:\s*static;/,
 	);
 });
 
