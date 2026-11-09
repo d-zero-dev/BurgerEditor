@@ -235,11 +235,16 @@
 		display: block;
 	}
 
+	:where(span:has(> label:not([for]) + output)) {
+		display: block;
+	}
+
 	:where(
 		:is(label:not([for]), small[id], [role='radiogroup'])
 			~ :is(
 				label:not([for]),
 				div:has(> label, > span > label):has(> :is(input, select, textarea)),
+				span:has(> label:not([for]) + output),
 				[role='radiogroup']
 			)
 	) {
