@@ -64,6 +64,7 @@ export function BlockCatalog({ catalog }: { readonly catalog: BlockCatalogData }
 												) : (
 													<span
 														className={styles['img']}
+														aria-hidden="true"
 														dangerouslySetInnerHTML={{
 															__html: blockInfo.definition.svg ?? '',
 														}}
