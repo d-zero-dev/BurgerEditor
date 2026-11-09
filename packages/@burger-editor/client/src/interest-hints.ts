@@ -3,7 +3,9 @@
  *
  * React 19 passes unknown lowercase attributes through to the DOM; these
  * augmentations make them type-check. Hint tooltips pair a controlling
- * button (`interestfor`) with a `popover="hint"` element.
+ * button (`interestfor`) with a `popover="hint"` element. See the
+ * {@link https://html.spec.whatwg.org/multipage/popover.html#attr-popover-hint-state | popover hint state}
+ * and Interest Invokers guidance in Chrome for Developers.
  */
 import 'react';
 

@@ -19,6 +19,8 @@
 		);
 	}
 
+	/* Hint visibility and stacking come from popover="hint" (top layer);
+	   z-index and display toggles are intentionally omitted. */
 	span {
 		position: absolute;
 		inline-size: calc(anchor-size(inline-size) * 2);

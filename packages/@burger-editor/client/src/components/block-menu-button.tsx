@@ -8,8 +8,11 @@ import styles from './block-menu-button.module.css';
 /**
  * Icon button of the block menu with an anchored hint tooltip (`interestfor`
  * + `popover="hint"`). Esc dismisses the tooltip without moving pointer or
- * focus (WCAG 1.4.13). The action is declared with the Invoker Commands API
- * instead of a click handler.
+ * focus (WCAG 1.4.13). The admin UI targets the latest stable Chrome, which
+ * implements Interest Invokers; without `HTMLButtonElement.prototype
+ * .interestForElement`, hints do not open (there is no CSS-only fallback).
+ * The action is declared with the Invoker Commands API instead of a click
+ * handler.
  * @param root0
  * @param root0.label
  * @param root0.command
