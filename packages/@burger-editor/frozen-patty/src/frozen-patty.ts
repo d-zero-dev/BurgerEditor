@@ -23,14 +23,14 @@ export default class FrozenPatty {
 	 * @param options Options
 	 */
 	constructor(html: string, options?: FrozenPattyOptions) {
-		this.#dom = document.createElement('fp-placeholer');
+		this.#dom = document.createElement('fp-placeholder');
 
 		// Sanitize initial HTML if XSS protection is enabled
 		if (options?.xssSanitize === false) {
 			this.#dom.innerHTML = html;
 			this.#xssSanitize = false;
 		} else {
-			this.#dom.innerHTML = sanitizeHtml(html);
+			this.#dom.innerHTML = sanitizeHtml(html, this.#dom);
 		}
 
 		if (options) {

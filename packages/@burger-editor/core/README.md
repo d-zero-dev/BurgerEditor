@@ -230,7 +230,7 @@ if (reasons.length > 0) {
 
 ### `dangerouslySetInnerHTML`
 
-アイテムデータは既定で XSS サニタイズされる。データに`dangerouslySetInnerHTML: true`を含めるとそのアイテムのすべてのデータが**サニタイズ無し**で挿入される。
+アイテムデータは既定で XSS サニタイズされる（除去する対象は[frozen-patty の README](../frozen-patty/README.md#xss-サニタイズが除去する対象)）。保存済みの HTML を読む`dataFromHtml()`も、HTML を同じ規則でサニタイズしてから値を読む。データに`dangerouslySetInnerHTML: true`を含めるとそのアイテムのすべてのデータが**サニタイズ無し**で挿入される。
 
 > **警告**: XSS 攻撃の原因になり得る。信頼できるソースから来る HTML にのみ使用すること。
 

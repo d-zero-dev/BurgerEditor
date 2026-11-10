@@ -190,20 +190,38 @@ frozenPatty(html)
 
 ### XSS サニタイズが除去する対象
 
-`xssSanitize: true`（デフォルト）で、`html`系の挿入時に以下を除去する。
+`xssSanitize: true`（デフォルト）で、`html`系の挿入時とコンストラクターに渡したテンプレートに以下を除去する。
 
-**タグ**:
+**タグ**（中身ごと除去する）:
 
 ```
-script, style, template, object, embed, iframe, frame, frameset, applet
+script, style, template, object, embed, iframe, frame, frameset, applet, noscript, base
 ```
+
+- 中身ごと除去するので、`<script>alert(1)</script>`の`alert(1)`は残らない（タグだけを外して中身を残すことはしない）
+- `meta`は`http-equiv`を持つものだけ、`link`は`itemprop`を持たないもの、または`rel`を持つもの（スタイルシートやリソースヒントの読み込み）だけを除去する。microdata の`<meta itemprop>`/`<link itemprop>`（`rel`なし）は残る
+- SVG の`animate`/`set`/`animateMotion`/`animateTransform`は、`attributeName`が`href`（`xlink:href`も同じ）か`on`で始まるものだけを除去する。`attributeName="opacity"`のような通常のアニメーションは残る
+- 要素名の大文字小文字は区別しない
+- `:node`フィールドで要素の種類を変える場合も同じ。除去対象の要素への付け替えは行わず、元の要素を残す。`meta`と`link`は、すべてのフィールドを書いた後で判定し直す
 
 **属性**:
 
-- `on*`で始まるイベントハンドラ属性（`onclick`、`onerror`ほか）
-- `href`/`src`/`action`などの URL 属性のうち、`javascript:`/`data:`/`vbscript:`で始まる値
+- `on`と英字だけの名前のイベントハンドラ属性（`onclick`、`onerror`ほか）と`manifest`。`one-time`のようにハイフンを含む名前は残る
+- `href`/`src`/`action`/`formaction`/`xlink:href`/`poster`/`ping`/`cite`/`background`のうち、URL として解釈したときに`javascript:`/`data:`/`vbscript:`で始まる値。URL パーサーと同じく、先頭の制御文字と空白、途中のタブと改行を無視して比べる（`java&#x09;script:`も除去される）。`ping`は URL のリストなので、先頭の URL だけを見る
+- 例外: `src`と`poster`の`data:image/png`・`jpeg`・`gif`・`webp`・`avif`（ラスター画像）は残る。SVG の`data:`は残らない
+
+**挿入先の文脈**: HTML は挿入先の要素と同じ名前の要素の子として、スクリプトも読み込みも走らない文書で解釈する。解釈し直しても同じ文字列になるまで繰り返し、5 周しても安定しない入力は空文字にして`console.warn`で知らせる。`<`を含まない文字列（`&lt;`のような文字参照はテキストにしかならない）は解釈せずそのまま返す。
 
 信頼できない外部データを扱う場合は、必ずデフォルト（`xssSanitize: true`）のまま使用すること。
+
+サニタイザー単体は`@burger-editor/frozen-patty/utils`から使える。挿入先の要素（または名前）を第 2 引数に渡す。
+
+```ts
+import { sanitizeHtml } from '@burger-editor/frozen-patty/utils';
+
+const cell = document.createElement('td');
+cell.innerHTML = sanitizeHtml('<p onclick="x()">a</p>', cell); // '<p>a</p>'
+```
 
 ## API
 

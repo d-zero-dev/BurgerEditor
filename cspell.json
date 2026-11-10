@@ -55,6 +55,11 @@
 		// Vitest API (vi.unstubAllGlobals)
 		"unstub",
 
+		// HTML / SVG / MathML terms used by the sanitizer and its tests
+		"mglyph",
+		"RCDATA",
+		"SMIL",
+
 		// GitHub Security Advisory IDs (e.g. GHSA-4v47-5hm4-93xf)
 		"GHSA"
 	]

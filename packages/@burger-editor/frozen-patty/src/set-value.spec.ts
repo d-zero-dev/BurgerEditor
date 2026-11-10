@@ -100,7 +100,9 @@ describe('setValue', () => {
 		expect(el.innerHTML).toBe('');
 		const dangerousHtml = '<script>alert("XSS")</script>';
 		setValue(el, 'foo', dangerousHtml);
-		expect(el.innerHTML).toBe('alert("XSS")');
+		// Behavior change: a dangerous element is removed together with its content
+		expect(el.innerHTML).toBe('');
+		// expect(el.innerHTML).toBe('alert("XSS")'); // previous
 	});
 
 	test('html (XSS protection)', () => {
@@ -109,7 +111,9 @@ describe('setValue', () => {
 		expect(el.innerHTML).toBe('');
 		const dangerousHtml = '<template><script>alert("XSS")</script></template>';
 		setValue(el, 'foo', dangerousHtml);
-		expect(el.innerHTML).toBe('alert("XSS")');
+		// Behavior change: a dangerous element is removed together with its content
+		expect(el.innerHTML).toBe('');
+		// expect(el.innerHTML).toBe('alert("XSS")'); // previous
 	});
 
 	test('html (XSS protection)', () => {
@@ -118,8 +122,12 @@ describe('setValue', () => {
 		expect(el.innerHTML).toBe('');
 		const dangerousHtml = '<style><span>XSS</span></style>';
 		setValue(el, 'foo', dangerousHtml);
-		expect(el.innerHTML).toBe('<span>XSS</span>');
-		expect(el.firstElementChild?.localName).toBe('span');
+		// Behavior change: a dangerous element is removed together with its content,
+		// so text inside `<style>` is no longer parsed again as markup
+		expect(el.innerHTML).toBe('');
+		// expect(el.innerHTML).toBe('<span>XSS</span>'); // previous
+		expect(el.firstElementChild).toBeNull();
+		// expect(el.firstElementChild?.localName).toBe('span'); // previous
 	});
 });
 

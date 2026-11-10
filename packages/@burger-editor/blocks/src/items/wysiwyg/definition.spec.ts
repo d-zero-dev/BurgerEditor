@@ -72,7 +72,10 @@ test('Safely set innerHTML', async () => {
 		'<div data-bge-group="">',
 		'<div data-bge-item="">',
 		`<div data-bgi="wysiwyg" data-bgi-ver="${__VERSION__}">`,
-		'<div data-bge="wysiwyg">alert("XSS")</div>',
+		// Behavior change: a dangerous element is removed together with its content
+		'<div data-bge="wysiwyg">',
+		'</div>',
+		// '<div data-bge="wysiwyg">alert("XSS")</div>', // previous
 		'</div>',
 		'</div>',
 		'</div>',
