@@ -1254,7 +1254,9 @@ test('XSS protection - even safe data:image/png URLs are blocked for security', 
 	fp.merge({ image: safeDataUrl });
 	const el = fp.toDOM().querySelector('img');
 
-	expect(el.getAttribute('src')).toBeFalsy();
+	// Behavior change: a `data:` URL of a raster image in `src` and `poster` is allowed
+	expect(el.getAttribute('src')).toBe(safeDataUrl);
+	// expect(el.getAttribute('src')).toBeFalsy(); // previous
 });
 
 test('XSS protection - https URLs are allowed and preserved', () => {

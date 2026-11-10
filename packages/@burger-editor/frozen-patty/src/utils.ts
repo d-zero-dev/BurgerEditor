@@ -8,7 +8,25 @@ import type {
 import { parseFields } from './parse-fields.js';
 
 /**
- * List of dangerous HTML elements to block for XSS protection
+ * Elements (lower-case local names) that are always removed, together with their
+ * content, for XSS protection.
+ *
+ * - `noscript` is parsed as elements when scripting is off (the inert document the
+ *   sanitizer parses in) and as raw text when it is on (a published page), so a
+ *   `</noscript>` inside an attribute value ends the element only in the page. No
+ *   amount of re-parsing in the sanitizer can see that, so the element goes.
+ * - `base` rewrites every relative URL of the page.
+ *
+ * Entries are compared with the lower-cased `localName`.
+ *
+ * `meta`, `link` and the SVG animation elements (`animate`, `set`, `animateMotion`,
+ * `animateTransform`) are not listed: only some of them do harm, depending on their
+ * attributes (see {@link isDangerousElement}), so they are decided per element.
+ * @example
+ * ```ts
+ * DANGEROUS_ELEMENTS.includes('noscript'); // true
+ * DANGEROUS_ELEMENTS.includes('span'); // false
+ * ```
  */
 export const DANGEROUS_ELEMENTS = [
 	'script',
@@ -20,6 +38,8 @@ export const DANGEROUS_ELEMENTS = [
 	'frame',
 	'frameset',
 	'applet',
+	'noscript',
+	'base',
 ];
 
 /**
@@ -67,11 +87,25 @@ export function arrayToHash(kvs: [keyof FrozenPattyData, PrimitiveDatum, boolean
 }
 
 /**
+ * Replaces `el` with an element named `nodeName`, carrying over its children and the
+ * attributes that no field is bound to (the bound ones are written later, by the
+ * fields).
  *
- * @param el
- * @param nodeName
- * @param attr
- * @param xssSanitize
+ * With `xssSanitize`, the original `el` is returned and stays in place when the new
+ * element would be dangerous. The name is checked first against {@link DANGEROUS_ELEMENTS}.
+ * `meta` and `link` are decided by their attributes, so they are checked again once the
+ * attributes are copied; `setComponent` checks them a third time after the fields have
+ * written theirs.
+ * @param el The element to replace
+ * @param nodeName The local name of the new element
+ * @param attr Data attribute name for specifying the node that FrozenPatty treats as a field
+ * @param xssSanitize Enable XSS protection
+ * @returns The new element, or `el` when nothing was replaced
+ * @example
+ * ```ts
+ * replaceNode(document.createElement('div'), 'span', 'bge').localName; // 'span' (when `el` has a parent)
+ * replaceNode(el, 'script', 'bge') === el; // true
+ * ```
  */
 export function replaceNode(
 	el: Element,
@@ -119,71 +153,293 @@ export function replaceNode(
 		node.setAttribute(name, value);
 	}
 
+	// `meta` and `link` are dangerous only with some attributes, which are known only now
+	if (xssSanitize && isDangerousElement(node)) {
+		return el;
+	}
+
 	el.replaceWith(node);
 
 	return node;
 }
 
 /**
- * Removes dangerous script elements from HTML string
- * @param html HTML string
- * @returns Sanitized HTML
+ * The number of parse → clean → serialize rounds {@link sanitizeHtml} tries before it
+ * gives up and returns an empty string.
  */
-export function sanitizeHtml(html: string): string {
+const MAX_SANITIZE_PASSES = 5;
+
+/**
+ * Elements whose content is run as script or applied as CSS, so that data written into
+ * them is an injection by itself, whatever it contains
+ */
+const CODE_CONTEXTS = new Set(['script', 'style']);
+
+/**
+ * One inert document per `document`, reused by every call: creating one costs more
+ * than parsing a field's worth of HTML in it.
+ */
+const inertDocuments = new WeakMap<Document, Document>();
+
+/**
+ * @returns A document in which nothing is loaded and nothing runs
+ */
+function getInertDocument(): Document {
+	let inert = inertDocuments.get(document);
+	if (!inert) {
+		inert = document.implementation.createHTMLDocument('');
+		inertDocuments.set(document, inert);
+	}
+	return inert;
+}
+
+/**
+ * Removes what could run script from an HTML string, and returns HTML that parses
+ * to the same tree again.
+ *
+ * - The string is parsed once per round in an inert document (nothing is loaded,
+ *   nothing runs), as the children of an element like `context`. The context
+ *   matters: `<tr>` and `<td>` survive only inside a table-ish context, and the text
+ *   of `<style>` is raw text in HTML but elements in SVG. Pass the element itself, so
+ *   its namespace is kept, and what was checked is the tree that gets re-parsed on the
+ *   published page.
+ * - Rounds repeat until the serialization stops changing (a parse → serialize
+ *   round trip of MathML / SVG with `style` is not stable, which is what mXSS
+ *   uses). A string that has not settled after {@link MAX_SANITIZE_PASSES}
+ *   rounds is dropped entirely rather than returned half-cleaned, and a warning says so.
+ * - What is removed: the elements {@link isDangerousElement} reports, with their
+ *   content (a microdata `<link itemprop>` without `rel` is content and stays), and
+ *   the attributes {@link sanitizeAttributeValue} rejects.
+ * - A string without `<` has no markup to clean (a character reference such as `&lt;`
+ *   decodes to text, never to an element) and is returned as it is.
+ * - Nothing can be made safe to put in a `<script>` or a `<style>` (the data is the
+ *   code), so an empty string is returned for such a `context`.
+ *
+ * The result is only as safe as the place it is inserted: put it in the element, or an
+ * element of the same name and namespace, that was passed as `context`.
+ * @param html HTML string
+ * @param context The element the result is inserted into, or its local name (HTML namespace)
+ * @returns Sanitized HTML, an empty string when it cannot be made stable, and an empty
+ * string when `html` is not a string or `context` is a `script` or a `style`
+ * @example
+ * ```ts
+ * sanitizeHtml('<a href="java&#x09;script:alert(1)">x</a>'); // '<a>x</a>'
+ * sanitizeHtml('a<script>alert(1)</script>b'); // 'ab'
+ * sanitizeHtml('<td>x</td>', 'tr'); // '<td>x</td>'
+ *
+ * const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+ * sanitizeHtml('<tspan>x</tspan><animate attributeName="href"/>', text); // '<tspan>x</tspan>'
+ * ```
+ */
+export function sanitizeHtml(html: string, context: string | Element = 'div'): string {
 	if (typeof html !== 'string') {
 		return '';
 	}
 
-	// Simple approach to handle script tags content
-	// First remove script tags but keep their content
-	let sanitized = html;
-
-	// For each dangerous element, replace tag but keep content using regex
-	// Example: <script>alert("XSS")</script> -> alert("XSS")
-	for (const tagName of DANGEROUS_ELEMENTS) {
-		const regex = new RegExp(`<${tagName}[^>]*>(.*?)<\\/${tagName}>`, 'gis');
-		sanitized = sanitized.replace(regex, '$1');
+	// The content of these is code, not markup: no string put in them is safe, `alert(1)` included
+	if (
+		CODE_CONTEXTS.has(
+			(typeof context === 'string' ? context : context.localName).toLowerCase(),
+		)
+	) {
+		return '';
 	}
 
-	// Parse HTML safely using DOM parser for remaining sanitization
-	const fragment = new Range().createContextualFragment(sanitized);
+	if (!html.includes('<')) {
+		return html;
+	}
 
-	// Remove event handler attributes from all elements
-	sanitizeElementAndChildren(fragment);
+	const inert = getInertDocument();
+	let current = html;
+	for (let pass = 0; pass < MAX_SANITIZE_PASSES; pass++) {
+		const host =
+			typeof context === 'string'
+				? inert.createElement(context)
+				: inert.createElementNS(context.namespaceURI, context.localName);
+		host.innerHTML = current;
+		// A <template> keeps what is parsed into it in `content`, not in its children.
+		// Not `'content' in host`: `<meta>` has a `content` too, and it is a string
+		sanitizeChildren(host instanceof HTMLTemplateElement ? host.content : host);
+		const next = host.innerHTML;
+		if (next === current) {
+			return next;
+		}
+		current = next;
+	}
 
-	const newHtml = [...fragment.childNodes]
-		.map((node) => {
-			if (node instanceof Element) {
-				return node.outerHTML;
-			}
-			return node.textContent ?? node.nodeValue ?? '';
-		})
-		.join('');
-
-	return newHtml;
+	// eslint-disable-next-line no-console -- the only trace of an HTML string that was dropped
+	console.warn(
+		`[frozen-patty] An HTML string did not settle within ${MAX_SANITIZE_PASSES} sanitizing rounds and was dropped.`,
+	);
+	return '';
 }
 
 /**
- * Sanitizes an element and all its child elements
- * @param node Target element
+ * Removes dangerous elements and attributes below `parent`
+ * @param parent
  */
-function sanitizeElementAndChildren(node: Node): void {
-	if (node instanceof Element) {
-		// Remove dangerous attributes from current element
-		sanitizeAttributes(node);
+function sanitizeChildren(parent: ParentNode): void {
+	// `children` is live: removing while walking it would skip the sibling after each removal
+	const dangerous: Element[] = [];
+	for (const child of parent.children) {
+		if (isDangerousElement(child)) {
+			dangerous.push(child);
+			continue;
+		}
+		sanitizeAttributes(child);
+		// A <template> is in DANGEROUS_ELEMENTS, so it is not reached here today. Its content is a
+		// tree of its own that `children` does not cover, so it is walked in case that changes
+		sanitizeChildren(child instanceof HTMLTemplateElement ? child.content : child);
 	}
-
-	// Process child elements recursively
-	for (const child of node.childNodes) {
-		sanitizeElementAndChildren(child);
+	for (const child of dangerous) {
+		child.remove();
 	}
 }
 
 /**
- * Sanitizes attribute value
- * @param name Attribute name
+ * SVG elements that set an attribute of their target at run time
+ */
+const ANIMATION_ELEMENTS = new Set([
+	'animate',
+	'set',
+	'animatemotion',
+	'animatetransform',
+]);
+
+/**
+ * Whether an SVG animation element sets `href` or an event handler of its target.
+ * The value of what it sets (`to`, `values`, …) is never looked at by the attribute
+ * checks, so a `javascript:` URL there reaches a link; the element goes instead. Only
+ * `attributeName` decides, read as the SMIL engine does (case ignored, `xlink:` dropped).
+ * @param el
+ */
+function animatesDangerousAttribute(el: Element): boolean {
+	for (const { name, value } of el.attributes) {
+		if (name.toLowerCase() === 'attributename') {
+			const target = value
+				.trim()
+				.toLowerCase()
+				.replace(/^xlink:/, '');
+			return target === 'href' || target.startsWith('on');
+		}
+	}
+	return false;
+}
+
+/**
+ * Whether the XSS protection removes an element together with its content: an element
+ * in {@link DANGEROUS_ELEMENTS}, a `<meta>` with `http-equiv` (a redirect), a
+ * `<link>` that is not plain microdata (without `itemprop`, or with `rel`, which loads
+ * a stylesheet or a resource hint), and an SVG animation element (`animate`, `set`,
+ * `animateMotion`, `animateTransform`) whose `attributeName` is `href` or an event
+ * handler. Other animations (`attributeName="opacity"`) are content and stay.
+ * @param el The element to judge, by its name and its attributes at this moment
+ * @returns `true` when the element is removed together with its content
+ * @example
+ * ```ts
+ * isDangerousElement(document.createElement('script')); // true
+ * // <meta http-equiv="refresh" content="0;url=…"> redirects the page
+ * // <meta itemprop="name" content="x"> is microdata
+ * // <link rel="stylesheet" href="…"> and <link href="…"> load a resource
+ * // <link itemprop="url" href="…"> is microdata
+ * // <animate attributeName="href" to="javascript:…"> rewrites a link
+ * // <animate attributeName="opacity" from="0" to="1"> is an animation
+ * ```
+ */
+export function isDangerousElement(el: Element): boolean {
+	const name = el.localName.toLowerCase();
+	if (DANGEROUS_ELEMENTS.includes(name)) {
+		return true;
+	}
+	if (name === 'meta') {
+		return el.hasAttribute('http-equiv');
+	}
+	if (name === 'link') {
+		return !el.hasAttribute('itemprop') || el.hasAttribute('rel');
+	}
+	if (ANIMATION_ELEMENTS.has(name)) {
+		return animatesDangerousAttribute(el);
+	}
+	return false;
+}
+
+/**
+ * Attributes whose value is a URL that the browser follows or loads. `poster`, `ping`,
+ * `cite` and `background` do not run script in current browsers; they are checked
+ * defensively, so that a stored page carries no `javascript:` or `data:` URL in any URL
+ * attribute. (`ping` is a list: only its first URL is checked.)
+ */
+const URL_ATTRIBUTES = new Set([
+	'href',
+	'src',
+	'action',
+	'formaction',
+	'xlink:href',
+	'poster',
+	'ping',
+	'cite',
+	'background',
+]);
+
+/**
+ * Names of the event handler attributes (`onclick`, `onerror`, …)
+ */
+const EVENT_HANDLER_NAME = /^on[a-z]+$/;
+
+/**
+ * The attributes in which an image is loaded as an image, so that a `data:` URL of a
+ * raster image is content and cannot run script
+ */
+const DATA_IMAGE_ATTRIBUTES = new Set(['src', 'poster']);
+
+/**
+ * A `data:` URL of a raster image. SVG is left out: in `<img>` it does not run script,
+ * but the same value is no safer for being named `src`.
+ */
+const SAFE_DATA_IMAGE = /^data:image\/(?:png|jpeg|gif|webp|avif)[;,]/;
+
+/**
+ * Reduces a URL attribute value to what the URL parser sees: leading C0 controls and
+ * spaces dropped, ASCII tabs and newlines removed anywhere, lower-cased.
+ * @param value
+ */
+function normalizeUrl(value: string): string {
+	const noBreaks = value.replaceAll(/[\t\n\r]/g, '');
+	// Not `trim()`: that also strips Unicode whitespace, which the URL parser keeps
+	let start = 0;
+	while (start < noBreaks.length && noBreaks.codePointAt(start)! <= 0x20) {
+		start++;
+	}
+	return noBreaks.slice(start).toLowerCase();
+}
+
+/**
+ * Judges whether an attribute may be written with the given value.
+ *
+ * - Event handler attributes (`on` and letters: `onclick`, `onerror`, …) and `manifest`
+ *   are never allowed.
+ * - For the URL attributes (`href`, `src`, `action`, `formaction`, `xlink:href`,
+ *   `poster`, `ping`, `cite`, `background`) a value that starts with `javascript:`,
+ *   `data:` or `vbscript:` is not allowed. The value is read the way the URL parser
+ *   reads it (leading control characters and spaces dropped, tabs and newlines removed
+ *   anywhere, case ignored), because `java&#x09;script:alert(1)` is a `javascript:` URL
+ *   to the browser but not to a plain `startsWith`.
+ * - The exception is a `data:` URL of a raster image (`png`, `jpeg`, `gif`, `webp`,
+ *   `avif`) in `src` or `poster`, which loads as an image and runs nothing.
+ * - Anything else, and any value that is not a string, passes.
+ * @param name Attribute name (case is ignored)
  * @param value Attribute value
- * @returns Safe attribute value, or null if dangerous
+ * @returns The value itself, or `null` when the attribute must not be written
+ * @example
+ * ```ts
+ * sanitizeAttributeValue('href', 'java\tscript:alert(1)'); // null
+ * sanitizeAttributeValue('onclick', 'x()'); // null
+ * sanitizeAttributeValue('href', 'https://example.com/'); // 'https://example.com/'
+ * sanitizeAttributeValue('title', 'javascript: is a language'); // 'javascript: is a language'
+ * sanitizeAttributeValue('one-time', 'x'); // 'x'
+ * sanitizeAttributeValue('src', 'data:image/png;base64,AAAA'); // 'data:image/png;base64,AAAA'
+ * sanitizeAttributeValue('href', 'data:image/png;base64,AAAA'); // null
+ * ```
  */
 export function sanitizeAttributeValue<T extends PrimitiveDatum>(
 	name: string,
@@ -195,24 +451,20 @@ export function sanitizeAttributeValue<T extends PrimitiveDatum>(
 
 	name = name.toLowerCase();
 
-	// Disallow event handler attributes
-	if (name.startsWith('on')) {
+	// Disallow event handler attributes. Their names are `on` and letters only, so an
+	// attribute such as `one-time` is not one
+	if (EVENT_HANDLER_NAME.test(name)) {
 		return null;
 	}
 
 	// Check for dangerous protocol in link attributes
-	if (
-		name === 'href' ||
-		name === 'src' ||
-		name === 'action' ||
-		name === 'formaction' ||
-		name === 'xlink:href'
-	) {
-		const trimmedValue = value.trim().toLowerCase();
+	if (URL_ATTRIBUTES.has(name)) {
+		const url = normalizeUrl(value);
 		if (
-			trimmedValue.startsWith('javascript:') ||
-			trimmedValue.startsWith('data:') ||
-			trimmedValue.startsWith('vbscript:')
+			url.startsWith('javascript:') ||
+			url.startsWith('vbscript:') ||
+			(url.startsWith('data:') &&
+				!(DATA_IMAGE_ATTRIBUTES.has(name) && SAFE_DATA_IMAGE.test(url)))
 		) {
 			return null;
 		}
@@ -231,12 +483,10 @@ export function sanitizeAttributeValue<T extends PrimitiveDatum>(
  * @param element Target element
  */
 function sanitizeAttributes(element: Element): void {
-	// Collect list of dangerous attributes
 	const dangerousAttrs = [...element.attributes]
 		.filter((attr) => sanitizeAttributeValue(attr.name, attr.value) === null)
 		.map((attr) => attr.name);
 
-	// Remove dangerous attributes
 	for (const attrName of dangerousAttrs) {
 		element.removeAttribute(attrName);
 	}

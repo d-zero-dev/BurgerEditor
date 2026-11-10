@@ -9,6 +9,7 @@ import {
 	flattenData,
 	getFields,
 	hasField,
+	isDangerousElement,
 	isReverseListElement,
 	maxLengthOf,
 	removeProp,
@@ -104,6 +105,16 @@ export function setComponent(
 		}
 	}
 
+	// `meta` and `link` are dangerous depending on attributes, and the fields set them
+	// after the element was chosen by a `:node` field, so look again once all are set
+	if (xssSanitize) {
+		for (const dangerous of [...el.querySelectorAll('meta, link')].filter((child) =>
+			isDangerousElement(child),
+		)) {
+			dangerous.remove();
+		}
+	}
+
 	for (const listRoot of el.querySelectorAll(`[data-${attr}-list]`)) {
 		// The list was collected before any list was rebuilt: a list nested in an
 		// item of a list rebuilt above is no longer in `el` (its clones were
@@ -174,6 +185,12 @@ export function setComponent(
 			}
 
 			const newEl = setComponent(item, itemData, attr, filter, xssSanitize);
+
+			// The look at `meta` / `link` inside `setComponent` cannot see the item itself,
+			// and an item can be a `<link itemprop>` that a field has just given a `rel`
+			if (xssSanitize && isDangerousElement(newEl)) {
+				continue;
+			}
 
 			if (reverse) {
 				listRoot.prepend(newEl);
