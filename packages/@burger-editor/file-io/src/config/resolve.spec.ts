@@ -87,6 +87,41 @@ describe('resolveConfig', () => {
 		expect(config.catalog).toBeDefined();
 	});
 
+	test('passes experimental item options through untouched', async () => {
+		const dir = await makeFixture(
+			'experimental',
+			`export default {
+				experimental: {
+					itemOptions: {
+						button: {
+							kinds: [{ value: 'primary', label: 'Primary' }],
+							beforeIcons: [{ value: 'arrow', label: 'Arrow' }],
+							afterIcons: [{ value: 'arrow-right', delete: true }],
+						},
+						wysiwyg: { enableTextOnlyMode: true },
+					},
+				},
+			};`,
+		);
+		const { config } = await resolveConfig(dir);
+		expect(config.experimental).toEqual({
+			itemOptions: {
+				button: {
+					kinds: [{ value: 'primary', label: 'Primary' }],
+					beforeIcons: [{ value: 'arrow', label: 'Arrow' }],
+					afterIcons: [{ value: 'arrow-right', delete: true }],
+				},
+				wysiwyg: { enableTextOnlyMode: true },
+			},
+		});
+	});
+
+	test('leaves experimental undefined when omitted', async () => {
+		const dir = await makeFixture('experimental-omitted', `export default {};`);
+		const { config } = await resolveConfig(dir);
+		expect(config.experimental).toBeUndefined();
+	});
+
 	test('passes mediaQueries through, and leaves it undefined when omitted', async () => {
 		const withQueries = await makeFixture(
 			'media-queries',

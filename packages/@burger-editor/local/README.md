@@ -440,7 +440,15 @@ export default {
 
 ### `experimental.itemOptions.button`
 
-ボタンアイテムの`kinds`選択肢をマージ・上書き・削除できる。
+ボタンアイテムの選択肢をマージ・上書き・削除できる。対象は 3 つ。
+
+| キー          | 対象             | 既定の選択肢（`value`）                                      |
+| ------------- | ---------------- | ------------------------------------------------------------ |
+| `kinds`       | ボタンの種類     | `primary`・`secondary`・`tertiary`・`text`                   |
+| `beforeIcons` | ラベルの前の飾り | `none`・`arrow-left`                                         |
+| `afterIcons`  | ラベルの後の飾り | `none`・`arrow-right`・`arrow-down`・`external`・`text-file` |
+
+どれも同じ書き方で、既存の`value`を書くとラベルを変更でき、`delete: true`を付けると削除でき、新しい`value`は追加される。新しい`value`を追加するときは`label`が必須（`label`が無い追加は無視される。既存の`value`の更新・削除には要らない）。選んだ`value`はそのまま`data-kind`・`data-before-icon`・`data-after-icon`属性に入るので、追加した`value`の見た目は利用側の CSS で用意する。
 
 ```js
 export default {
@@ -449,12 +457,33 @@ export default {
 		itemOptions: {
 			button: {
 				kinds: [
-					{ value: 'link', label: 'リンクボタン' }, // 既存ラベルを変更
-					{ value: 'em', delete: true }, // 既存選択肢を削除
-					{ value: 'primary', label: 'プライマリボタン' }, // 新規追加
-					{ value: 'secondary', label: 'セカンダリボタン' },
+					{ value: 'primary', label: 'プライマリボタン' }, // 既存ラベルを変更
+					{ value: 'tertiary', delete: true }, // 既存選択肢を削除
+					{ value: 'outline', label: 'アウトラインボタン' }, // 新規追加
+				],
+				beforeIcons: [
+					{ value: 'arrow-left', label: '戻る矢印' }, // 既存ラベルを変更
+				],
+				afterIcons: [
+					{ value: 'text-file', delete: true }, // 既存選択肢を削除
+					{ value: 'download', label: 'ダウンロード' }, // 新規追加
 				],
 			},
+		},
+	},
+};
+```
+
+### `experimental.itemOptions.wysiwyg`
+
+`enableTextOnlyMode: true`にすると、WYSIWYG ツールバーのモード切り替えが「デザインモード」「テキスト編集モード」「HTMLモード」から選ぶ形になる。テキスト編集モードは HTML 構造を保ったまま文言だけを編集する。既定（`false`）では「HTML Mode」ボタンだけが出て、デザインモードと HTML モードを切り替える。
+
+```js
+export default {
+	// ...
+	experimental: {
+		itemOptions: {
+			wysiwyg: { enableTextOnlyMode: true },
 		},
 	},
 };

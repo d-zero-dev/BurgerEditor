@@ -65,14 +65,22 @@ title: 'New Page'
 			button: {
 				kinds: [
 					// 既存のラベルを変更
-					{ value: 'link', label: 'リンクボタン' },
-					// 既存の選択肢を削除
-					{ value: 'em', delete: true },
-					// 新しい選択肢を追加
 					{ value: 'primary', label: 'プライマリボタン' },
-					{ value: 'secondary', label: 'セカンダリボタン' },
+					// 既存の選択肢を削除
+					{ value: 'tertiary', delete: true },
+					// 新しい選択肢を追加
 					{ value: 'outline', label: 'アウトラインボタン' },
 					{ value: 'danger', label: '危険ボタン' },
+				],
+				beforeIcons: [
+					// 既存のラベルを変更
+					{ value: 'arrow-left', label: '戻る矢印' },
+				],
+				afterIcons: [
+					// 既存の選択肢を削除
+					{ value: 'text-file', delete: true },
+					// 新しい選択肢を追加
+					{ value: 'download', label: 'ダウンロード' },
 				],
 			},
 			wysiwyg: {
