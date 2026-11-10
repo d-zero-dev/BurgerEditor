@@ -46,7 +46,6 @@ graph TD
     inspector --> core
     fileio --> blocks
     fileio --> core
-    fileio --> utils
     cli --> blocks
     cli --> core
     cli --> fileio

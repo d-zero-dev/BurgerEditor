@@ -1,5 +1,4 @@
-import type { BlockCatalog, FileType, SelectableValue } from '@burger-editor/core';
-import type { Mergeable } from '@burger-editor/utils';
+import type { BlockCatalog, Config, FileType } from '@burger-editor/core';
 
 /**
  * Configuration loaded via cosmiconfig from the searched
@@ -36,16 +35,29 @@ export interface BurgerEditorConfig {
 		readonly interval: number;
 		readonly retryCount: number;
 	};
-	readonly experimental?: {
-		readonly itemOptions?: {
-			readonly button?: {
-				readonly kinds?: readonly Mergeable<SelectableValue>[];
-			};
-			readonly wysiwyg?: {
-				readonly enableTextOnlyMode?: boolean;
-			};
-		};
-	};
+	/**
+	 * Experimental, per-item options. The shape is exactly
+	 * `Config['experimental']` of `@burger-editor/core`, and `resolveConfig()`
+	 * hands it over without touching it, so whatever the editor reads is what a
+	 * config file may declare.
+	 *
+	 * The shape is derived rather than restated here, because a restated copy
+	 * drifts from what the editor reads and hides supported options from the
+	 * config file's type.
+	 * @example
+	 * ```js
+	 * export default {
+	 * 	experimental: {
+	 * 		itemOptions: {
+	 * 			button: {
+	 * 				beforeIcons: [{ value: 'arrow', label: '矢印' }],
+	 * 			},
+	 * 		},
+	 * 	},
+	 * };
+	 * ```
+	 */
+	readonly experimental?: Config['experimental'];
 	readonly virtualTree: VirtualTreeConfig;
 	readonly agent: AgentConfig;
 }

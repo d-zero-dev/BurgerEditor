@@ -30,7 +30,6 @@
 	"dependencies": {
 		"@burger-editor/blocks": "4.0.0-alpha.77",
 		"@burger-editor/core": "4.0.0-alpha.77",
-		"@burger-editor/utils": "4.0.0-alpha.77",
 		"cosmiconfig": "10.0.1",
 		"jsdom": "28.1.0",
 		"prettier": "3.9.10"
