@@ -1,0 +1,52 @@
+name: Release reminder
+
+# Opens one Issue per release line when a change that reaches npm users has
+# waited for a release for 3 days, and closes it once nothing is waiting. The
+# lines are defined in scripts/release-lines/lines.mjs and the decision is in
+# scripts/release-reminder/report.mjs. The script imports only Node.js
+# built-ins, so this job installs nothing.
+#
+# A scheduled run, and a manual run with `dry-run` off, touch Issues. A pull
+# request run and a manual run with `dry-run` on (the default) only print the
+# report and the Issue body to the job summary.
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Print the report to the job summary without touching Issues
+        type: boolean
+        default: true
+  pull_request:
+    branches:
+      - dev
+    paths:
+      - scripts/release-reminder/**
+      - scripts/release-lines/**
+      - .github/workflows/release-reminder.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        # The history and tags of every line branch are needed
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Report
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPLY: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && !inputs.dry-run) }}
+        run: |
+          if [ "$APPLY" = "true" ]; then
+            node scripts/release-reminder/index.mjs --apply
+          else
+            node scripts/release-reminder/index.mjs
+          fi
