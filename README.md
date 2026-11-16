@@ -43,6 +43,19 @@ Claude Code 等の AI エージェント、または非対話なスクリプト�
 - カタログ・アイテム・スタイルオプションのスキーマ取得
 - 設定ファイル（`burgereditor.config.js`）の自動解決（cosmiconfig が親ディレクトリを walk-up）
 
+### 📦 インストールするバージョンとサポート
+
+v4 は`dev`、v3 は`v3`ブランチで開発しています。各バージョンが受け取る修正、サポートの期限、バージョンを指定しないインストール（`latest`）がどのバージョンを指すか、脆弱性の報告の手順は、[SECURITY.md](./SECURITY.md)を参照してください。
+
+公開パッケージの依存は範囲指定（`^`）です。公開から日の浅い版を取り込まないために、利用側のパッケージマネージャーにも公開からの待ち時間を設定することを推奨します。
+
+```yaml
+# Yarn (.yarnrc.yml)
+npmMinimalAgeGate: 7d
+```
+
+pnpm は`minimumReleaseAge`（`pnpm-workspace.yaml`）で同じ設定ができます。
+
 ### 👨‍💻 Contributor向け
 
 BurgerEditor は Lerna + Yarn Workspaces のモノレポです。
@@ -83,7 +96,7 @@ yarn storybook  # 管理画面 UI のカタログ
 ```
 
 - コミットメッセージは[Conventional Commits](https://www.conventionalcommits.org/)の形式に従ってください（`yarn commit`）
-- PR は`dev`ブランチへ向けてください
+- PR は`dev`ブランチへ向けてください。v3 系の修正は`v3`ブランチへ向けます（脆弱性修正と不具合修正のみ）
 
 ## License
 
