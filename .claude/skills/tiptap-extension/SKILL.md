@@ -113,8 +113,8 @@ yarn workspace @burger-editor/custom-element add @tiptap/extension-xxx@<他の @
 
 リポジトリルートで 1 コマンドずつ実行し、失敗したら修正して再実行する。
 
-1. `yarn lint`
-2. `yarn build` — git worktree 内では `NX_WORKSPACE_ROOT_PATH=<worktree の絶対パス> yarn build`（付けないと成果物がメインチェックアウト側に出力される）
+1. `yarn build` — git worktree 内では `NX_WORKSPACE_ROOT_PATH=<worktree の絶対パス> yarn build`（付けないと成果物がメインチェックアウト側に出力される）
+2. `yarn lint` — build の後に実行する（ビルド前だと ESLint の型を使うルールが誤判定し、`--fix` が無関係なファイルを書き換える）
 3. `yarn test --project custom-element`
 4. ツールバーの見た目が変わる場合: `yarn test:vr:docker`。意図した変更なら `yarn test:vr:docker:update` でベースラインを更新する
 

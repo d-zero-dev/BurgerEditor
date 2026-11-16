@@ -1,13 +1,14 @@
 ---
 name: npm-publish
-description: npm パッケージのリリース（dev→main マージ、バージョニング、tag push、publish workflow 監視、publish 結果検証、dev への同期）
-when_to_use: ユーザーが「リリースして」「publish して」「バージョン上げて」「/npm-publish」と指示した場合
+description: npm パッケージのリリース（dev→main マージ、バージョニング、tag push、publish workflow 監視、publish 結果検証、dev への同期）。v3 系のリリースは末尾の「v3 のリリース」
+when_to_use: ユーザーが「リリースして」「publish して」「バージョン上げて」「v3 をリリースして」「/npm-publish」と指示した場合
 disable-model-invocation: true
 ---
 
 # 前提
 
-- リリースは `main` ブランチから行う。`dev` の変更を `main` にマージしてから実行する
+- リリースは `main` ブランチから行う。`dev` の変更を `main` にマージしてから実行する。v3 系のリリースは `v3` ブランチで行う（末尾の「v3 のリリース」）。ラインの定義は `scripts/release-lines/lines.mjs`。利用者に届く変更が 3 日リリースされないと `release-reminder` ワークフローが Issue を開く。v4 の正式版を出すときは `major-rotation` スキルも読む
+- `lerna version` は `main` / `v3` にリリースのコミットを書く。`.husky/pre-commit` はこれらのブランチを止めない（止めるのは `dev` のみ）
 - `v*` タグ push で `publish.yml` が発火し、npm へ自動 publish される（OIDC Trusted Publishing）
 - **publish は取り消せない**。各ステップでユーザーの確認を取る
 - **`yarn release` / `git push` 系はユーザーが実行する**。エージェントは実行せず（`.claude/settings.json` で deny されている）`!` プレフィックス付きのコマンドを提示し、完了報告を待つ
@@ -91,12 +92,12 @@ git diff yarn.lock
 ## 6. 事前チェック
 
 ```bash
-yarn lint
 yarn build
+yarn lint
 yarn test
 ```
 
-すべてパスすること。`yarn test` は Docker 経由で VR まで走るため時間がかかるが省略しない。`main` の CI が green かも併せて確認する。
+lint は build の後に実行する（ビルド前だと ESLint の型を使うルールが誤判定し、`--fix` が無関係なファイルを書き換える）。すべてパスすること。`yarn test` は Docker 経由で VR まで走るため時間がかかるが省略しない。`main` の CI が green かも併せて確認する。
 
 ```bash
 gh run list --branch main --limit 5
@@ -182,29 +183,25 @@ npm view @burger-editor/core dist-tags
 確認項目:
 
 - バージョンが手順 8 で上げた値と一致しているか
-- **dist-tag が意図通りか**。正式リリースは `latest`、プレリリースは `alpha` / `beta` / `rc` / `next`。`publish.yml` は `lerna.json` の `version` 文字列から判定する（`-alpha` → `alpha`、`-` を含む → `next`、それ以外 → `latest`）
+- **dist-tag が意図通りか**。`publish.yml` は `lerna.json` の `version` 文字列から判定する: `-alpha` → `alpha`、`-beta` → `beta`、`-rc` → `rc`、それ以外の `-` を含む版はエラーで止まる（`next` は廃止）。正式版は、メジャーが npm の `latest`（`@burger-editor/client`）のメジャーより小さければ `v<major>`、そうでなければ `latest`。v4 の正式版が出た後に v3 を出しても `latest` は v4 のまま残る
+- **正式版を 1 つも持たないパッケージ**（v3 に存在しない v4 専用のパッケージ。`npm view <package> versions` に `-` を含まない版がないもの）は、publish の後に `scripts/follow-latest-dist-tag.mjs` が `latest` も公開した版に動かす。`npm dist-tag ls <package>` で `latest` が今回の版か確認する。動かせていなければワークフローが失敗している（npmjs.com で該当パッケージの Trusted Publisher の「Allow npm dist-tag」が無効になっていないか確認し、`gh run rerun` で直す）
 - provenance が付与されているか（`npm view <package> --json` の `dist.attestations`）
 
-fixed モードでも**一部のパッケージだけ publish される（部分 publish）**ことがある。全15パッケージを個別に確認し、漏れがあればユーザーに報告する。
+fixed モードでも**一部のパッケージだけ publish される（部分 publish）**ことがある。上の表の全パッケージを個別に確認し、漏れがあればユーザーに報告する。
 
 **ここが success の判定点**。npm 上の状態を確認するまでリリース完了と判断してはいけない。
 
 ## 11. main → dev の同期
 
-publish の成功を確認した後、バージョン更新コミットを `dev` に取り込む。
+publish の成功を確認した後、バージョン更新コミットを `dev` に取り込む。`dev` へのマージは merge queue を通る PR だけで、`.husky/pre-commit` も `dev` への直接コミットを止めるので、`dev` から同期用のブランチを切って PR にする。
 
 ```bash
 git checkout dev
+git switch -c chore/sync-main
 git merge main --no-edit
 ```
 
-コンフリクトが発生したらユーザーに報告して指示を仰ぐ。マージできたら push をユーザーに依頼する。
-
-```
-! git push origin dev
-```
-
-`dev` はブランチ保護がかかっており、`maintain` ロールでは直接 push できない場合がある。push が拒否されたら PR 経由に切り替える（`git checkout -b chore/sync-main` してから `/pr` の手順へ）。
+コンフリクトが発生したらユーザーに報告して指示を仰ぐ。マージできたら `/pr` の手順（base は `dev`）へ進む。キューのマージ方式はマージコミットなので、リリースのタグは `dev` からも辿れる（未リリース通知の起点の判定はこれに依存する）。
 
 ## 12. 失敗時の対処
 
@@ -217,4 +214,16 @@ git merge main --no-edit
 
 - **`v*` タグの作成・削除は CODEOWNERS のみ**（GitHub Rulesets で保護）。権限がない場合は手順 8 で失敗するため、実行者がタグ権限者か事前に確認する
 - **publish は取り消せない**。手順 5・6 の事前チェックを省略しない
+- **Node.js の版（`setup-yarn` と `publish.yml`）を上げたら、`publish.yml` の `Update npm for dist-tag` ステップが要るか確認する**。新しい Node.js が npm 11.21.0 以降を同梱していれば、そのステップは外せる（コメントのとおり）
 - **`yarn release` は `prerelease` スクリプト経由で `yarn build; yarn test` を再度走らせる**。手順 6 と重複するが、`lerna version` の途中で失敗するより事前に落としたほうが安全なので省略しない
+
+# v3 のリリース
+
+v3 系（`v3` ブランチ。脆弱性修正と不具合修正のみ。v4 の正式版の後は脆弱性修正のみ）は、`dev` / `main` ではなく `v3` ブランチで行う。違いだけを書く。
+
+- 手順 2〜4 の代わりに、`v3` を最新化して、リリースしたい修正がマージ済みであることを確認する（`main` へのマージは要らない）
+- 手順 5〜7 は `v3` で行う（`v3` のテストは v3 の `test.yml`。リリース内容の提示は前回の `v3.*` タグからの差分）
+- 手順 8 の push は `! git push origin v3 --follow-tags`
+- 手順 9〜10 は同じ。dist-tag は、v4 の正式版が出るまでは `latest`、出た後は `v3`。この判定は `v3` ブランチの `publish.yml` が `dev` と同じ分岐を持っていることが前提（`v3` ブランチへの変更として行う。持っていない間は、`lerna publish` が `latest` を動かすので、正式版が出た後の v3 のリリースは行わない）。`v3` は semver の範囲に見えるタグ名で、`npm dist-tag add` は受け付けない。付け直す必要が出たら、ユーザーに相談する（publish の `--dist-tag v3` は受け付ける）
+- 手順 11 の同期は要らない（`v3` と `dev` は別のコードベースで、互いにマージしない）
+- 変更が `v3` にマージされてもリリースされないと、`release-reminder` ワークフローが v3 の Issue を開く

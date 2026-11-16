@@ -1,7 +1,6 @@
 {
 	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
 	"configMigration": true,
-	"platformAutomerge": false,
 	"extends": [
 		"config:recommended",
 		"docker:pinDigests",
@@ -9,15 +8,15 @@
 		":pinDevDependencies",
 		":semanticCommitTypeAll(chore)"
 	],
+	"baseBranchPatterns": ["dev", "v3"],
 	"timezone": "Asia/Tokyo",
-	"schedule": ["* 22-23,0-4 * * 1-5"],
 	"rangeStrategy": "pin",
 	"minimumReleaseAge": "7 days",
 	"internalChecksFilter": "strict",
 	"osvVulnerabilityAlerts": true,
 	"vulnerabilityAlerts": {
-		"minimumReleaseAge": null,
-		"automerge": true
+		"enabled": true,
+		"minimumReleaseAge": null
 	},
 	"autoApprove": true,
 	"labels": ["Dependencies", "Renovate"],
@@ -27,11 +26,33 @@
 		"minimumReleaseAge": null,
 		"schedule": ["* 0-5 * * 1"]
 	},
+	"customManagers": [
+		{
+			"description": "CI and the local VR container run the Playwright image whose browsers match the installed playwright package. Reading the image tag as a version of the npm package puts both in one pull request, and the 7-day minimumReleaseAge is then aged by the npm release date (the registry of the image publishes none)",
+			"customType": "regex",
+			"managerFilePatterns": [
+				"/^\\.github/workflows/test\\.yml$/",
+				"/^Dockerfile\\.vr$/"
+			],
+			"matchStrings": [
+				"mcr\\.microsoft\\.com/playwright:v(?<currentValue>\\d+\\.\\d+\\.\\d+)-noble"
+			],
+			"depNameTemplate": "playwright",
+			"datasourceTemplate": "npm",
+			"versioningTemplate": "npm"
+		}
+	],
 	"packageRules": [
 		{
 			"description": "Lock file maintenance delegates resolution to the package manager, so its updates carry no release timestamp; under Renovate 42's default minimumReleaseAgeBehaviour=timestamp-required, the repository-wide minimumReleaseAge keeps renovate/stability-days pending forever and the PR never automerges. The cooldown for yarn.lock is enforced by npmMinimalAgeGate in .yarnrc.yml instead (https://docs.renovatebot.com/key-concepts/minimum-release-age/#lockfilemaintenance-updates)",
 			"matchUpdateTypes": ["lockFileMaintenance"],
 			"minimumReleaseAge": null
+		},
+		{
+			"description": "Exempt lock file maintenance from the repository-wide PR limits. Major updates waiting for review keep the concurrent limit full, which would hold back lock file maintenance; it is the only update that refreshes transitive dependencies, because the vulnerability pull requests of Renovate cover direct dependencies only",
+			"matchUpdateTypes": ["lockFileMaintenance"],
+			"prConcurrentLimit": 0,
+			"prHourlyLimit": 0
 		},
 		{
 			"matchDepTypes": ["optionalDependencies"],
@@ -46,15 +67,46 @@
 			"addLabels": ["Dependencies: Production"]
 		},
 		{
-			"description": "Automerge non-major updates, except for 0.x where minor is breaking",
+			"description": "Automerge every update that keeps the major version, 0.x included, once the checks pass and minimumReleaseAge has elapsed",
 			"matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-			"matchCurrentVersion": "!/^0/",
 			"automerge": true
+		},
+		{
+			"description": "A major update is reviewed by the owner unless a later rule says otherwise. Its pull request stays open until then, so it gets a lower prConcurrentLimit than the default 10: the limit is compared against the count of every open Renovate pull request, so pull requests waiting for review stop being raised at 5 and the other 5 slots stay free for updates that automerge",
+			"matchUpdateTypes": ["major"],
+			"prConcurrentLimit": 5
+		},
+		{
+			"description": "devDependencies do not reach consumers, so their major updates automerge too",
+			"matchDepTypes": ["devDependencies"],
+			"matchUpdateTypes": ["major"],
+			"automerge": true,
+			"prConcurrentLimit": 10
+		},
+		{
+			"description": "GitHub Actions do not reach consumers, so their major updates automerge too",
+			"matchManagers": ["github-actions"],
+			"matchUpdateTypes": ["major"],
+			"automerge": true,
+			"prConcurrentLimit": 10
 		},
 		{
 			"description": "Keep yarn resolutions on auto range strategy",
 			"matchDepTypes": ["resolutions"],
 			"rangeStrategy": "auto"
+		},
+		{
+			"description": "Raise the lower bound of the ranges in published packages on each update, so a consumer's install cannot dedupe onto a version older than the one we last released against. Packages in the workspace and devDependencies stay exact. Only `dev` publishes new ranges; the maintenance line keeps exact versions. The lower bound of a peerDependency rises the same way, and a consumer below it no longer satisfies the peer: acceptable while the packages are prereleases, to be reconsidered for peerDependencies at the first stable release (CLAUDE.md, \"依存関係の追加\")",
+			"matchBaseBranches": ["dev"],
+			"matchFileNames": ["packages/**/package.json"],
+			"matchDepTypes": ["dependencies", "peerDependencies"],
+			"matchPackageNames": ["!/^@burger-editor\\//"],
+			"rangeStrategy": "bump"
+		},
+		{
+			"description": "The storybook package is private, so its dependencies stay exact like devDependencies",
+			"matchFileNames": ["packages/@burger-editor/storybook/package.json"],
+			"rangeStrategy": "pin"
 		},
 		{
 			"description": "hono and zod move together via @hono/zod-validator peer deps",
@@ -132,6 +184,29 @@
 		{
 			"groupName": "ws",
 			"matchPackageNames": ["ws", "@types/ws"]
+		},
+		{
+			"description": "The Playwright image tag follows the npm package (see customManagers), so no update of the image itself is raised, and its digest is not pinned: a digest wins over the tag when both are present, so a digest left behind by the tag bump would run the previous browsers against the new playwright package. The registry of the image publishes no release timestamp either, which would keep renovate/stability-days pending forever",
+			"matchDatasources": ["docker"],
+			"matchPackageNames": ["mcr.microsoft.com/playwright"],
+			"enabled": false
+		},
+		{
+			"description": "v3 is a maintenance line: it takes vulnerability fixes (vulnerabilityAlerts.enabled overrides this rule) and lock file maintenance (not listed here), and no other update, minor and patch included. The lines and their branches are defined in scripts/release-lines/lines.mjs",
+			"matchBaseBranches": ["v3"],
+			"matchUpdateTypes": [
+				"major",
+				"minor",
+				"patch",
+				"pin",
+				"pinDigest",
+				"digest",
+				"lockfileUpdate",
+				"rollback",
+				"bump",
+				"replacement"
+			],
+			"enabled": false
 		}
 	]
 }

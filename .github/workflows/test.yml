@@ -1,12 +1,22 @@
 name: Test
 
+# `dev` takes pull requests only through its merge queue (a repository
+# ruleset), and the queue requires the `ci-ok` job below. `merge_group` runs
+# the whole suite on the queue's merge result before it reaches `dev`. `main`
+# is where releases are cut, so a push there runs it too. The branches are
+# defined in scripts/release-lines/lines.mjs.
 on:
   push:
     branches:
       - dev
+      - main
   pull_request:
     branches:
       - dev
+  merge_group:
+
+permissions:
+  contents: read
 
 jobs:
   test:
@@ -98,3 +108,28 @@ jobs:
 
       - name: Test
         run: yarn test:no-compiler
+
+  # The single check the ruleset of `dev` requires, on a pull request and in
+  # the merge queue. Requiring this job instead of `test` and
+  # `test-no-compiler` means a job can be added, renamed or removed here
+  # without editing the ruleset. A new job has to be listed in `needs` below,
+  # though: one that is not listed is not required by anything.
+  # consistency.spec.mjs fails when `needs` and the jobs of this file differ.
+  # `if: always()` makes it report even when a job it needs failed or was
+  # skipped (a skipped required check would count as passed).
+  ci-ok:
+    name: ci-ok
+    if: always()
+    needs: [test, test-no-compiler]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every job to succeed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          for result in $RESULTS; do
+            if [ "$result" != "success" ]; then
+              echo "A required job finished as '$result'."
+              exit 1
+            fi
+          done

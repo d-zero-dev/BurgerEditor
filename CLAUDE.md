@@ -22,6 +22,22 @@ BurgerEditor v4 は、CMS に埋め込む HTML ブロックエディタ。Lerna 
 - `vitest.config.ts` — テストプロジェクト定義
 - `.yarnrc.yml` — Yarn の挙動（後述のサプライチェーン設定を含む）
 
+## ブランチ構成
+
+| ライン | ブランチ | 役割          | 受け取るもの                                                                                         | Renovate                                         |
+| ------ | -------- | ------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `v4`   | `dev`    | `prerelease`  | 新機能・修正・依存更新。リリースは`main`に`dev`をマージして切る                                      | すべて。`dependencies`のメジャーだけレビュー待ち |
+| `v3`   | `v3`     | `maintenance` | 脆弱性修正・不具合修正。v4 の正式版の後は脆弱性修正のみで、v4 の正式版の公開日から 12 か月で終了する | 脆弱性修正と lock file maintenance のみ          |
+
+- **ラインの定義は`scripts/release-lines/lines.mjs`**。ブランチ名を書くファイル（`.github/renovate.json`・ワークフロー・`.husky/pre-commit`・この表・`SECURITY.md`）との食い違いは`yarn test --project scripts`が落とす。ラインを入れ替える手順は`major-rotation`スキル
+- **`main`は v4 のリリース元**: `dev`をマージして`yarn release`でバージョンを切り、タグを push する（`npm-publish`スキル）。`main`の push でも`test.yml`が走る。通常の作業は`main`に積まない
+- **`dev`は merge queue 経由でマージする**: 必須チェックは`ci-ok`（`test.yml`の`test`と`test-no-compiler`の集約。ジョブを足したら`ci-ok`の`needs`にも足す。`yarn test --project scripts`が食い違いを落とす）。PR を作ったら CI を待ち、マージはキューが行う（Renovate は auto-merge でキューに入る）
+- **リポジトリ外の設定に依存している**（コードを見ても分からないので、復旧するときや公開パッケージを足すときに確かめる）: (a)`dev`・`main`・`v3`の ruleset（`dev`は merge queue で、マージ方式はマージコミット、必須チェックは`ci-ok`）、(b) npmjs.com の各パッケージの Trusted Publisher の「Allow npm dist-tag」（`scripts/follow-latest-dist-tag.mjs`が`latest`を動かすのに要る。公開パッケージを足したら設定する）、(c) GitHub の private vulnerability reporting（`SECURITY.md`の報告先）
+- **`v3`への変更**は、`v3`から切ったトピックブランチで作り、base を`v3`にして PR を作る。`v3`は v3 系の別のコードベースで、`dev`からのマージはしない
+- **`.husky/pre-commit`が止めるのは`dev`への直接コミット**。`main`と`v3`は`lerna version`がリリースのコミットを書く場所なので止めない（作業のコミットを直接積まない規則は変わらない）
+- Renovate のブランチ名は、対象ブランチごとに`renovate/dev-*`/`renovate/v3-*`になる
+- 未リリースの変更は`release-reminder`ワークフローが Issue にして知らせる（利用者に届く変更が 3 日リリースされないとき）
+
 ## コマンド
 
 ```sh
@@ -35,18 +51,19 @@ yarn test:vr:docker           # VR のみ（Docker）
 yarn test:vr:docker:update    # VR ベースラインを更新
 yarn test:no-compiler         # React Compiler を無効にして client / blocks / blocks-editor を実行
 yarn verify:*                 # CI と同じ構造検査（architecture-graph / react-compiler / blocks-boundary / packed-install。後の 2 つは build 後）
-yarn lint                     # eslint / stylelint / markuplint / prettier / textlint / cspell
+yarn lint                     # eslint / stylelint / markuplint / prettier / textlint / cspell / renovate（renovate.json の検証）
 yarn commit                   # Commitizen（cz）でコミット
 ```
 
 ### コマンド制約
 
 - **yarn のみ使用**: npm/pnpm/bun/deno によるコマンド実行は禁止
-- **build / lint は全体実行**: 時間がかかっても`yarn build`/`yarn lint`のリポジトリ全体実行を使う。`tsc`/`eslint`/`prettier`/`stylelint`の単発実行・ファイルスコープ実行（`npx eslint <file>`等）は禁止
+- **build / lint は全体実行。lint は build の後**: 時間がかかっても`yarn build`/`yarn lint`のリポジトリ全体実行を使う。`yarn lint`は必ず`yarn build`の後に実行する（CI も Build → Lint の順）。ESLint の型を使うルールはビルド成果物（`dist/`）から型情報を得るため、ビルド前に実行すると誤判定し、`--fix`が型の断言（`as`・`!`）や理由付きの`eslint-disable`を無関係なファイルから消してしまう。`tsc`/`eslint`/`prettier`/`stylelint`の単発実行・ファイルスコープ実行（`npx eslint <file>`等）は禁止
+- **`lint:renovate`は`RENOVATE_X_IGNORE_RE2=true`付きで実行する**（`package.json`のとおり）: `.yarnrc.yml`の`enableScripts: false`で`renovate`の RE2（ネイティブの正規表現エンジン）がビルドされず、付けないと毎回警告のスタックトレースが出る。RE2 なしの標準の正規表現で検証するので、RE2 にしかない制約は検出できない。ネイティブのビルドを許すか、`renovate`を使わなくなったら外す
 - **test はプロジェクト単位**: ローカルでは変更に関連する Vitest プロジェクトだけを`yarn test --project <name>`で実行する（プロジェクト名は`vitest.config.ts`の`name`）。全体実行は CI に任せる。詳細は「テスト」節
 - **パッケージディレクトリに cd しない**: 常にリポジトリルートから実行する。個別パッケージを対象にする場合は`yarn workspace <package-name> <command>`を使う
 - **コマンドの連続実行禁止**: `&&`、`;`、改行によるコマンド連結をしない。1回の Bash 呼び出しで1コマンドのみ実行する。連結されたコマンドは settings.json の permissions でパターンマッチできず、毎回ユーザーの手動承認が必要になる
-- **main / dev ブランチでの作業・コミット禁止**: 作業開始前に`git branch --show-current`で現ブランチを確認し、`main`/`dev`にいる場合は`git switch -c <topic>`でトピックブランチを作ってから作業する
+- **main / dev / v3 ブランチでの作業・コミット禁止**: 作業開始前に`git branch --show-current`で現ブランチを確認し、`main`/`dev`/`v3`にいる場合は`git switch -c <topic>`でトピックブランチを作ってから作業する。例外は`lerna version`が書くリリースのコミットだけ（`npm-publish`スキル）
 - **git worktree からのビルドは`NX_WORKSPACE_ROOT_PATH`必須**: リポジトリ内部にネストした worktree（`.claude/worktrees/*`等）から素の`yarn build`を実行すると、Nx がワークスペースルートをメインチェックアウトに誤解決し、**成功表示のまま成果物がメイン側に書かれる**（worktree の`dist/`は生成されない）。`NX_WORKSPACE_ROOT_PATH=<worktree絶対パス> yarn build`でルートを明示すること
 
 ## テスト
@@ -64,6 +81,9 @@ yarn commit                   # Commitizen（cz）でコミット
 ## 依存関係の追加
 
 - バージョンは固定で追加する（`yarn add foo@1.2.3`）。`^`/`~`を付けない（`.yarnrc.yml`の`defaultSemverRangePrefix: ''`で既定化されている）
+  - **例外は公開パッケージの外部の`dependencies`と`peerDependencies`**: `^`の範囲で書く（`yarn add foo@^1.2.3`）。利用者のインストールが、リリースした版より古い版に重複排除されたり、`react`の版が 1 つ違うだけで peer の条件に合わなくなったりしないため。`.github/renovate.json`の`rangeStrategy: bump`のルールが、更新のたびに下限を上げる。ワークスペース内のパッケージ同士（lerna の`--exact`）、`devDependencies`、private の`storybook`は固定のまま。`scripts/published-ranges.spec.mjs`（`yarn test --project scripts`）がこの書き方の食い違いを落とす。**下限を上げる副作用**: `peerDependencies`の下限も、更新のたびに（minor/patch は自動マージで）上がり、下限より古い版を使う利用者は、その版以降の peer の条件に合わなくなる。alpha の間は許容しているが、正式版以降は破壊的変更に当たるので、そのときに peer を`bump`から外すか見直す
+  - 利用者側のサプライチェーン保護（公開からの待ち時間）は利用者の設定でしか効かない。README と`SECURITY.md`で設定を推奨している
+  - **`playwright`の版を変えるときは、`test.yml`と`Dockerfile.vr`のイメージタグ（`mcr.microsoft.com/playwright:v<版>-noble`）も同じ版にする**。ブラウザのビルドが版ごとに違い、ずれると`Executable doesn't exist`で落ちる。Renovate は npm の版に連動して 1 つの PR で直し、食い違いは`yarn test --project scripts`が検出する。イメージは digest で固定しない（digest はタグより優先されるので、タグだけ上がると古いブラウザが残る）
 - **モノレポ内のパッケージ間に依存を足したら、ARCHITECTURE.md の依存グラフも同じ変更で直す**（`yarn verify:architecture-graph`が CI で食い違いを落とす）。足してよい向きかは ARCHITECTURE.md の「依存の向き」で判断する
 - **追加したら`.github/renovate.json`の`packageRules`を確認する**。そのパッケージが既存の`groupName`グループに入るべきか、新しいグループを作るべきかを判断する
   - `config:recommended`は`group:monorepos`を含むため、**同一 monorepo から公開されるパッケージ群（`@vitest/*`、`@tiptap/*`、`playwright`系など）は設定なしで自動的に束ねられる**。手で書く必要はない
@@ -74,7 +94,7 @@ yarn commit                   # Commitizen（cz）でコミット
     - 自前の`@d-zero/*`パッケージ群
   - 判断基準は「**片方だけバージョンが上がった状態でビルドと型チェックが通るか**」。通らないなら同じ`groupName`にまとめる
 - グループ化を怠ると、Renovate が個別に PR を作り、片方だけマージされた中間状態で CI が赤になる。結果として**両方の PR がマージできなくなる**
-- グルーピングの現状は`git branch -r --list 'origin/renovate/*'`で確認できる。`*-monorepo`サフィックスのブランチは`group:monorepos`による自動グループ
+- グルーピングの現状は`git branch -r --list 'origin/renovate/*'`で確認できる。`*-monorepo`サフィックスのブランチは`group:monorepos`による自動グループ。対象ブランチが`dev`と`v3`の 2 つなので、ブランチ名は`renovate/dev-*`/`renovate/v3-*`になる
 
 ## ドキュメント原則
 
@@ -130,6 +150,7 @@ yarn commit                   # Commitizen（cz）でコミット
 | Merged           | `.claude/skills/merged/SKILL.md`                                    | マージ後の手順（外部作者への完了コメント・issue への報告）                                                                                                |
 | Create issue     | `.claude/skills/create-issue/SKILL.md`                              | 原因まで調べて Issue を起票する（持ち越しの引き継ぎ先）                                                                                                   |
 | npm publish      | `.claude/skills/npm-publish/SKILL.md`                               | リリース（dev→main マージ・バージョニング・publish 監視・検証）                                                                                           |
+| Major rotation   | `.claude/skills/major-rotation/SKILL.md`                            | リリースラインの入れ替え（v4 正式版・v3 の終了・次のメジャー）の手順                                                                                      |
 | Refactor         | `.claude/skills/refactor/SKILL.md`                                  | テストファーストのリファクタリング手順                                                                                                                    |
 | Product Manager  | `.claude/skills/product-manager/SKILL.md`                           | リポジトリ分析、ドキュメント整合チェック、PR レビュー                                                                                                     |
 | QA Engineer      | `.claude/skills/qa-engineer/SKILL.md`                               | コードレビュー、テスト品質チェック                                                                                                                        |
