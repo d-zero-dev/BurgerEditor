@@ -20,7 +20,7 @@
  * @type {readonly (readonly string[])[]}
  */
 export const VITEST_PROJECT_GROUPS = [
-	['default', 'local', 'local/import', 'local/client'], // Node / jsdom（Chromiumを起動しない）
+	['default', 'scripts', 'local', 'local/import', 'local/client'], // Node / jsdom（Chromiumを起動しない）
 	['core', 'custom-element'], // ブラウザ
 	['local/client-browser', 'vr'], // ブラウザ
 	['client'], // ブラウザ（単独ピーク最大のため1プロジェクトで1グループ）
