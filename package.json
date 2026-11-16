@@ -26,7 +26,8 @@
 		"verify:react-compiler": "node scripts/check-react-compiler-coverage.mjs",
 		"verify:blocks-boundary": "node scripts/check-blocks-entry-boundary.mjs",
 		"verify:packed-install": "node scripts/verify-packed-install.mjs",
-		"lint": "run-s lint:eslint lint:stylelint lint:markuplint lint:prettier lint:textlint:fix lint:textlint:check lint:cspell",
+		"lint": "run-s lint:eslint lint:stylelint lint:markuplint lint:prettier lint:textlint:fix lint:textlint:check lint:cspell lint:renovate",
+		"lint:renovate": "RENOVATE_X_IGNORE_RE2=true renovate-config-validator --strict",
 		"lint:cspell": "npx cspell --no-progress --show-suggestions \"{*,**/*}/\"",
 		"lint:eslint": "npx eslint --fix \"{*,**/*}.{js,cjs,mjs,jsx,ts,cts,mts,tsx}\"",
 		"lint:stylelint": "npx stylelint \"./packages/@burger-editor/*/{src,style}/**/*.{css,scss,sass}\" --fix",
@@ -86,6 +87,7 @@
 		"pixelmatch": "7.2.0",
 		"playwright": "1.63.0",
 		"pngjs": "7.0.0",
+		"renovate": "44.222.5",
 		"typescript": "5.9.3",
 		"vitest": "4.1.12"
 	},
