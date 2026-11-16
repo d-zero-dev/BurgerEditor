@@ -28,9 +28,9 @@
 		"clean": "tsc --build --clean"
 	},
 	"dependencies": {
-		"dayjs": "1.11.23",
-		"marked": "17.0.6",
-		"turndown": "7.2.4"
+		"dayjs": "^1.11.23",
+		"marked": "^17.0.6",
+		"turndown": "^7.2.4"
 	},
 	"devDependencies": {
 		"@types/turndown": "5.0.6"
