@@ -192,10 +192,13 @@ try {
 		),
 	);
 	// lockfile を作る初回 install を CI の immutable 既定で拒否させない。
-	// peer を自動導入しない node-modules を明示する（モノレポと同じ設定）
+	// peer を自動導入しない node-modules を明示する（モノレポと同じ設定）。
+	// 公開パッケージの外部依存は `^` の範囲なので、lockfile のないこの環境では
+	// 範囲内の最新版に解決される。モノレポと同じ公開からの待ち時間
+	// （npmMinimalAgeGate）を設定して、公開直後の版が検証に混ざらないようにする
 	await writeFile(
 		path.join(project, '.yarnrc.yml'),
-		'nodeLinker: node-modules\nenableImmutableInstalls: false\nenableScripts: false\n',
+		'nodeLinker: node-modules\nenableImmutableInstalls: false\nenableScripts: false\nnpmMinimalAgeGate: 7d\n',
 	);
 	await writeFile(path.join(project, 'yarn.lock'), '');
 
