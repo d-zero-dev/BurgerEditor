@@ -15,9 +15,9 @@ PR: $ARGUMENTS
 
 # 手順
 
-1. **マージを確認する。** 上に PR 番号が無ければユーザーに聞く。`gh pr view <n> --json state,mergedAt,baseRefName,author,closingIssuesReferences` を実行する。`state` が `MERGED` でなければ止めてユーザーに伝える
+1. **マージを確認する。** 上に PR 番号が無ければユーザーに聞く。`gh pr view <n> --json state,mergedAt,baseRefName,author,closingIssuesReferences` を実行する。`state` が `MERGED` でなければ止めてユーザーに伝える。`dev` への PR は merge queue に入っているだけのことがある（`gh pr view --json` に該当のフィールドはないので、`gh api graphql -f query='query { repository(owner: "<owner>", name: "<repo>") { pullRequest(number: <n>) { isInMergeQueue mergeQueueEntry { position state } } } }'` で確かめる）。その場合はキューのマージ結果の CI が通ってマージされるまで待つよう伝える
 2. **owner を解決し**、PR 作者と各 linked issue の起票者が owner かどうかを判定する
 3. **PR の作者が owner 以外のときだけ、完了コメントを PR に付ける**: 何が入ったか、意図的に外したもの、計画と結果が違う点。PR 本文はレビュー前に書かれたもので、このコメントはマージされた PR が実際に何かを記録する。owner 自身の PR には付けない（PR 本文と会話に記録がある）
 4. **linked issue の起票者が owner 以外のときだけ、その issue に報告コメントを付ける**: 何をどの PR で行ったか。owner が立てた issue には報告しない（PR がすでに言っており、owner は返事を待っていない）
-   - デフォルトブランチ以外への PR（次メジャーラインのブランチ等）では `Fixes #N` が issue を閉じないので、`gh issue view <m> --json state` を確認し、開いていれば `gh issue close <m> --reason completed` で閉じる。報告コメントを付ける issue では `--comment "Fixed by #<n> (merged into <base>)."` としてクローズに畳み込む
+   - デフォルトブランチ以外への PR（`v3` や次メジャーラインのブランチ等）では `Fixes #N` が issue を閉じないので、`gh issue view <m> --json state` を確認し、開いていれば `gh issue close <m> --reason completed` で閉じる。報告コメントを付ける issue では `--comment "Fixed by #<n> (merged into <base>)."` としてクローズに畳み込む
 5. **報告する。** 投稿したコメントと閉じた issue
