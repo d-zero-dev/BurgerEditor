@@ -29,15 +29,15 @@
 	},
 	"dependencies": {
 		"@burger-editor/utils": "4.0.0-alpha.77",
-		"@tabler/icons": "3.49.0",
-		"@tiptap/core": "3.31.4",
-		"@tiptap/extension-image": "3.31.4",
-		"@tiptap/extension-paragraph": "3.31.4",
-		"@tiptap/extension-subscript": "3.31.4",
-		"@tiptap/extension-superscript": "3.31.4",
-		"@tiptap/extension-table": "3.31.4",
-		"@tiptap/pm": "3.31.4",
-		"@tiptap/starter-kit": "3.31.4"
+		"@tabler/icons": "^3.49.0",
+		"@tiptap/core": "^3.31.4",
+		"@tiptap/extension-image": "^3.31.4",
+		"@tiptap/extension-paragraph": "^3.31.4",
+		"@tiptap/extension-subscript": "^3.31.4",
+		"@tiptap/extension-superscript": "^3.31.4",
+		"@tiptap/extension-table": "^3.31.4",
+		"@tiptap/pm": "^3.31.4",
+		"@tiptap/starter-kit": "^3.31.4"
 	},
 	"devDependencies": {
 		"rollup": "4.64.12",
