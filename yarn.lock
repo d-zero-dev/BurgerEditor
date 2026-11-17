@@ -980,16 +980,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@burger-editor/blocks@npm:4.0.0-alpha.77, @burger-editor/blocks@workspace:packages/@burger-editor/blocks":
+"@burger-editor/blocks@npm:4.0.0-alpha.78, @burger-editor/blocks@workspace:packages/@burger-editor/blocks":
   version: 0.0.0-use.local
   resolution: "@burger-editor/blocks@workspace:packages/@burger-editor/blocks"
   dependencies:
     "@babel/core": "npm:7.29.13"
     "@babel/preset-typescript": "npm:7.29.7"
-    "@burger-editor/client": "npm:4.0.0-alpha.77"
-    "@burger-editor/core": "npm:4.0.0-alpha.77"
-    "@burger-editor/custom-element": "npm:4.0.0-alpha.77"
-    "@burger-editor/utils": "npm:4.0.0-alpha.77"
+    "@burger-editor/client": "npm:4.0.0-alpha.78"
+    "@burger-editor/core": "npm:4.0.0-alpha.78"
+    "@burger-editor/custom-element": "npm:4.0.0-alpha.78"
+    "@burger-editor/utils": "npm:4.0.0-alpha.78"
     "@d-zero/shared": "npm:^0.23.0"
     "@rollup/plugin-babel": "npm:7.1.0"
     "@testing-library/dom": "npm:10.4.2"
@@ -1014,14 +1014,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/cli@npm:4.0.0-alpha.77, @burger-editor/cli@workspace:packages/@burger-editor/cli":
+"@burger-editor/cli@npm:4.0.0-alpha.78, @burger-editor/cli@workspace:packages/@burger-editor/cli":
   version: 0.0.0-use.local
   resolution: "@burger-editor/cli@workspace:packages/@burger-editor/cli"
   dependencies:
-    "@burger-editor/blocks": "npm:4.0.0-alpha.77"
-    "@burger-editor/core": "npm:4.0.0-alpha.77"
-    "@burger-editor/file-io": "npm:4.0.0-alpha.77"
-    "@burger-editor/frozen-patty": "npm:4.0.0-alpha.77"
+    "@burger-editor/blocks": "npm:4.0.0-alpha.78"
+    "@burger-editor/core": "npm:4.0.0-alpha.78"
+    "@burger-editor/file-io": "npm:4.0.0-alpha.78"
+    "@burger-editor/frozen-patty": "npm:4.0.0-alpha.78"
     "@d-zero/roar": "npm:^2.3.0"
     "@d-zero/shared": "npm:0.23.0"
     "@types/node": "npm:26.6.6"
@@ -1031,16 +1031,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/client@npm:4.0.0-alpha.77, @burger-editor/client@workspace:packages/@burger-editor/client":
+"@burger-editor/client@npm:4.0.0-alpha.78, @burger-editor/client@workspace:packages/@burger-editor/client":
   version: 0.0.0-use.local
   resolution: "@burger-editor/client@workspace:packages/@burger-editor/client"
   dependencies:
     "@babel/core": "npm:7.29.13"
     "@babel/preset-typescript": "npm:7.29.7"
-    "@burger-editor/core": "npm:4.0.0-alpha.77"
-    "@burger-editor/custom-element": "npm:4.0.0-alpha.77"
-    "@burger-editor/migrator": "npm:4.0.0-alpha.77"
-    "@burger-editor/utils": "npm:4.0.0-alpha.77"
+    "@burger-editor/core": "npm:4.0.0-alpha.78"
+    "@burger-editor/custom-element": "npm:4.0.0-alpha.78"
+    "@burger-editor/migrator": "npm:4.0.0-alpha.78"
+    "@burger-editor/utils": "npm:4.0.0-alpha.78"
     "@rolldown/plugin-babel": "npm:0.3.1"
     "@tabler/icons-react": "npm:^3.51.0"
     "@testing-library/dom": "npm:10.4.2"
@@ -1074,12 +1074,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/core@npm:4.0.0-alpha.77, @burger-editor/core@workspace:packages/@burger-editor/core":
+"@burger-editor/core@npm:4.0.0-alpha.78, @burger-editor/core@workspace:packages/@burger-editor/core":
   version: 0.0.0-use.local
   resolution: "@burger-editor/core@workspace:packages/@burger-editor/core"
   dependencies:
-    "@burger-editor/frozen-patty": "npm:4.0.0-alpha.77"
-    "@burger-editor/utils": "npm:4.0.0-alpha.77"
+    "@burger-editor/frozen-patty": "npm:4.0.0-alpha.78"
+    "@burger-editor/utils": "npm:4.0.0-alpha.78"
     "@types/semver": "npm:7.8.0"
     gray-matter: "npm:^4.0.3"
     jaco: "npm:^5.0.0"
@@ -1087,22 +1087,22 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/css@npm:4.0.0-alpha.77, @burger-editor/css@workspace:packages/@burger-editor/css":
+"@burger-editor/css@npm:4.0.0-alpha.78, @burger-editor/css@workspace:packages/@burger-editor/css":
   version: 0.0.0-use.local
   resolution: "@burger-editor/css@workspace:packages/@burger-editor/css"
   dependencies:
-    "@burger-editor/blocks": "npm:4.0.0-alpha.77"
+    "@burger-editor/blocks": "npm:4.0.0-alpha.78"
     glob: "npm:14.0.4"
     postcss: "npm:8.5.32"
     vitest: "npm:4.1.12"
   languageName: unknown
   linkType: soft
 
-"@burger-editor/custom-element@npm:4.0.0-alpha.77, @burger-editor/custom-element@workspace:packages/@burger-editor/custom-element":
+"@burger-editor/custom-element@npm:4.0.0-alpha.78, @burger-editor/custom-element@workspace:packages/@burger-editor/custom-element":
   version: 0.0.0-use.local
   resolution: "@burger-editor/custom-element@workspace:packages/@burger-editor/custom-element"
   dependencies:
-    "@burger-editor/utils": "npm:4.0.0-alpha.77"
+    "@burger-editor/utils": "npm:4.0.0-alpha.78"
     "@tabler/icons": "npm:^3.51.0"
     "@tiptap/core": "npm:^3.31.4"
     "@tiptap/extension-image": "npm:^3.31.4"
@@ -1119,12 +1119,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/file-io@npm:4.0.0-alpha.77, @burger-editor/file-io@workspace:packages/@burger-editor/file-io":
+"@burger-editor/file-io@npm:4.0.0-alpha.78, @burger-editor/file-io@workspace:packages/@burger-editor/file-io":
   version: 0.0.0-use.local
   resolution: "@burger-editor/file-io@workspace:packages/@burger-editor/file-io"
   dependencies:
-    "@burger-editor/blocks": "npm:4.0.0-alpha.77"
-    "@burger-editor/core": "npm:4.0.0-alpha.77"
+    "@burger-editor/blocks": "npm:4.0.0-alpha.78"
+    "@burger-editor/core": "npm:4.0.0-alpha.78"
     "@d-zero/shared": "npm:0.23.0"
     "@types/jsdom": "npm:28.0.3"
     "@types/node": "npm:26.6.6"
@@ -1135,24 +1135,24 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/frozen-patty@npm:4.0.0-alpha.77, @burger-editor/frozen-patty@workspace:packages/@burger-editor/frozen-patty":
+"@burger-editor/frozen-patty@npm:4.0.0-alpha.78, @burger-editor/frozen-patty@workspace:packages/@burger-editor/frozen-patty":
   version: 0.0.0-use.local
   resolution: "@burger-editor/frozen-patty@workspace:packages/@burger-editor/frozen-patty"
   dependencies:
-    "@burger-editor/utils": "npm:4.0.0-alpha.77"
+    "@burger-editor/utils": "npm:4.0.0-alpha.78"
   languageName: unknown
   linkType: soft
 
-"@burger-editor/inspector@npm:4.0.0-alpha.77, @burger-editor/inspector@workspace:packages/@burger-editor/inspector":
+"@burger-editor/inspector@npm:4.0.0-alpha.78, @burger-editor/inspector@workspace:packages/@burger-editor/inspector":
   version: 0.0.0-use.local
   resolution: "@burger-editor/inspector@workspace:packages/@burger-editor/inspector"
   dependencies:
-    "@burger-editor/core": "npm:4.0.0-alpha.77"
+    "@burger-editor/core": "npm:4.0.0-alpha.78"
     jsdom: "npm:^28.1.0"
   languageName: unknown
   linkType: soft
 
-"@burger-editor/legacy@npm:4.0.0-alpha.77, @burger-editor/legacy@workspace:packages/@burger-editor/legacy":
+"@burger-editor/legacy@npm:4.0.0-alpha.78, @burger-editor/legacy@workspace:packages/@burger-editor/legacy":
   version: 0.0.0-use.local
   resolution: "@burger-editor/legacy@workspace:packages/@burger-editor/legacy"
   dependencies:
@@ -1163,16 +1163,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/local@npm:4.0.0-alpha.77, @burger-editor/local@workspace:packages/@burger-editor/local":
+"@burger-editor/local@npm:4.0.0-alpha.78, @burger-editor/local@workspace:packages/@burger-editor/local":
   version: 0.0.0-use.local
   resolution: "@burger-editor/local@workspace:packages/@burger-editor/local"
   dependencies:
-    "@burger-editor/blocks": "npm:4.0.0-alpha.77"
-    "@burger-editor/cli": "npm:4.0.0-alpha.77"
-    "@burger-editor/client": "npm:4.0.0-alpha.77"
-    "@burger-editor/core": "npm:4.0.0-alpha.77"
-    "@burger-editor/file-io": "npm:4.0.0-alpha.77"
-    "@burger-editor/inspector": "npm:4.0.0-alpha.77"
+    "@burger-editor/blocks": "npm:4.0.0-alpha.78"
+    "@burger-editor/cli": "npm:4.0.0-alpha.78"
+    "@burger-editor/client": "npm:4.0.0-alpha.78"
+    "@burger-editor/core": "npm:4.0.0-alpha.78"
+    "@burger-editor/file-io": "npm:4.0.0-alpha.78"
+    "@burger-editor/inspector": "npm:4.0.0-alpha.78"
     "@d-zero/shared": "npm:0.23.0"
     "@hono/node-server": "npm:^2.1.6"
     "@hono/zod-validator": "npm:^0.9.1"
@@ -1203,13 +1203,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@burger-editor/mcp-server@workspace:packages/@burger-editor/mcp-server"
   dependencies:
-    "@burger-editor/blocks": "npm:4.0.0-alpha.77"
-    "@burger-editor/cli": "npm:4.0.0-alpha.77"
-    "@burger-editor/core": "npm:4.0.0-alpha.77"
-    "@burger-editor/file-io": "npm:4.0.0-alpha.77"
-    "@burger-editor/legacy": "npm:4.0.0-alpha.77"
-    "@burger-editor/migrator": "npm:4.0.0-alpha.77"
-    "@burger-editor/utils": "npm:4.0.0-alpha.77"
+    "@burger-editor/blocks": "npm:4.0.0-alpha.78"
+    "@burger-editor/cli": "npm:4.0.0-alpha.78"
+    "@burger-editor/core": "npm:4.0.0-alpha.78"
+    "@burger-editor/file-io": "npm:4.0.0-alpha.78"
+    "@burger-editor/legacy": "npm:4.0.0-alpha.78"
+    "@burger-editor/migrator": "npm:4.0.0-alpha.78"
+    "@burger-editor/utils": "npm:4.0.0-alpha.78"
     "@d-zero/shared": "npm:0.23.0"
     "@modelcontextprotocol/sdk": "npm:^1.32.2"
     vitest: "npm:4.1.12"
@@ -1219,24 +1219,24 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/migrator@npm:4.0.0-alpha.77, @burger-editor/migrator@workspace:packages/@burger-editor/migrator":
+"@burger-editor/migrator@npm:4.0.0-alpha.78, @burger-editor/migrator@workspace:packages/@burger-editor/migrator":
   version: 0.0.0-use.local
   resolution: "@burger-editor/migrator@workspace:packages/@burger-editor/migrator"
   dependencies:
-    "@burger-editor/core": "npm:4.0.0-alpha.77"
-    "@burger-editor/legacy": "npm:4.0.0-alpha.77"
-    "@burger-editor/utils": "npm:4.0.0-alpha.77"
+    "@burger-editor/core": "npm:4.0.0-alpha.78"
+    "@burger-editor/legacy": "npm:4.0.0-alpha.78"
+    "@burger-editor/utils": "npm:4.0.0-alpha.78"
     semver: "npm:^7.8.6"
   languageName: unknown
   linkType: soft
 
-"@burger-editor/runtime@npm:4.0.0-alpha.77, @burger-editor/runtime@workspace:packages/@burger-editor/runtime":
+"@burger-editor/runtime@npm:4.0.0-alpha.78, @burger-editor/runtime@workspace:packages/@burger-editor/runtime":
   version: 0.0.0-use.local
   resolution: "@burger-editor/runtime@workspace:packages/@burger-editor/runtime"
   dependencies:
-    "@burger-editor/blocks": "npm:4.0.0-alpha.77"
-    "@burger-editor/core": "npm:4.0.0-alpha.77"
-    "@burger-editor/css": "npm:4.0.0-alpha.77"
+    "@burger-editor/blocks": "npm:4.0.0-alpha.78"
+    "@burger-editor/core": "npm:4.0.0-alpha.78"
+    "@burger-editor/css": "npm:4.0.0-alpha.78"
     typescript: "npm:5.9.3"
     vite: "npm:8.3.7"
     vite-plugin-dts: "npm:5.1.2"
@@ -1247,13 +1247,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@burger-editor/storybook@workspace:packages/@burger-editor/storybook"
   dependencies:
-    "@burger-editor/blocks": "npm:4.0.0-alpha.77"
-    "@burger-editor/client": "npm:4.0.0-alpha.77"
-    "@burger-editor/core": "npm:4.0.0-alpha.77"
-    "@burger-editor/css": "npm:4.0.0-alpha.77"
-    "@burger-editor/custom-element": "npm:4.0.0-alpha.77"
-    "@burger-editor/local": "npm:4.0.0-alpha.77"
-    "@burger-editor/runtime": "npm:4.0.0-alpha.77"
+    "@burger-editor/blocks": "npm:4.0.0-alpha.78"
+    "@burger-editor/client": "npm:4.0.0-alpha.78"
+    "@burger-editor/core": "npm:4.0.0-alpha.78"
+    "@burger-editor/css": "npm:4.0.0-alpha.78"
+    "@burger-editor/custom-element": "npm:4.0.0-alpha.78"
+    "@burger-editor/local": "npm:4.0.0-alpha.78"
+    "@burger-editor/runtime": "npm:4.0.0-alpha.78"
     "@storybook/react-vite": "npm:10.6.6"
     "@tabler/icons-react": "npm:3.51.0"
     "@testing-library/dom": "npm:10.4.2"
@@ -1267,7 +1267,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/utils@npm:4.0.0-alpha.77, @burger-editor/utils@workspace:packages/@burger-editor/utils":
+"@burger-editor/utils@npm:4.0.0-alpha.78, @burger-editor/utils@workspace:packages/@burger-editor/utils":
   version: 0.0.0-use.local
   resolution: "@burger-editor/utils@workspace:packages/@burger-editor/utils"
   dependencies:

@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.78](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.77...v4.0.0-alpha.78) (2026-11-17)
+
+### Bug Fixes
+
+* **cli:** refuse agent writes that leave a link image or a carousel slide unnamed ([3c3edb3](https://github.com/d-zero-dev/BurgerEditor/commit/3c3edb34d8f20b51316a250a684e062a7bc49f5b))
+
+### Features
+
+* **cli:** normalize item data on agent writes to disk ([3ae48a1](https://github.com/d-zero-dev/BurgerEditor/commit/3ae48a19cae6fe339f73b7d0b6a34920c9eec7ba)), closes [#1056](https://github.com/d-zero-dev/BurgerEditor/issues/1056)
+
+
 # [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
 
 - fix(cli)!: detect style options with the editor's rules ([94a76db](https://github.com/d-zero-dev/BurgerEditor/commit/94a76db66e5aee52b60be40a6c11c493ad5c9e6e)), closes [#1015](https://github.com/d-zero-dev/BurgerEditor/issues/1015) [#1018](https://github.com/d-zero-dev/BurgerEditor/issues/1018)

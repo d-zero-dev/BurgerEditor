@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.78](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.77...v4.0.0-alpha.78) (2026-11-17)
+
+### Bug Fixes
+
+* **custom-element:** name WYSIWYG toolbar controls for assistive tech ([868adab](https://github.com/d-zero-dev/BurgerEditor/commit/868adab96940ed44348ddd82a99b4cede160b975)), closes [#1101](https://github.com/d-zero-dev/BurgerEditor/issues/1101)
+
+
 # [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
 
 ### Bug Fixes

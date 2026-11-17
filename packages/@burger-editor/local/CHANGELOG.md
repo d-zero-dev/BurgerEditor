@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.78](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.77...v4.0.0-alpha.78) (2026-11-17)
+
+### Bug Fixes
+
+* **local:** check update-item ops before relaying them to a tab ([39603fa](https://github.com/d-zero-dev/BurgerEditor/commit/39603faf5af51ea740efb33c9c97ae13a32f68a1))
+
+### Features
+
+* **local:** draw the front matter marker with empty alt text ([3b6ead7](https://github.com/d-zero-dev/BurgerEditor/commit/3b6ead7c24e9cf27d161a95e360ecf340898d293))
+* **local:** keep tabs, saves and agent relays on the content on disk ([4e1efb2](https://github.com/d-zero-dev/BurgerEditor/commit/4e1efb25faf339d5929b8a8c0c12991f292afd7f)), closes [#content-hash](https://github.com/d-zero-dev/BurgerEditor/issues/content-hash)
+
+
 # [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
 
 ### Bug Fixes

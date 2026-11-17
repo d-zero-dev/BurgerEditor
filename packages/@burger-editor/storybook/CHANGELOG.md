@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.78](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.77...v4.0.0-alpha.78) (2026-11-17)
+
+### Bug Fixes
+
+* **storybook:** load the mock engine without vitest ([8952196](https://github.com/d-zero-dev/BurgerEditor/commit/895219691fce2042bb2984a99ffcc1499b01c0d0)), closes [#1058](https://github.com/d-zero-dev/BurgerEditor/issues/1058)
+
+### Features
+
+* **storybook:** add the published carousel story ([715c88d](https://github.com/d-zero-dev/BurgerEditor/commit/715c88d06e9e52441b61213929f7897c281a2c16))
+* **storybook:** add the ThumbnailButton story ([a81f322](https://github.com/d-zero-dev/BurgerEditor/commit/a81f32247717815b238c1f78a25e38d4d8714a87))
+* **storybook:** derive the carousel story data through toItemData ([b3e2c86](https://github.com/d-zero-dev/BurgerEditor/commit/b3e2c86e1e53edd0408afc85f0917a946ca90053))
+* **storybook:** pass per-slide image arrays to the carousel and add a TextField onBlur story ([7346bb7](https://github.com/d-zero-dev/BurgerEditor/commit/7346bb75aa14a0a782da5c7b869497954372f27e))
+* **storybook:** pass the carousel slide labels in the story ([90adfaa](https://github.com/d-zero-dev/BurgerEditor/commit/90adfaa09b6ef6abb380ef6657af83fbca12c873))
+* **storybook:** show why the carousel story is rejected and add a required TextField story ([170e51a](https://github.com/d-zero-dev/BurgerEditor/commit/170e51a0c62d5ab3f9c7c93f72e51d7f9eebd0db))
+* **storybook:** switch the carousel slide wrapper, caption and alt ([7c3f609](https://github.com/d-zero-dev/BurgerEditor/commit/7c3f609afcec3e410454cd452e966236463bb222))
+
+
 # [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
 
 **Note:** Version bump only for package @burger-editor/storybook
