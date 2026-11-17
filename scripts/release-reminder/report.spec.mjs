@@ -608,6 +608,50 @@ describe('analyzeLine', () => {
 			expect(analyze().changes).toEqual([]);
 		});
 	});
+
+	describe('the order and the forms of the entries of files', () => {
+		const qux = (file) => `packages/@burger-editor/qux/${file}`;
+		const manifest = JSON.stringify({
+			name: '@burger-editor/qux',
+			files: ['lib', '!vendored', '!x', 'x/**', 'out/*.{js,css}', 'pic/[ab].png'],
+		});
+
+		beforeEach(() => {
+			land({ [qux('package.json')]: manifest }, daysAgo(20));
+			repo.git(['tag', 'v4.0.0-alpha.2']);
+		});
+
+		it('excludes a directory named by a negated entry without a slash, at any depth', () => {
+			land(
+				{ [qux('lib/a/vendored/t.js')]: '// t\n', [qux('lib/a/code.js')]: '// code\n' },
+				daysAgo(10),
+			);
+			expect(analyze().changes).toEqual([qux('lib/a/code.js')]);
+		});
+
+		it('lets a later entry win over an earlier negated one', () => {
+			land({ [qux('x/y.js')]: '// y\n' }, daysAgo(10));
+			expect(analyze().changes).toEqual([qux('x/y.js')]);
+		});
+
+		it('reads {a,b} as alternatives and [ab] as a class of characters', () => {
+			land(
+				{
+					[qux('out/a.js')]: '// a\n',
+					[qux('out/b.css')]: 'b {}\n',
+					[qux('out/c.txt')]: 'c\n',
+					[qux('pic/a.png')]: 'png\n',
+					[qux('pic/c.png')]: 'png\n',
+				},
+				daysAgo(10),
+			);
+			expect(analyze().changes).toEqual([
+				qux('out/a.js'),
+				qux('out/b.css'),
+				qux('pic/a.png'),
+			]);
+		});
+	});
 });
 
 describe('renderIssue', () => {

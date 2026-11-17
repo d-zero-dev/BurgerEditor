@@ -235,7 +235,7 @@ function readPackages(git, rev) {
  * @returns {boolean}
  */
 function matchesFilesEntry(relative, entry) {
-	if (entry.includes('*') || entry.includes('?')) {
+	if (/[*?[{]/.test(entry)) {
 		return globToRegExp(entry.replace(/^\.\//, '')).test(relative);
 	}
 	const normalized = entry.replace(/^\.\//, '').replace(/\/$/, '');
@@ -245,11 +245,22 @@ function matchesFilesEntry(relative, entry) {
 /**
  * Turns a glob of the `files` field into a regular expression: `*` and `?`
  * stay within a directory, `**` crosses directories (`**` followed by `/`
- * also matches no directory at all).
+ * also matches no directory at all), `{a,b}` is a choice of alternatives
+ * (not nested) and `[ab]` / `[!ab]` is a class of characters.
  * @param {string} glob
  * @returns {RegExp}
+ * @example
+ * globToRegExp('out/*.{js,css}').test('out/a.css'); // true
  */
 function globToRegExp(glob) {
+	return new RegExp(`^${globSource(glob)}$`);
+}
+
+/**
+ * @param {string} glob
+ * @returns {string} The source of the regular expression, without anchors.
+ */
+function globSource(glob) {
 	let source = '';
 	for (let index = 0; index < glob.length; index += 1) {
 		const char = glob[index];
@@ -265,38 +276,63 @@ function globToRegExp(glob) {
 			}
 		} else if (char === '?') {
 			source += '[^/]';
+		} else if (char === '{' && glob.includes('}', index)) {
+			const close = glob.indexOf('}', index);
+			const choices = glob.slice(index + 1, close).split(',');
+			source += `(?:${choices.map((choice) => globSource(choice)).join('|')})`;
+			index = close;
+		} else if (char === '[' && glob.includes(']', index + 2)) {
+			const close = glob.indexOf(']', index + 2);
+			const body = glob.slice(index + 1, close);
+			const negated = body.startsWith('!');
+			source += `[${negated ? '^' : ''}${(negated ? body.slice(1) : body).replaceAll(/[\\\]^]/g, String.raw`\$&`)}]`;
+			index = close;
 		} else {
 			source += char.replaceAll(/[$()+.[\\\]^{|}]/g, String.raw`\$&`);
 		}
 	}
-	return new RegExp(`^${source}$`);
+	return source;
 }
 
 /**
- * Whether a file of a package is published by its `files` field: some entry
- * names it, and no negated entry (`!pattern`) excludes it. A negated entry
- * without a slash applies at any depth, as in npm.
+ * Whether a negated entry of `files` (without its `!`) excludes a file. An
+ * entry without a slash applies at any depth, to the file or to a directory
+ * of its path, as in npm.
+ * @param {string} relative A path relative to the package directory.
+ * @param {string} pattern
+ * @returns {boolean}
+ */
+function excludes(relative, pattern) {
+	if (matchesFilesEntry(relative, pattern)) {
+		return true;
+	}
+	return (
+		!pattern.includes('/') &&
+		relative.split('/').some((segment) => matchesFilesEntry(segment, pattern))
+	);
+}
+
+/**
+ * Whether a file of a package is published by its `files` field. The entries
+ * apply in order and the last one that matches wins: an entry names the file
+ * to include it, and a negated entry (`!pattern`) excludes it, so a later
+ * entry can bring back what an earlier negated one left out.
  * @param {string} relative A path relative to the package directory.
  * @param {string[]} files The `files` field of the package.
  * @returns {boolean}
  */
 function shipsByFiles(relative, files) {
-	const basename = relative.slice(relative.lastIndexOf('/') + 1);
-	const excluded = files
-		.filter((entry) => entry.startsWith('!'))
-		.map((entry) => entry.slice(1))
-		.some(
-			(entry) =>
-				matchesFilesEntry(relative, entry) ||
-				(!entry.includes('/') && matchesFilesEntry(basename, entry)),
-		);
-	return (
-		!excluded &&
-		files.some(
-			(entry) =>
-				!entry.startsWith('!') && entry !== 'dist' && matchesFilesEntry(relative, entry),
-		)
-	);
+	let ships = false;
+	for (const entry of files) {
+		if (entry.startsWith('!')) {
+			if (excludes(relative, entry.slice(1))) {
+				ships = false;
+			}
+		} else if (entry !== 'dist' && matchesFilesEntry(relative, entry)) {
+			ships = true;
+		}
+	}
+	return ships;
 }
 
 /**
