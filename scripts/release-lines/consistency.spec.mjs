@@ -490,4 +490,52 @@ describe('release lines are the single definition of the branches', () => {
 			});
 		}
 	});
+
+	describe('Corepack', () => {
+		// Node 25 and later do not ship Corepack, and the Playwright image moved
+		// to Node 26, so neither the image nor the Node of `actions/setup-node`
+		// brings `corepack` any more. Both places that enable Yarn install it
+		// from npm at a pinned version.
+		const files = ['.github/actions/setup-yarn/action.yml', 'Dockerfile.vr'];
+		const config = () => JSON.parse(read('.github/renovate.json'));
+		const installed = (file) =>
+			[...read(file).matchAll(/npm install -g corepack@(?<version>\S+)/g)].map(
+				(match) => match.groups.version,
+			);
+
+		for (const file of files) {
+			it(`${file} installs Corepack at an exact version before enabling it`, () => {
+				const text = read(file);
+				const versions = installed(file);
+				expect(versions, `${file} must install corepack once`).toHaveLength(1);
+				expect(versions[0]).toMatch(/^\d+\.\d+\.\d+$/);
+				expect(text.indexOf('npm install -g corepack@')).toBeLessThan(
+					text.indexOf('corepack enable'),
+				);
+			});
+		}
+
+		it('pins the same version in every place', () => {
+			expect(new Set(files.flatMap((file) => installed(file))).size).toBe(1);
+		});
+
+		it('reads every pinned version through its custom manager', () => {
+			// The regex is what lets Renovate raise the pin; `yarn lint` validates
+			// its syntax but not that it matches.
+			const manager = (config().customManagers ?? []).find(
+				(candidate) => candidate.depNameTemplate === 'corepack',
+			);
+			expect(manager, 'renovate.json has no custom manager for corepack').toBeDefined();
+			for (const file of files) {
+				const found = manager.matchStrings.flatMap((source) =>
+					[...read(file).matchAll(new RegExp(source, 'g'))].map(
+						(match) => match.groups?.currentValue,
+					),
+				);
+				expect(found, `${file}: the custom manager misses the pin`).toEqual(
+					installed(file),
+				);
+			}
+		});
+	});
 });

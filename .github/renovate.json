@@ -40,6 +40,18 @@
 			"depNameTemplate": "playwright",
 			"datasourceTemplate": "npm",
 			"versioningTemplate": "npm"
+		},
+		{
+			"description": "Node 25 and later do not ship Corepack, so the setup-yarn action and Dockerfile.vr install it from npm at a pinned version. Reading that version as an update of the npm package lets Renovate raise the pin like any other dependency",
+			"customType": "regex",
+			"managerFilePatterns": [
+				"/^\\.github/actions/setup-yarn/action\\.yml$/",
+				"/^Dockerfile\\.vr$/"
+			],
+			"matchStrings": ["npm install -g corepack@(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+			"depNameTemplate": "corepack",
+			"datasourceTemplate": "npm",
+			"versioningTemplate": "npm"
 		}
 	],
 	"packageRules": [
