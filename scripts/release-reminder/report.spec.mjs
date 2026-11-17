@@ -557,6 +557,57 @@ describe('analyzeLine', () => {
 			expect(analyze().changes).toEqual([]);
 		});
 	});
+
+	describe('the glob entries of files', () => {
+		// npm reads `**` as "any number of directories" and `!` as "except", so a
+		// package that ships `assets/**/*.css` or `lib/**` but not `lib/**/skip.js`
+		// must have the first two counted and the last left out.
+		const baz = (file) => `packages/@burger-editor/baz/${file}`;
+		const manifest = JSON.stringify({
+			name: '@burger-editor/baz',
+			files: ['assets/**/*.css', 'lib/**', '!lib/**/skip.js', '!*.map'],
+		});
+
+		beforeEach(() => {
+			land({ [baz('package.json')]: manifest }, daysAgo(20));
+			repo.git(['tag', 'v4.0.0-alpha.2']);
+		});
+
+		it('counts a file under ** at any depth, including none', () => {
+			land(
+				{
+					[baz('assets/style.css')]: 'a {}\n',
+					[baz('assets/a/b/deep.css')]: 'a {}\n',
+					[baz('lib/x/y/z.js')]: '// z\n',
+				},
+				daysAgo(10),
+			);
+			expect(analyze().changes).toEqual([
+				baz('assets/a/b/deep.css'),
+				baz('assets/style.css'),
+				baz('lib/x/y/z.js'),
+			]);
+		});
+
+		it('does not count a file that a negated entry excludes', () => {
+			land(
+				{
+					[baz('lib/skip.js')]: '// skip\n',
+					[baz('lib/a/skip.js')]: '// skip\n',
+					[baz('bundle.map')]: '{}\n',
+					// a negated entry without a slash applies at any depth
+					[baz('lib/x/bundle.map')]: '{}\n',
+				},
+				daysAgo(10),
+			);
+			expect(analyze().changes).toEqual([]);
+		});
+
+		it('does not count a file that no entry names', () => {
+			land({ [baz('assets/a/notes.txt')]: 'text\n' }, daysAgo(10));
+			expect(analyze().changes).toEqual([]);
+		});
+	});
 });
 
 describe('renderIssue', () => {

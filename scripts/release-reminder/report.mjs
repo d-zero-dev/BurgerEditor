@@ -235,15 +235,68 @@ function readPackages(git, rev) {
  * @returns {boolean}
  */
 function matchesFilesEntry(relative, entry) {
-	if (entry.includes('*')) {
-		const pattern = entry
-			.split('*')
-			.map((part) => part.replaceAll(/[$()+.?[\\\]^{|}]/g, String.raw`\$&`))
-			.join('[^/]*');
-		return new RegExp(`^${pattern}$`).test(relative);
+	if (entry.includes('*') || entry.includes('?')) {
+		return globToRegExp(entry.replace(/^\.\//, '')).test(relative);
 	}
 	const normalized = entry.replace(/^\.\//, '').replace(/\/$/, '');
 	return relative === normalized || relative.startsWith(`${normalized}/`);
+}
+
+/**
+ * Turns a glob of the `files` field into a regular expression: `*` and `?`
+ * stay within a directory, `**` crosses directories (`**` followed by `/`
+ * also matches no directory at all).
+ * @param {string} glob
+ * @returns {RegExp}
+ */
+function globToRegExp(glob) {
+	let source = '';
+	for (let index = 0; index < glob.length; index += 1) {
+		const char = glob[index];
+		if (char === '*') {
+			if (glob[index + 1] !== '*') {
+				source += '[^/]*';
+			} else if (glob[index + 2] === '/') {
+				source += '(?:.*/)?';
+				index += 2;
+			} else {
+				source += '.*';
+				index += 1;
+			}
+		} else if (char === '?') {
+			source += '[^/]';
+		} else {
+			source += char.replaceAll(/[$()+.[\\\]^{|}]/g, String.raw`\$&`);
+		}
+	}
+	return new RegExp(`^${source}$`);
+}
+
+/**
+ * Whether a file of a package is published by its `files` field: some entry
+ * names it, and no negated entry (`!pattern`) excludes it. A negated entry
+ * without a slash applies at any depth, as in npm.
+ * @param {string} relative A path relative to the package directory.
+ * @param {string[]} files The `files` field of the package.
+ * @returns {boolean}
+ */
+function shipsByFiles(relative, files) {
+	const basename = relative.slice(relative.lastIndexOf('/') + 1);
+	const excluded = files
+		.filter((entry) => entry.startsWith('!'))
+		.map((entry) => entry.slice(1))
+		.some(
+			(entry) =>
+				matchesFilesEntry(relative, entry) ||
+				(!entry.includes('/') && matchesFilesEntry(basename, entry)),
+		);
+	return (
+		!excluded &&
+		files.some(
+			(entry) =>
+				!entry.startsWith('!') && entry !== 'dist' && matchesFilesEntry(relative, entry),
+		)
+	);
 }
 
 /**
@@ -270,10 +323,7 @@ function classify(file, packages) {
 	if (relative.startsWith('src/')) {
 		return 'code';
 	}
-	const ships = pkg.files.some(
-		(entry) => entry !== 'dist' && matchesFilesEntry(relative, entry),
-	);
-	return ships ? 'code' : null;
+	return shipsByFiles(relative, pkg.files) ? 'code' : null;
 }
 
 /**
