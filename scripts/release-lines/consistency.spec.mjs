@@ -236,6 +236,46 @@ describe('release lines are the single definition of the branches', () => {
 			});
 		}
 
+		// The comment next to the digest has to be a full version (`# v7.0.1`),
+		// not a floating tag (`# v7`): Renovate ages a digest update against the
+		// release date of the version in the comment, a floating tag gives it
+		// none, and `renovate/stability-days` then stays pending for ever, so the
+		// update never merges. `helpers:pinGitHubActionDigestsToSemver` in
+		// renovate.json writes the full version; this keeps a hand-written one
+		// from going back.
+		const actionFiles = [
+			...files.map((name) => `.github/workflows/${name}`),
+			...readdirSync(path.join(root, '.github/actions')).map(
+				(name) => `.github/actions/${name}/action.yml`,
+			),
+		];
+		for (const file of actionFiles) {
+			it(`${file} pins every action by digest, with a full version in the comment`, () => {
+				const uses = read(file)
+					.split('\n')
+					.flatMap((line) => {
+						const value = /^[\s-]*uses:(.*)$/.exec(line)?.[1]?.trim();
+						if (value === undefined) {
+							return [];
+						}
+						const [target = '', ...comment] = value.split('#');
+						const [name = '', ref = ''] = target.trim().split('@');
+						return [
+							{ name, ref, comment: comment.length > 0 ? `#${comment.join('#')}` : '' },
+						];
+					})
+					.filter(({ name }) => !name.startsWith('./'));
+				const wrong = uses.filter(
+					({ ref, comment }) =>
+						!/^[0-9a-f]{40}$/.test(ref) || !/^#\s*v\d+\.\d+\.\d+\s*$/.test(comment),
+				);
+				expect(
+					wrong.map(({ name, ref, comment }) => `${name}@${ref} ${comment}`),
+					`${file}: an action is not pinned by digest with a comment like "# v7.0.1"`,
+				).toEqual([]);
+			});
+		}
+
 		it('runs test.yml for the branch and the release branch of the newest line', () => {
 			// An empty list would pass the check above, so the parser must find them
 			const names = workflowBranches(read('.github/workflows/test.yml'));
