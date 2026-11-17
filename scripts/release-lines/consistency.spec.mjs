@@ -330,6 +330,81 @@ describe('release lines are the single definition of the branches', () => {
 		});
 	});
 
+	describe('install commands of the documents for users', () => {
+		// While the newest line is a prerelease, `latest` of its packages is a
+		// stale prerelease or the stable version of the older line, so a command
+		// that names a package without a tag installs the wrong thing: the
+		// commands carry the tag of the prerelease. Once the newest line is
+		// stable, `latest` is right and the tag has to go. Both directions are
+		// checked, so the rotation to a stable line cannot leave the tags behind
+		// (the `major-rotation` skill lists the step).
+		const packagesDir = 'packages/@burger-editor';
+		const documents = [
+			'README.md',
+			...readdirSync(path.join(root, packagesDir)).map(
+				(name) => `${packagesDir}/${name}/README.md`,
+			),
+			...readdirSync(path.join(root, 'skills'), { recursive: true })
+				.filter((name) => String(name).endsWith('.md'))
+				.map((name) => `skills/${name}`),
+		].filter((file) => {
+			try {
+				read(file);
+				return true;
+			} catch {
+				return false;
+			}
+		});
+		const requireTag = NEWEST.role === 'prerelease';
+
+		/**
+		 * @param {string} text
+		 * @returns {{ name: string, tag: string | undefined }[]} The packages that a
+		 * command of the text names, in `yarn add`, `yarn global add` or `npx`, and
+		 * the packages of an `args` entry of an MCP configuration.
+		 */
+		function packagesOfCommands(text) {
+			const found = [];
+			const commands =
+				/(?:yarn (?:global )?add(?: -D)?|npx(?: -y)?)((?: +@burger-editor\/[a-z-]+(?:@[^\s`"',)]+)?)+)/g;
+			for (const match of text.matchAll(commands)) {
+				for (const token of match[1].trim().split(/ +/)) {
+					const [, name, tag] = /^(@burger-editor\/[a-z-]+)(?:@(.+))?$/.exec(token) ?? [];
+					found.push({ name, tag });
+				}
+			}
+			for (const match of text.matchAll(/"(@burger-editor\/[a-z-]+)(?:@([^"]*))?"/g)) {
+				// only a package that is run (an `args` entry), not a `name` or a key
+				const before = text.slice(Math.max(0, (match.index ?? 0) - 40), match.index);
+				if (/"-y",\s*$|\["-y",\s*$/.test(before)) {
+					found.push({ name: match[1], tag: match[2] });
+				}
+			}
+			return found;
+		}
+
+		it('finds the commands it is meant to check', () => {
+			const all = documents.flatMap((file) => packagesOfCommands(read(file)));
+			expect(all.length).toBeGreaterThan(20);
+		});
+
+		for (const file of documents) {
+			it(`${file} ${requireTag ? 'installs with the tag of the prerelease' : 'installs without the tag of a prerelease'}`, () => {
+				const wrong = packagesOfCommands(read(file)).filter(({ tag }) =>
+					requireTag ? tag !== 'alpha' : tag === 'alpha',
+				);
+				expect(
+					wrong.map(({ name, tag }) => (tag ? `${name}@${tag}` : name)),
+					`${file}: ${
+						requireTag
+							? 'a command names a package without @alpha'
+							: 'a command still names a package with @alpha'
+					}`,
+				).toEqual([]);
+			});
+		}
+	});
+
 	describe('Playwright', () => {
 		const imageTag = () => `mcr.microsoft.com/playwright:v${playwrightVersion()}-noble`;
 

@@ -30,7 +30,7 @@ BurgerEditorは、プラットフォーム非依存のブロックエディタ�
 
 Claude Code 等の AI エージェント、または非対話なスクリプトからページ・ブロックを編集したい方は次を参照してください：
 
-- [@burger-editor/cli](./packages/@burger-editor/cli/) — JSON-only な CLI（`npx @burger-editor/cli <subcommand>`）
+- [@burger-editor/cli](./packages/@burger-editor/cli/) — JSON-only な CLI（`npx @burger-editor/cli@alpha <subcommand>`）
 - [@burger-editor/mcp-server](./packages/@burger-editor/mcp-server/) — Model Context Protocol サーバー。v3/v4 両対応
 - [skills/editing-burger-editor-pages/](./skills/editing-burger-editor-pages/) — 既存ページのブロック編集向け SKILL
 - [skills/building-burger-editor-projects/](./skills/building-burger-editor-projects/) — プロジェクト構築・カスタムブロック向け SKILL

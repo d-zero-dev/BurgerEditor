@@ -7,7 +7,7 @@ TipTap ベースの WYSIWYG エディタを Web Components（`<bge-wysiwyg-edito
 ## Installation
 
 ```sh
-yarn add @burger-editor/custom-element
+yarn add @burger-editor/custom-element@alpha
 ```
 
 ## Related Packages

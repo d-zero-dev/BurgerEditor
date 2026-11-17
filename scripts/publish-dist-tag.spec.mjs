@@ -112,6 +112,27 @@ function run(version, latest) {
 	return { tag: /^tag=(.+)$/m.exec(written)?.[1] ?? null, failed, output };
 }
 
+describe('the wiring of the dist-tag in publish.yml', () => {
+	// The tests below run the step that decides the tag on its own. What they
+	// cannot see is whether the publish uses the answer, and whether something
+	// else changes a tag afterwards: a renamed step id or a dropped flag would
+	// publish under `latest` while they stay green, and an `npm dist-tag` run
+	// would need the "Allow npm dist-tag" permission on every package, which
+	// the workflow deliberately does without.
+	const workflow = readFileSync(path.join(root, '.github/workflows/publish.yml'), 'utf8');
+
+	it('publishes with the tag that the step decided', () => {
+		expect(workflow).toContain('id: dist-tag');
+		expect(workflow).toContain(
+			'lerna publish from-package --dist-tag ${{ steps.dist-tag.outputs.tag }}',
+		);
+	});
+
+	it('runs no `npm dist-tag` command after the publish', () => {
+		expect(workflow).not.toMatch(/^\s*(?:- )?run:.*\bnpm dist-tag\b/m);
+	});
+});
+
 describe('the dist-tag of a release', () => {
 	it('has a step script to run', () => {
 		expect(readStepScript()).toContain('GITHUB_OUTPUT');

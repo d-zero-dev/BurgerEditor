@@ -18,7 +18,7 @@ BurgerEditor v4 を新しく導入する、AI クライアントを接続する�
 	"mcpServers": {
 		"burger-editor": {
 			"command": "npx",
-			"args": ["-y", "@burger-editor/mcp-server"],
+			"args": ["-y", "@burger-editor/mcp-server@alpha"],
 		},
 	},
 }

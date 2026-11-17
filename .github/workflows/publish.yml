@@ -79,6 +79,21 @@ jobs:
           else
             echo "tag=latest" >> "$GITHUB_OUTPUT"
           fi
+      # Nothing runs `npm dist-tag` after the publish, on purpose. The only
+      # tag a version gets is the one `lerna publish --dist-tag` sets while
+      # publishing, so a prerelease never moves `latest`: the `latest` of a
+      # package that has no stable release (the ones only v4 publishes) stays
+      # on the version it had, until the first stable release takes it, and an
+      # install without a version gets that old version (`@alpha` gets the
+      # newest; SECURITY.md and the READMEs say so). A first publish of a new
+      # package is the exception: npm gives `latest` to the first version ever
+      # published, whatever the tag. Moving `latest` here would need two
+      # things: "Allow npm dist-tag" in the Trusted Publisher settings of every
+      # package, which can only be set on npmjs.com, one package at a time
+      # (`npm trust` has no flag for it), and an npm of 11.21.0 or later, which
+      # is the only way for `npm dist-tag` to authenticate through Trusted
+      # Publishing (the npm of the Node.js above is older). To move `latest`
+      # by hand, see the `npm-publish` skill.
       - name: Publish
         # `from-package` (vs `from-git`): publishes only packages whose
         # current package.json version is NOT yet on the npm registry.
@@ -88,18 +103,3 @@ jobs:
         # already-published packages re-trigger the 409 and abort the
         # whole job before the unpublished ones get their turn.
         run: npx lerna publish from-package --dist-tag ${{ steps.dist-tag.outputs.tag }} --yes
-      - name: Update npm for dist-tag
-        # `npm dist-tag` authenticates through Trusted Publishing from npm
-        # 11.21.0 on, and the Node.js above ships npm 11.20.0. Only the step
-        # below needs it, so the publish itself keeps the bundled npm. Drop
-        # this step once the Node.js version ships npm 11.21.0 or later. The
-        # version is pinned like every other dependency.
-        run: npm install --global npm@11.21.2
-      - name: Move latest for packages without a stable release
-        # A prerelease is published under its own dist-tag, which leaves
-        # `latest` of a package that never had a stable release on the first
-        # version ever published. Move it to this version. Packages that have
-        # a stable release (v3 has one) keep their `latest`. Each package needs
-        # "Allow npm dist-tag" enabled in its Trusted Publisher settings on
-        # npmjs.com. See scripts/follow-latest-dist-tag.mjs.
-        run: node scripts/follow-latest-dist-tag.mjs

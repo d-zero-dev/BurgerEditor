@@ -5,7 +5,7 @@ BurgerEditor のバージョン間でコンテンツを移行するツール。�
 ## Installation
 
 ```sh
-yarn add @burger-editor/migrator
+yarn add @burger-editor/migrator@alpha
 ```
 
 ## Related Packages

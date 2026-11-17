@@ -1,6 +1,6 @@
 # cli-fallback — MCP が使えない環境向け
 
-`@burger-editor/cli`（`npx @burger-editor/cli <subcommand>`）は MCP サーバーと**同じ機能を持つが契約が違う**。CI やシェルスクリプト、MCP を組み込めないクライアントから操作するときだけ使う。MCP が使える環境では MCP を優先する（このスキルの本体・他の references は MCP 前提で書かれている）。
+`@burger-editor/cli`（`npx @burger-editor/cli@alpha <subcommand>`）は MCP サーバーと**同じ機能を持つが契約が違う**。CI やシェルスクリプト、MCP を組み込めないクライアントから操作するときだけ使う。MCP が使える環境では MCP を優先する（このスキルの本体・他の references は MCP 前提で書かれている）。
 
 ## MCP との契約差分（最重要）
 
@@ -16,10 +16,10 @@
 ## 使い方
 
 ```bash
-npx @burger-editor/cli page-blocks <path>
-npx @burger-editor/cli block-insert <path> <atIndex> --spec '{"catalog":"h2","items":[[{"name":"title-h2","data":{"titleH2":"…"}}]]}'
-npx @burger-editor/cli block-replace <path> <index> --spec-file ./spec.json
-npx @burger-editor/cli block-delete <path> <index> --dry-run
+npx @burger-editor/cli@alpha page-blocks <path>
+npx @burger-editor/cli@alpha block-insert <path> <atIndex> --spec '{"catalog":"h2","items":[[{"name":"title-h2","data":{"titleH2":"…"}}]]}'
+npx @burger-editor/cli@alpha block-replace <path> <index> --spec-file ./spec.json
+npx @burger-editor/cli@alpha block-delete <path> <index> --dry-run
 ```
 
 - `--spec`はインライン JSON、`--spec-file`はファイルパス。どちらもキーは camelCase で書く
