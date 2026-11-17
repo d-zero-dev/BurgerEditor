@@ -133,21 +133,23 @@ describe('the dist-tag of a release', () => {
 	});
 
 	it('publishes a stable release of the major that is on latest under latest', () => {
-		// today's v3 release, before v4 is stable
 		expect(run('3.5.1', '3.5.0')).toMatchObject({ tag: 'latest', failed: false });
 	});
 
-	it('publishes the stable release of an older major under its own tag', () => {
-		expect(run('3.5.1', '4.0.0')).toMatchObject({ tag: 'v3', failed: false });
-	});
-
-	it('refuses a prerelease of an older major, which would move the tag of the current line', () => {
-		const result = run('3.6.0-alpha.1', '4.0.0');
-		expect(result).toMatchObject({ tag: null, failed: true });
-		expect(result.output).toContain(
-			'::error::3.6.0-alpha.1 is a prerelease of an older major',
-		);
-	});
+	// An older major is released from the branch of its own line, whose workflow
+	// decides its tag (a prerelease would move the tag of the current line, and
+	// a stable release would take `latest` away from it): this workflow only
+	// publishes the current line.
+	it.each(['3.5.1', '3.6.0-alpha.1'])(
+		'refuses %s, an older major than latest, which is released from its own branch',
+		(version) => {
+			const result = run(version, '4.0.0');
+			expect(result).toMatchObject({ tag: null, failed: true });
+			expect(result.output).toContain(
+				`::error::${version} is of an older major than the latest release (4.0.0); an older major is released from its own branch`,
+			);
+		},
+	);
 
 	it('refuses a prerelease tag it does not know', () => {
 		const result = run('4.0.0-next.1', '3.5.0');
