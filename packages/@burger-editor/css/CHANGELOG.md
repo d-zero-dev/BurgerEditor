@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.78](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.77...v4.0.0-alpha.78) (2026-11-17)
+
+### Bug Fixes
+
+* **css:** resolve the package from CSS imports and ship the docs ([1a5713f](https://github.com/d-zero-dev/BurgerEditor/commit/1a5713f325a6497977ed10666b1cbc374265af0f))
+
+
 # [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
 
 **Note:** Version bump only for package @burger-editor/css

@@ -3,6 +3,104 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.78](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.77...v4.0.0-alpha.78) (2026-11-17)
+
+* feat(blocks)!: fill empty source media and store carousel images as image lists ([2f68aef](https://github.com/d-zero-dev/BurgerEditor/commit/2f68aef1a8e61c45ba96e05a8a3ba32f7743fc71)), closes [#1056](https://github.com/d-zero-dev/BurgerEditor/issues/1056)
+* feat(core)!: let items normalize their data before every write ([2e51b9b](https://github.com/d-zero-dev/BurgerEditor/commit/2e51b9b3a071564cb382a759d875dbd10507019b))
+* feat(frozen-patty)!: read nested lists back as arrays of arrays ([dcb6817](https://github.com/d-zero-dev/BurgerEditor/commit/dcb6817179d87ddee4f66eab73ea840fa32101d2))
+
+### Bug Fixes
+
+* **blocks:** apply align-items: baseline to the inline container's baseline option ([90a58f2](https://github.com/d-zero-dev/BurgerEditor/commit/90a58f2e073bc64512914419d1ce0c72ab78d512))
+* **blocks:** make the carousel reachable and its controls legible ([503539a](https://github.com/d-zero-dev/BurgerEditor/commit/503539afb4aa2dea248e36a0f6dec24d73e3289c)), closes [#1055](https://github.com/d-zero-dev/BurgerEditor/issues/1055)
+* **blocks:** name native carousel dots without the runtime ([56b7085](https://github.com/d-zero-dev/BurgerEditor/commit/56b70855f819227ec4eb986f273d4281e40b4b78)), closes [#1055](https://github.com/d-zero-dev/BurgerEditor/issues/1055)
+* **blocks:** refuse unnamed link images and carousel slides on every write path ([13b0a02](https://github.com/d-zero-dev/BurgerEditor/commit/13b0a0281f4195b393580989c2f2aa86a5c7a897))
+* **blocks:** require alt for linked images and a name for every carousel slide ([dbf4fe8](https://github.com/d-zero-dev/BurgerEditor/commit/dbf4fe8d86b874c8c45e40ce0b0c21fd5d86cdec))
+* **blocks:** stack grid groups that have nine or more items ([8ae3df8](https://github.com/d-zero-dev/BurgerEditor/commit/8ae3df813f2fb541b48ea8a9f3d830a307d73db3))
+* **blocks:** store the carousel per-view only as --per-view ([04aab59](https://github.com/d-zero-dev/BurgerEditor/commit/04aab5938ddd30bd671ceceae2c9d25e244da66a)), closes [#1055](https://github.com/d-zero-dev/BurgerEditor/issues/1055)
+* **client:** align item overlay anchors with resolved items ([cc7381d](https://github.com/d-zero-dev/BurgerEditor/commit/cc7381dae0729186082fe9ef763df8e605892546))
+* **client:** dismiss block menu tooltips with Esc via hint popovers ([309e359](https://github.com/d-zero-dev/BurgerEditor/commit/309e35987714db3a9f3756956dc924985ee20910)), closes [#1107](https://github.com/d-zero-dev/BurgerEditor/issues/1107)
+* **client:** follow hovered blocks with CSS anchor positioning ([80b2398](https://github.com/d-zero-dev/BurgerEditor/commit/80b23988ace635982eef7063b85057b7aec7a8f7)), closes [#1105](https://github.com/d-zero-dev/BurgerEditor/issues/1105)
+* **client:** give column count range an accessible name ([968142a](https://github.com/d-zero-dev/BurgerEditor/commit/968142ad02d2b5688db954540120bebfbc64783b)), closes [#1109](https://github.com/d-zero-dev/BurgerEditor/issues/1109)
+* **client:** hide catalog SVG from accessible name ([9313acd](https://github.com/d-zero-dev/BurgerEditor/commit/9313acda133a30f95e4aa2675accb3f1b8d5e7f7)), closes [#1103](https://github.com/d-zero-dev/BurgerEditor/issues/1103)
+* **client:** satisfy Item.getInstance mock return type in test ([f7344b0](https://github.com/d-zero-dev/BurgerEditor/commit/f7344b0b09b5c2a58c2a86aae7644759186db67c))
+* **client:** style WYSIWYG toolbar button tooltips ([b028d0e](https://github.com/d-zero-dev/BurgerEditor/commit/b028d0e19bddfde3582f529fed022cc385de2f33))
+* **client:** use View Transitions for block move swap ([0337fdc](https://github.com/d-zero-dev/BurgerEditor/commit/0337fdc3dadfd8b117776a8b93f61ffbba15970c))
+* **cli:** refuse agent writes that leave a link image or a carousel slide unnamed ([3c3edb3](https://github.com/d-zero-dev/BurgerEditor/commit/3c3edb34d8f20b51316a250a684e062a7bc49f5b))
+* **core:** parse values in an inert document before sanitizing them ([51f698a](https://github.com/d-zero-dev/BurgerEditor/commit/51f698aea01cc47f4d0e61884aa8209a3e1df55a))
+* **css:** resolve the package from CSS imports and ship the docs ([1a5713f](https://github.com/d-zero-dev/BurgerEditor/commit/1a5713f325a6497977ed10666b1cbc374265af0f))
+* **custom-element:** name WYSIWYG toolbar controls for assistive tech ([868adab](https://github.com/d-zero-dev/BurgerEditor/commit/868adab96940ed44348ddd82a99b4cede160b975)), closes [#1101](https://github.com/d-zero-dev/BurgerEditor/issues/1101)
+* **file-io:** derive the experimental config type from core ([1aa57df](https://github.com/d-zero-dev/BurgerEditor/commit/1aa57dffdf6d01abdb04fdb55c9f061b70472b25))
+* **file-io:** drop [@property](https://github.com/property) rules before parsing the stylesheet document ([4a55504](https://github.com/d-zero-dev/BurgerEditor/commit/4a55504225ea2c3dd32069025c3af60d35fb7d62))
+* **frozen-patty:** read unset <source> attributes as null ([19400d2](https://github.com/d-zero-dev/BurgerEditor/commit/19400d2b3ee5c6f64c9dae6f2e80ab04b718e114))
+* **frozen-patty:** sanitize HTML in an inert document until it settles ([e0c7d2d](https://github.com/d-zero-dev/BurgerEditor/commit/e0c7d2d1c7c2ea6bd9cc68469d894cf327747cfc)), closes [#x09](https://github.com/d-zero-dev/BurgerEditor/issues/x09)
+* **frozen-patty:** write the command attribute of a button in the Node.js DOM ([cee277b](https://github.com/d-zero-dev/BurgerEditor/commit/cee277b4598ffe972dc9d94d00f9dbe92006b4f5))
+* **github:** check the form of the version in the publish workflow of the current line ([eccb39a](https://github.com/d-zero-dev/BurgerEditor/commit/eccb39abba7f940322dbfb0d23d71c902e38b3da))
+* **local:** check update-item ops before relaying them to a tab ([39603fa](https://github.com/d-zero-dev/BurgerEditor/commit/39603faf5af51ea740efb33c9c97ae13a32f68a1))
+* **repo:** apply the entries of files in order and read braces, classes and directories ([4c5bfab](https://github.com/d-zero-dev/BurgerEditor/commit/4c5bfab5ffc9076b9a7191a0e92cdfecfc302485))
+* **repo:** count the files that a glob or a negated entry of files ships ([f79b7ae](https://github.com/d-zero-dev/BurgerEditor/commit/f79b7ae47477b0247b60a659ef421d9fa15c79e1))
+* **repo:** name the possible causes in the warning and in the hook message ([63c79e7](https://github.com/d-zero-dev/BurgerEditor/commit/63c79e7476fa4cbfa29f162b05069873341b3e41))
+* **repo:** say why the pre-commit hook refuses when node cannot run ([f032209](https://github.com/d-zero-dev/BurgerEditor/commit/f032209e2bbf58f4513b10e4e2b1af59360e1d33))
+* **repo:** warn when a change that reaches users cannot be placed in the history ([42c0188](https://github.com/d-zero-dev/BurgerEditor/commit/42c01888b83e793531084ac3662eccec30c5ad28))
+* **runtime:** harden the carousel runtime after review ([600e18c](https://github.com/d-zero-dev/BurgerEditor/commit/600e18c53cba2edf1dc3395e0495696ae249c443))
+* **runtime:** keep carousel dots named and pause autoplay behind popups ([0121ed7](https://github.com/d-zero-dev/BurgerEditor/commit/0121ed7e0ca46dbcd742b271be3451c87216d0c0))
+* **runtime:** make only the fade carousel a live region ([58e76bc](https://github.com/d-zero-dev/BurgerEditor/commit/58e76bc9156071bc20d4434bd6e44e9a04552195))
+* **runtime:** name carousel parts from authored content ([fa95742](https://github.com/d-zero-dev/BurgerEditor/commit/fa95742fa24927b6b55bd1324106eb66346cbd5f))
+* **storybook:** load the mock engine without vitest ([8952196](https://github.com/d-zero-dev/BurgerEditor/commit/895219691fce2042bb2984a99ffcc1499b01c0d0)), closes [#1058](https://github.com/d-zero-dev/BurgerEditor/issues/1058)
+
+### Features
+
+* **blocks:** add shared style variables for the carousel arrows and dots ([a3ef645](https://github.com/d-zero-dev/BurgerEditor/commit/a3ef645b28ee03ee7e8a7fb67f7e39b59bc94677))
+* **blocks:** add the carousel item ([16cb692](https://github.com/d-zero-dev/BurgerEditor/commit/16cb6925c5677874f468ff9289e426aa6ecaa406))
+* **blocks:** lay out the carousel with CSS scroll snap ([9d4091e](https://github.com/d-zero-dev/BurgerEditor/commit/9d4091e08c4dc4b91eccb503b2db41adaef6a045)), closes [#1055](https://github.com/d-zero-dev/BurgerEditor/issues/1055)
+* **client:** add a vitest-free mock engine export ([000f1b1](https://github.com/d-zero-dev/BurgerEditor/commit/000f1b103ed59c2599b2922c0b950d8aa8c31a4a)), closes [#1058](https://github.com/d-zero-dev/BurgerEditor/issues/1058)
+* **client:** add onBlur to TextField and describedBy to SelectField ([313da26](https://github.com/d-zero-dev/BurgerEditor/commit/313da2692255806bc3b7d41b32858e27ed8f902c))
+* **client:** add ThumbnailButton and slide list styles ([c54e755](https://github.com/d-zero-dev/BurgerEditor/commit/c54e755cd8ebdd1c3693292878516f262d8e25b9))
+* **client:** fold front matter with details and summary ([54639c4](https://github.com/d-zero-dev/BurgerEditor/commit/54639c4c7a126d9aff7967e9150a2618b0681247))
+* **client:** let TextField mark a field as required for assistive technology ([38f4a7f](https://github.com/d-zero-dev/BurgerEditor/commit/38f4a7fa5328a3b3f7bb5803d4d2d33afc87d0b8))
+* **cli:** normalize item data on agent writes to disk ([3ae48a1](https://github.com/d-zero-dev/BurgerEditor/commit/3ae48a19cae6fe339f73b7d0b6a34920c9eec7ba)), closes [#1056](https://github.com/d-zero-dev/BurgerEditor/issues/1056)
+* **core:** add validateItemData to refuse saves an item must not accept ([421534d](https://github.com/d-zero-dev/BurgerEditor/commit/421534ddaa00df17f45aff353d81e29f7d988f47))
+* **file-io:** accept mediaQueries in the config file ([ba945fb](https://github.com/d-zero-dev/BurgerEditor/commit/ba945fb13b36e4fd13fdc854289496ecd2bc6544))
+* **frozen-patty:** convert custom property values read with style() ([3bc1aea](https://github.com/d-zero-dev/BurgerEditor/commit/3bc1aea3f1176717132ed69c965d91208396b77e))
+* **local:** draw the front matter marker with empty alt text ([3b6ead7](https://github.com/d-zero-dev/BurgerEditor/commit/3b6ead7c24e9cf27d161a95e360ecf340898d293))
+* **local:** keep tabs, saves and agent relays on the content on disk ([4e1efb2](https://github.com/d-zero-dev/BurgerEditor/commit/4e1efb25faf339d5929b8a8c0c12991f292afd7f)), closes [#content-hash](https://github.com/d-zero-dev/BurgerEditor/issues/content-hash)
+* **runtime:** add the carousel runtime ([7aebc79](https://github.com/d-zero-dev/BurgerEditor/commit/7aebc79a4e37c52cb3f4a48f5afd669658f134ad)), closes [#1054](https://github.com/d-zero-dev/BurgerEditor/issues/1054)
+* **runtime:** follow the carousel CSS for the slides per view and the arrow glyphs ([46786f0](https://github.com/d-zero-dev/BurgerEditor/commit/46786f088ef846ef7bb4f1dfc2733ac9620b75f9))
+* **storybook:** add the published carousel story ([715c88d](https://github.com/d-zero-dev/BurgerEditor/commit/715c88d06e9e52441b61213929f7897c281a2c16))
+* **storybook:** add the ThumbnailButton story ([a81f322](https://github.com/d-zero-dev/BurgerEditor/commit/a81f32247717815b238c1f78a25e38d4d8714a87))
+* **storybook:** derive the carousel story data through toItemData ([b3e2c86](https://github.com/d-zero-dev/BurgerEditor/commit/b3e2c86e1e53edd0408afc85f0917a946ca90053))
+* **storybook:** pass per-slide image arrays to the carousel and add a TextField onBlur story ([7346bb7](https://github.com/d-zero-dev/BurgerEditor/commit/7346bb75aa14a0a782da5c7b869497954372f27e))
+* **storybook:** pass the carousel slide labels in the story ([90adfaa](https://github.com/d-zero-dev/BurgerEditor/commit/90adfaa09b6ef6abb380ef6657af83fbca12c873))
+* **storybook:** show why the carousel story is rejected and add a required TextField story ([170e51a](https://github.com/d-zero-dev/BurgerEditor/commit/170e51a0c62d5ab3f9c7c93f72e51d7f9eebd0db))
+* **storybook:** switch the carousel slide wrapper, caption and alt ([7c3f609](https://github.com/d-zero-dev/BurgerEditor/commit/7c3f609afcec3e410454cd452e966236463bb222))
+
+### BREAKING CHANGES
+
+* the carousel template and data shape changed (image keys are
+  arrays of arrays; the sp* keys are gone). Saved carousels in the old sp-* shape
+  are not read back; the carousel was still in development and none exist.
+
+  Behavior change: saved HTML of image and carousel puts the configured media
+  query on every <source> instead of media="" (pages that already have one get it
+  on their next save). Carousel specs were rewritten to the new data shape and
+  three were renamed to match: "SP画像のないスライドは spPath が null のまま往復する"
+  -> "SP画像の無いスライドは、名前が無ければ確定できない"; "名前のある SP画像のない
+  スライドは spPath が null のまま往復する" -> "名前のある SP画像の無いスライドは、
+  画像の配列が 1 枚のまま往復する"; "保存済みHTMLの読み戻しで空文字・0になるSPの値は
+  null に揃える" -> "読み戻しで空の配列やスカラーになった画像の値は、画像ごとの配列に
+  そろえる". The carousel editor spec that edits the media query now picks "Other"
+  first.
+* the values of ItemData are ItemDataValue, which allows arrays
+  of arrays (nested lists read back by frozen-patty). Code that narrowed item
+  values to flat arrays may need a type update.
+
+  Behavior change: render() fills required config keys that options.config sets
+  to undefined with their empty defaults (before: they stayed undefined).
+* toJSON() returns arrays of arrays for fields inside nested lists
+  (depth 0 and 1 are unchanged). PrimitiveData is now recursive and the values of
+  FrozenPattyFlattenData are PrimitiveData.
+
+
 # [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
 
 ### Bug Fixes

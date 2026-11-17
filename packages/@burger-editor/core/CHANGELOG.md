@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.78](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.77...v4.0.0-alpha.78) (2026-11-17)
+
+* feat(core)!: let items normalize their data before every write ([2e51b9b](https://github.com/d-zero-dev/BurgerEditor/commit/2e51b9b3a071564cb382a759d875dbd10507019b))
+
+### Bug Fixes
+
+* **core:** parse values in an inert document before sanitizing them ([51f698a](https://github.com/d-zero-dev/BurgerEditor/commit/51f698aea01cc47f4d0e61884aa8209a3e1df55a))
+
+### Features
+
+* **core:** add validateItemData to refuse saves an item must not accept ([421534d](https://github.com/d-zero-dev/BurgerEditor/commit/421534ddaa00df17f45aff353d81e29f7d988f47))
+
+### BREAKING CHANGES
+
+* the values of ItemData are ItemDataValue, which allows arrays
+  of arrays (nested lists read back by frozen-patty). Code that narrowed item
+  values to flat arrays may need a type update.
+
+  Behavior change: render() fills required config keys that options.config sets
+  to undefined with their empty defaults (before: they stayed undefined).
+
+
 # [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
 
 ### Bug Fixes

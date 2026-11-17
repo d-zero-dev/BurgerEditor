@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.78](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.77...v4.0.0-alpha.78) (2026-11-17)
+
+### Bug Fixes
+
+* **file-io:** derive the experimental config type from core ([1aa57df](https://github.com/d-zero-dev/BurgerEditor/commit/1aa57dffdf6d01abdb04fdb55c9f061b70472b25))
+* **file-io:** drop [@property](https://github.com/property) rules before parsing the stylesheet document ([4a55504](https://github.com/d-zero-dev/BurgerEditor/commit/4a55504225ea2c3dd32069025c3af60d35fb7d62))
+
+### Features
+
+* **file-io:** accept mediaQueries in the config file ([ba945fb](https://github.com/d-zero-dev/BurgerEditor/commit/ba945fb13b36e4fd13fdc854289496ecd2bc6544))
+
+
 # [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
 
 ### Features

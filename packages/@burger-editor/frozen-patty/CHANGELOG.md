@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.78](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.77...v4.0.0-alpha.78) (2026-11-17)
+
+* feat(frozen-patty)!: read nested lists back as arrays of arrays ([dcb6817](https://github.com/d-zero-dev/BurgerEditor/commit/dcb6817179d87ddee4f66eab73ea840fa32101d2))
+
+### Bug Fixes
+
+* **frozen-patty:** read unset <source> attributes as null ([19400d2](https://github.com/d-zero-dev/BurgerEditor/commit/19400d2b3ee5c6f64c9dae6f2e80ab04b718e114))
+* **frozen-patty:** sanitize HTML in an inert document until it settles ([e0c7d2d](https://github.com/d-zero-dev/BurgerEditor/commit/e0c7d2d1c7c2ea6bd9cc68469d894cf327747cfc)), closes [#x09](https://github.com/d-zero-dev/BurgerEditor/issues/x09)
+* **frozen-patty:** write the command attribute of a button in the Node.js DOM ([cee277b](https://github.com/d-zero-dev/BurgerEditor/commit/cee277b4598ffe972dc9d94d00f9dbe92006b4f5))
+
+### Features
+
+* **frozen-patty:** convert custom property values read with style() ([3bc1aea](https://github.com/d-zero-dev/BurgerEditor/commit/3bc1aea3f1176717132ed69c965d91208396b77e))
+
+### BREAKING CHANGES
+
+* toJSON() returns arrays of arrays for fields inside nested lists
+  (depth 0 and 1 are unchanged). PrimitiveData is now recursive and the values of
+  FrozenPattyFlattenData are PrimitiveData.
+
+
 # [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
 
 **Note:** Version bump only for package @burger-editor/frozen-patty
