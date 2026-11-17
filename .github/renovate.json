@@ -40,6 +40,18 @@
 			"depNameTemplate": "playwright",
 			"datasourceTemplate": "npm",
 			"versioningTemplate": "npm"
+		},
+		{
+			"description": "Node 25 and later do not ship Corepack, so the setup-yarn action and Dockerfile.vr install it from npm at a pinned version. Reading that version as an update of the npm package lets Renovate raise the pin like any other dependency",
+			"customType": "regex",
+			"managerFilePatterns": [
+				"/^\\.github/actions/setup-yarn/action\\.yml$/",
+				"/^Dockerfile\\.vr$/"
+			],
+			"matchStrings": ["npm install -g corepack@(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+			"depNameTemplate": "corepack",
+			"datasourceTemplate": "npm",
+			"versioningTemplate": "npm"
 		}
 	],
 	"packageRules": [
@@ -112,6 +124,11 @@
 			"description": "hono and zod move together via @hono/zod-validator peer deps",
 			"groupName": "hono-zod",
 			"matchPackageNames": ["hono", "/^@hono\\//", "zod"]
+		},
+		{
+			"description": "markuplint loads the parsers and specs of its own release, and a parser of a newer major crashes an older CLI while it reports, so the CLI and the @markuplint packages must be raised together",
+			"groupName": "markuplint",
+			"matchPackageNames": ["markuplint", "/^@markuplint\\//"]
 		},
 		{
 			"groupName": "react",
