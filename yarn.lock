@@ -3519,10 +3519,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@markuplint/ml-ast@npm:5.3.0":
-  version: 5.3.0
-  resolution: "@markuplint/ml-ast@npm:5.3.0"
-  checksum: 10c0/7d4ec457baf60fe0db533c9402a0fa8cd6e2fd8da7ad7c16d7f7636eb147f28a14946c9ccb78d90c7ed90130d3f9eb0e996199c21a4326bb37d832d39c11c0d0
+"@markuplint/ml-ast@npm:5.5.0":
+  version: 5.5.0
+  resolution: "@markuplint/ml-ast@npm:5.5.0"
+  checksum: 10c0/321efc834424ea1fc09f5e2a96b829c01f0bb344515009924207b928fae34e493df66f8ee4a6e1ffc5dfbe6413f2a22287d674e530688407565e6efe6bccaace
   languageName: node
   linkType: hard
 
@@ -3578,15 +3578,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@markuplint/ml-spec@npm:5.4.0":
-  version: 5.4.0
-  resolution: "@markuplint/ml-spec@npm:5.4.0"
+"@markuplint/ml-spec@npm:5.5.0":
+  version: 5.5.0
+  resolution: "@markuplint/ml-spec@npm:5.5.0"
   dependencies:
-    "@markuplint/ml-ast": "npm:5.3.0"
-    "@markuplint/types": "npm:5.4.0"
+    "@markuplint/ml-ast": "npm:5.5.0"
+    "@markuplint/shared": "npm:5.5.0"
+    "@markuplint/types": "npm:5.5.0"
     is-plain-object: "npm:^5.1.0"
     type-fest: "npm:^5.10.0"
-  checksum: 10c0/b51c0f6b2a7f0139568b656eb3fb3baac654e0fa0d3e55e15ce28afd0ef5a07a5780dcadb89c522e914b1d8f830e0bd5f256e3e81605bc8ed275cb80c1cf2248
+  checksum: 10c0/1196db4df17a79229bf200bcc1a094938b1178dc995c41037d8e323811fbee8a7f54d02e16215eb4aec30a568955c49201091eea386c7dd66d5578efe1ad992a
   languageName: node
   linkType: hard
 
@@ -3619,12 +3620,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@markuplint/react-spec@npm:5.4.0":
-  version: 5.4.0
-  resolution: "@markuplint/react-spec@npm:5.4.0"
+"@markuplint/react-spec@npm:5.5.0":
+  version: 5.5.0
+  resolution: "@markuplint/react-spec@npm:5.5.0"
   dependencies:
-    "@markuplint/ml-spec": "npm:5.4.0"
-  checksum: 10c0/1264caa6e9d7bb63a211bf59e1e0e0a62afed97d20a1afb26a1eec974e58612d0ffbeedd1926c921edcf3cc23d717fd0d04067e93225b050044090ad65f6ba13
+    "@markuplint/ml-spec": "npm:5.5.0"
+  checksum: 10c0/5b548c4b5eda440eebafcb881b9b91b1a260c8f6f7ab17e68f223d050098f33a585a0771c6ec8d5b0dec1c4f96ca26875ec02e7c4cb925e07b5821556a4740b9
   languageName: node
   linkType: hard
 
@@ -3670,12 +3671,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@markuplint/shared@npm:5.4.0":
-  version: 5.4.0
-  resolution: "@markuplint/shared@npm:5.4.0"
+"@markuplint/shared@npm:5.5.0":
+  version: 5.5.0
+  resolution: "@markuplint/shared@npm:5.5.0"
   dependencies:
     html-entities: "npm:^2.6.0"
-  checksum: 10c0/6fa13d7db24c7da70d395abc086b9c3dac5cef1a6d9af31530f056419117a645856b5ffcb680ee2600a02166b9dae4b89331b29d4e91de368c962c76a5bd4027
+  checksum: 10c0/e0065b11700b6d73562cc9bcce3ffc54c950b633b9e7ff85891da25f234f28be2d37db1473ff0e30deafcb4e2ee57fa4218eb9f76125e8dc35998f4a1673b90b
   languageName: node
   linkType: hard
 
@@ -3697,21 +3698,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@markuplint/types@npm:5.4.0":
-  version: 5.4.0
-  resolution: "@markuplint/types@npm:5.4.0"
+"@markuplint/types@npm:5.5.0":
+  version: 5.5.0
+  resolution: "@markuplint/types@npm:5.5.0"
   dependencies:
-    "@markuplint/shared": "npm:5.4.0"
+    "@markuplint/shared": "npm:5.5.0"
     "@types/css-tree": "npm:^3.2.0"
     "@types/debug": "npm:^4.1.13"
-    bcp-47: "npm:^2.1.1"
+    bcp-47: "npm:^2.1.2"
     css-tree: "npm:^3.2.1"
     debug: "npm:^4.4.3"
     language-subtag-registry: "npm:^0.4.2"
     leven: "npm:^4.1.0"
     type-fest: "npm:^5.10.0"
     whatwg-mimetype: "npm:^5.0.0"
-  checksum: 10c0/7b9e8ab38f8b55caf0fe87102e3dc05ef123a6b398be258556f425eef3889beaab3c3d76f7c3251e5fb00bffa89f4fec955960c1b815b7e048d51e41429bcecb
+  checksum: 10c0/3c8c64e86b53ad12bc5b93c1fbdf3a5a831527605d46e524567c9f5bbbe51666cdc8752cb1d72123bbeaced8f7614e614c783331ef4734080da1443258a7c43a
   languageName: node
   linkType: hard
 
@@ -8209,7 +8210,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bcp-47@npm:^2.1.1":
+"bcp-47@npm:^2.1.2":
   version: 2.1.2
   resolution: "bcp-47@npm:2.1.2"
   dependencies:
@@ -17941,7 +17942,7 @@ __metadata:
     "@d-zero/textlint-config": "npm:5.1.2"
     "@d-zero/tsconfig": "npm:2.0.0"
     "@markuplint/jsx-parser": "npm:4.18.4"
-    "@markuplint/react-spec": "npm:5.4.0"
+    "@markuplint/react-spec": "npm:5.5.0"
     "@vitest/browser": "npm:4.1.12"
     "@vitest/browser-playwright": "npm:4.1.12"
     eslint-plugin-react-hooks: "npm:7.1.1"
