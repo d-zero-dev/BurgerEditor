@@ -93,7 +93,7 @@ jobs:
       # (`npm trust` has no flag for it), and an npm of 11.21.0 or later, which
       # is the only way for `npm dist-tag` to authenticate through Trusted
       # Publishing (the npm of the Node.js above is older). To move `latest`
-      # by hand, see step 10 of the `npm-publish` skill.
+      # by hand, see the `npm-publish` skill.
       - name: Publish
         # `from-package` (vs `from-git`): publishes only packages whose
         # current package.json version is NOT yet on the npm registry.
