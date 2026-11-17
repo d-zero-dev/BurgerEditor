@@ -71,6 +71,24 @@ function workflowBranches(text) {
 }
 
 /**
+ * The block of one trigger under `on:` of a workflow (the lines indented
+ * deeper than the trigger), so its `branches:` can be read on its own.
+ * @param {string} text
+ * @param {string} trigger For example `push` or `pull_request`.
+ * @returns {string}
+ */
+function triggerBlock(text, trigger) {
+	const block = new RegExp(
+		`^ {2}${trigger}:[ \\t]*\\n((?: {4,}.*\\n|[ \\t]*\\n)*)`,
+		'm',
+	).exec(text);
+	if (!block) {
+		throw new Error(`The workflow has no \`${trigger}:\` trigger under \`on:\``);
+	}
+	return block[1];
+}
+
+/**
  * The Markdown table row that names a line, if any.
  * @param {string} text
  * @param {import('./lines.mjs').ReleaseLine} line
@@ -222,6 +240,20 @@ describe('release lines are the single definition of the branches', () => {
 			// An empty list would pass the check above, so the parser must find them
 			const names = workflowBranches(read('.github/workflows/test.yml'));
 			expect(sorted(names)).toEqual(sorted([NEWEST.branch, NEWEST.releaseBranch]));
+		});
+
+		it('runs test.yml on a push only for the release branch, because the merge queue already ran it on every merge into the branch', () => {
+			// A push to the branch of the line is the merge the queue just validated:
+			// running the whole suite (VR included) again adds a third run per change.
+			// The release branch has no queue, so a push there is its only run.
+			const text = read('.github/workflows/test.yml');
+			expect(
+				workflowBranches(triggerBlock(text, 'push')),
+				'test.yml runs on a push to a branch that the merge queue validates',
+			).toEqual([NEWEST.releaseBranch]);
+			expect(workflowBranches(triggerBlock(text, 'pull_request'))).toEqual([
+				NEWEST.branch,
+			]);
 		});
 
 		it('requires every job of test.yml through ci-ok, which the merge queue waits for', () => {

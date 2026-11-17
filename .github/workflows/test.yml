@@ -2,13 +2,14 @@ name: Test
 
 # `dev` takes pull requests only through its merge queue (a repository
 # ruleset), and the queue requires the `ci-ok` job below. `merge_group` runs
-# the whole suite on the queue's merge result before it reaches `dev`. `main`
-# is where releases are cut, so a push there runs it too. The branches are
-# defined in scripts/release-lines/lines.mjs.
+# the whole suite on the queue's merge result before it reaches `dev`, so a
+# push to `dev` would run the same suite on the same commit a third time and
+# is not a trigger. `main` has no queue and is where releases are cut, so a
+# push there runs it. The branches are defined in
+# scripts/release-lines/lines.mjs.
 on:
   push:
     branches:
-      - dev
       - main
   pull_request:
     branches:
