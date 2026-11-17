@@ -197,6 +197,28 @@ describe('release lines are the single definition of the branches', () => {
 			);
 		});
 
+		it('moves markuplint and its @markuplint packages in one pull request', () => {
+			// A parser of a newer major crashes an older CLI, so a package that
+			// is raised alone leaves the lint broken until the others follow.
+			const manifest = JSON.parse(read('package.json'));
+			const names = Object.keys({
+				...manifest.dependencies,
+				...manifest.devDependencies,
+			}).filter((name) => name === 'markuplint' || name.startsWith('@markuplint/'));
+			expect(names, 'package.json has no markuplint package').toContain('markuplint');
+			const rule = config().packageRules.find(
+				(candidate) => candidate.groupName === 'markuplint',
+			);
+			expect(rule, 'renovate.json has no group named markuplint').toBeDefined();
+			const matches = (name) =>
+				rule.matchPackageNames.some((pattern) =>
+					pattern.startsWith('/') && pattern.endsWith('/')
+						? new RegExp(pattern.slice(1, -1)).test(name)
+						: pattern === name,
+				);
+			expect(names.filter((name) => !matches(name))).toEqual([]);
+		});
+
 		it('reads every Playwright image tag through its custom manager', () => {
 			// The regex is what puts the image into the pull request of the npm
 			// package; `yarn lint` validates its syntax but not that it matches.
