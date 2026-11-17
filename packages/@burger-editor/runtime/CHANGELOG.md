@@ -3,6 +3,21 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.78](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.77...v4.0.0-alpha.78) (2026-11-17)
+
+### Bug Fixes
+
+* **runtime:** harden the carousel runtime after review ([600e18c](https://github.com/d-zero-dev/BurgerEditor/commit/600e18c53cba2edf1dc3395e0495696ae249c443))
+* **runtime:** keep carousel dots named and pause autoplay behind popups ([0121ed7](https://github.com/d-zero-dev/BurgerEditor/commit/0121ed7e0ca46dbcd742b271be3451c87216d0c0))
+* **runtime:** make only the fade carousel a live region ([58e76bc](https://github.com/d-zero-dev/BurgerEditor/commit/58e76bc9156071bc20d4434bd6e44e9a04552195))
+* **runtime:** name carousel parts from authored content ([fa95742](https://github.com/d-zero-dev/BurgerEditor/commit/fa95742fa24927b6b55bd1324106eb66346cbd5f))
+
+### Features
+
+* **runtime:** add the carousel runtime ([7aebc79](https://github.com/d-zero-dev/BurgerEditor/commit/7aebc79a4e37c52cb3f4a48f5afd669658f134ad)), closes [#1054](https://github.com/d-zero-dev/BurgerEditor/issues/1054)
+* **runtime:** follow the carousel CSS for the slides per view and the arrow glyphs ([46786f0](https://github.com/d-zero-dev/BurgerEditor/commit/46786f088ef846ef7bb4f1dfc2733ac9620b75f9))
+
+
 # [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
 
 **Note:** Version bump only for package @burger-editor/runtime

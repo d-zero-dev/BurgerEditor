@@ -3,6 +3,44 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.78](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.77...v4.0.0-alpha.78) (2026-11-17)
+
+* feat(blocks)!: fill empty source media and store carousel images as image lists ([2f68aef](https://github.com/d-zero-dev/BurgerEditor/commit/2f68aef1a8e61c45ba96e05a8a3ba32f7743fc71)), closes [#1056](https://github.com/d-zero-dev/BurgerEditor/issues/1056)
+
+### Bug Fixes
+
+* **blocks:** apply align-items: baseline to the inline container's baseline option ([90a58f2](https://github.com/d-zero-dev/BurgerEditor/commit/90a58f2e073bc64512914419d1ce0c72ab78d512))
+* **blocks:** make the carousel reachable and its controls legible ([503539a](https://github.com/d-zero-dev/BurgerEditor/commit/503539afb4aa2dea248e36a0f6dec24d73e3289c)), closes [#1055](https://github.com/d-zero-dev/BurgerEditor/issues/1055)
+* **blocks:** name native carousel dots without the runtime ([56b7085](https://github.com/d-zero-dev/BurgerEditor/commit/56b70855f819227ec4eb986f273d4281e40b4b78)), closes [#1055](https://github.com/d-zero-dev/BurgerEditor/issues/1055)
+* **blocks:** refuse unnamed link images and carousel slides on every write path ([13b0a02](https://github.com/d-zero-dev/BurgerEditor/commit/13b0a0281f4195b393580989c2f2aa86a5c7a897))
+* **blocks:** require alt for linked images and a name for every carousel slide ([dbf4fe8](https://github.com/d-zero-dev/BurgerEditor/commit/dbf4fe8d86b874c8c45e40ce0b0c21fd5d86cdec))
+* **blocks:** stack grid groups that have nine or more items ([8ae3df8](https://github.com/d-zero-dev/BurgerEditor/commit/8ae3df813f2fb541b48ea8a9f3d830a307d73db3))
+* **blocks:** store the carousel per-view only as --per-view ([04aab59](https://github.com/d-zero-dev/BurgerEditor/commit/04aab5938ddd30bd671ceceae2c9d25e244da66a)), closes [#1055](https://github.com/d-zero-dev/BurgerEditor/issues/1055)
+
+### Features
+
+* **blocks:** add shared style variables for the carousel arrows and dots ([a3ef645](https://github.com/d-zero-dev/BurgerEditor/commit/a3ef645b28ee03ee7e8a7fb67f7e39b59bc94677))
+* **blocks:** add the carousel item ([16cb692](https://github.com/d-zero-dev/BurgerEditor/commit/16cb6925c5677874f468ff9289e426aa6ecaa406))
+* **blocks:** lay out the carousel with CSS scroll snap ([9d4091e](https://github.com/d-zero-dev/BurgerEditor/commit/9d4091e08c4dc4b91eccb503b2db41adaef6a045)), closes [#1055](https://github.com/d-zero-dev/BurgerEditor/issues/1055)
+
+### BREAKING CHANGES
+
+* the carousel template and data shape changed (image keys are
+  arrays of arrays; the sp* keys are gone). Saved carousels in the old sp-* shape
+  are not read back; the carousel was still in development and none exist.
+
+  Behavior change: saved HTML of image and carousel puts the configured media
+  query on every <source> instead of media="" (pages that already have one get it
+  on their next save). Carousel specs were rewritten to the new data shape and
+  three were renamed to match: "SP画像のないスライドは spPath が null のまま往復する"
+  -> "SP画像の無いスライドは、名前が無ければ確定できない"; "名前のある SP画像のない
+  スライドは spPath が null のまま往復する" -> "名前のある SP画像の無いスライドは、
+  画像の配列が 1 枚のまま往復する"; "保存済みHTMLの読み戻しで空文字・0になるSPの値は
+  null に揃える" -> "読み戻しで空の配列やスカラーになった画像の値は、画像ごとの配列に
+  そろえる". The carousel editor spec that edits the media query now picks "Other"
+  first.
+
+
 # [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
 
 **Note:** Version bump only for package @burger-editor/blocks

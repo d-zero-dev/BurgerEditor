@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.78](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.77...v4.0.0-alpha.78) (2026-11-17)
+
+### Bug Fixes
+
+* **client:** align item overlay anchors with resolved items ([cc7381d](https://github.com/d-zero-dev/BurgerEditor/commit/cc7381dae0729186082fe9ef763df8e605892546))
+* **client:** dismiss block menu tooltips with Esc via hint popovers ([309e359](https://github.com/d-zero-dev/BurgerEditor/commit/309e35987714db3a9f3756956dc924985ee20910)), closes [#1107](https://github.com/d-zero-dev/BurgerEditor/issues/1107)
+* **client:** follow hovered blocks with CSS anchor positioning ([80b2398](https://github.com/d-zero-dev/BurgerEditor/commit/80b23988ace635982eef7063b85057b7aec7a8f7)), closes [#1105](https://github.com/d-zero-dev/BurgerEditor/issues/1105)
+* **client:** give column count range an accessible name ([968142a](https://github.com/d-zero-dev/BurgerEditor/commit/968142ad02d2b5688db954540120bebfbc64783b)), closes [#1109](https://github.com/d-zero-dev/BurgerEditor/issues/1109)
+* **client:** hide catalog SVG from accessible name ([9313acd](https://github.com/d-zero-dev/BurgerEditor/commit/9313acda133a30f95e4aa2675accb3f1b8d5e7f7)), closes [#1103](https://github.com/d-zero-dev/BurgerEditor/issues/1103)
+* **client:** satisfy Item.getInstance mock return type in test ([f7344b0](https://github.com/d-zero-dev/BurgerEditor/commit/f7344b0b09b5c2a58c2a86aae7644759186db67c))
+* **client:** style WYSIWYG toolbar button tooltips ([b028d0e](https://github.com/d-zero-dev/BurgerEditor/commit/b028d0e19bddfde3582f529fed022cc385de2f33))
+* **client:** use View Transitions for block move swap ([0337fdc](https://github.com/d-zero-dev/BurgerEditor/commit/0337fdc3dadfd8b117776a8b93f61ffbba15970c))
+
+### Features
+
+* **client:** add a vitest-free mock engine export ([000f1b1](https://github.com/d-zero-dev/BurgerEditor/commit/000f1b103ed59c2599b2922c0b950d8aa8c31a4a)), closes [#1058](https://github.com/d-zero-dev/BurgerEditor/issues/1058)
+* **client:** add onBlur to TextField and describedBy to SelectField ([313da26](https://github.com/d-zero-dev/BurgerEditor/commit/313da2692255806bc3b7d41b32858e27ed8f902c))
+* **client:** add ThumbnailButton and slide list styles ([c54e755](https://github.com/d-zero-dev/BurgerEditor/commit/c54e755cd8ebdd1c3693292878516f262d8e25b9))
+* **client:** fold front matter with details and summary ([54639c4](https://github.com/d-zero-dev/BurgerEditor/commit/54639c4c7a126d9aff7967e9150a2618b0681247))
+* **client:** let TextField mark a field as required for assistive technology ([38f4a7f](https://github.com/d-zero-dev/BurgerEditor/commit/38f4a7fa5328a3b3f7bb5803d4d2d33afc87d0b8))
+
+
 # [4.0.0-alpha.77](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.76...v4.0.0-alpha.77) (2026-10-13)
 
 ### Bug Fixes
