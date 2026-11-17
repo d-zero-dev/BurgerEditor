@@ -22,14 +22,15 @@ disable-model-invocation: true
 
 リリースと後始末:
 
-1. `npm-publish` スキルの手順で `yarn release`（graduate）を行う。`publish.yml` は、メジャーが npm の `latest`（`@burger-editor/client`）のメジャー（3）以上なら `latest` で公開するので、全パッケージの `latest` が `4.0.0` になる（正式版のなかった v4 専用パッケージの `latest` は、alpha から、この公開で初めて動く）。`npm dist-tag ls <package>` で全パッケージを確認する
+1. `npm-publish` スキルの手順で `yarn release`（graduate）を行う。`publish.yml` は、メジャーが npm の `latest`（`@burger-editor/client`）のメジャー（3）以上なら `latest` で公開するので、全パッケージの `latest` が `4.0.0` になる（`latest` が古い alpha のまま来た v4 専用パッケージも、この公開で初めて `4.0.0` に動く）。`npm dist-tag ls <package>` で全パッケージを確認する。公開が一部で止まって `latest` が動かないパッケージが残ったら、`npm-publish` の「失敗時の対処」のとおり同じジョブを再実行する（未公開のパッケージだけが、正式版として `latest` で公開される）
 
 ライン定義の更新（正式版を出した後）:
 
-2. `lines.mjs`: v4 の `role` を正式版の役割に変える（`LineRole` と先頭の JSDoc に `stable` を足し、Renovate は `full`、未リリース通知はあり）。v3 の終了日（v4 の正式版の公開日 + `MAINTENANCE_MONTHS_AFTER_NEXT_STABLE` か月）を JSDoc と各表に書く
-3. 脆弱性修正のみになる v3 の受け取るものを、`CLAUDE.md` の「ブランチ構成」と `SECURITY.md` のサポート表で直す（`consistency.spec.mjs` が、この 2 つの表の食い違いと、期間の月数の食い違いを落とす）。README の「サポートするバージョン」は `SECURITY.md` を指すだけなので、直さない
-4. `SECURITY.md` の「正式版を公開するまで `alpha`」「v3 が `latest`」「v4 専用パッケージの `latest`」「v4 の正式版を公開すると…`v3` の dist-tag」（未来形の文を現在形に）の記述を現状に直す（`consistency.spec.mjs` は検査しないので、文面は目で確かめる）
-5. v3 の保守を脆弱性修正のみにしたことを、`v3` ブランチの `CLAUDE.md` にも書く（PR の base は `v3`。前提の「保守ラインのブランチのファイル」を全部確かめる）。`v3` の `publish.yml` の判定は、`latest` のメジャーが 4 になれば自動で `v3` を付けるので、見直した上で、変更は要らない。最初の 3.x のリリースで、公開されたパッケージ（リリースのコミットの `package.json` の差分に出たもの。4 つ全部とは限らない）に `v3` の dist-tag が付いたことを `npm dist-tag ls <package>` で確かめる
+2. インストールと `npx` のコマンドから `@alpha` を外す（`latest` が正式版を指すので不要）。対象は、ルートの `README.md`、各パッケージの `README.md`、`skills/`。`grep -rn "@alpha" README.md packages/@burger-editor/*/README.md skills` で探す（`SECURITY.md` の `@alpha` の説明は、手順 4 で直す）
+3. `lines.mjs`: v4 の `role` を正式版の役割に変える（`LineRole` と先頭の JSDoc に `stable` を足し、Renovate は `full`、未リリース通知はあり）。v3 の終了日（v4 の正式版の公開日 + `MAINTENANCE_MONTHS_AFTER_NEXT_STABLE` か月）を JSDoc と各表に書く
+4. 脆弱性修正のみになる v3 の受け取るものを、`CLAUDE.md` の「ブランチ構成」と `SECURITY.md` のサポート表で直す（`consistency.spec.mjs` が、この 2 つの表の食い違いと、期間の月数の食い違いを落とす）。README の「サポートするバージョン」は `SECURITY.md` を指すだけなので、直さない
+5. `SECURITY.md` の「正式版を公開するまで `alpha`」「v3 が `latest`」「v4 専用パッケージの `latest`」「v4 の正式版を公開すると…`v3` の dist-tag」（未来形の文を現在形に）の記述を現状に直す（`consistency.spec.mjs` は検査しないので、文面は目で確かめる）
+6. v3 の保守を脆弱性修正のみにしたことを、`v3` ブランチの `CLAUDE.md` にも書く（PR の base は `v3`。前提の「保守ラインのブランチのファイル」を全部確かめる）。`v3` の `publish.yml` の判定は、`latest` のメジャーが 4 になれば自動で `v3` を付けるので、見直した上で、変更は要らない。最初の 3.x のリリースで、公開されたパッケージ（リリースのコミットの `package.json` の差分に出たもの。4 つ全部とは限らない）に `v3` の dist-tag が付いたことを `npm dist-tag ls <package>` で確かめる
 
 # B. v3 のサポート期限が来たとき
 

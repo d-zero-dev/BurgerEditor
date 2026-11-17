@@ -184,7 +184,7 @@ npm view @burger-editor/core dist-tags
 
 - バージョンが手順 8 で上げた値と一致しているか
 - **dist-tag が意図通りか**。`dev` / `main` の `publish.yml` は `lerna.json` の `version` 文字列から判定する: `-alpha` → `alpha`、`-beta` → `beta`、`-rc` → `rc`、それ以外の `-` を含む版はエラーで止まる（`next` は廃止）。正式版は `latest`。メジャーが npm の `latest`（`@burger-editor/client`）のメジャーより小さい版（古いメジャー）は、プレリリースも正式版も、エラーで止まる（古いメジャーは、そのラインのブランチの `publish.yml` が公開する）。v3 の `publish.yml` は別の判定を持つ（末尾の「v3 のリリース」）
-- **正式版を 1 つも持たないパッケージ**（v3 に存在しない v4 専用のパッケージ。`npm view <package> versions` に `-` を含まない版がないもの）の `latest` は、公開では動かない（最初に公開された alpha などのまま。`alpha` が今回の版を指す）。公開の後に CI から `npm dist-tag` は実行しない（実行には、パッケージごとに npmjs.com の Trusted Publisher で「Allow npm dist-tag」を設定する画面操作が要る）。`latest` を最新の alpha に合わせたいときは、ユーザーが `npm dist-tag add <package>@<version> latest` を実行する（OTP が要る）。`SECURITY.md` は、バージョンを指定しないインストールに頼らず `@alpha` を使うよう案内している
+- **正式版を 1 つも持たないパッケージ**（v3 に存在しない v4 専用のパッケージ。`npm view <package> versions` に `-` を含まない版がないもの）の `latest` は、公開では動かない（`latest` が古い alpha のままなのは想定どおりで、失敗ではない。`alpha` が今回の版を指すことを確認する）。公開の後に CI から `npm dist-tag` は実行しない（実行には、パッケージごとに npmjs.com の Trusted Publisher で「Allow npm dist-tag」を設定する画面操作が要る）。`latest` を最新の alpha に合わせたいときは、ユーザーが `npm dist-tag add <package>@<version> latest` をパッケージごとに実行する（対象は、この項目の条件に当てはまるパッケージ。1 つずつ OTP の承認が要る）。公開のたびにずれるので、習慣にせず、必要なときだけ行う。READMEs と skills のコマンド、`SECURITY.md` の案内は `@alpha` を使うので、行わなくても案内は成り立つ
 - provenance が付与されているか（`npm view <package> --json` の `dist.attestations`）
 
 fixed モードでも**一部のパッケージだけ publish される（部分 publish）**ことがある。上の表の全パッケージを個別に確認し、漏れがあればユーザーに報告する。
