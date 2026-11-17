@@ -37,9 +37,20 @@ jobs:
         id: dist-tag
         run: |
           VERSION=$(node -e "console.log(require('./lerna.json').version)")
+          # A version of the form of semver (no leading zero in a number): the
+          # numeric comparison below reads "04" as octal and stops with an
+          # arithmetic error that says nothing about the version.
+          if ! [[ "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::'$VERSION' in lerna.json is not a version"
+            exit 1
+          fi
           MAJOR="${VERSION%%.*}"
-          # The major on `latest` tells the current line from a maintenance
-          # line. @burger-editor/client is the package both lines publish.
+          # This workflow publishes the current line. The major on `latest`
+          # tells whether the version belongs to it: an older major is
+          # released from the branch of its own line, whose workflow decides
+          # its tag (a prerelease from here would move the tag of the current
+          # line, and a stable release would take `latest` away from it).
+          # @burger-editor/client is the package both lines publish.
           LATEST_VERSION="$(npm view @burger-editor/client@latest version)" || {
             echo "::error::Could not read the version of the latest release of @burger-editor/client"
             exit 1
@@ -49,14 +60,13 @@ jobs:
             echo "::error::Could not read the major version of the latest release (got '$LATEST_VERSION')"
             exit 1
           fi
+          if [[ "$MAJOR" -lt "$LATEST_MAJOR" ]]; then
+            echo "::error::$VERSION is of an older major than the latest release ($LATEST_VERSION); an older major is released from its own branch"
+            exit 1
+          fi
           if [[ "$VERSION" == *"-"* ]]; then
-            # A prerelease dist-tag (alpha, beta, rc) belongs to the current
-            # line. A maintenance line publishes stable releases only: its
-            # prerelease would move the tag of the current line.
-            if [[ "$MAJOR" -lt "$LATEST_MAJOR" ]]; then
-              echo "::error::$VERSION is a prerelease of an older major (latest is $LATEST_MAJOR.x); a maintenance line publishes stable releases only"
-              exit 1
-            elif [[ "$VERSION" == *"-alpha"* ]]; then
+            # A prerelease dist-tag (alpha, beta, rc) belongs to the current line.
+            if [[ "$VERSION" == *"-alpha"* ]]; then
               echo "tag=alpha" >> "$GITHUB_OUTPUT"
             elif [[ "$VERSION" == *"-beta"* ]]; then
               echo "tag=beta" >> "$GITHUB_OUTPUT"
@@ -66,10 +76,6 @@ jobs:
               echo "::error::Unknown prerelease tag in version: $VERSION"
               exit 1
             fi
-          elif [[ "$MAJOR" -lt "$LATEST_MAJOR" ]]; then
-            # A stable release of a maintenance line must not take `latest`
-            # away from the current line: publish it under `v<major>`.
-            echo "tag=v${MAJOR}" >> "$GITHUB_OUTPUT"
           else
             echo "tag=latest" >> "$GITHUB_OUTPUT"
           fi

@@ -112,6 +112,21 @@ describe('.husky/pre-commit', () => {
 		});
 	}
 
+	it('refuses every commit, and says why, when the list of guarded branches cannot be read', () => {
+		// A `node` that cannot run (a GUI git client without the version manager
+		// in its PATH, for example) must not let a commit through unguarded, and
+		// "command not found" alone does not say that the guard is what refused
+		writeFileSync(path.join(dir, 'bin/node'), '#!/bin/sh\nexit 127\n');
+		chmodSync(path.join(dir, 'bin/node'), 0o755);
+		git(['init', '--initial-branch=a-topic-branch']);
+		const result = runHook();
+		expect(result.status).toBe(1);
+		expect(result.reachedLintStaged).toBe(false);
+		expect(result.stderr).toContain('Could not read the list of guarded branches');
+		expect(result.stderr).toContain('is node in the PATH');
+		expect(result.stderr).toContain('guarded-branches.mjs run');
+	});
+
 	it('lets a commit on a detached HEAD through, which has no branch name (a rebase, for example)', () => {
 		git(['init', '--initial-branch=dev']);
 		git(['commit', '--allow-empty', '-m', 'first']);
