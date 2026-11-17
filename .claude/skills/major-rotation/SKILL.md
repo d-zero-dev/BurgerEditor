@@ -26,7 +26,7 @@ disable-model-invocation: true
 
 ライン定義の更新（正式版を出した後）:
 
-2. インストールと `npx` のコマンドから `@alpha` を外す（`latest` が正式版を指すので不要）。対象は、ルートの `README.md`、各パッケージの `README.md`、`skills/`。`grep -rn "@alpha" README.md packages/@burger-editor/*/README.md skills` で探す（`SECURITY.md` の `@alpha` の説明は、手順 4 で直す）
+2. 手順 1 で、**全パッケージの `latest` が `4.0.0` になったことを確かめてから**、インストールと `npx` のコマンドから `@alpha` を外す（`latest` が正式版を指すので不要。確かめる前に外すと、動かなかったパッケージが古い alpha のままになる）。対象は、ルートの `README.md`、各パッケージの `README.md`、`skills/`。`consistency.spec.mjs` が、v4 のラインの `role` が正式版になった後は `@alpha` が残っていると落ちる（`lines.mjs` を直すのは手順 3）ので、外し忘れはその spec が見つける。`SECURITY.md` の `@alpha` の説明は、手順 5 で直す
 3. `lines.mjs`: v4 の `role` を正式版の役割に変える（`LineRole` と先頭の JSDoc に `stable` を足し、Renovate は `full`、未リリース通知はあり）。v3 の終了日（v4 の正式版の公開日 + `MAINTENANCE_MONTHS_AFTER_NEXT_STABLE` か月）を JSDoc と各表に書く
 4. 脆弱性修正のみになる v3 の受け取るものを、`CLAUDE.md` の「ブランチ構成」と `SECURITY.md` のサポート表で直す（`consistency.spec.mjs` が、この 2 つの表の食い違いと、期間の月数の食い違いを落とす）。README の「サポートするバージョン」は `SECURITY.md` を指すだけなので、直さない
 5. `SECURITY.md` の「正式版を公開するまで `alpha`」「v3 が `latest`」「v4 専用パッケージの `latest`」「v4 の正式版を公開すると…`v3` の dist-tag」（未来形の文を現在形に）の記述を現状に直す（`consistency.spec.mjs` は検査しないので、文面は目で確かめる）
