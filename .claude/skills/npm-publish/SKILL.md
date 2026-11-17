@@ -184,7 +184,7 @@ npm view @burger-editor/core dist-tags
 
 - バージョンが手順 8 で上げた値と一致しているか
 - **dist-tag が意図通りか**。`dev` / `main` の `publish.yml` は `lerna.json` の `version` 文字列から判定する: `-alpha` → `alpha`、`-beta` → `beta`、`-rc` → `rc`、それ以外の `-` を含む版はエラーで止まる（`next` は廃止）。正式版は `latest`。メジャーが npm の `latest`（`@burger-editor/client`）のメジャーより小さい版（古いメジャー）は、プレリリースも正式版も、エラーで止まる（古いメジャーは、そのラインのブランチの `publish.yml` が公開する）。v3 の `publish.yml` は別の判定を持つ（末尾の「v3 のリリース」）
-- **正式版を 1 つも持たないパッケージ**（v3 に存在しない v4 専用のパッケージ。`npm view <package> versions` に `-` を含まない版がないもの）は、publish の後に `scripts/follow-latest-dist-tag.mjs` が `latest` も公開した版に動かす。`npm dist-tag ls <package>` で `latest` が今回の版か確認する。動かせていなければワークフローが失敗している（npmjs.com で該当パッケージの Trusted Publisher の「Allow npm dist-tag」が無効になっていないか確認し、`gh run rerun` で直す）
+- **正式版を 1 つも持たないパッケージ**（v3 に存在しない v4 専用のパッケージ。`npm view <package> versions` に `-` を含まない版がないもの）の `latest` は、公開では動かない（最初に公開された alpha などのまま。`alpha` が今回の版を指す）。公開の後に CI から `npm dist-tag` は実行しない（実行には、パッケージごとに npmjs.com の Trusted Publisher で「Allow npm dist-tag」を設定する画面操作が要る）。`latest` を最新の alpha に合わせたいときは、ユーザーが `npm dist-tag add <package>@<version> latest` を実行する（OTP が要る）。`SECURITY.md` は、バージョンを指定しないインストールに頼らず `@alpha` を使うよう案内している
 - provenance が付与されているか（`npm view <package> --json` の `dist.attestations`）
 
 fixed モードでも**一部のパッケージだけ publish される（部分 publish）**ことがある。上の表の全パッケージを個別に確認し、漏れがあればユーザーに報告する。
@@ -214,7 +214,6 @@ git merge main --no-edit
 
 - **`v*` タグの作成・削除は CODEOWNERS のみ**（GitHub Rulesets で保護）。権限がない場合は手順 8 で失敗するため、実行者がタグ権限者か事前に確認する
 - **publish は取り消せない**。手順 5・6 の事前チェックを省略しない
-- **Node.js の版（`setup-yarn` と `dev` の `publish.yml`）を上げたら、`dev` の `publish.yml` の `Update npm for dist-tag` ステップが要るか確認する**（v3 の `publish.yml` にそのステップはない）。新しい Node.js が npm 11.21.0 以降を同梱していれば、そのステップは外せる（コメントのとおり）
 - **`yarn release` は `prerelease` スクリプト経由で `yarn build; yarn test` を再度走らせる**。手順 6 と重複するが、`lerna version` の途中で失敗するより事前に落としたほうが安全なので省略しない
 
 # v3 のリリース
@@ -231,7 +230,7 @@ v3 系（`v3` ブランチ。脆弱性修正と不具合修正のみ。v4 の正
   - 次は、インストールとビルドの前にエラーで止まる: `lerna.json` の版が版の形でない、プレリリース、3.x 以外の版、npm の `latest`（`@burger-editor/client`）が読めない・プレリリース・3 より古い
   - 正式版の dist-tag は、`latest` のメジャーが 3 のうち（v4 の正式版が出るまで）は `latest`、4 以上になった後は `v3`。`v3` の dist-tag は、v4 の正式版の後の最初の 3.x のリリースで初めて付く
   - 公開されうるパッケージは 4 つ（`client`・`css`・`runtime`・`frozen-patty`。上の 15 パッケージの表は `dev` のもの）。v3 の `yarn release` には `--force-publish` がなく、正式版のリリースで上がるのは変更のあったパッケージだけなので、リリースのコミットの `package.json` の差分に出たパッケージを、`dist-tags`・版・provenance で確認する（4 つ全部が上がるとは限らず、上がらないパッケージは部分 publish ではない）
-  - `latest` を動かす `scripts/follow-latest-dist-tag.mjs` は v3 には無い（4 つとも正式版を持つ）。npmjs.com の「Allow npm dist-tag」も要らない（dist-tag は `lerna publish --dist-tag` が公開時に付ける）
+  - 公開の後に `npm dist-tag` は実行しない（4 つとも正式版を持ち、dist-tag は `lerna publish --dist-tag` が公開時に付ける）
   - `v3` は semver の範囲に見えるタグ名で、`npm dist-tag add` は受け付けない。付け直す必要が出たら、ユーザーに相談する（publish の `--dist-tag v3` は受け付ける）
 - 手順 11 の同期は要らない（`v3` と `dev` は別のコードベースで、互いにマージしない）
 - 手順 12 の失敗時の対処のうち、再実行（`from-package`）、`workflow_dispatch`、誤ったバージョンの扱いは v3 にも当てはまる。`workflow_dispatch` は `v3` のブランチを選んで起動する。`from-package` が各パッケージの `package.json` の版のうち未公開のものを公開し、`lerna.json` の版は検査と dist-tag の決定に使われるので、リリースのコミットを push した後に行う。公開が失敗したままでも、`main` はないので、リリースのコミットがそのまま `v3` に残る。v4 の正式版の前後をまたいで再実行すると、残りのパッケージだけが、先に公開されたものと別の dist-tag（`latest` と `v3`）になりうる

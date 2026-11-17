@@ -22,17 +22,14 @@ disable-model-invocation: true
 
 リリースと後始末:
 
-1. `npm-publish` スキルの手順で `yarn release`（graduate）を行う。`publish.yml` は、メジャーが npm の `latest`（`@burger-editor/client`）のメジャー（3）以上なら `latest` で公開するので、全パッケージの `latest` が `4.0.0` になる。`npm dist-tag ls <package>` で全パッケージを確認する
-2. 正式版を公開できたら、正式版のなかったパッケージの `latest` を追従させていた仕組みを外す（正式版が `latest` を持つので不要）:
-   - `.github/workflows/publish.yml` の `Update npm for dist-tag` と `Move latest for packages without a stable release` の 2 ステップ
-   - `scripts/follow-latest-dist-tag.mjs` と `scripts/follow-latest-dist-tag.spec.mjs`
+1. `npm-publish` スキルの手順で `yarn release`（graduate）を行う。`publish.yml` は、メジャーが npm の `latest`（`@burger-editor/client`）のメジャー（3）以上なら `latest` で公開するので、全パッケージの `latest` が `4.0.0` になる（正式版のなかった v4 専用パッケージの `latest` は、alpha から、この公開で初めて動く）。`npm dist-tag ls <package>` で全パッケージを確認する
 
 ライン定義の更新（正式版を出した後）:
 
-3. `lines.mjs`: v4 の `role` を正式版の役割に変える（`LineRole` と先頭の JSDoc に `stable` を足し、Renovate は `full`、未リリース通知はあり）。v3 の終了日（v4 の正式版の公開日 + `MAINTENANCE_MONTHS_AFTER_NEXT_STABLE` か月）を JSDoc と各表に書く
-4. 脆弱性修正のみになる v3 の受け取るものを、`CLAUDE.md` の「ブランチ構成」と `SECURITY.md` のサポート表で直す（`consistency.spec.mjs` が、この 2 つの表の食い違いと、期間の月数の食い違いを落とす）。README の「サポートするバージョン」は `SECURITY.md` を指すだけなので、直さない
-5. `SECURITY.md` の「正式版を公開するまで `alpha`」「v3 が `latest`」「v4 専用パッケージの `latest`」「v4 の正式版を公開すると…`v3` の dist-tag」（未来形の文を現在形に）の記述を現状に直す（`consistency.spec.mjs` は検査しないので、文面は目で確かめる）
-6. v3 の保守を脆弱性修正のみにしたことを、`v3` ブランチの `CLAUDE.md` にも書く（PR の base は `v3`。前提の「保守ラインのブランチのファイル」を全部確かめる）。`v3` の `publish.yml` の判定は、`latest` のメジャーが 4 になれば自動で `v3` を付けるので、見直した上で、変更は要らない。最初の 3.x のリリースで、公開されたパッケージ（リリースのコミットの `package.json` の差分に出たもの。4 つ全部とは限らない）に `v3` の dist-tag が付いたことを `npm dist-tag ls <package>` で確かめる
+2. `lines.mjs`: v4 の `role` を正式版の役割に変える（`LineRole` と先頭の JSDoc に `stable` を足し、Renovate は `full`、未リリース通知はあり）。v3 の終了日（v4 の正式版の公開日 + `MAINTENANCE_MONTHS_AFTER_NEXT_STABLE` か月）を JSDoc と各表に書く
+3. 脆弱性修正のみになる v3 の受け取るものを、`CLAUDE.md` の「ブランチ構成」と `SECURITY.md` のサポート表で直す（`consistency.spec.mjs` が、この 2 つの表の食い違いと、期間の月数の食い違いを落とす）。README の「サポートするバージョン」は `SECURITY.md` を指すだけなので、直さない
+4. `SECURITY.md` の「正式版を公開するまで `alpha`」「v3 が `latest`」「v4 専用パッケージの `latest`」「v4 の正式版を公開すると…`v3` の dist-tag」（未来形の文を現在形に）の記述を現状に直す（`consistency.spec.mjs` は検査しないので、文面は目で確かめる）
+5. v3 の保守を脆弱性修正のみにしたことを、`v3` ブランチの `CLAUDE.md` にも書く（PR の base は `v3`。前提の「保守ラインのブランチのファイル」を全部確かめる）。`v3` の `publish.yml` の判定は、`latest` のメジャーが 4 になれば自動で `v3` を付けるので、見直した上で、変更は要らない。最初の 3.x のリリースで、公開されたパッケージ（リリースのコミットの `package.json` の差分に出たもの。4 つ全部とは限らない）に `v3` の dist-tag が付いたことを `npm dist-tag ls <package>` で確かめる
 
 # B. v3 のサポート期限が来たとき
 
@@ -41,7 +38,7 @@ disable-model-invocation: true
 3. `.github/workflows/*.yml` の `branches:` に `v3` があれば外す（spec が落とす）。未リリース通知は `lines.mjs` から自動で外れる
 4. `CLAUDE.md` の表と `SECURITY.md` の表の v3 の行を「サポート終了」にして、`lines.mjs` の定義から外した状態に合わせる（spec は定義にない行を要求しない）
 5. `v3` ブランチの `CLAUDE.md` と `README.md` に「サポート終了」と書く（PR の base は `v3`）。終了後に `v3` からリリースするかはユーザーと決める。しない場合は、`v3` の `publish.yml` の 2 つのトリガー（`push` のタグと `workflow_dispatch`）を外す（ワークフローごと消してもよい）。この変更は、手順 7 で ruleset を読み取り専用にする前にマージする
-6. `dev` 側で、v3 のリリースを案内する記述を外すか「終了」と書く: `npm-publish` スキルの「v3 のリリース」の節と、それを指す記述（冒頭の `description`、「前提」の v3 の一文、手順 10 の「v3 の `publish.yml` は別の判定を持つ」、「注意」の `Update npm for dist-tag` の括弧書き）、ルートの `CLAUDE.md` の「`v3`への変更」の項の「`v3`のリリース」の一文、`scripts/release-reminder/report.mjs` の Issue 本文の「v3 系は、同スキルの「v3 のリリース」」の案内
+6. `dev` 側で、v3 のリリースを案内する記述を外すか「終了」と書く: `npm-publish` スキルの「v3 のリリース」の節と、それを指す記述（冒頭の `description`、「前提」の v3 の一文、手順 10 の「v3 の `publish.yml` は別の判定を持つ」）、ルートの `CLAUDE.md` の「`v3`への変更」の項の「`v3`のリリース」の一文、`scripts/release-reminder/report.mjs` の Issue 本文の「v3 系は、同スキルの「v3 のリリース」」の案内
 7. リポジトリ外（ユーザー実行）: `v3` ブランチの ruleset を外すか、読み取り専用にする。ブランチは削除しない（タグと履歴を残す）
 
 # C. 次のメジャーを始めるとき
