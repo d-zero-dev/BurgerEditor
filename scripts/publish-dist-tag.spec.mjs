@@ -151,6 +151,20 @@ describe('the dist-tag of a release', () => {
 		},
 	);
 
+	// A malformed major would reach the numeric comparison of bash, which reads
+	// a leading zero as octal and stops with an arithmetic error that says
+	// nothing about the version
+	it.each(['', '4', '4.0', 'garbage', '04.0.0'])(
+		'refuses the version "%s" in lerna.json, which is not a version',
+		(version) => {
+			const result = run(version, '3.5.0');
+			expect(result).toMatchObject({ tag: null, failed: true });
+			expect(result.output).toContain(
+				`::error::'${version}' in lerna.json is not a version`,
+			);
+		},
+	);
+
 	it('refuses a prerelease tag it does not know', () => {
 		const result = run('4.0.0-next.1', '3.5.0');
 		expect(result).toMatchObject({ tag: null, failed: true });
