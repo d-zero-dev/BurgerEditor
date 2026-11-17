@@ -159,6 +159,30 @@ describe('release-reminder/index.mjs', () => {
 		expect(result.summary).toContain('## v4（dev）');
 	});
 
+	it('warns, and does not report the line as due, when a change cannot be placed in the history', () => {
+		// `main` holds a release (alpha.2) with a fix that `dev` has not taken yet,
+		// and nothing on `dev` since the shared commit touched a file that reaches
+		// users: the tag is newer than `dev`, so the fix shows up as a difference,
+		// but no first-parent commit of `dev` brought it.
+		git(['checkout', '-B', 'dev', 'v4.0.0-alpha.1'], daysAgo(30));
+		git(['checkout', '-b', 'main', 'v4.0.0-alpha.1'], daysAgo(30));
+		commit(
+			'packages/@burger-editor/foo/src/hotfix.ts',
+			'export const fix = 1;\n',
+			'fix: a fix released from main',
+			daysAgo(12),
+		);
+		git(['tag', 'v4.0.0-alpha.2'], daysAgo(12));
+		git(['checkout', 'dev'], daysAgo(11));
+		commit('docs/guide.txt', 'notes\n', 'docs: a note', daysAgo(10));
+
+		const result = run();
+		expect(result.status).toBe(0);
+		expect(result.stdout).toContain('通知の対象: いいえ');
+		expect(result.stderr).toContain('v4: 利用者に届く変更が 1 件ありますが');
+		expect(result.summary).toContain('警告: 利用者に届く変更が 1 件ありますが');
+	});
+
 	it('skips a line whose branch does not exist, without failing the others', () => {
 		const result = run();
 		expect(result.status).toBe(0);

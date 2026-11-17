@@ -133,8 +133,16 @@ for (const line of RELEASE_LINES.filter((candidate) => candidate.reminder)) {
 		`- 最初の変更が入った日時: ${report.since?.toISOString() ?? '-'}`,
 		`- 通知の対象: ${report.due ? 'はい' : 'いいえ'}`,
 		`- 脆弱性修正: ${report.vulnerabilityCommits.length}件`,
-		'',
 	];
+	if (report.changes.length > 0 && report.since === null) {
+		// 起点のタグが ref より新しい変更を含むとき（リリースブランチにだけある修正が
+		// 同期されていないとき）、差分には出るが、ref の側に「入った」コミットがない。
+		// 期限を数えられないので通知の対象にはしないが、黙って落とさずに知らせる
+		const warning = `利用者に届く変更が ${report.changes.length} 件ありますが、それが ${ref} に入ったコミットを履歴から特定できないため、通知の対象にしません（起点のタグ ${report.baseline} が ${ref} より新しい変更を含んでいます。${line.releaseBranch ?? ref} から ${ref} への同期を確認してください）`;
+		console.warn(`${line.id}: ${warning}`);
+		lines.push(`- 警告: ${warning}`);
+	}
+	lines.push('');
 	if (report.due) {
 		const issue = renderIssue(report, line);
 		lines.push(
