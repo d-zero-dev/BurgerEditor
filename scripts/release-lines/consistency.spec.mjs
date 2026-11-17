@@ -2,7 +2,7 @@
 // failure names the file to fix, so breaking `lines.mjs` on purpose (removing
 // a line, renaming `dev`) lists every place that has to follow.
 
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -265,6 +265,75 @@ describe('release lines are the single definition of the branches', () => {
 				'ci-ok does not need exactly the other jobs of test.yml',
 			).toEqual(sorted(workflowJobs(text).filter((job) => job !== 'ci-ok')));
 		});
+	});
+
+	describe('actions used by the workflows', () => {
+		// The comment next to the digest has to name a full version (`# v7.0.1`),
+		// not a floating tag (`# v7`): Renovate ages a digest update against the
+		// release date of the version in the comment, a floating tag gives it
+		// none, and `renovate/stability-days` then stays pending for ever, so the
+		// update never merges. `helpers:pinGitHubActionDigestsToSemver` in
+		// renovate.json writes the full version; this keeps a hand-written
+		// comment of another form from going back. It checks the form of the
+		// comment, not that the version belongs to the digest.
+		const yamlFilesOf = (dir) =>
+			existsSync(path.join(root, dir))
+				? readdirSync(path.join(root, dir), { recursive: true })
+						.map(String)
+						.filter((name) => /\.ya?ml$/.test(name))
+						.map((name) => `${dir}/${name}`)
+				: [];
+		const files = [
+			...yamlFilesOf('.github/workflows'),
+			...yamlFilesOf('.github/actions'),
+		];
+
+		/**
+		 * @param {string} text The text of a workflow or of a composite action.
+		 * @returns {{ name: string, ref: string, comment: string }[]} The actions that a
+		 * `uses:` line names, with what follows `@` and the comment after `#`. A local
+		 * action and a Docker image are left out: they have no git digest.
+		 */
+		function usedActions(text) {
+			return text.split('\n').flatMap((line) => {
+				const value = /^[\s-]*uses:(.*)$/.exec(line)?.[1]?.trim();
+				if (value === undefined) {
+					return [];
+				}
+				const [target = '', ...comment] = value.split('#');
+				const reference = target.trim().replaceAll(/^["']|["']$/g, '');
+				if (reference.startsWith('./') || reference.startsWith('docker://')) {
+					return [];
+				}
+				const [name = '', ref = ''] = reference.split('@');
+				return [
+					{
+						name,
+						ref,
+						comment: comment.length > 0 ? `#${comment.join('#')}`.trim() : '',
+					},
+				];
+			});
+		}
+
+		it('finds the actions it is meant to check', () => {
+			// an empty list would pass every check below
+			const all = files.flatMap((file) => usedActions(read(file)));
+			expect(all.length).toBeGreaterThan(5);
+		});
+
+		for (const file of files) {
+			it(`${file} pins every action by digest, with a version in the comment`, () => {
+				const wrong = usedActions(read(file)).filter(
+					({ ref, comment }) =>
+						!/^[0-9a-f]{40}$/.test(ref) || !/^#\s*v?\d+\.\d+\.\d+/.test(comment),
+				);
+				expect(
+					wrong.map(({ name, ref, comment }) => `${name}@${ref} ${comment}`),
+					`${file}: an action is not pinned by digest with a full version in the comment (like "# v7.0.1")`,
+				).toEqual([]);
+			});
+		}
 	});
 
 	describe('.husky/pre-commit', () => {
