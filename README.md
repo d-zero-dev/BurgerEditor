@@ -2,7 +2,7 @@
 
 [![Test](https://github.com/d-zero-dev/BurgerEditor/actions/workflows/test.yml/badge.svg)](https://github.com/d-zero-dev/BurgerEditor/actions/workflows/test.yml)
 
-BurgerEditor は baserCMS 向けのブロックエディタです。この`v3`ブランチは 3.x 系の継続メンテナンス用モノレポで、v4 系の開発とは独立しています。
+BurgerEditor は baserCMS 向けのブロックエディタです。この`v3`ブランチは 3.x 系の保守ライン（脆弱性修正と不具合修正のみ）のモノレポで、v4 系の開発とは独立しています。サポート期間と脆弱性の報告先は[SECURITY.md](https://github.com/d-zero-dev/BurgerEditor/blob/dev/SECURITY.md)を参照してください。
 
 ## License
 
