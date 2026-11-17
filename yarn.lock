@@ -17310,9 +17310,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"renovate@npm:44.225.1":
-  version: 44.225.1
-  resolution: "renovate@npm:44.225.1"
+"renovate@npm:44.225.2":
+  version: 44.225.2
+  resolution: "renovate@npm:44.225.2"
   dependencies:
     "@aws-sdk/client-codecommit": "npm:3.1139.0"
     "@aws-sdk/client-ec2": "npm:3.1139.0"
@@ -17446,7 +17446,7 @@ __metadata:
   bin:
     renovate: dist/renovate.js
     renovate-config-validator: dist/config-validator.js
-  checksum: 10c0/57c0a7702af5fc1d0ef326621d1d89d5d38eb1b04c4db1f2020406c4ef3283d31dac880559b05c569a5e2d7ebb5bc34dd6120977d0a7c001a11db3e3caa4ec6e
+  checksum: 10c0/e80204de5716744cda6035e1fbeed4fb4cbb3dab79421adc51f6d5add41de1db788bbc5d5ed08d980826728481dcfb3f303a9db57ed4da52b63d3ce9c12031a4
   languageName: node
   linkType: hard
 
@@ -17953,7 +17953,7 @@ __metadata:
     pixelmatch: "npm:7.2.0"
     playwright: "npm:1.63.0"
     pngjs: "npm:7.0.0"
-    renovate: "npm:44.225.1"
+    renovate: "npm:44.225.2"
     typescript: "npm:5.9.3"
     vitest: "npm:4.1.12"
   languageName: unknown
