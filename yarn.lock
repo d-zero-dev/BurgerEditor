@@ -1042,7 +1042,7 @@ __metadata:
     "@burger-editor/migrator": "npm:4.0.0-alpha.77"
     "@burger-editor/utils": "npm:4.0.0-alpha.77"
     "@rolldown/plugin-babel": "npm:0.3.1"
-    "@tabler/icons-react": "npm:^3.49.0"
+    "@tabler/icons-react": "npm:^3.51.0"
     "@testing-library/dom": "npm:10.4.2"
     "@testing-library/react": "npm:16.3.3"
     "@types/babel__core": "npm:7.20.5"
@@ -1255,7 +1255,7 @@ __metadata:
     "@burger-editor/local": "npm:4.0.0-alpha.77"
     "@burger-editor/runtime": "npm:4.0.0-alpha.77"
     "@storybook/react-vite": "npm:10.6.6"
-    "@tabler/icons-react": "npm:3.49.0"
+    "@tabler/icons-react": "npm:3.51.0"
     "@testing-library/dom": "npm:10.4.2"
     "@testing-library/react": "npm:16.3.3"
     "@types/react": "npm:19.3.0"
@@ -5937,25 +5937,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tabler/icons-react@npm:3.49.0, @tabler/icons-react@npm:^3.49.0":
-  version: 3.49.0
-  resolution: "@tabler/icons-react@npm:3.49.0"
+"@tabler/icons-react@npm:3.51.0, @tabler/icons-react@npm:^3.51.0":
+  version: 3.51.0
+  resolution: "@tabler/icons-react@npm:3.51.0"
   dependencies:
-    "@tabler/icons": "npm:3.49.0"
+    "@tabler/icons": "npm:3.51.0"
   peerDependencies:
     react: ">= 16"
-  checksum: 10c0/4c50b4f9ff56f6755161896ba4e5271dc97caf4132394e443162bff015e0fc72c109b53bc31436d4350fa2c836a472b304e5761b2a121c18c03f157966ba8025
+  checksum: 10c0/e7a1d432dc9c76e1e0f4cd7545130077dec01ef65d247c5fe5fce5ff5cf3fcae2cdd7b953ffac469fb19c84fae528c01088f6e2948af0edaed5f43b21b84ff09
   languageName: node
   linkType: hard
 
-"@tabler/icons@npm:3.49.0":
-  version: 3.49.0
-  resolution: "@tabler/icons@npm:3.49.0"
-  checksum: 10c0/8540c7182c67efcd7209d0ab2de75dd413eff0f61c5906d0e1b20bc53ef4eaadcd13e301e2e5829dac47ee710bc0d8301d99c1dd0aada683a87addb32742d34a
-  languageName: node
-  linkType: hard
-
-"@tabler/icons@npm:^3.51.0":
+"@tabler/icons@npm:3.51.0, @tabler/icons@npm:^3.51.0":
   version: 3.51.0
   resolution: "@tabler/icons@npm:3.51.0"
   checksum: 10c0/bb4e6f0280962adf08c39c98b8493d8ef155fac4afb5928299ddc7d7bc28c6b544123cdd37a34709a5091d6a16759946a78a6133dbaeef73973b1cefed396a62
