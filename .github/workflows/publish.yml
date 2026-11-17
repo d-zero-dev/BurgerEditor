@@ -87,19 +87,11 @@ jobs:
         # one package mid-batch) cannot be recovered by re-running — the
         # already-published packages re-trigger the 409 and abort the
         # whole job before the unpublished ones get their turn.
+        #
+        # The dist-tag is set by the publish itself and nothing runs
+        # `npm dist-tag` afterwards, on purpose: that would need "Allow npm
+        # dist-tag" in the Trusted Publisher settings of every package, which
+        # can only be set on npmjs.com one package at a time. So a prerelease
+        # leaves the `latest` of a package that never had a stable release
+        # where it is, until the first stable release takes it.
         run: npx lerna publish from-package --dist-tag ${{ steps.dist-tag.outputs.tag }} --yes
-      - name: Update npm for dist-tag
-        # `npm dist-tag` authenticates through Trusted Publishing from npm
-        # 11.21.0 on, and the Node.js above ships npm 11.20.0. Only the step
-        # below needs it, so the publish itself keeps the bundled npm. Drop
-        # this step once the Node.js version ships npm 11.21.0 or later. The
-        # version is pinned like every other dependency.
-        run: npm install --global npm@11.21.2
-      - name: Move latest for packages without a stable release
-        # A prerelease is published under its own dist-tag, which leaves
-        # `latest` of a package that never had a stable release on the first
-        # version ever published. Move it to this version. Packages that have
-        # a stable release (v3 has one) keep their `latest`. Each package needs
-        # "Allow npm dist-tag" enabled in its Trusted Publisher settings on
-        # npmjs.com. See scripts/follow-latest-dist-tag.mjs.
-        run: node scripts/follow-latest-dist-tag.mjs
