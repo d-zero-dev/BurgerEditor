@@ -7,7 +7,7 @@ BurgerEditor の標準ブロックと標準アイテムを提供するカタロ�
 ## Installation
 
 ```sh
-yarn add @burger-editor/blocks
+yarn add @burger-editor/blocks@alpha
 ```
 
 ## Usage

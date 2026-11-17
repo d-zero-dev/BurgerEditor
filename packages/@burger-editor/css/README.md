@@ -7,7 +7,7 @@ BurgerEditor で作成したページを公開サイトで表示するための 
 ## Installation
 
 ```sh
-yarn add @burger-editor/css
+yarn add @burger-editor/css@alpha
 ```
 
 ## Usage

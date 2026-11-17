@@ -21,13 +21,13 @@ AI クライアント（Claude Desktop/Claude Code/Cursor/Cline 等）から自�
 	"mcpServers": {
 		"burger-editor": {
 			"command": "npx",
-			"args": ["-y", "@burger-editor/mcp-server"]
+			"args": ["-y", "@burger-editor/mcp-server@alpha"]
 		}
 	}
 }
 ```
 
-**バイナリ名**: 4.0.0-alpha.68 以降、bin は **`bge-mcp-server`のみ** 公開しています。汎用名の`mcp-server`を bin 化すると`node_modules/.bin/`や global PATH 上で他の MCP server パッケージと衝突するため、独自プレフィクス付きの 1 名のみに絞っています。`npx @burger-editor/mcp-server`でこの bin が呼ばれます（npm は single-bin パッケージを名前不問で実行する仕様）。global install 後に`bge-mcp-server`コマンドとしても叩けます。
+**バイナリ名**: 4.0.0-alpha.68 以降、bin は **`bge-mcp-server`のみ** 公開しています。汎用名の`mcp-server`を bin 化すると`node_modules/.bin/`や global PATH 上で他の MCP server パッケージと衝突するため、独自プレフィクス付きの 1 名のみに絞っています。`npx @burger-editor/mcp-server@alpha`でこの bin が呼ばれます（npm は single-bin パッケージを名前不問で実行する仕様）。global install 後に`bge-mcp-server`コマンドとしても叩けます。
 
 ## Related Packages
 
@@ -43,8 +43,8 @@ AI クライアント（Claude Desktop/Claude Code/Cursor/Cline 等）から自�
 グローバルか npx 経由で使う:
 
 ```sh
-yarn global add @burger-editor/mcp-server
-# または npx -y @burger-editor/mcp-server
+yarn global add @burger-editor/mcp-server@alpha
+# または npx -y @burger-editor/mcp-server@alpha
 ```
 
 ## AI クライアント別の接続設定
@@ -60,7 +60,7 @@ stdio トランスポートをサポートする任意の MCP クライアント
 	"mcpServers": {
 		"burger-editor": {
 			"command": "npx",
-			"args": ["-y", "@burger-editor/mcp-server"],
+			"args": ["-y", "@burger-editor/mcp-server@alpha"],
 			"disabled": false,
 			"autoApprove": []
 		}
@@ -71,7 +71,7 @@ stdio トランスポートをサポートする任意の MCP クライアント
 ### Claude Code
 
 ```sh
-claude mcp add burger-editor -- npx -y @burger-editor/mcp-server
+claude mcp add burger-editor -- npx -y @burger-editor/mcp-server@alpha
 ```
 
 または`.claude/settings.json`に直接追記:
@@ -81,7 +81,7 @@ claude mcp add burger-editor -- npx -y @burger-editor/mcp-server
 	"mcpServers": {
 		"burger-editor": {
 			"command": "npx",
-			"args": ["-y", "@burger-editor/mcp-server"]
+			"args": ["-y", "@burger-editor/mcp-server@alpha"]
 		}
 	}
 }
@@ -96,7 +96,7 @@ claude mcp add burger-editor -- npx -y @burger-editor/mcp-server
 	"mcpServers": {
 		"burger-editor": {
 			"command": "npx",
-			"args": ["-y", "@burger-editor/mcp-server"]
+			"args": ["-y", "@burger-editor/mcp-server@alpha"]
 		}
 	}
 }
@@ -110,7 +110,7 @@ VS Code 設定の`cline.mcpServers`に同じ shape で追記:
 {
 	"burger-editor": {
 		"command": "npx",
-		"args": ["-y", "@burger-editor/mcp-server"]
+		"args": ["-y", "@burger-editor/mcp-server@alpha"]
 	}
 }
 ```
@@ -131,7 +131,7 @@ CLI フラグは環境変数より優先される。ループバック（`localh
 	"mcpServers": {
 		"burger-editor": {
 			"command": "npx",
-			"args": ["-y", "@burger-editor/mcp-server", "--mode", "local"],
+			"args": ["-y", "@burger-editor/mcp-server@alpha", "--mode", "local"],
 			"env": { "BGE_LOCAL_URL": "http://localhost:5255" }
 		}
 	}
@@ -147,13 +147,13 @@ CLI フラグは環境変数より優先される。ループバック（`localh
 	"mcpServers": {
 		"burger-editor-main": {
 			"command": "npx",
-			"args": ["-y", "@burger-editor/mcp-server", "--url", "http://localhost:5255"]
+			"args": ["-y", "@burger-editor/mcp-server@alpha", "--url", "http://localhost:5255"]
 		},
 		"burger-editor-child": {
 			"command": "npx",
 			"args": [
 				"-y",
-				"@burger-editor/mcp-server",
+				"@burger-editor/mcp-server@alpha",
 				"--config",
 				"/path/to/project/burgereditor.child.config.js",
 				"--url",
@@ -270,7 +270,7 @@ Claude Code/Claude Desktop/Cursor などの MCP host はサーバの stderr を�
 <stack trace>
 ```
 
-`tools/list`が空になる場合は、`bge-mcp-server` bin が実在ファイルを指しているか（`npx @burger-editor/mcp-server --version`）を確認してください。汎用名`mcp-server`は他パッケージとの衝突を避けるため意図的に公開していません。
+`tools/list`が空になる場合は、`bge-mcp-server` bin が実在ファイルを指しているか（`npx @burger-editor/mcp-server@alpha --version`）を確認してください。汎用名`mcp-server`は他パッケージとの衝突を避けるため意図的に公開していません。
 
 ## 設計上の不変条件
 
@@ -315,7 +315,7 @@ Claude Code/Claude Desktop/Cursor などの MCP host はサーバの stderr を�
 2. パッケージが正しくインストールされているか確認:
 
 ```sh
-npx @burger-editor/mcp-server --version
+npx @burger-editor/mcp-server@alpha --version
 ```
 
 ### AI クライアントがツールを認識しない
