@@ -112,9 +112,9 @@ git describe --tags --abbrev=0
 git log --oneline $(git describe --tags --abbrev=0)..HEAD
 ```
 
-fixed モードなので `lerna.json` の `version` が現行バージョンの正。`yarn release` は conventional commits からバージョンを自動決定するため、**リリース種別（graduate / alpha / beta / rc）をユーザーに確認する必要はない**。差分は「何が入るか」の確認材料として提示するだけでよい。
+fixed モードなので `lerna.json` の `version` が現行バージョンの正。**リリースのコマンドは、この版で決まる**: `-alpha` が付く間（v4 は正式版まで）は `yarn release:alpha`、`-beta`・`-rc` が付く間は、ユーザーが明示したときだけ `yarn release:beta`・`yarn release:rc`、プレリリースでない版が現行のときだけ `yarn release`。**`yarn release` は `--conventional-graduate` なので、プレリリースの版で実行すると正式版に上がり**（`4.0.0-alpha.77` → `4.0.0`）、`dev` / `main` の `publish.yml` はそれを止めずに `latest` で公開する（取り消せない）。コマンドは、ユーザーに案内する前に、`lerna.json` の版から決める。版の上げ幅（番号が進むだけか、パッチ・マイナーか）は conventional commits から自動で決まるので、上げ幅をユーザーに確認する必要はない。差分は「何が入るか」の確認材料として提示するだけでよい。
 
-あわせて、前回タグ以降に破壊的変更マーカーが無いかを確認する。マーカー付きコミットが 1 つでもあれば `yarn release` の決めるバージョンが変わる。`0.x` ではマイナーに丸められ、`X.0.0-alpha.n`（v4 の alpha はここ）ではプレリリース番号が進むだけだが、安定版（`1.0.0` 以降）とマイナー / パッチのプレリリースではメジャーに跳ねる（段階ごとの効果と、付けてよい条件は `git` スキルの「破壊的変更と振る舞いの変更」）。
+あわせて、前回タグ以降に破壊的変更マーカーが無いかを確認する。マーカー付きコミットが 1 つでもあれば `lerna version` の決めるバージョンが変わる。`0.x` ではマイナーに丸められ、`X.0.0-alpha.n`（v4 の alpha はここ）ではプレリリース番号が進むだけだが、安定版（`1.0.0` 以降）とマイナー / パッチのプレリリースではメジャーに跳ねる（段階ごとの効果と、付けてよい条件は `git` スキルの「破壊的変更と振る舞いの変更」）。
 
 ```bash
 git log <last-tag>..HEAD --format=%s | grep -E '^[a-z]+(\([^)]*\))?!:'
@@ -134,20 +134,26 @@ git log <last-tag>..HEAD --grep='^Behavior change'
 `lerna version` は選択・確認のプロンプトを出すインタラクティブコマンドで、Claude Code の `!` 経由では対話できない（プロンプトが表示されても入力できず止まる）。ユーザーに次の手順を依頼する:
 
 1. Claude Code のセッションを終了する（`exit`）
-2. ターミナルで直接 `yarn release` を実行し、プロンプトに対話的に回答する
+2. ターミナルで、`main` を checkout した作業ツリーで、手順 7 で決めたコマンドを直接実行し、プロンプトに対話的に回答する。**プロンプトの版が、手順 7 で決めた版（たとえば `4.0.0-alpha.78`）であることを確認してから承認する**。違う版（`-alpha` のない `4.0.0` や、別のメジャーのプレリリース）が出たら、承認せずに中止する（`Ctrl+C`。何も作られない）
 3. 完了したら `claude --continue` で会話に戻る
 
 ```
-yarn release          # graduate（正式リリース。通常はこれだけで十分）
+yarn release:alpha    # lerna.json の版に -alpha が付く間（v4 は正式版まで）
+yarn release:beta     # -beta が付く間（ユーザーが明示したときだけ）
+yarn release:rc       # -rc が付く間（ユーザーが明示したときだけ）
+yarn release          # プレリリースでない版が現行のとき（graduate）。プレリリースの版では実行しない
 ```
 
-alpha / beta / rc のプレリリースが必要な場合は、ユーザーが会話の中で明示的に指示したときだけ、上記と同じ exit → 実行 → `--continue` の手順で該当コマンドを案内する。
+`main` は同時に 1 つの作業ツリーでしか開けない。エージェントが作業ツリーで `main` を用意したときは、`git switch --detach` で `main` を空けて、リリースを行う作業ツリーを 1 つに決める。作業ツリーに隔離されたセッションは、ほかの作業ツリーの git を操作できない（`git -C` も、ユーザーの `!` も拒否される）ので、`git restore .` などは、ユーザーのターミナルで実行してもらう。
+
+**`lerna` が `spawnSync corepack ENOENT` で止まることがある。** `lerna` は、環境変数 `COREPACK_ROOT` が定義されていると「corepack が有効」と判断して `corepack yarn …`（lockfile の更新）を呼ぶ。`yarn` を経由すると `COREPACK_ROOT` が定義されるのに、端末に `corepack` の実行ファイルがない（Node が corepack を含まない）と起きる。このとき、版の書き換えと CHANGELOG の更新だけが残り（コミットとタグはない）、そのままでは再実行できない。`git restore .` で戻して、`COREPACK_ROOT` を外し、リリースのスクリプトと同じ引数で `lerna` を直接実行する。
 
 ```
-yarn release:alpha    # alpha プレリリース
-yarn release:beta     # beta プレリリース
-yarn release:rc       # RC プレリリース
+git restore .
+env -u COREPACK_ROOT node_modules/.bin/lerna version --exact --force-publish --conventional-commits --conventional-prerelease --preid alpha --no-push
 ```
+
+引数は `package.json` の `release:alpha` と同じ。beta・rc・正式版は、それぞれのスクリプトの引数に合わせる。
 
 リリーススクリプトは `--no-push` なので、**コミットとタグの push が別途必要**。ユーザーから完了報告を受けたら、次を提示する。
 
@@ -214,7 +220,7 @@ git merge main --no-edit
 
 - **`v*` タグの作成・削除は CODEOWNERS のみ**（GitHub Rulesets で保護）。権限がない場合は手順 8 で失敗するため、実行者がタグ権限者か事前に確認する
 - **publish は取り消せない**。手順 5・6 の事前チェックを省略しない
-- **`yarn release` は `prerelease` スクリプト経由で `yarn build; yarn test` を再度走らせる**。手順 6 と重複するが、`lerna version` の途中で失敗するより事前に落としたほうが安全なので省略しない
+- **`yarn release*` は `yarn build; yarn test` を走らせない**（Yarn 4 は `prerelease` のような pre フックを自動では実行しない。`yarn release:alpha` の出力は `lerna` のものだけだった）。手順 6 の事前チェックが、公開の前の唯一の検査なので、省略しない
 
 # v3 のリリース
 
