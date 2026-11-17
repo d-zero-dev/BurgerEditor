@@ -10,9 +10,11 @@ branch_name=$(git symbolic-ref --short HEAD 2>/dev/null || true)
 
 # If the list cannot be read, refuse the commit rather than letting it through
 # unguarded, and say that the guard is what refused it: the error of node
-# alone ("command not found") does not.
+# alone ("command not found") does not. The cause is not always node (a
+# syntax error in lines.mjs fails the same way), so the message names both.
 guarded_branches=$(node scripts/release-lines/guarded-branches.mjs) || {
-  echo "Could not read the list of guarded branches (is node in the PATH?)." >&2
+  echo "Could not read the list of guarded branches: is node in the PATH, and does" >&2
+  echo "scripts/release-lines/guarded-branches.mjs run? See the error above." >&2
   echo "The commit is refused because the branch cannot be checked." >&2
   exit 1
 }

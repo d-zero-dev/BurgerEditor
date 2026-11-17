@@ -122,9 +122,9 @@ describe('.husky/pre-commit', () => {
 		const result = runHook();
 		expect(result.status).toBe(1);
 		expect(result.reachedLintStaged).toBe(false);
-		expect(result.stderr).toContain(
-			'Could not read the list of guarded branches (is node in the PATH?)',
-		);
+		expect(result.stderr).toContain('Could not read the list of guarded branches');
+		expect(result.stderr).toContain('is node in the PATH');
+		expect(result.stderr).toContain('guarded-branches.mjs run');
 	});
 
 	it('lets a commit on a detached HEAD through, which has no branch name (a rebase, for example)', () => {
