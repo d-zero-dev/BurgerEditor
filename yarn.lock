@@ -1174,7 +1174,7 @@ __metadata:
     "@burger-editor/file-io": "npm:4.0.0-alpha.78"
     "@burger-editor/inspector": "npm:4.0.0-alpha.78"
     "@d-zero/shared": "npm:0.23.0"
-    "@hono/node-server": "npm:^2.1.6"
+    "@hono/node-server": "npm:^2.1.7"
     "@hono/zod-validator": "npm:^0.9.1"
     "@types/debug": "npm:4.1.13"
     "@types/node": "npm:26.6.6"
@@ -1184,7 +1184,7 @@ __metadata:
     ansi-colors: "npm:^4.1.3"
     debug: "npm:^4.4.3"
     dotenv: "npm:18.0.10"
-    hono: "npm:^4.13.17"
+    hono: "npm:^4.13.18"
     open: "npm:^11.0.4"
     prettier: "npm:^3.9.10"
     react: "npm:19.3.1"
@@ -2903,12 +2903,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hono/node-server@npm:^2.1.6":
-  version: 2.1.6
-  resolution: "@hono/node-server@npm:2.1.6"
+"@hono/node-server@npm:^2.1.7":
+  version: 2.1.7
+  resolution: "@hono/node-server@npm:2.1.7"
   peerDependencies:
     hono: ^4 || ^5.0.0-0
-  checksum: 10c0/bb57a4e00f193b37f1e7c8a4b8206914ab3f6073d8e7da7ca4b005f0205d89ef9cd0bdb783a4b59869a4c9211f1567f3e0717f31e92704ed7b1801a33d3252d3
+  checksum: 10c0/1e54997c3db9925e97e2a37ad829b9c4eb1694749678a37745c394b0cdde3e16b26d448e1435d0dcf4a56a756a9e5fb16ac9f56ce33a60b402dbe5282a0270f7
   languageName: node
   linkType: hard
 
@@ -12105,10 +12105,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"hono@npm:^4.13.17":
-  version: 4.13.17
-  resolution: "hono@npm:4.13.17"
-  checksum: 10c0/63a2d834f0cf1b3858d5872883589ea48522567251bc4eb62c5f17e47cc6f793b2201150bca4822374165e92dbdcc8d3573443c7cdb8a340a933dce39e6df34d
+"hono@npm:^4.13.18":
+  version: 4.13.18
+  resolution: "hono@npm:4.13.18"
+  checksum: 10c0/c04462570fe9dcdf820b633e6c22d33d414d7608abbed7daadd3ad7c594b2670b4790a16b613658e952367a12082a21f0b556d021c17ccbbc70758eefd80badc
   languageName: node
   linkType: hard
 
