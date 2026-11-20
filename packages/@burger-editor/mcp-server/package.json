@@ -43,7 +43,7 @@
 	},
 	"devDependencies": {
 		"@burger-editor/blocks": "4.0.0-alpha.78",
-		"@d-zero/shared": "0.23.1",
+		"@d-zero/shared": "0.23.2",
 		"vitest": "4.1.12"
 	}
 }
