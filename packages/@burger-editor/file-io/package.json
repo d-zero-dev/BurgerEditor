@@ -35,7 +35,7 @@
 		"prettier": "^3.10.0"
 	},
 	"devDependencies": {
-		"@d-zero/shared": "0.23.1",
+		"@d-zero/shared": "0.23.2",
 		"@types/jsdom": "28.0.3",
 		"@types/node": "26.6.6",
 		"vitest": "4.1.12"
