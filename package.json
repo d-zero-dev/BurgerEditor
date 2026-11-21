@@ -83,7 +83,7 @@
 		"jsdom": "28.1.0",
 		"lerna": "10.1.2",
 		"markuplint": "4.18.5",
-		"npm-run-all2": "8.0.4",
+		"npm-run-all2": "9.0.4",
 		"pixelmatch": "7.2.0",
 		"playwright": "1.65.1",
 		"pngjs": "7.0.0",
