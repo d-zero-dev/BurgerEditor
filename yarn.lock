@@ -1103,7 +1103,7 @@ __metadata:
   resolution: "@burger-editor/custom-element@workspace:packages/@burger-editor/custom-element"
   dependencies:
     "@burger-editor/utils": "npm:4.0.0-alpha.78"
-    "@tabler/icons": "npm:^3.51.0"
+    "@tabler/icons": "npm:^3.52.0"
     "@tiptap/core": "npm:^3.34.0"
     "@tiptap/extension-image": "npm:^3.34.0"
     "@tiptap/extension-paragraph": "npm:^3.34.0"
@@ -5977,10 +5977,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tabler/icons@npm:3.51.0, @tabler/icons@npm:^3.51.0":
+"@tabler/icons@npm:3.51.0":
   version: 3.51.0
   resolution: "@tabler/icons@npm:3.51.0"
   checksum: 10c0/bb4e6f0280962adf08c39c98b8493d8ef155fac4afb5928299ddc7d7bc28c6b544123cdd37a34709a5091d6a16759946a78a6133dbaeef73973b1cefed396a62
+  languageName: node
+  linkType: hard
+
+"@tabler/icons@npm:^3.52.0":
+  version: 3.52.0
+  resolution: "@tabler/icons@npm:3.52.0"
+  checksum: 10c0/80cfbec0e159a7ec6786fd15903e75aa74c037cdcd011ec12ec497f21c85691e794b59175b283e0b667d5b223c09a71d013066b90cf06bb08e080522a47ea38f
   languageName: node
   linkType: hard
 
