@@ -29,6 +29,6 @@
 	},
 	"dependencies": {
 		"@burger-editor/core": "4.0.0-alpha.78",
-		"jsdom": "^28.1.0"
+		"jsdom": "^31.0.1"
 	}
 }
