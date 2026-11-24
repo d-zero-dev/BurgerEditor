@@ -87,7 +87,7 @@
 		"pixelmatch": "8.0.0",
 		"playwright": "1.65.1",
 		"pngjs": "7.0.0",
-		"renovate": "44.247.0",
+		"renovate": "44.247.1",
 		"typescript": "5.9.3",
 		"vitest": "4.1.12"
 	},
