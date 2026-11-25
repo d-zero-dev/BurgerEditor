@@ -1516,9 +1516,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@containerbase/base@npm:14.67.2":
-  version: 14.67.2
-  resolution: "@containerbase/base@npm:14.67.2"
+"@containerbase/base@npm:14.67.3":
+  version: 14.67.3
+  resolution: "@containerbase/base@npm:14.67.3"
   dependencies:
     semver: "npm:^7.8.5"
   peerDependencies:
@@ -1526,7 +1526,7 @@ __metadata:
   peerDependenciesMeta:
     zod:
       optional: true
-  checksum: 10c0/2b304744be2cea2e0fbf7b0da3b9c0ddccb07d8820beed3c330c2d34b77d65e9d041b8c4e61740cc6a4f541282ab4b7014784cec805e31b186894e45503cf092
+  checksum: 10c0/a3ef4a47185e1e7bb4c97ffd381f4edb1edc8f6460ba1628e2f0621300150a75d3eeae169839e15be76553f016bf08410a4ab40673b66d0e86e3ad6be41c3afc
   languageName: node
   linkType: hard
 
@@ -5129,17 +5129,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@renovatebot/base-image@npm:13.172.2":
-  version: 13.172.2
-  resolution: "@renovatebot/base-image@npm:13.172.2"
+"@renovatebot/base-image@npm:13.172.4":
+  version: 13.172.4
+  resolution: "@renovatebot/base-image@npm:13.172.4"
   dependencies:
-    "@containerbase/base": "npm:14.67.2"
+    "@containerbase/base": "npm:14.67.3"
   peerDependencies:
     zod: ^4.0.0
   peerDependenciesMeta:
     zod:
       optional: true
-  checksum: 10c0/9479f79ac6795df72ed061a330edd20f063c0f19fd60ce07f97441824ae5050685dae99021b9753e320db226c803d846374edffea13341e98db4b7f2c23189c9
+  checksum: 10c0/0a5358faf993aa0795c141b06a1890a70e449d9f8e68f65b4ba24017e5241ac3a925ab1b128d535ab723fefa5f1e38fd464eeec585b423a0ece42c6fd770bede
   languageName: node
   linkType: hard
 
@@ -16530,6 +16530,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"prettier@npm:3.10.0":
+  version: 3.10.0
+  resolution: "prettier@npm:3.10.0"
+  bin:
+    prettier: bin/prettier.cjs
+  checksum: 10c0/f06fa310104fc6a27ce605bfb93d1afa336c7f88115029f8b6edafe59422cb905588bc4f8fe4f00d2d72a0d9020346fea8ffdc3bf342d4659e78ded1582aac61
+  languageName: node
+  linkType: hard
+
 "prettier@npm:3.9.10":
   version: 3.9.10
   resolution: "prettier@npm:3.9.10"
@@ -17315,9 +17324,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"renovate@npm:44.251.0":
-  version: 44.251.0
-  resolution: "renovate@npm:44.251.0"
+"renovate@npm:44.252.6":
+  version: 44.252.6
+  resolution: "renovate@npm:44.252.6"
   dependencies:
     "@aws-sdk/client-codecommit": "npm:3.1139.0"
     "@aws-sdk/client-ec2": "npm:3.1139.0"
@@ -17350,7 +17359,7 @@ __metadata:
     "@pnpm/parse-overrides": "npm:1001.0.4"
     "@qnighy/marshal": "npm:0.1.3"
     "@redis/client": "npm:6.3.1"
-    "@renovatebot/base-image": "npm:13.172.2"
+    "@renovatebot/base-image": "npm:13.172.4"
     "@renovatebot/detect-tools": "npm:5.0.0"
     "@renovatebot/good-enough-parser": "npm:4.0.3"
     "@renovatebot/osv-offline": "npm:4.5.10"
@@ -17417,7 +17426,7 @@ __metadata:
     p-queue: "npm:9.3.5"
     p-throttle: "npm:8.1.1"
     parse-link-header: "npm:2.0.0"
-    prettier: "npm:3.9.10"
+    prettier: "npm:3.10.0"
     protobufjs: "npm:8.8.1"
     punycode: "npm:2.3.1"
     re2: "npm:1.27.1"
@@ -17451,7 +17460,7 @@ __metadata:
   bin:
     renovate: dist/renovate.js
     renovate-config-validator: dist/config-validator.js
-  checksum: 10c0/6e539423f3ae5998f67dfa3eceebaa02348973a899c92d95d9e14428cd14b06a7be2a6b0400015ba9a855c33cbbfbf950e88a79f71ec440f366dbcb0849199f0
+  checksum: 10c0/0d1d399b5874874417ef3ad841a9321481547c2cdec3f211f186c467e7eeb4a6c998de04a024452ae647e70d1f315908b39d4f0bc0e7524f0fcff514c41bb15f
   languageName: node
   linkType: hard
 
@@ -17958,7 +17967,7 @@ __metadata:
     pixelmatch: "npm:8.0.0"
     playwright: "npm:1.65.1"
     pngjs: "npm:7.0.0"
-    renovate: "npm:44.251.0"
+    renovate: "npm:44.252.6"
     typescript: "npm:5.9.3"
     vitest: "npm:4.1.12"
   languageName: unknown
