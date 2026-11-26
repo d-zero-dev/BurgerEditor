@@ -15133,10 +15133,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"neotraverse@npm:1.0.1":
-  version: 1.0.1
-  resolution: "neotraverse@npm:1.0.1"
-  checksum: 10c0/98e5d2d1974f91d527851a9dcfceb62701a1d31970b324b9f35fbdd244d173edc7a379ea1773f64771a9dc282486e3d3b693b24e14b1e969291612b2ff6b5054
+"neotraverse@npm:1.0.2":
+  version: 1.0.2
+  resolution: "neotraverse@npm:1.0.2"
+  checksum: 10c0/602b9db855fc4756d75f685b374e91657ca0b53682de6b19d5fe9663fc6bd870df0c6016e8ea42653d864cd983b08cd3a801b9d699c9ef4d40ff7e4d14a603af
   languageName: node
   linkType: hard
 
@@ -17324,9 +17324,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"renovate@npm:44.252.6":
-  version: 44.252.6
-  resolution: "renovate@npm:44.252.6"
+"renovate@npm:44.252.7":
+  version: 44.252.7
+  resolution: "renovate@npm:44.252.7"
   dependencies:
     "@aws-sdk/client-codecommit": "npm:3.1139.0"
     "@aws-sdk/client-ec2": "npm:3.1139.0"
@@ -17418,7 +17418,7 @@ __metadata:
     minimatch: "npm:10.2.6"
     moo: "npm:0.5.3"
     ms: "npm:2.1.3"
-    neotraverse: "npm:1.0.1"
+    neotraverse: "npm:1.0.2"
     node-html-parser: "npm:9.0.7"
     openpgp: "npm:6.3.2"
     p-all: "npm:5.0.1"
@@ -17443,7 +17443,7 @@ __metadata:
     slugify: "npm:1.6.9"
     source-map-support: "npm:0.5.21"
     strip-json-comments: "npm:5.0.3"
-    tar: "npm:7.5.22"
+    tar: "npm:7.5.23"
     toml-eslint-parser: "npm:1.0.3"
     upath: "npm:3.0.8"
     url-join: "npm:5.2.0"
@@ -17460,7 +17460,7 @@ __metadata:
   bin:
     renovate: dist/renovate.js
     renovate-config-validator: dist/config-validator.js
-  checksum: 10c0/0d1d399b5874874417ef3ad841a9321481547c2cdec3f211f186c467e7eeb4a6c998de04a024452ae647e70d1f315908b39d4f0bc0e7524f0fcff514c41bb15f
+  checksum: 10c0/2b08b15bbf4bd246db22f1a8e85825eb9109835e230f70222a295910c04c84d8b23109c53d08ce335a4c92d79aac6b6542c5c49aa838a86e9e20cc3c77fefd7e
   languageName: node
   linkType: hard
 
@@ -17967,7 +17967,7 @@ __metadata:
     pixelmatch: "npm:8.0.0"
     playwright: "npm:1.65.1"
     pngjs: "npm:7.0.0"
-    renovate: "npm:44.252.6"
+    renovate: "npm:44.252.7"
     typescript: "npm:5.9.3"
     vitest: "npm:4.1.12"
   languageName: unknown
@@ -19090,6 +19090,19 @@ __metadata:
     minizlib: "npm:^3.1.0"
     yallist: "npm:^5.0.0"
   checksum: 10c0/1311f6be85a8157ac4c9147bae43e13923d2a1aae15e4aa1bd5239e4e03d2cf53cfe103dde7f35832fbb4c938b042856bc8e9a0afd29abd05e2d1608788c4fea
+  languageName: node
+  linkType: hard
+
+"tar@npm:7.5.23":
+  version: 7.5.23
+  resolution: "tar@npm:7.5.23"
+  dependencies:
+    "@isaacs/fs-minipass": "npm:^4.0.0"
+    chownr: "npm:^3.0.0"
+    minipass: "npm:^7.1.2"
+    minizlib: "npm:^3.1.0"
+    yallist: "npm:^5.0.0"
+  checksum: 10c0/41324dc475f655e6a322729dacac14e3114ed4b18cba350be5d1eb52b1aa2794a1c78c2a5b7f49d3d15f53c058158168121eaf6c5d2f75a0a9565b344bf3a18a
   languageName: node
   linkType: hard
 
