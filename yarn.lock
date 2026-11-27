@@ -16593,14 +16593,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prosemirror-view@npm:1.43.1":
-  version: 1.43.1
-  resolution: "prosemirror-view@npm:1.43.1"
+"prosemirror-view@npm:1.44.0":
+  version: 1.44.0
+  resolution: "prosemirror-view@npm:1.44.0"
   dependencies:
     prosemirror-model: "npm:^1.25.12"
     prosemirror-state: "npm:^1.0.0"
     prosemirror-transform: "npm:^1.1.0"
-  checksum: 10c0/ecde23fa3f4955386ce9fb82dcb37fab73d71bc9817fc65007a5cb07fef954680b4642023ed4a35cc629af7ec833a9a5074f20f73cccfdd9853adfe261c7b136
+  checksum: 10c0/ff95fdebc0fa08e7b442809b7e6440b9aa9fd405796c43ef257b35953bbd7f67bf50598be07108629072f1b745146dc4257d332ce2ae04d08866524b137abb05
   languageName: node
   linkType: hard
 
