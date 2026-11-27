@@ -49,7 +49,7 @@
 		"nx/undici": "8.13.1",
 		"prosemirror-model": "1.25.13",
 		"prosemirror-transform": "1.12.7",
-		"prosemirror-view": "1.43.1"
+		"prosemirror-view": "1.44.0"
 	},
 	"config": {
 		"commitizen": {
