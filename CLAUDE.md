@@ -24,20 +24,20 @@ BurgerEditor v4 は、CMS に埋め込む HTML ブロックエディタ。Lerna 
 
 ## ブランチ構成
 
-| ライン | ブランチ | 役割          | 受け取るもの                                                                                         | Renovate                                         |
-| ------ | -------- | ------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `v4`   | `dev`    | `prerelease`  | 新機能・修正・依存更新。リリースは`main`に`dev`をマージして切る                                      | すべて。`dependencies`のメジャーだけレビュー待ち |
-| `v3`   | `v3`     | `maintenance` | 脆弱性修正・不具合修正。v4 の正式版の後は脆弱性修正のみで、v4 の正式版の公開日から 12 か月で終了する | 脆弱性修正と lock file maintenance のみ          |
+| ライン | ブランチ | 役割          | 受け取るもの                                                                                         | Renovate                                                                                                              |
+| ------ | -------- | ------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `v4`   | `dev`    | `prerelease`  | 新機能・修正・依存更新。リリースは Release PR（`dev`から`main`）で切る                               | すべて。major も自動マージ。例外（`@d-zero/release-automation`と、テストが実行しない API を使う依存）だけレビュー待ち |
+| `v3`   | `v3`     | `maintenance` | 脆弱性修正・不具合修正。v4 の正式版の後は脆弱性修正のみで、v4 の正式版の公開日から 12 か月で終了する | 脆弱性修正と lock file maintenance のみ                                                                               |
 
-- **ラインの定義は`scripts/release-lines/lines.mjs`**。ブランチ名を書くファイル（`.github/renovate.json`・ワークフロー・`.husky/pre-commit`・この表・`SECURITY.md`）との食い違いは`yarn test --project scripts`が落とす。ラインを入れ替える手順は`major-rotation`スキル
-- **`main`は v4 のリリース元**: `dev`をマージして`yarn release`でバージョンを切り、タグを push する（`npm-publish`スキル）。`main`の push でも`test.yml`が走る。通常の作業は`main`に積まない
-- **`dev`は merge queue 経由でマージする**: 必須チェックは`ci-ok`（`test.yml`の`test`と`test-no-compiler`の集約。ジョブを足したら`ci-ok`の`needs`にも足す。`yarn test --project scripts`が食い違いを落とす）。PR を作ったら CI を待ち、マージはキューが行う（Renovate は auto-merge でキューに入る）。`test.yml`は`dev`への push では走らず（キューが、マージ結果に対して`merge_group`で走らせる）、admin のバイパスで`dev`へ直接 push した場合は CI が走らない
-- **リポジトリ外の設定に依存している**（コードを見ても分からないので、復旧するときや公開パッケージを足すときに確かめる）: (a)`dev`・`main`・`v3`の ruleset（`dev`は merge queue で、マージ方式はマージコミット、必須チェックは`ci-ok`）、(b) GitHub の private vulnerability reporting（`SECURITY.md`の報告先）、(c) npmjs.com の各パッケージの Trusted Publisher（`publish.yml`からの公開を許す設定。`npm trust github <package> --file publish.yml --repository d-zero-dev/BurgerEditor --allow-publish`。公開パッケージを足したら設定する。ただし、registry に一度も公開されていないパッケージには設定できないので、新しいパッケージの最初の公開だけは手で行い、その後に設定する。手順は`d-zero-dev/repos-manager`の`npm-oidc-trusted-publishing-setup.md`）
-- **公開の後に CI から`npm dist-tag`は実行しない**: 実行するには、パッケージごとに npmjs.com の Trusted Publisher で「Allow npm dist-tag」を設定する画面操作が要る（npm 11 と 12 の`npm trust`にはそのフラグがない）。その設定をしない代わりに、正式版のない v4 専用パッケージの`latest`は最初の正式版まで動かず、バージョンを指定しないインストールは古い alpha になる（`alpha`が最新を指す。READMEs と skills のコマンドは`@alpha`を付けている）。dist-tag は`lerna publish --dist-tag`が公開時に付ける。`latest`を手で動かす手順は`npm-publish`スキルの手順 10
-- **`v3`への変更**は、`v3`から切ったトピックブランチで作り、base を`v3`にして PR を作る。`v3`は v3 系の別のコードベースで、`dev`からのマージはしない。`v3`のリリースは、`v3`の`publish.yml`が`dev`とは別の判定（正式版だけを公開）を持つので、`npm-publish`スキルの「v3 のリリース」に従う
-- **`.husky/pre-commit`が止めるのは`dev`への直接コミット**。`main`と`v3`は`lerna version`がリリースのコミットを書く場所なので止めない（作業のコミットを直接積まない規則は変わらない）
+- **ラインの定義は`.github/release-lines.json`**。ブランチ名を書くファイル（`.github/renovate.json`・ワークフロー・`.husky/pre-commit`・`SECURITY.md`）との食い違いは`release-automation lines-check`（`test.yml`の`lines-check`）が落とす。この表は目で合わせる。ラインを入れ替える手順は`major-rotation`スキル
+- **`main`は v4 のリリース元**: 自動で作られる Release PR（`dev`から`main`）のマージだけを受け付け、マージを起点に`publish.yml`が公開して`main`を`dev`に反映する（`npm-publish`スキル）。通常の作業は`main`に積まない。`main`への直接の push では公開されない
+- **`dev`は merge queue 経由でマージする**: 必須チェックは`ci-ok`と`lines-check`（`test.yml`。`ci-ok`は`checks`（`checks.yml`の`test`と`test-no-compiler`）と`commit-check`の集約。ジョブを足したら`ci-ok`の`needs`にも足す）。PR を作ったら CI を待ち、マージはキューが行う（Renovate は auto-merge でキューに入る）。`test.yml`は`dev`への push では走らず（キューが、マージ結果に対して`merge_group`で走らせる）、admin のバイパスで`dev`へ直接 push した場合は CI が走らない。公開前（Release PR）と毎晩（Nightly）の検査は`full-ci.yml`で、中身は同じ`checks.yml`
+- **リポジトリ外の設定に依存している**（コードを見ても分からないので、復旧するときや公開パッケージを足すときに確かめる）: (a)`dev`・`main`・`v3`とタグの ruleset（`dev`は merge queue で、マージ方式はマージコミット、必須チェックは`ci-ok`と`lines-check`）と、Environment（`release-pr`・`release`）、GitHub App（Release・Publish）、(b) GitHub の private vulnerability reporting（`SECURITY.md`の報告先）、(c) npmjs.com の各パッケージの Trusted Publisher（`publish.yml`からの公開を許す設定。`npm trust github <package> --file publish.yml --repository d-zero-dev/BurgerEditor --allow-publish`。公開パッケージを足したら設定する。ただし、registry に一度も公開されていないパッケージには設定できないので、新しいパッケージの最初の公開だけは手で行い、その後に設定する。手順は`d-zero-dev/repos-manager`の`npm-oidc-trusted-publishing-setup.md`）
+- **公開の後に CI から`npm dist-tag`は実行しない**: 実行するには、パッケージごとに npmjs.com の Trusted Publisher で「Allow npm dist-tag」を設定する画面操作が要る（npm 11 と 12 の`npm trust`にはそのフラグがない）。その設定をしない代わりに、正式版のない v4 専用パッケージの`latest`は最初の正式版まで動かず、バージョンを指定しないインストールは古い alpha になる（`alpha`が最新を指す。READMEs と skills のコマンドは`@alpha`を付けている）。dist-tag は`lerna publish --dist-tag`が公開時に付ける。`latest`を手で動かす手順は`npm-publish`スキルの「このリポジトリに固有のこと」
+- **`v3`への変更**は、`v3`から切ったトピックブランチで作り、base を`v3`にして PR を作る。`v3`は v3 系の別のコードベースで、`dev`からのマージはしない。`v3`のリリースは、`v3`向けの Release PR（`v3`のワークフローが公開する。正式版だけを公開）で行うので、`npm-publish`スキルの「v3 のリリース」に従う
+- **`.husky/pre-commit`は`release-automation guard`で、直接コミットを禁じるブランチを止める**（`.github/release-lines.json`から判定する）
 - Renovate のブランチ名は、対象ブランチごとに`renovate/dev-*`/`renovate/v3-*`になる
-- 未リリースの変更は`release-reminder`ワークフローが Issue にして知らせる（利用者に届く変更が 3 日リリースされないとき）
+- 利用者に届く変更が 3 日たつと、`release-pr.yml`が系列ごとに Release PR を作る（手動起動なら待たずに作れる）。Nightly（`nightly.yml`）が毎日、各系列の Full CI を起動し、脆弱性を監査する。失敗は`release-blocker`の Issue になり、その系列の Release PR を止める
 
 ## コマンド
 
@@ -71,7 +71,7 @@ yarn commit                   # Commitizen（cz）でコミット
 
 `yarn test`は`scripts/docker-yarn.sh`経由で **linux/amd64 の Docker コンテナ** 内でテストを実行する。VR（Visual Regression）のスクリーンショットを CI と画素単位で一致させるため。初回はイメージのビルドが走る（Apple Silicon では遅い）。イメージの Node は`package.json`の`volta.node`に追従する。
 
-- **ローカル検証は関連プロジェクトのみ**: 変更したパッケージのテストを含むプロジェクトを`yarn test --project <name>`（複数可）で実行する。依存先パッケージを変更した場合は、利用側パッケージのプロジェクトも含める。引数なしの`yarn test`（全プロジェクト）は CI とリリース前（`prerelease`）が担う
+- **ローカル検証は関連プロジェクトのみ**: 変更したパッケージのテストを含むプロジェクトを`yarn test --project <name>`（複数可）で実行する。依存先パッケージを変更した場合は、利用側パッケージのプロジェクトも含める。引数なしの`yarn test`（全プロジェクト）は CI（`checks.yml`。Release PR と Nightly の Full CI も同じ）が担う
 - VR を含まないプロジェクトを素早く回すときは`yarn test:unit --project <name>`（ホスト実行）を使う
 - **UI コンポーネントを追加・変更したら story も合わせる**: `storybook`パッケージに、それに沿った story を同じ変更で足すか直す（1 つの story に 1 つの状態）。story はテストではないので、振る舞いの検査はプロジェクトのテストに書く
 - **UI に関わる変更では`yarn test:vr:docker`も実行する**。UI を意図的に変えたら`yarn test:vr:docker:update`でベースラインを再生成してコミットに含める
@@ -82,10 +82,10 @@ yarn commit                   # Commitizen（cz）でコミット
 ## 依存関係の追加
 
 - バージョンは固定で追加する（`yarn add foo@1.2.3`）。`^`/`~`を付けない（`.yarnrc.yml`の`defaultSemverRangePrefix: ''`で既定化されている）
-  - **例外は公開パッケージの外部の`dependencies`と`peerDependencies`**: `^`の範囲で書く（`yarn add foo@^1.2.3`）。利用者のインストールが、リリースした版より古い版に重複排除されたり、`react`の版が 1 つ違うだけで peer の条件に合わなくなったりしないため。`.github/renovate.json`の`rangeStrategy: bump`のルールが、更新のたびに下限を上げる。ワークスペース内のパッケージ同士（lerna の`--exact`）、`devDependencies`、private の`storybook`は固定のまま。`scripts/published-ranges.spec.mjs`（`yarn test --project scripts`）がこの書き方の食い違いを落とす。**下限を上げる副作用**: `peerDependencies`の下限も、更新のたびに（minor/patch は自動マージで）上がり、下限より古い版を使う利用者は、その版以降の peer の条件に合わなくなる。alpha の間は許容しているが、正式版以降は破壊的変更に当たるので、そのときに peer を`bump`から外すか見直す
+  - **例外は公開パッケージの外部の`dependencies`と`peerDependencies`**: `^`の範囲で書く（`yarn add foo@^1.2.3`）。利用者のインストールが、リリースした版より古い版に重複排除されたり、`react`の版が 1 つ違うだけで peer の条件に合わなくなったりしないため。`.github/renovate.json`の`rangeStrategy: bump`のルールが、`dependencies`の更新のたびに下限を上げる（コミットは`fix(deps)`）。`peerDependencies`は`widen`で、Renovate は下限を上げない。ワークスペース内のパッケージ同士（lerna の`--exact`）、`devDependencies`、private の`storybook`は固定のまま。`scripts/published-ranges.spec.mjs`（`yarn test --project scripts`）がこの書き方の食い違いを落とす
   - 利用者側のサプライチェーン保護（公開からの待ち時間）は利用者の設定でしか効かない。README と`SECURITY.md`で設定を推奨している
   - **`playwright`の版を変えるときは、`test.yml`と`Dockerfile.vr`のイメージタグ（`mcr.microsoft.com/playwright:v<版>-noble`）も同じ版にする**。ブラウザのビルドが版ごとに違い、ずれると`Executable doesn't exist`で落ちる。Renovate は npm の版に連動して 1 つの PR で直し、食い違いは`yarn test --project scripts`が検出する。イメージは digest で固定しない（digest はタグより優先されるので、タグだけ上がると古いブラウザが残る）
-- **GitHub Actions（`uses:`）は、commit の digest で固定し、コメントは完全な版（`# v7.0.1`）にする**。浮動のタグ（`# v7`）だと、Renovate が更新の古さ（`minimumReleaseAge`の 7 日）を測る基準の版がなく、`renovate/stability-days`が永遠に pending になって、更新が自動マージされない。`renovate.json`の`helpers:pinGitHubActionDigestsToSemver`が完全な版を書き、digest で固定していない`uses:`と、コメントが完全な版でない書き方は、`yarn test --project scripts`が検出する。コメントの版が digest のものかは検査しないので、digest を手で変えたら、コメントも合わせる。`v3`の Renovate は digest の更新を出さないので、`v3`は手で更新する
+- **GitHub Actions（`uses:`）は、commit の digest で固定し、コメントは完全な版（`# v7.0.1`）にする**。浮動のタグ（`# v7`）だと、Renovate が更新の古さ（`minimumReleaseAge`の 3 日）を測る基準の版がなく、`renovate/stability-days`が永遠に pending になって、更新が自動マージされない。`renovate.json`の`helpers:pinGitHubActionDigestsToSemver`が完全な版を書き、digest で固定していない`uses:`と、コメントが完全な版でない書き方は、`yarn test --project scripts`が検出する。コメントの版が digest のものかは検査しないので、digest を手で変えたら、コメントも合わせる。`v3`の Renovate は digest の更新を出さないので、`v3`は手で更新する
 - **モノレポ内のパッケージ間に依存を足したら、ARCHITECTURE.md の依存グラフも同じ変更で直す**（`yarn verify:architecture-graph`が CI で食い違いを落とす）。足してよい向きかは ARCHITECTURE.md の「依存の向き」で判断する
 - **追加したら`.github/renovate.json`の`packageRules`を確認する**。そのパッケージが既存の`groupName`グループに入るべきか、新しいグループを作るべきかを判断する
   - `config:recommended`は`group:monorepos`を含むため、**同一 monorepo から公開されるパッケージ群（`@vitest/*`、`@tiptap/*`、`playwright`系など）は設定なしで自動的に束ねられる**。手で書く必要はない
@@ -139,7 +139,7 @@ yarn commit                   # Commitizen（cz）でコミット
 - `yarn add`する前にパッケージの信頼性（ダウンロード数、メンテナンス状況、既知の脆弱性）を確認する
 - `yarn add`する場合はバージョンを固定する（例: `yarn add foo@1.2.3`）
 - lockfile（yarn.lock）の手動編集は禁止
-- **`.yarnrc.yml`の保護設定を無効化しない**: `enableScripts: false`（依存の install/postinstall を実行しない）と`npmMinimalAgeGate: 7d`（publish 後7日未満のパッケージを拒否）はサプライチェーン対策。自社パッケージを publish 直後に取り込むために一時的に外した場合は、`yarn.lock`固定後に**必ず復元してコミットする**
+- **`.yarnrc.yml`の保護設定を無効化しない**: `enableScripts: false`（依存の install/postinstall を実行しない）と`npmMinimalAgeGate: 3d`（publish 後3日未満のパッケージを拒否）はサプライチェーン対策。自社パッケージを publish 直後に取り込むために一時的に外した場合は、`yarn.lock`固定後に**必ず復元してコミットする**
 
 ## スキル
 

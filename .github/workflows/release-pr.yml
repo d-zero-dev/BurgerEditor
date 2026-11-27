@@ -1,0 +1,50 @@
+name: Release PR
+
+# Rules 20-30: open, update or replace the Release PR of each line, as the
+# Release App. A manual run opens one without waiting, and may promote a stage.
+# The schedule runs on the default branch, dev, and covers every line.
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      line:
+        description: Only this line branch (empty for every line)
+        type: string
+        default: ''
+      promote:
+        description: Move the stage of the release
+        type: choice
+        options: [none, beta, rc, stable]
+        default: none
+
+concurrency:
+  group: release-pr
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release-pr:
+    runs-on: ubuntu-latest
+    environment: release-pr
+    steps:
+      - uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        id: app
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-yarn
+      - run: >-
+          yarn release-automation release-pr
+          ${{ github.event_name == 'workflow_dispatch' && '--manual' || '' }}
+          ${{ inputs.line && format('--line {0}', inputs.line) || '' }}
+          ${{ inputs.promote && inputs.promote != 'none' && format('--promote {0}', inputs.promote) || '' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_APP_TOKEN: ${{ steps.app.outputs.token }}
+          RELEASE_APP_SLUG: ${{ vars.RELEASE_APP_SLUG }}
