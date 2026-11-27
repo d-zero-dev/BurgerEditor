@@ -46,7 +46,7 @@
 	"resolutions": {
 		"@burger-editor/mcp-server/zod": "4.6.7",
 		"css-tree": "3.2.1",
-		"nx/undici": "7.30.2",
+		"nx/undici": "8.13.1",
 		"prosemirror-model": "1.25.13",
 		"prosemirror-transform": "1.12.7",
 		"prosemirror-view": "1.43.0"
