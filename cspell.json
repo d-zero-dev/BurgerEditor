@@ -8,6 +8,7 @@
 		// Dependencies
 		"jaco",
 		"jqueryui",
+		"tabler",
 		"unstub",
 
 		// Project specific
