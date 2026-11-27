@@ -1208,6 +1208,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@d-zero/release-automation@npm:0.0.4":
+  version: 0.0.4
+  resolution: "@d-zero/release-automation@npm:0.0.4"
+  dependencies:
+    yaml: "npm:2.9.1"
+  bin:
+    release-automation: dist/cli.js
+  checksum: 10c0/b89d17a8442e3004aa1379ab013262d9c2d3c4871bf3ba0c3d21540c542b4570b54a2156d8b857ca7edf1cfd23f192bdd1f2d461db388c0a4405dc990fc96f74
+  languageName: node
+  linkType: hard
+
 "@d-zero/stylelint-config@npm:5.1.1":
   version: 5.1.1
   resolution: "@d-zero/stylelint-config@npm:5.1.1"
@@ -10400,6 +10411,7 @@ __metadata:
     "@d-zero/eslint-config": "npm:5.1.1"
     "@d-zero/lint-staged-config": "npm:5.1.1"
     "@d-zero/prettier-config": "npm:5.1.1"
+    "@d-zero/release-automation": "npm:0.0.4"
     "@d-zero/stylelint-config": "npm:5.1.1"
     "@d-zero/textlint-config": "npm:5.1.2"
     "@d-zero/tsconfig": "npm:2.0.0"
@@ -12686,7 +12698,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"yaml@npm:^2.9.1":
+"yaml@npm:2.9.1, yaml@npm:^2.9.1":
   version: 2.9.1
   resolution: "yaml@npm:2.9.1"
   bin:

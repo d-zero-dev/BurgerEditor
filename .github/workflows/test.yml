@@ -1,50 +1,65 @@
 name: Test
 
+# The Minimum CI. A pull request into this line must pass the `ci-ok` and
+# `lines-check` jobs below (the ruleset requires them). `merge_group` is here
+# because `release-automation lines-check` requires every line to run the
+# Minimum CI on it, though this line has no merge queue. `sync/**` is the
+# branch that brings `main` back to `dev` after a release of the current line.
+# The branches are defined in .github/release-lines.json, and
+# `release-automation lines-check` fails when they differ.
 on:
-  push:
-    branches:
-      - v3
   pull_request:
-    branches:
-      - v3
+    branches: [dev, v3, main]
+  push:
+    branches: ['sync/**']
+  merge_group:
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  checks:
+    uses: ./.github/workflows/checks.yml
+
+  commit-check:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Setup Node.js
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          node-version: 24
-
-      - name: Enable Corepack and setup Yarn v4
-        run: |
-          corepack enable
-          corepack prepare $(node -p "require('./package.json').packageManager") --activate
-          yarn --version
-
-      - name: Cache dependencies
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          path: .yarn/cache
-          key: yarn-cache-${{ hashFiles('yarn.lock') }}
-          restore-keys: yarn-cache-
+          node-version-file: package.json
+      - run: npm install --global corepack@0.36.0
+      - run: corepack enable
+      - run: yarn install --immutable
+      - run: yarn release-automation commit-check --base ${{ github.base_ref }}
 
-      - name: Install dependencies
-        run: yarn install --immutable
+  lines-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+      - run: npm install --global corepack@0.36.0
+      - run: corepack enable
+      - run: yarn install --immutable
+      - run: yarn release-automation lines-check
 
-      - name: Build
-        run: yarn build
-
-      - name: Lint
-        run: yarn lint
-
-      - name: Test
-        run: yarn test
+  # The checks the ruleset requires: `ci-ok` (and `lines-check`). Requiring this
+  # job instead of the jobs it needs means a job can be added, renamed or
+  # removed here without editing the ruleset. A new job has to be listed in
+  # `needs` below, though: one that is not listed is not required by anything.
+  # `if: always()` makes it report even when a job it needs failed or was
+  # skipped; `commit-check` is skipped on `merge_group` and `push`, which is not
+  # a failure.
+  ci-ok:
+    if: always()
+    needs: [checks, commit-check]
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = false

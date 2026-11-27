@@ -1,0 +1,6 @@
+{
+	"lines": [
+		{ "branch": "dev", "role": "current" },
+		{ "branch": "v3", "role": "previous" }
+	]
+}

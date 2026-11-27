@@ -1,0 +1,50 @@
+name: Checks
+
+# The checks of the Minimum CI (test.yml) and of the Full CI (full-ci.yml). The
+# two run the same suite on purpose: Full CI is what a Release PR and the
+# Nightly run, and nothing here is narrowed for the Minimum CI. A check that
+# only the Full CI needs goes in a job of full-ci.yml, not here.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+
+      - name: Enable Corepack and setup Yarn v4
+        run: |
+          npm install --global corepack@0.36.0
+          corepack enable
+          corepack prepare $(node -p "require('./package.json').packageManager") --activate
+          yarn --version
+
+      - name: Cache dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .yarn/cache
+          key: yarn-cache-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-cache-
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Test
+        run: yarn test
