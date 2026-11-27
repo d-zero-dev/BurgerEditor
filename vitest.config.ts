@@ -40,14 +40,6 @@ export default defineConfig({
 					...jsdomConfig,
 				},
 			},
-			{
-				// publish.yml の dist-tag の判定（scripts/publish-dist-tag.spec.mjs）。Node のみ
-				test: {
-					name: 'scripts',
-					include: ['scripts/**/*.spec.mjs'],
-					environment: 'node',
-				},
-			},
 		],
 	},
 });

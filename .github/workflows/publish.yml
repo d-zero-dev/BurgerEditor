@@ -1,13 +1,27 @@
 name: Publish
 
+# Rule 65: the merge of a Release PR into a publish branch publishes it. The
+# command checks the Release PR, tags the merge commit as the Publish App,
+# publishes with OIDC Trusted Publishing, verifies the registry, and for the
+# current line brings main back to dev. A push that is not the merge of a
+# Release PR publishes nothing. Tag pushes start nothing.
+#
+# Nothing runs `npm dist-tag` after the publish, on purpose. The only tag a
+# version gets is the one `lerna publish --dist-tag` sets while publishing, so
+# a prerelease never moves `latest`: the `latest` of a package that has no
+# stable release (the ones only v4 publishes) stays on the version it had,
+# until the first stable release takes it, and an install without a version
+# gets that old version (`@alpha` gets the newest; SECURITY.md and the READMEs
+# say so). A first publish of a new package is the exception: npm gives
+# `latest` to the first version ever published, whatever the tag. Moving
+# `latest` here would need "Allow npm dist-tag" in the Trusted Publisher
+# settings of every package, which can only be set on npmjs.com, one package
+# at a time (`npm trust` has no flag for it), and an npm of 11.21.0 or later,
+# which is the only way for `npm dist-tag` to authenticate through Trusted
+# Publishing. To move `latest` by hand, see the `npm-publish` skill.
 on:
   push:
-    tags:
-      - "v*"
-  # A run started by hand publishes whatever the lerna.json of the chosen
-  # branch says, with no tag behind it: start it from `v3`, after the release
-  # commit is pushed, to publish what a failed tag run left out.
-  workflow_dispatch:
+    branches: [main, v3]
 
 concurrency:
   group: publish
@@ -16,103 +30,34 @@ concurrency:
 permissions:
   contents: read
   id-token: write
+  checks: read
+  issues: write
+  pull-requests: read
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: release
     steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        id: publish-app
+        with:
+          client-id: ${{ vars.PUBLISH_APP_CLIENT_ID }}
+          private-key: ${{ secrets.PUBLISH_APP_PRIVATE_KEY }}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - name: Enable Corepack
-        run: corepack enable
-      - name: Setup Node.js
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
-          registry-url: "https://registry.npmjs.org"
-      # Runs before the install and the build: a version this line must not
-      # publish should stop the job before anything else is spent on it. It
-      # needs only node and npm.
-      - name: Determine dist-tag
-        id: dist-tag
-        run: |
-          VERSION=$(node -e "console.log(require('./lerna.json').version)")
-          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::'$VERSION' in lerna.json is not a version"
-            exit 1
-          fi
-          MAJOR="${VERSION%%.*}"
-          # This branch is the 3.x line, a maintenance line: it publishes
-          # stable 3.x releases only. A prerelease dist-tag (alpha, beta, rc)
-          # belongs to the current line, and a prerelease from here would move
-          # that tag. A version of another major would take `latest` from the
-          # line it belongs to. The 3 below is the major of this line: change
-          # it, and the 3.x in the messages, when the line ends or rotates
-          # (the `major-rotation` skill on the dev branch lists the files).
-          if [[ "${VERSION%%+*}" == *-* ]]; then
-            echo "::error::$VERSION is a prerelease; the 3.x line publishes stable releases only"
-            exit 1
-          fi
-          if [[ "$MAJOR" != "3" ]]; then
-            echo "::error::$VERSION is not a 3.x version; this branch publishes the 3.x line only"
-            exit 1
-          fi
-          # The major on `latest` tells whether the 3.x line is still the
-          # current one. @burger-editor/client is the package both lines
-          # publish, so it stands for all of them: if a publish of the next
-          # major stopped halfway, the packages that did not get there keep a
-          # `latest` of 3.x, and a release from this line puts all of them
-          # under `v3`, which is the safe direction.
-          LATEST_VERSION="$(npm view @burger-editor/client@latest version)" || {
-            echo "::error::Could not read the version of the latest release of @burger-editor/client"
-            exit 1
-          }
-          LATEST_MAJOR="${LATEST_VERSION%%.*}"
-          if ! [[ "$LATEST_MAJOR" =~ ^[0-9]+$ ]]; then
-            echo "::error::Could not read the major version of the latest release (got '$LATEST_VERSION')"
-            exit 1
-          fi
-          # A prerelease on `latest` does not tell which line is current, and
-          # an older major on `latest` would be moved forward to this line.
-          if [[ "$LATEST_VERSION" == *-* ]]; then
-            echo "::error::The latest release ($LATEST_VERSION) is a prerelease; cannot tell which line is current"
-            exit 1
-          fi
-          if [[ "$LATEST_MAJOR" -lt "$MAJOR" ]]; then
-            echo "::error::The latest release ($LATEST_VERSION) is of an older major than 3.x; moving latest forward is not the job of this workflow"
-            exit 1
-          fi
-          if [[ "$LATEST_MAJOR" -gt "$MAJOR" ]]; then
-            # A newer major is on `latest`: publish under `v<major>` so this
-            # release does not take `latest` away from it.
-            echo "tag=v${MAJOR}" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=latest" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Install dependencies
-        run: yarn install --immutable
-      - name: Build
-        run: yarn build
-      - name: Publish
-        # The tag goes through the environment, not into the command line.
-        # An empty --dist-tag is read by lerna as "not given", which publishes
-        # under `latest`: the guard below stops that, so a renamed step id
-        # cannot take `latest` away from a newer major.
-        #
-        # `from-package` (vs `from-git`): publishes only packages whose
-        # current package.json version is NOT yet on the npm registry.
-        # `from-git` re-attempts every package at the tag, which means a
-        # partial-publish failure (e.g. sigstore transparency log 409 on
-        # one package mid-batch) cannot be recovered by re-running: the
-        # already-published packages re-trigger the 409 and abort the
-        # whole job before the unpublished ones get their turn.
+          node-version-file: package.json
+          registry-url: https://registry.npmjs.org
+      - run: npm install --global corepack@0.36.0
+      - run: corepack enable
+      - run: yarn install --immutable
+      - run: yarn build
+      - run: yarn release-automation publish
         env:
-          DIST_TAG: ${{ steps.dist-tag.outputs.tag }}
-        run: |
-          if [[ -z "$DIST_TAG" ]]; then
-            echo "::error::The dist-tag step gave no tag"
-            exit 1
-          fi
-          npx lerna publish from-package --dist-tag "$DIST_TAG" --yes
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_APP_SLUG: ${{ vars.RELEASE_APP_SLUG }}
+          PUBLISH_APP_TOKEN: ${{ steps.publish-app.outputs.token }}
+          PUBLISH_APP_SLUG: ${{ vars.PUBLISH_APP_SLUG }}

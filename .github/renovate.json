@@ -1,0 +1,266 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"configMigration": true,
+	"extends": [
+		"config:recommended",
+		"docker:pinDigests",
+		"helpers:pinGitHubActionDigestsToSemver",
+		":pinDevDependencies",
+		":semanticCommitTypeAll(chore)"
+	],
+	"baseBranchPatterns": ["dev", "v3"],
+	"timezone": "Asia/Tokyo",
+	"rangeStrategy": "pin",
+	"minimumReleaseAge": "3 days",
+	"internalChecksFilter": "strict",
+	"prConcurrentLimit": 0,
+	"prHourlyLimit": 0,
+	"platformAutomerge": true,
+	"osvVulnerabilityAlerts": true,
+	"vulnerabilityAlerts": {
+		"enabled": true,
+		"minimumReleaseAge": null,
+		"labels": ["security"]
+	},
+	"labels": ["Dependencies", "Renovate"],
+	"lockFileMaintenance": {
+		"enabled": true,
+		"automerge": true,
+		"schedule": ["* 0-4 * * *"]
+	},
+	"customManagers": [
+		{
+			"description": "CI and the local VR container run the Playwright image whose browsers match the installed playwright package. Reading the image tag as a version of the npm package puts both in one pull request, and the minimumReleaseAge is then aged by the npm release date (the registry of the image publishes none)",
+			"customType": "regex",
+			"managerFilePatterns": [
+				"/^\\.github/workflows/checks\\.yml$/",
+				"/^Dockerfile\\.vr$/"
+			],
+			"matchStrings": [
+				"mcr\\.microsoft\\.com/playwright:v(?<currentValue>\\d+\\.\\d+\\.\\d+)-noble"
+			],
+			"depNameTemplate": "playwright",
+			"datasourceTemplate": "npm",
+			"versioningTemplate": "npm"
+		},
+		{
+			"description": "Node 25 and later do not ship Corepack, so the setup-yarn action and Dockerfile.vr install it from npm at a pinned version. Reading that version as an update of the npm package lets Renovate raise the pin like any other dependency",
+			"customType": "regex",
+			"managerFilePatterns": [
+				"/^\\.github/actions/setup-yarn/action\\.yml$/",
+				"/^\\.github/workflows/[^/]+\\.yml$/",
+				"/^Dockerfile\\.vr$/"
+			],
+			"matchStrings": [
+				"npm install (?:-g|--global) corepack@(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+			],
+			"depNameTemplate": "corepack",
+			"datasourceTemplate": "npm",
+			"versioningTemplate": "npm"
+		}
+	],
+	"packageRules": [
+		{
+			"matchDepTypes": ["optionalDependencies"],
+			"addLabels": ["Dependencies: Optional"]
+		},
+		{ "matchDepTypes": ["devDependencies"], "addLabels": ["Dependencies: Development"] },
+		{ "matchDepTypes": ["dependencies"], "addLabels": ["Dependencies: Production"] },
+		{
+			"description": "Rule 1: every update automerges once the required CI passes, 0.x and majors included",
+			"matchUpdateTypes": ["major", "minor", "patch", "pin", "digest"],
+			"automerge": true
+		},
+		{
+			"description": "Rule 11: pinGitHubActionDigestsToSemver raises each release as a version update; the digest update of the same commit carries no release date and never passes minimumReleaseAge",
+			"matchManagers": ["github-actions"],
+			"matchUpdateTypes": ["digest"],
+			"enabled": false
+		},
+		{
+			"description": "Rule 4: lock file maintenance has no release dates to wait on (the package manager's age gate holds new versions back) and is never held back by other PRs",
+			"matchUpdateTypes": ["lockFileMaintenance"],
+			"minimumReleaseAge": null,
+			"prConcurrentLimit": 0,
+			"prHourlyLimit": 0
+		},
+		{
+			"description": "Rule 7: published packages raise the lower bound of their dependency ranges. Packages of this workspace stay exact (lerna --exact). Only `dev` publishes new ranges; the previous line keeps exact versions",
+			"matchBaseBranches": ["dev"],
+			"matchFileNames": ["packages/**/package.json"],
+			"matchDepTypes": ["dependencies"],
+			"matchPackageNames": ["!/^@burger-editor\\//"],
+			"rangeStrategy": "bump",
+			"semanticCommitType": "fix",
+			"semanticCommitScope": "deps"
+		},
+		{
+			"description": "Rule 8: a peer range keeps its lower bound",
+			"matchDepTypes": ["peerDependencies"],
+			"rangeStrategy": "widen"
+		},
+		{
+			"description": "engines states the Node.js versions a published package supports; it is raised by hand, not by Renovate (the same as a peer range, rule 8)",
+			"matchDepTypes": ["engines"],
+			"enabled": false
+		},
+		{
+			"description": "resolutions keep their ranges",
+			"matchDepTypes": ["resolutions"],
+			"rangeStrategy": "auto"
+		},
+		{
+			"description": "The storybook package is private, so its dependencies stay exact like devDependencies and do not reach users",
+			"matchFileNames": ["packages/@burger-editor/storybook/package.json"],
+			"rangeStrategy": "pin",
+			"semanticCommitType": "chore",
+			"semanticCommitScope": null
+		},
+		{
+			"description": "hono and zod move together via @hono/zod-validator peer deps",
+			"groupName": "hono-zod",
+			"matchPackageNames": ["hono", "/^@hono\\//", "zod"]
+		},
+		{
+			"description": "markuplint loads the parsers and specs of its own release, and a parser of a newer major crashes an older CLI while it reports, so the CLI and the @markuplint packages must be raised together",
+			"groupName": "markuplint",
+			"matchPackageNames": ["markuplint", "/^@markuplint\\//"]
+		},
+		{
+			"groupName": "react",
+			"matchPackageNames": ["react", "react-dom", "@types/react", "@types/react-dom"]
+		},
+		{
+			"description": "vite-plugin-dts follows vite's peer dependency range, keep aligned with vite bumps",
+			"groupName": "vite",
+			"matchPackageNames": ["vite", "vite-plugin-dts"]
+		},
+		{
+			"description": "React Compiler's babel plugin, its two bundler integrations (@rolldown/plugin-babel for client, @rollup/plugin-babel for blocks), @vitejs/plugin-react (source of reactCompilerPreset), and their shared babel/typescript-parsing peers must build and type-check together",
+			"groupName": "react-compiler",
+			"matchPackageNames": [
+				"babel-plugin-react-compiler",
+				"@rolldown/plugin-babel",
+				"@rollup/plugin-babel",
+				"@vitejs/plugin-react",
+				"@babel/core",
+				"@babel/preset-typescript",
+				"@types/babel__core"
+			]
+		},
+		{
+			"groupName": "typescript",
+			"matchPackageNames": ["typescript", "@d-zero/tsconfig"]
+		},
+		{
+			"groupName": "@d-zero configs",
+			"matchPackageNames": [
+				"@d-zero/commitlint-config",
+				"@d-zero/cspell-config",
+				"@d-zero/eslint-config",
+				"@d-zero/lint-staged-config",
+				"@d-zero/markuplint-config",
+				"@d-zero/prettier-config",
+				"@d-zero/stylelint-config",
+				"@d-zero/textlint-config"
+			]
+		},
+		{
+			"groupName": "@d-zero runtime",
+			"matchPackageNames": ["@d-zero/roar", "@d-zero/shared"]
+		},
+		{
+			"groupName": "debug",
+			"matchPackageNames": ["debug", "@types/debug"]
+		},
+		{
+			"groupName": "jsdom",
+			"matchPackageNames": ["jsdom", "@types/jsdom"]
+		},
+		{
+			"groupName": "use-sync-external-store",
+			"matchPackageNames": ["use-sync-external-store", "@types/use-sync-external-store"]
+		},
+		{
+			"groupName": "semver",
+			"matchPackageNames": ["semver", "@types/semver"]
+		},
+		{
+			"groupName": "turndown",
+			"matchPackageNames": ["turndown", "@types/turndown"]
+		},
+		{
+			"description": "@types/node is DefinitelyTyped, keep aligned with the volta.node/setup-node bump",
+			"groupName": "node",
+			"matchPackageNames": ["node", "@types/node"]
+		},
+		{
+			"groupName": "ws",
+			"matchPackageNames": ["ws", "@types/ws"]
+		},
+		{
+			"description": "The Playwright image tag follows the npm package (see customManagers), so no update of the image itself is raised, and its digest is not pinned: a digest wins over the tag when both are present, so a digest left behind by the tag bump would run the previous browsers against the new playwright package. The registry of the image publishes no release timestamp either, which would keep renovate/stability-days pending forever",
+			"matchDatasources": ["docker"],
+			"matchPackageNames": ["mcr.microsoft.com/playwright"],
+			"enabled": false
+		},
+		{
+			"description": "Rule 57: the release automation changes how this repository publishes; a person reviews every update",
+			"matchPackageNames": ["@d-zero/release-automation"],
+			"automerge": false,
+			"addLabels": ["manual-review"]
+		},
+		{
+			"description": "Rule 57: no test runs the `open` call that opens the browser (local/src/commands/server.ts); a person reviews a major update until a test does (#1233)",
+			"matchPackageNames": ["open"],
+			"matchUpdateTypes": ["major"],
+			"automerge": false,
+			"addLabels": ["manual-review"]
+		},
+		{
+			"description": "Rule 57: no test runs the zValidator of the file API (json and form, local/src/routes/file-api.ts); a person reviews a major update until a test does (#1234)",
+			"matchPackageNames": ["@hono/zod-validator"],
+			"matchUpdateTypes": ["major"],
+			"automerge": false,
+			"addLabels": ["manual-review"]
+		},
+		{
+			"description": "Rule 57: no test sends MCP requests over StdioServerTransport (mcp-server/src/index.ts); a person reviews a major update until a test does (#1235)",
+			"matchPackageNames": ["@modelcontextprotocol/sdk"],
+			"matchUpdateTypes": ["major"],
+			"automerge": false,
+			"addLabels": ["manual-review"]
+		},
+		{
+			"description": "Rule 57: no test renders the video, audio, document and PDF icons of Thumbnail (client/src/components/thumbnail.tsx); a person reviews a major update until a test does (#1237)",
+			"matchPackageNames": ["@tabler/icons-react"],
+			"matchUpdateTypes": ["major"],
+			"automerge": false,
+			"addLabels": ["manual-review"]
+		},
+		{
+			"description": "Rule 57: no test parses or renders an <img> with the Image extension (custom-element/src/tiptap-extentions/image.ts); a person reviews a major update until a test does (#1238)",
+			"matchPackageNames": ["@tiptap/extension-image"],
+			"matchUpdateTypes": ["major"],
+			"automerge": false,
+			"addLabels": ["manual-review"]
+		},
+		{
+			"description": "release-automation: previous lines take vulnerability fixes and lock file maintenance only",
+			"matchBaseBranches": ["v3"],
+			"matchUpdateTypes": [
+				"major",
+				"minor",
+				"patch",
+				"pin",
+				"pinDigest",
+				"digest",
+				"lockfileUpdate",
+				"rollback",
+				"bump",
+				"replacement"
+			],
+			"enabled": false
+		}
+	]
+}

@@ -1,1 +1,7 @@
+# Prevent direct commits to a branch that only takes merged pull requests. The
+# branches are those of .github/release-lines.json; `release-automation guard`
+# reads them, so the hook has no list of its own to go stale. A detached HEAD
+# (during a rebase, for example) has no branch name and passes.
+yarn release-automation guard
+
 lint-staged
