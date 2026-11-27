@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { compareVersions } from './release-reminder/report.mjs';
+import { compareVersions } from './compare-versions.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const scope = path.join(root, 'packages/@burger-editor');

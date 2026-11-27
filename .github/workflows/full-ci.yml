@@ -1,0 +1,27 @@
+name: Full CI
+
+# Rules 31-34: the checks that run before a release and every night. A Release PR
+# (the `release` label) and the Nightly (workflow_dispatch) run them; any other
+# pull request skips `full`, and `full-ci-ok` still reports a success. The suite
+# is the same as the Minimum CI (checks.yml).
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main, v3]
+    types: [opened, synchronize, reopened, labeled]
+
+permissions:
+  contents: read
+
+jobs:
+  full:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'release')
+    uses: ./.github/workflows/checks.yml
+
+  # The check the Release PR requires: `full-ci-ok`.
+  full-ci-ok:
+    if: always()
+    needs: [full]
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = false
