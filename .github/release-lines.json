@@ -1,6 +1,6 @@
 {
 	"lines": [
-		{ "branch": "dev", "role": "current" },
-		{ "branch": "v3", "role": "previous" }
+		{ "branch": "dev", "role": "current", "distTag": "latest" },
+		{ "branch": "v3", "role": "previous", "distTag": "v3-legacy" }
 	]
 }
