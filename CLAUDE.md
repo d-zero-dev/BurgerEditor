@@ -32,7 +32,7 @@
 
 - **正式版だけを公開する**。v3 の Release PR は正式版だけを提案する（プレリリース（`-alpha`・`-beta`・`-rc`）は v4 の dist-tag を動かすため）
 - リリースは Release PR で行う（`dev`の`npm-publish`スキルの「v3 のリリース」）。`v3`向けの Release PR をマージすると、`publish.yml`が発火して、npm へ publish し、版と dist-tag を確かめる。タグは Publish App が作る。公開は`lerna publish from-package`なので、部分的に失敗しても、同じジョブの再実行（Actions の「Re-run」）で、まだ公開されていないパッケージだけが公開される
-- dist-tag は`release-automation publish`が決める。v4 の正式版が出るまでは`latest`、出た後は`v3`（`v3`タグは、v4 の正式版の後の最初の 3.x のリリースで付く）。`latest`を古いメジャーに動かす公開は、公開の前にエラーで止まる
+- dist-tag は`.github/release-lines.json`の`distTag`が決める（`v3`は`v3-legacy`。`latest`は v4 が使う）。v4 の正式版の後は`distTag`を外し、`release-automation publish`が決める`v3`になる。`latest`を古いメジャーに動かす公開は、公開の前にエラーで止まる
 - **コミットの`BREAKING CHANGE`や`!`は書かない**: Release PR は conventional commits から版を決めるので、それがあるとメジャーを超える（4.0.0）。PR の`commit-check`が、そのコミットを拒否する
 
 ## パッケージ構成
