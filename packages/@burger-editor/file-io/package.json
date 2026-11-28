@@ -38,6 +38,6 @@
 		"@d-zero/shared": "0.23.2",
 		"@types/jsdom": "28.0.3",
 		"@types/node": "26.6.10",
-		"vitest": "5.1.1"
+		"vitest": "5.1.2"
 	}
 }
