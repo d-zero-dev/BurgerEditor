@@ -48,7 +48,7 @@
 		"@burger-editor/custom-element": "4.0.0-alpha.80",
 		"@burger-editor/migrator": "4.0.0-alpha.80",
 		"@burger-editor/utils": "4.0.0-alpha.80",
-		"@tabler/icons-react": "^3.52.0",
+		"@tabler/icons-react": "^3.53.0",
 		"react-error-boundary": "^6.1.6",
 		"use-sync-external-store": "^1.7.0"
 	},
