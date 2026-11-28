@@ -8888,10 +8888,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"commander@npm:15.0.0, commander@npm:^15.0.0":
-  version: 15.0.0
-  resolution: "commander@npm:15.0.0"
-  checksum: 10c0/539229c171914ea1ccd45ee5f10d924289a12a684ea3a7a44147abe54003c35ed6de9ae4ad198d88c29fdf403dca0428451a388234e6dc01b6faa978fb207206
+"commander@npm:15.1.0":
+  version: 15.1.0
+  resolution: "commander@npm:15.1.0"
+  checksum: 10c0/dd1013291d3e8779c726313616fa23174abc962182d0894ac73017c55d8b1ffe4a72401d91a1173974050536576896dc5279db07d37f929dbad469a16a12c54e
   languageName: node
   linkType: hard
 
@@ -8899,6 +8899,13 @@ __metadata:
   version: 14.0.3
   resolution: "commander@npm:14.0.3"
   checksum: 10c0/755652564bbf56ff2ff083313912b326450d3f8d8c85f4b71416539c9a05c3c67dbd206821ca72635bf6b160e2afdefcb458e86b317827d5cb333b69ce7f1a24
+  languageName: node
+  linkType: hard
+
+"commander@npm:^15.0.0":
+  version: 15.0.0
+  resolution: "commander@npm:15.0.0"
+  checksum: 10c0/539229c171914ea1ccd45ee5f10d924289a12a684ea3a7a44147abe54003c35ed6de9ae4ad198d88c29fdf403dca0428451a388234e6dc01b6faa978fb207206
   languageName: node
   linkType: hard
 
@@ -17152,9 +17159,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"renovate@npm:44.262.1":
-  version: 44.262.1
-  resolution: "renovate@npm:44.262.1"
+"renovate@npm:44.262.2":
+  version: 44.262.2
+  resolution: "renovate@npm:44.262.2"
   dependencies:
     "@aws-sdk/client-codecommit": "npm:3.1139.0"
     "@aws-sdk/client-ec2": "npm:3.1139.0"
@@ -17207,7 +17214,7 @@ __metadata:
     cacache: "npm:20.0.4"
     changelog-filename-regex: "npm:2.0.1"
     clean-git-ref: "npm:2.0.1"
-    commander: "npm:15.0.0"
+    commander: "npm:15.1.0"
     common-tags: "npm:1.8.2"
     croner: "npm:10.0.1"
     cronstrue: "npm:3.41.0"
@@ -17288,7 +17295,7 @@ __metadata:
   bin:
     renovate: dist/renovate.js
     renovate-config-validator: dist/config-validator.js
-  checksum: 10c0/cc9b58cdc3803bf6d7f944e99251a83e99b45c8033c10135532d058ba4013198779d711124661f76b7729f419c1443838d8c825997aa5b4d15c5818fffae69ce
+  checksum: 10c0/f3af7db7b1c71ab150767c56a1d4e7e1297f0981ad719653e5a265c487f12c560fffdfff8b8caef3d5d35a5b2206a3ce4124475079501fa603931ee2cd344690
   languageName: node
   linkType: hard
 
@@ -17738,7 +17745,7 @@ __metadata:
     pixelmatch: "npm:8.0.0"
     playwright: "npm:1.65.1"
     pngjs: "npm:7.0.0"
-    renovate: "npm:44.262.1"
+    renovate: "npm:44.262.2"
     typescript: "npm:5.9.3"
     vitest: "npm:5.1.1"
   languageName: unknown
