@@ -62,8 +62,8 @@ export default defineConfig({
 		// なくなるため、定義のずれを設定読み込み時に検出する
 		projects: assertProjectsGrouped([
 			{
-				// リリースラインの定義と各設定ファイルの整合、未リリース通知の判定
-				// （scripts/release-lines / scripts/release-reminder）。Node のみ
+				// 公開パッケージの依存の範囲の書き方の検査。リリースラインと各設定ファイルの整合は
+				// release-automation の lines-check が検査する（scripts/published-ranges.spec.mjs）。Node のみ
 				test: {
 					name: 'scripts',
 					include: ['scripts/**/*.spec.mjs'],

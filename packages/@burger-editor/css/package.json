@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/css",
-	"version": "4.0.0-alpha.78",
+	"version": "4.0.0-alpha.79",
 	"description": "Stylesheet for BurgerEditor Blocks",
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)",
@@ -30,9 +30,9 @@
 		"build": "node build.js"
 	},
 	"devDependencies": {
-		"@burger-editor/blocks": "4.0.0-alpha.78",
-		"glob": "14.0.4",
-		"postcss": "8.5.32",
-		"vitest": "4.1.12"
+		"@burger-editor/blocks": "4.0.0-alpha.79",
+		"glob": "14.0.6",
+		"postcss": "8.5.33",
+		"vitest": "5.1.1"
 	}
 }

@@ -1,0 +1,27 @@
+name: Verify Release PR
+
+# Rule 63: a pull request into a publish branch must be a Release PR the
+# Release App generated. pull_request_target runs the checks of the target
+# branch and checks out none of the pull request's code. Required check on
+# `main` and on the previous lines: release-pr-verified.
+on:
+  pull_request_target:
+    branches: [main, v3]
+    types: [opened, synchronize, reopened, labeled, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  release-pr-verified:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-yarn
+      - run: yarn release-automation verify-release-pr --pr ${{ github.event.pull_request.number }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_APP_SLUG: ${{ vars.RELEASE_APP_SLUG }}

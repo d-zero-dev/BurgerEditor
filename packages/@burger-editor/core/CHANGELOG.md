@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.79](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.78...v4.0.0-alpha.79) (2026-11-28)
+
+**Note:** Version bump only for package @burger-editor/core
+
+
+
+
+
 # [4.0.0-alpha.78](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.77...v4.0.0-alpha.78) (2026-11-17)
 
 * feat(core)!: let items normalize their data before every write ([2e51b9b](https://github.com/d-zero-dev/BurgerEditor/commit/2e51b9b3a071564cb382a759d875dbd10507019b))

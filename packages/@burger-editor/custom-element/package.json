@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/custom-element",
-	"version": "4.0.0-alpha.78",
+	"version": "4.0.0-alpha.79",
 	"description": "BurgerEditor Custom Element",
 	"author": "D-ZERO",
 	"license": "MIT",
@@ -28,19 +28,19 @@
 		"dev": "rollup -c -w"
 	},
 	"dependencies": {
-		"@burger-editor/utils": "4.0.0-alpha.78",
-		"@tabler/icons": "^3.51.0",
-		"@tiptap/core": "^3.31.4",
-		"@tiptap/extension-image": "^3.31.4",
-		"@tiptap/extension-paragraph": "^3.31.4",
-		"@tiptap/extension-subscript": "^3.31.4",
-		"@tiptap/extension-superscript": "^3.31.4",
-		"@tiptap/extension-table": "^3.31.4",
-		"@tiptap/pm": "^3.31.4",
-		"@tiptap/starter-kit": "^3.31.4"
+		"@burger-editor/utils": "4.0.0-alpha.79",
+		"@tabler/icons": "^3.52.0",
+		"@tiptap/core": "^3.35.0",
+		"@tiptap/extension-image": "^3.35.0",
+		"@tiptap/extension-paragraph": "^3.35.0",
+		"@tiptap/extension-subscript": "^3.35.0",
+		"@tiptap/extension-superscript": "^3.35.0",
+		"@tiptap/extension-table": "^3.35.0",
+		"@tiptap/pm": "^3.35.0",
+		"@tiptap/starter-kit": "^3.35.0"
 	},
 	"devDependencies": {
-		"rollup": "4.64.12",
+		"rollup": "4.68.8",
 		"rollup-plugin-dts": "6.5.1",
 		"rollup-plugin-esbuild": "6.2.1",
 		"rollup-plugin-string": "3.0.0"

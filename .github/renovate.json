@@ -4,34 +4,36 @@
 	"extends": [
 		"config:recommended",
 		"docker:pinDigests",
-		"helpers:pinGitHubActionDigests",
+		"helpers:pinGitHubActionDigestsToSemver",
 		":pinDevDependencies",
 		":semanticCommitTypeAll(chore)"
 	],
 	"baseBranchPatterns": ["dev", "v3"],
 	"timezone": "Asia/Tokyo",
 	"rangeStrategy": "pin",
-	"minimumReleaseAge": "7 days",
+	"minimumReleaseAge": "3 days",
 	"internalChecksFilter": "strict",
+	"prConcurrentLimit": 0,
+	"prHourlyLimit": 0,
+	"platformAutomerge": true,
 	"osvVulnerabilityAlerts": true,
 	"vulnerabilityAlerts": {
 		"enabled": true,
-		"minimumReleaseAge": null
+		"minimumReleaseAge": null,
+		"labels": ["security"]
 	},
-	"autoApprove": true,
 	"labels": ["Dependencies", "Renovate"],
 	"lockFileMaintenance": {
 		"enabled": true,
 		"automerge": true,
-		"minimumReleaseAge": null,
-		"schedule": ["* 0-5 * * 1"]
+		"schedule": ["* 0-4 * * *"]
 	},
 	"customManagers": [
 		{
-			"description": "CI and the local VR container run the Playwright image whose browsers match the installed playwright package. Reading the image tag as a version of the npm package puts both in one pull request, and the 7-day minimumReleaseAge is then aged by the npm release date (the registry of the image publishes none)",
+			"description": "CI and the local VR container run the Playwright image whose browsers match the installed playwright package. Reading the image tag as a version of the npm package puts both in one pull request, and the minimumReleaseAge is then aged by the npm release date (the registry of the image publishes none)",
 			"customType": "regex",
 			"managerFilePatterns": [
-				"/^\\.github/workflows/test\\.yml$/",
+				"/^\\.github/workflows/checks\\.yml$/",
 				"/^Dockerfile\\.vr$/"
 			],
 			"matchStrings": [
@@ -40,78 +42,89 @@
 			"depNameTemplate": "playwright",
 			"datasourceTemplate": "npm",
 			"versioningTemplate": "npm"
+		},
+		{
+			"description": "Node 25 and later do not ship Corepack, so the setup-yarn action and Dockerfile.vr install it from npm at a pinned version. Reading that version as an update of the npm package lets Renovate raise the pin like any other dependency",
+			"customType": "regex",
+			"managerFilePatterns": [
+				"/^\\.github/actions/setup-yarn/action\\.yml$/",
+				"/^\\.github/workflows/[^/]+\\.yml$/",
+				"/^Dockerfile\\.vr$/"
+			],
+			"matchStrings": [
+				"npm install (?:-g|--global) corepack@(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+			],
+			"depNameTemplate": "corepack",
+			"datasourceTemplate": "npm",
+			"versioningTemplate": "npm"
 		}
 	],
 	"packageRules": [
 		{
-			"description": "Lock file maintenance delegates resolution to the package manager, so its updates carry no release timestamp; under Renovate 42's default minimumReleaseAgeBehaviour=timestamp-required, the repository-wide minimumReleaseAge keeps renovate/stability-days pending forever and the PR never automerges. The cooldown for yarn.lock is enforced by npmMinimalAgeGate in .yarnrc.yml instead (https://docs.renovatebot.com/key-concepts/minimum-release-age/#lockfilemaintenance-updates)",
-			"matchUpdateTypes": ["lockFileMaintenance"],
-			"minimumReleaseAge": null
+			"matchDepTypes": ["optionalDependencies"],
+			"addLabels": ["Dependencies: Optional"]
+		},
+		{ "matchDepTypes": ["devDependencies"], "addLabels": ["Dependencies: Development"] },
+		{ "matchDepTypes": ["dependencies"], "addLabels": ["Dependencies: Production"] },
+		{
+			"description": "Rule 1: every update automerges once the required CI passes, 0.x and majors included",
+			"matchUpdateTypes": ["major", "minor", "patch", "pin", "digest"],
+			"automerge": true
 		},
 		{
-			"description": "Exempt lock file maintenance from the repository-wide PR limits. Major updates waiting for review keep the concurrent limit full, which would hold back lock file maintenance; it is the only update that refreshes transitive dependencies, because the vulnerability pull requests of Renovate cover direct dependencies only",
+			"description": "Rule 11: pinGitHubActionDigestsToSemver raises each release as a version update; the digest update of the same commit carries no release date and never passes minimumReleaseAge",
+			"matchManagers": ["github-actions"],
+			"matchUpdateTypes": ["digest"],
+			"enabled": false
+		},
+		{
+			"description": "Rule 4: lock file maintenance has no release dates to wait on (the package manager's age gate holds new versions back) and is never held back by other PRs",
 			"matchUpdateTypes": ["lockFileMaintenance"],
+			"minimumReleaseAge": null,
 			"prConcurrentLimit": 0,
 			"prHourlyLimit": 0
 		},
 		{
-			"matchDepTypes": ["optionalDependencies"],
-			"addLabels": ["Dependencies: Optional"]
-		},
-		{
-			"matchDepTypes": ["devDependencies"],
-			"addLabels": ["Dependencies: Development"]
-		},
-		{
+			"description": "Rule 7: published packages raise the lower bound of their dependency ranges. Packages of this workspace stay exact (lerna --exact). Only `dev` publishes new ranges; the previous line keeps exact versions",
+			"matchBaseBranches": ["dev"],
+			"matchFileNames": ["packages/**/package.json"],
 			"matchDepTypes": ["dependencies"],
-			"addLabels": ["Dependencies: Production"]
+			"matchPackageNames": ["!/^@burger-editor\\//"],
+			"rangeStrategy": "bump",
+			"semanticCommitType": "fix",
+			"semanticCommitScope": "deps"
 		},
 		{
-			"description": "Automerge every update that keeps the major version, 0.x included, once the checks pass and minimumReleaseAge has elapsed",
-			"matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-			"automerge": true
+			"description": "Rule 8: a peer range keeps its lower bound",
+			"matchDepTypes": ["peerDependencies"],
+			"rangeStrategy": "widen"
 		},
 		{
-			"description": "A major update is reviewed by the owner unless a later rule says otherwise. Its pull request stays open until then, so it gets a lower prConcurrentLimit than the default 10: the limit is compared against the count of every open Renovate pull request, so pull requests waiting for review stop being raised at 5 and the other 5 slots stay free for updates that automerge",
-			"matchUpdateTypes": ["major"],
-			"prConcurrentLimit": 5
+			"description": "engines states the Node.js versions a published package supports; it is raised by hand, not by Renovate (the same as a peer range, rule 8)",
+			"matchDepTypes": ["engines"],
+			"enabled": false
 		},
 		{
-			"description": "devDependencies do not reach consumers, so their major updates automerge too",
-			"matchDepTypes": ["devDependencies"],
-			"matchUpdateTypes": ["major"],
-			"automerge": true,
-			"prConcurrentLimit": 10
-		},
-		{
-			"description": "GitHub Actions do not reach consumers, so their major updates automerge too",
-			"matchManagers": ["github-actions"],
-			"matchUpdateTypes": ["major"],
-			"automerge": true,
-			"prConcurrentLimit": 10
-		},
-		{
-			"description": "Keep yarn resolutions on auto range strategy",
+			"description": "resolutions keep their ranges",
 			"matchDepTypes": ["resolutions"],
 			"rangeStrategy": "auto"
 		},
 		{
-			"description": "Raise the lower bound of the ranges in published packages on each update, so a consumer's install cannot dedupe onto a version older than the one we last released against. Packages in the workspace and devDependencies stay exact. Only `dev` publishes new ranges; the maintenance line keeps exact versions. The lower bound of a peerDependency rises the same way, and a consumer below it no longer satisfies the peer: acceptable while the packages are prereleases, to be reconsidered for peerDependencies at the first stable release (CLAUDE.md, \"依存関係の追加\")",
-			"matchBaseBranches": ["dev"],
-			"matchFileNames": ["packages/**/package.json"],
-			"matchDepTypes": ["dependencies", "peerDependencies"],
-			"matchPackageNames": ["!/^@burger-editor\\//"],
-			"rangeStrategy": "bump"
-		},
-		{
-			"description": "The storybook package is private, so its dependencies stay exact like devDependencies",
+			"description": "The storybook package is private, so its dependencies stay exact like devDependencies and do not reach users",
 			"matchFileNames": ["packages/@burger-editor/storybook/package.json"],
-			"rangeStrategy": "pin"
+			"rangeStrategy": "pin",
+			"semanticCommitType": "chore",
+			"semanticCommitScope": null
 		},
 		{
 			"description": "hono and zod move together via @hono/zod-validator peer deps",
 			"groupName": "hono-zod",
 			"matchPackageNames": ["hono", "/^@hono\\//", "zod"]
+		},
+		{
+			"description": "markuplint loads the parsers and specs of its own release, and a parser of a newer major crashes an older CLI while it reports, so the CLI and the @markuplint packages must be raised together",
+			"groupName": "markuplint",
+			"matchPackageNames": ["markuplint", "/^@markuplint\\//"]
 		},
 		{
 			"groupName": "react",
@@ -192,7 +205,48 @@
 			"enabled": false
 		},
 		{
-			"description": "v3 is a maintenance line: it takes vulnerability fixes (vulnerabilityAlerts.enabled overrides this rule) and lock file maintenance (not listed here), and no other update, minor and patch included. The lines and their branches are defined in scripts/release-lines/lines.mjs",
+			"description": "Rule 57: the release automation changes how this repository publishes; a person reviews every update",
+			"matchPackageNames": ["@d-zero/release-automation"],
+			"automerge": false,
+			"addLabels": ["manual-review"]
+		},
+		{
+			"description": "Rule 57: no test runs the `open` call that opens the browser (local/src/commands/server.ts); a person reviews a major update until a test does (#1233)",
+			"matchPackageNames": ["open"],
+			"matchUpdateTypes": ["major"],
+			"automerge": false,
+			"addLabels": ["manual-review"]
+		},
+		{
+			"description": "Rule 57: no test runs the zValidator of the file API (json and form, local/src/routes/file-api.ts); a person reviews a major update until a test does (#1234)",
+			"matchPackageNames": ["@hono/zod-validator"],
+			"matchUpdateTypes": ["major"],
+			"automerge": false,
+			"addLabels": ["manual-review"]
+		},
+		{
+			"description": "Rule 57: no test sends MCP requests over StdioServerTransport (mcp-server/src/index.ts); a person reviews a major update until a test does (#1235)",
+			"matchPackageNames": ["@modelcontextprotocol/sdk"],
+			"matchUpdateTypes": ["major"],
+			"automerge": false,
+			"addLabels": ["manual-review"]
+		},
+		{
+			"description": "Rule 57: no test renders the video, audio, document and PDF icons of Thumbnail (client/src/components/thumbnail.tsx); a person reviews a major update until a test does (#1237)",
+			"matchPackageNames": ["@tabler/icons-react"],
+			"matchUpdateTypes": ["major"],
+			"automerge": false,
+			"addLabels": ["manual-review"]
+		},
+		{
+			"description": "Rule 57: no test parses or renders an <img> with the Image extension (custom-element/src/tiptap-extentions/image.ts); a person reviews a major update until a test does (#1238)",
+			"matchPackageNames": ["@tiptap/extension-image"],
+			"matchUpdateTypes": ["major"],
+			"automerge": false,
+			"addLabels": ["manual-review"]
+		},
+		{
+			"description": "release-automation: previous lines take vulnerability fixes and lock file maintenance only",
 			"matchBaseBranches": ["v3"],
 			"matchUpdateTypes": [
 				"major",

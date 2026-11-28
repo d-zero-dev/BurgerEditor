@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/legacy",
-	"version": "4.0.0-alpha.78",
+	"version": "4.0.0-alpha.79",
 	"description": "BurgerEditor Legacy Components",
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)",
@@ -27,7 +27,7 @@
 		"dev": "rollup -c -w"
 	},
 	"devDependencies": {
-		"rollup": "4.64.12",
+		"rollup": "4.68.8",
 		"rollup-plugin-dts": "6.5.1",
 		"rollup-plugin-esbuild": "6.2.1",
 		"rollup-plugin-string": "3.0.0"

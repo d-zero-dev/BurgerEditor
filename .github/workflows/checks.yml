@@ -1,0 +1,102 @@
+name: Checks
+
+# The checks of the Minimum CI (test.yml) and of the Full CI (full-ci.yml). The
+# two run the same suite on purpose: Full CI is what a Release PR and the
+# Nightly run, and nothing here is narrowed for the Minimum CI. A check that
+# only the Full CI needs goes in a job of full-ci.yml, not here.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.1-noble
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/setup-yarn
+
+      - name: Install CJK fonts
+        # azure.archive.ubuntu.com への接続が一過性にタイムアウトし apt-get update が失敗することがあるためリトライする
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          retry_wait_seconds: 10
+          command: |
+            apt-get update
+            apt-get install -y --no-install-recommends fonts-noto-cjk
+            rm -rf /var/lib/apt/lists/*
+
+      - name: Verify architecture graph
+        # ARCHITECTURE.mdの依存グラフ（依存してよい向きの根拠）が各
+        # package.jsonと食い違っていないことを検証する
+        # （scripts/check-architecture-graph.mjs）
+        run: yarn verify:architecture-graph
+
+      - name: Verify React Compiler coverage
+        # React Compilerはコンパイル対象外の判断を診断ログなしで下すことが
+        # あるため、item Editorごとの期待コンパイル状態をコードで固定して
+        # 検証する（scripts/check-react-compiler-coverage.mjs）
+        run: yarn verify:react-compiler
+
+      - name: Build
+        run: yarn build
+
+      - name: Verify blocks entry boundary
+        # blocksのルートエントリ（Node.js・ユーザーの設定ファイルから読まれる）が
+        # react / react-dom / @burger-editor/client に依存しないことをビルド
+        # 成果物で検証する（scripts/check-blocks-entry-boundary.mjs）。
+        # モノレポ内はルートのdevDependenciesにReactがあるため他のテストでは
+        # 検出できない
+        run: yarn verify:blocks-boundary
+
+      - name: Verify packed install
+        # 公開パッケージを yarn pack した tarball だけから React 未導入の空
+        # ディレクトリへインストールし、cli / bge / bge-mcp-server が起動する
+        # ことを検証する（scripts/verify-packed-install.mjs）。exports /
+        # files / dependencies / peerDependencies の過不足はモノレポ内の
+        # シンボリックリンク解決では検出できない
+        run: yarn verify:packed-install
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Test
+        run: yarn test
+
+      - name: Upload VR diff images on failure
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: vr-diff-images
+          path: packages/@burger-editor/client/src/__tests__/vr/__snapshots__/**/*-diff.png
+
+  # React Compilerを無効化した状態でも同じテストが通ることを確認する
+  # （react.devの「両方のモードで実行する」推奨）。VRはコンパイラの
+  # 有無に左右されないピクセル出力の検証なのでここでは対象外にする
+  test-no-compiler:
+    name: Test (BGE_NO_COMPILER=1)
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.1-noble
+    env:
+      BGE_NO_COMPILER: '1'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/setup-yarn
+
+      - name: Build
+        run: yarn build
+
+      - name: Test
+        run: yarn test:no-compiler

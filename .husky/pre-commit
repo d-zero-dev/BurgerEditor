@@ -1,30 +1,7 @@
-# Prevent direct commits to a branch that only takes merged pull requests.
-# The guarded branches are defined by `commitGuard` in
-# scripts/release-lines/lines.mjs and read through guarded-branches.mjs, so the
-# hook has no list of its own to go stale. `main` and `v3` are deliberately NOT
-# guarded: `lerna version` writes its release commit there with commit hooks
-# enabled (lines.mjs never guards them; consistency.spec.mjs checks that).
-# See the npm-publish skill. A detached HEAD (during a rebase, for example) has
-# no branch name and passes.
-branch_name=$(git symbolic-ref --short HEAD 2>/dev/null || true)
-
-# If the list cannot be read, refuse the commit rather than letting it through
-# unguarded, and say that the guard is what refused it: the error of node
-# alone ("command not found") does not. The cause is not always node (a
-# syntax error in lines.mjs fails the same way), so the message names both.
-guarded_branches=$(node scripts/release-lines/guarded-branches.mjs) || {
-  echo "Could not read the list of guarded branches: is node in the PATH, and does" >&2
-  echo "scripts/release-lines/guarded-branches.mjs run? See the error above." >&2
-  echo "The commit is refused because the branch cannot be checked." >&2
-  exit 1
-}
-
-for guarded_branch in $guarded_branches; do
-  if [ "$branch_name" = "$guarded_branch" ]; then
-    echo "Direct commits to the $branch_name branch are prohibited."
-    echo "Please commit to a topic branch and merge it with a pull request instead."
-    exit 1
-  fi
-done
+# Prevent direct commits to a branch that only takes merged pull requests. The
+# branches are those of .github/release-lines.json; `release-automation guard`
+# reads them, so the hook has no list of its own to go stale. A detached HEAD
+# (during a rebase, for example) has no branch name and passes.
+yarn release-automation guard
 
 lint-staged
