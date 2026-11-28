@@ -5136,9 +5136,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@renovatebot/base-image@npm:13.176.7":
-  version: 13.176.7
-  resolution: "@renovatebot/base-image@npm:13.176.7"
+"@renovatebot/base-image@npm:13.177.0":
+  version: 13.177.0
+  resolution: "@renovatebot/base-image@npm:13.177.0"
   dependencies:
     "@containerbase/base": "npm:14.69.3"
   peerDependencies:
@@ -5146,7 +5146,7 @@ __metadata:
   peerDependenciesMeta:
     zod:
       optional: true
-  checksum: 10c0/6e9139fa08a5ee5b889c869c76fdd084a64c1fb71cdce97b21012f02ad8728e32f15038de2b48f0b40297cb68858fb952e3d79522462f6c107d5ed65b60c3eee
+  checksum: 10c0/6f5a5dd0eb0413fc59bd8f3fc2ce7968f2597007324cb12f826cbad09e94d797f59e5b6b75f957636887e3254b077961ccddc7844c1362f72229c09a588e433a
   languageName: node
   linkType: hard
 
@@ -17155,9 +17155,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"renovate@npm:44.261.3":
-  version: 44.261.3
-  resolution: "renovate@npm:44.261.3"
+"renovate@npm:44.262.1":
+  version: 44.262.1
+  resolution: "renovate@npm:44.262.1"
   dependencies:
     "@aws-sdk/client-codecommit": "npm:3.1139.0"
     "@aws-sdk/client-ec2": "npm:3.1139.0"
@@ -17190,7 +17190,7 @@ __metadata:
     "@pnpm/parse-overrides": "npm:1001.0.4"
     "@qnighy/marshal": "npm:0.1.3"
     "@redis/client": "npm:6.3.1"
-    "@renovatebot/base-image": "npm:13.176.7"
+    "@renovatebot/base-image": "npm:13.177.0"
     "@renovatebot/detect-tools": "npm:5.0.0"
     "@renovatebot/good-enough-parser": "npm:4.0.3"
     "@renovatebot/osv-offline": "npm:4.5.10"
@@ -17269,7 +17269,7 @@ __metadata:
     semver: "npm:7.8.6"
     semver-stable: "npm:3.0.0"
     semver-utils: "npm:1.1.4"
-    shlex: "npm:3.0.0"
+    shlex: "npm:3.0.1"
     simple-git: "npm:4.1.0"
     slugify: "npm:1.6.9"
     source-map-support: "npm:0.5.21"
@@ -17291,7 +17291,7 @@ __metadata:
   bin:
     renovate: dist/renovate.js
     renovate-config-validator: dist/config-validator.js
-  checksum: 10c0/8213e038a6d68f4cbc5b6cd7130faf228092a0515583ff9efcea63983a2a76281a2f4f16d23edcadb2bd4756ef6f6ad6e64a2c76eca56a8583a86db4fb62fa84
+  checksum: 10c0/cc9b58cdc3803bf6d7f944e99251a83e99b45c8033c10135532d058ba4013198779d711124661f76b7729f419c1443838d8c825997aa5b4d15c5818fffae69ce
   languageName: node
   linkType: hard
 
@@ -17741,7 +17741,7 @@ __metadata:
     pixelmatch: "npm:8.0.0"
     playwright: "npm:1.65.1"
     pngjs: "npm:7.0.0"
-    renovate: "npm:44.261.3"
+    renovate: "npm:44.262.1"
     typescript: "npm:5.9.3"
     vitest: "npm:5.1.1"
   languageName: unknown
@@ -18061,10 +18061,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"shlex@npm:3.0.0":
-  version: 3.0.0
-  resolution: "shlex@npm:3.0.0"
-  checksum: 10c0/7f3b450c4d31a2cd91ec0523abe8dc5b34f8aa1e79189f3ccd73c4517935f45dcac23a6ba475c8ad75cbd490039098fa074b34d3ddcb0182c10273c6e5b44988
+"shlex@npm:3.0.1":
+  version: 3.0.1
+  resolution: "shlex@npm:3.0.1"
+  checksum: 10c0/373f24f99cb07e424c05071504a210a94d402034593b3008b5ae62bf633b5c5752b9847398a3d1a79cc53d93a4838588fce33ae56a760a2dc19ef9dc0d3cce61
   languageName: node
   linkType: hard
 
