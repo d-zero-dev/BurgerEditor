@@ -33,13 +33,13 @@ npx bge
 
 ## Related Packages
 
-| パッケージ                                        | 役割                                                      | このパッケージ単独で足りるケース                                                     |
-| ------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| [`@burger-editor/local`](./) **（本パッケージ）** | ブラウザ UI + HTTP サーバー                               | 編集者が GUI で操作するだけなら本パッケージのみ                                      |
-| [`@burger-editor/cli`](../cli/)                   | 非対話 CLI（`npx @burger-editor/cli <subcommand>`） | スクリプト・CI から JSON 入出力で操作したいときに追加で使う。`local`と同じ設定を参照 |
-| [`@burger-editor/mcp-server`](../mcp-server/)     | MCP サーバー（Claude / Cursor 等からの自然言語操作）      | AI エージェントから操作したいときに追加で使う。内部で`cli`のハンドラを再利用         |
-| [`@burger-editor/core`](../core/)                 | エディタエンジン本体・カスタムアイテム実装基盤            | 独自ブロック / アイテムを開発するときに追加で使う                                    |
-| [`@burger-editor/file-io`](../file-io/)           | ファイル I/O・virtual-path-resolver・Front Matter の本体  | 本パッケージが内部利用。直接依存する必要はない（`local`から re-export される）       |
+| パッケージ                                        | 役割                                                     | このパッケージ単独で足りるケース                                                     |
+| ------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| [`@burger-editor/local`](./) **（本パッケージ）** | ブラウザ UI + HTTP サーバー                              | 編集者が GUI で操作するだけなら本パッケージのみ                                      |
+| [`@burger-editor/cli`](../cli/)                   | 非対話 CLI（`npx @burger-editor/cli <subcommand>`）      | スクリプト・CI から JSON 入出力で操作したいときに追加で使う。`local`と同じ設定を参照 |
+| [`@burger-editor/mcp-server`](../mcp-server/)     | MCP サーバー（Claude / Cursor 等からの自然言語操作）     | AI エージェントから操作したいときに追加で使う。内部で`cli`のハンドラを再利用         |
+| [`@burger-editor/core`](../core/)                 | エディタエンジン本体・カスタムアイテム実装基盤           | 独自ブロック / アイテムを開発するときに追加で使う                                    |
+| [`@burger-editor/file-io`](../file-io/)           | ファイル I/O・virtual-path-resolver・Front Matter の本体 | 本パッケージが内部利用。直接依存する必要はない（`local`から re-export される）       |
 
 依存方向: `local` → `core`/`file-io`/`blocks`。`cli`と`mcp-server`は`local`には依存せず、同じ`burgereditor.config.js`を読む。
 
