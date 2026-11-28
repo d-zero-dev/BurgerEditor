@@ -7,7 +7,7 @@ BurgerEditor のブロック編集エンジンと「HTML 構造契約」を提�
 ## Installation
 
 ```sh
-yarn add @burger-editor/core@alpha
+yarn add @burger-editor/core
 ```
 
 ## Related Packages

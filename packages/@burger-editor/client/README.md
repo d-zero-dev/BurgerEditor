@@ -7,7 +7,7 @@ BurgerEditor をブラウザ上の DOM に組み込むための UI レイヤー�
 ## Installation
 
 ```sh
-yarn add @burger-editor/client@alpha @burger-editor/core@alpha @burger-editor/blocks@alpha react@19.3.0 react-dom@19.3.0
+yarn add @burger-editor/client @burger-editor/core @burger-editor/blocks react@19.3.0 react-dom@19.3.0
 ```
 
 `react`と`react-dom`は peerDependencies のため、利用側でインストールする（client は React を同梱しない）。アプリのバンドルには React が 1 つだけ含まれるようにする。標準アイテムを使う場合、`items`は`@burger-editor/blocks/editor`から import する（`@burger-editor/blocks`のルートは`Editor`を含まない）。

@@ -9,7 +9,7 @@
 ## Installation
 
 ```sh
-yarn add -D @burger-editor/frozen-patty@alpha
+yarn add -D @burger-editor/frozen-patty
 ```
 
 ## Related Packages
