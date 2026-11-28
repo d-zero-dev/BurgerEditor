@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.79](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.78...v4.0.0-alpha.79) (2026-11-28)
+
+**Note:** Version bump only for package @burger-editor/blocks
+
+
+
+
+
 # [4.0.0-alpha.78](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.77...v4.0.0-alpha.78) (2026-11-17)
 
 * feat(blocks)!: fill empty source media and store carousel images as image lists ([2f68aef](https://github.com/d-zero-dev/BurgerEditor/commit/2f68aef1a8e61c45ba96e05a8a3ba32f7743fc71)), closes [#1056](https://github.com/d-zero-dev/BurgerEditor/issues/1056)

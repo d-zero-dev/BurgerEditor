@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.79](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.78...v4.0.0-alpha.79) (2026-11-28)
+
+### Bug Fixes
+
+* **github:** raise markuplint and its packages in one pull request ([e98d573](https://github.com/d-zero-dev/BurgerEditor/commit/e98d5730e1ff9502d0d009b85a6666acbe6bc5f0))
+* **repo:** install Corepack from npm where the Node has none ([f30312b](https://github.com/d-zero-dev/BurgerEditor/commit/f30312bf93e4cc894f7b9156414f84259e89b4c9))
+
+
 # [4.0.0-alpha.78](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.77...v4.0.0-alpha.78) (2026-11-17)
 
 * feat(blocks)!: fill empty source media and store carousel images as image lists ([2f68aef](https://github.com/d-zero-dev/BurgerEditor/commit/2f68aef1a8e61c45ba96e05a8a3ba32f7743fc71)), closes [#1056](https://github.com/d-zero-dev/BurgerEditor/issues/1056)

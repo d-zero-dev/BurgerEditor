@@ -1,6 +1,6 @@
 {
   "lerna": "9.0.3",
-  "version": "4.0.0-alpha.78",
+  "version": "4.0.0-alpha.79",
   "packages": [
     "packages/@burger-editor/*"
   ],
