@@ -5,7 +5,7 @@ Node 側のファイル I/O 集約パッケージ。`@burger-editor/local`（ブ
 ## Installation
 
 ```sh
-yarn add @burger-editor/file-io@alpha
+yarn add @burger-editor/file-io
 ```
 
 `@burger-editor/core`と`@burger-editor/blocks`は依存として一緒にインストールされる。

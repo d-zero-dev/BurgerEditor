@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.0.0-alpha.80](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.79...v4.0.0-alpha.80) (2026-11-28)
+
+### Bug Fixes
+
+* **deps:** drop the unused semver from core and migrator ([7bedfc8](https://github.com/d-zero-dev/BurgerEditor/commit/7bedfc8d6dc8c1e5b6e24631d338607a36c57aa6)), closes [#1240](https://github.com/d-zero-dev/BurgerEditor/issues/1240)
+
+
 # [4.0.0-alpha.79](https://github.com/d-zero-dev/BurgerEditor/compare/v4.0.0-alpha.78...v4.0.0-alpha.79) (2026-11-28)
 
 **Note:** Version bump only for package @burger-editor/core

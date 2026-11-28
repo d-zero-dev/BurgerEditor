@@ -28,11 +28,11 @@ disable-model-invocation: true
 
 `dev` は v4 のプレリリース（alpha）で、`dev` の Release PR を段階ごとに昇格させて正式版にする。
 
-1. `npm-publish` スキルで、`promote=beta`、`promote=rc`、`promote=stable` の順に Release PR を作って公開する。段階を飛ばすかはユーザーが決める。各段階の公開は、そのたびに全パッケージの dist-tag（`beta`・`rc`）を確かめる
+1. `npm-publish` スキルで、`promote=beta`、`promote=rc`、`promote=stable` の順に Release PR を作って公開する。段階を飛ばすかはユーザーが決める。各段階の公開は、そのたびに全パッケージの dist-tag を確かめる（`dev` の系列定義が `distTag` で `latest` を指定している間は、`beta`・`rc` も `latest` で公開される）
 2. 正式版（`promote=stable`）の Release PR は、v3 の定期 lock file maintenance を止める Renovate のルール（`release-automation: lock file maintenance stopped on security-only lines`）と系列定義の変更を含む。手で消さない
-3. 公開の後、**全パッケージの `latest` が `4.0.0` になったことを `npm dist-tag ls <package>` で確かめる**。`latest` が古い alpha のまま来た v4 専用パッケージも、この公開で初めて `4.0.0` に動く。動かないパッケージが残ったら、`npm-publish` の「失敗したとき」のとおり同じジョブを再実行する
-4. 確かめたあと、インストールと `npx` のコマンドから `@alpha` を外す（確かめる前に外すと、動かなかったパッケージが古い alpha のままになる）。対象は、ルートの `README.md`、各パッケージの `README.md`、`skills/`
-5. `SECURITY.md` の「正式版を公開するまで `alpha`」「v3 が `latest`」「v4 専用パッケージの `latest`」「v4 の正式版を公開すると…`v3` の dist-tag」の記述を、現在形で現状に直す。`v3` の行にサポート終了日を書く（`release-automation classify` が出す日付。`lines-check` が検査する）
+3. 公開の後、**全パッケージの `latest` が `4.0.0` になったことを `npm dist-tag ls <package>` で確かめる**。動かないパッケージが残ったら、`npm-publish` の「失敗したとき」のとおり同じジョブを再実行する
+4. 確かめたあと、`.github/release-lines.json` の `dev` と `v3` の `distTag` を外す（`dev` と `v3` の両ブランチで同じ内容にそろえる）。外すと、v4 の正式版は自動判定の `latest`、後継の正式版が出た後の v3 の公開は `v3` の dist-tag になる
+5. `SECURITY.md` の「正式版を公開するまで `latest` で配布」「v3 は `v3-legacy`」「v4 の正式版を公開すると…`v3` の dist-tag」の記述を、現在形で現状に直す。`v3` の行にサポート終了日を書く（`release-automation classify` が出す日付。`lines-check` が検査する）
 6. v3 の保守が脆弱性修正のみになったことを、ルートの `CLAUDE.md` の「ブランチ構成」と `v3` ブランチの `CLAUDE.md`（PR の base は `v3`）に書く。`v3` ブランチのファイルは別のコードベースなので、手で見直す（下の「`v3` ブランチのファイル」）
 7. 最初の 3.x のリリースで、公開されたパッケージに `v3` の dist-tag が付いたことを `npm dist-tag ls <package>` で確かめる（リリースのコミットの `package.json` の差分に出たもの。4 つ全部とは限らない）
 

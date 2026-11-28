@@ -5,7 +5,7 @@ BurgerEditor HTML を解析・検索するユーティリティ群。CSS 変数�
 ## Installation
 
 ```sh
-yarn add @burger-editor/inspector@alpha
+yarn add @burger-editor/inspector
 ```
 
 ## Usage

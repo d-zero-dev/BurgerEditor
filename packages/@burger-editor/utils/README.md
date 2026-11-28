@@ -5,7 +5,7 @@ BurgerEditor 各パッケージで共有される汎用ユーティリティ関�
 ## Installation
 
 ```sh
-yarn add @burger-editor/utils@alpha
+yarn add @burger-editor/utils
 ```
 
 ## Usage

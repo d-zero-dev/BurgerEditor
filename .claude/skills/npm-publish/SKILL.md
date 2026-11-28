@@ -74,7 +74,7 @@ gh run watch <run-id> --repo d-zero-dev/BurgerEditor
 npm view <package> dist-tags
 ```
 
-- `dev` から公開した版（`4.0.0-alpha.N`）は `alpha` が今回の版を指す。`beta`・`rc`・正式版も同じ（正式版は `latest`）
+- `dev` から公開した版（`4.0.0-alpha.N`）は、系列定義の `distTag`（`latest`）が今回の版を指す。`alpha` は動かない。`distTag` を外した後は、`alpha`・`beta`・`rc` が同じ名前の dist-tag を指し、正式版は `latest` を指す
 - provenance が付いているか（`npm view <package> --json` の `dist.attestations`）
 - 部分 publish：fixed モードでも一部のパッケージだけが公開されることがある。上のパッケージの一覧を個別に確認し、漏れがあればユーザーに報告する
 
@@ -95,9 +95,9 @@ npm view <package> dist-tags
 
 ## `latest` と dist-tag
 
-- dist-tag は `lerna publish --dist-tag` が公開時に付ける。公開の後に CI から `npm dist-tag` は実行しない（実行には、パッケージごとに npmjs.com の Trusted Publisher で「Allow npm dist-tag」を設定する画面操作が要る。`npm trust` にそのフラグはない）
-- **正式版を 1 つも持たないパッケージ**（v3 に存在しない v4 専用のパッケージ。`npm view <package> versions` に `-` を含まない版がないもの）の `latest` は、公開では動かない。`latest` が古い alpha のままなのは想定どおりで、失敗ではない。`alpha` が今回の版を指すことを確認する
-- `latest` を最新の alpha に合わせたいときは、ユーザーが `npm dist-tag add <package>@<version> latest` をパッケージごとに実行する（1 つずつ OTP の承認が要る）。公開のたびにずれるので、習慣にせず、必要なときだけ行う。READMEs と skills のコマンド、`SECURITY.md` の案内は `@alpha` を使うので、行わなくても案内は成り立つ
+- dist-tag は `lerna publish --dist-tag` が公開時に付ける。付ける dist-tag は、`.github/release-lines.json` の系列ごとの `distTag` が決める（`dev` は `latest`、`v3` は `v3-legacy`）。公開の後に CI から `npm dist-tag` は実行しない（実行には、パッケージごとに npmjs.com の Trusted Publisher で「Allow npm dist-tag」を設定する画面操作が要る。`npm trust` にそのフラグはない）
+- v4 は、正式版の前の alpha も、公開のたびに `latest` が今回の版を指す。v4 専用のパッケージも同じ。`alpha` の dist-tag は、`distTag` を入れる前の最後の版（`4.0.0-alpha.79`）を指したまま動かない
+- v3 でも公開している 4 つ（`client`・`css`・`runtime`・`frozen-patty`）は、v4 の最初の公開で `latest` が `3.5.0` から v4 に動く。その前に、ユーザーが `npm dist-tag add <package>@3.5.0 v3-legacy` をパッケージごとに実行して、`v3-legacy` を付けておく（1 つずつ OTP の承認が要る）。以後、v3 のリリースは `v3-legacy` で公開される
 - 新しいパッケージの最初の公開では、npm が最初の版に `latest` を付ける（タグによらない）。最初の公開は手で行い、その後に Trusted Publisher を設定する（`CLAUDE.md` の「リポジトリ外の設定に依存している」）
 
 ## v3 のリリース
@@ -107,7 +107,7 @@ v3 系（`v3` ブランチ。v4 が正式版になるまでは脆弱性修正と
 - Release PR は `v3` を base にして作られ、マージすると `v3` の `publish.yml` が公開する。`main` は使わない。手動起動は `-f line=v3`
 - リリース内容の提示は、前回の `v3.*` タグからの差分。`yarn test` は Docker も VR も使わないホストの vitest（v3 の `CLAUDE.md` の「テスト」）で、CI は `v3` の `test.yml`（`gh run list --branch v3 --limit 5`）
 - v3 は正式版だけを公開する（プレリリースの昇格はない）
-- dist-tag は、v4 が正式版になるまでは `latest`、v4 の正式版の後は `v3`（後継の正式版が出ているかで、ワークフローが決める）。`v3` の dist-tag は、v4 の正式版の後の最初の 3.x の公開で初めて付く。`v3` は semver の範囲に見えるタグ名で、`npm dist-tag add` は受け付けないので、付け直す必要が出たらユーザーに相談する
+- dist-tag は、系列定義の `v3` の `distTag`（`v3-legacy`）で公開される。v4 の正式版の公開の後に、`dev` と `v3` の系列定義から `distTag` を外すと、後継の正式版が出ているかでワークフローが決める `v3` になる（`major-rotation` スキル）。`v3` は semver の範囲に見えるタグ名で、`npm dist-tag add` は受け付けないので、手で付けるときは `v3-legacy` を使う
 - 公開されうるパッケージは 4 つ（`client`・`css`・`runtime`・`frozen-patty`）。v3 の Release PR は `--force-publish` を使わないので、上がるのは変更のあったパッケージだけ。Release PR の `package.json` の差分に出たパッケージを、`dist-tags`・版・provenance で確認する（4 つ全部が上がるとは限らず、上がらないパッケージは部分 publish ではない）
 - `dev` への反映は要らない（`v3` と `dev` は別のコードベースで、互いにマージしない）
 - 失敗時の再実行（`gh run rerun <run-id> --failed`）は v3 にも当てはまる。v4 の正式版の前後をまたいで再実行すると、残りのパッケージだけが、先に公開されたものと別の dist-tag（`latest` と `v3`）になりうる

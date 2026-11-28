@@ -5,7 +5,7 @@ BurgerEditor で生成された HTML にインタラクティブ機能を付与�
 ## Installation
 
 ```sh
-yarn add @burger-editor/runtime@alpha
+yarn add @burger-editor/runtime
 ```
 
 ## Usage

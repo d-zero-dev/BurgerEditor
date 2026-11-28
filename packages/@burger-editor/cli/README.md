@@ -18,13 +18,13 @@ export default {
 
 ```sh
 # プロジェクトのページツリーを見る
-npx @burger-editor/cli@alpha page-list
+npx @burger-editor/cli page-list
 
 # 単一ページの中身を見る
-npx @burger-editor/cli@alpha page-get about.html
+npx @burger-editor/cli page-get about.html
 
 # 解決済み config を確認
-npx @burger-editor/cli@alpha config-resolve
+npx @burger-editor/cli config-resolve
 ```
 
 `page-list`が JSON を返せばインストール成功。
@@ -44,21 +44,21 @@ npx @burger-editor/cli@alpha config-resolve
 bin は名前を付けずに公開している（グローバルにインストールすると、スコープを外した`cli`という汎用的なコマンド名になる）。**npx 経由で呼び出す**:
 
 ```sh
-npx @burger-editor/cli@alpha <subcommand> [args] [flags]
+npx @burger-editor/cli <subcommand> [args] [flags]
 ```
 
-引数の細部は`npx @burger-editor/cli@alpha --help`を参照。
+引数の細部は`npx @burger-editor/cli --help`を参照。
 
 ### 設定ファイルを指定する
 
 既定ではカレントディレクトリから`burgereditor.config.*`を探索する。1 つのリポジトリで複数サイトの設定を使い分けるときは、全サブコマンド共通の`--config <path>`か環境変数`BGE_CONFIG`で読み込むファイルを指定する（`--config`が優先）。
 
 ```sh
-npx @burger-editor/cli@alpha page-list --config ./burgereditor.child.config.js
-BGE_CONFIG=./burgereditor.child.config.js npx @burger-editor/cli@alpha page-list
+npx @burger-editor/cli page-list --config ./burgereditor.child.config.js
+BGE_CONFIG=./burgereditor.child.config.js npx @burger-editor/cli page-list
 ```
 
-どのファイルが読まれたかは`config-resolve`の`configPath`で確認できる。指定したファイルが存在しない場合や、`--config`にパスが無い場合はエラーになる。`--config`はサブコマンドの後ろに書く（`npx @burger-editor/cli@alpha --config x page-list`の順は受け付けない）。2 回以上指定した場合は最後の値が使われる。解決規則は`@burger-editor/file-io`の`resolveConfig`の JSDoc を参照。
+どのファイルが読まれたかは`config-resolve`の`configPath`で確認できる。指定したファイルが存在しない場合や、`--config`にパスが無い場合はエラーになる。`--config`はサブコマンドの後ろに書く（`npx @burger-editor/cli --config x page-list`の順は受け付けない）。2 回以上指定した場合は最後の値が使われる。解決規則は`@burger-editor/file-io`の`resolveConfig`の JSDoc を参照。
 
 ## 設計判断
 
@@ -106,18 +106,18 @@ BGE_CONFIG=./burgereditor.child.config.js npx @burger-editor/cli@alpha page-list
 ```sh
 # stdin
 echo '{"catalog":"h2","items":[[{"name":"title-h2","data":{"titleH2":"見出し"}}]]}' \
-  | npx @burger-editor/cli@alpha block-insert about.html 0
+  | npx @burger-editor/cli block-insert about.html 0
 
 # --spec インライン
-npx @burger-editor/cli@alpha block-replace about.html 3 \
+npx @burger-editor/cli block-replace about.html 3 \
   --spec '{"catalog":"wysiwyg","items":[[{"name":"wysiwyg","data":{"wysiwyg":"<p>本文</p>"}}]]}'
 
 # --spec-file
-npx @burger-editor/cli@alpha block-insert about.html 0 --spec-file ./hero.json
+npx @burger-editor/cli block-insert about.html 0 --spec-file ./hero.json
 
 # front-matter 全置換
 echo '{"title":"新タイトル"}' \
-  | npx @burger-editor/cli@alpha front-matter-set about.html --replace
+  | npx @burger-editor/cli front-matter-set about.html --replace
 ```
 
 ## パス指定
@@ -130,10 +130,10 @@ echo '{"title":"新タイトル"}' \
 リーディング`/`は **OS ルートではなく documentRoot 直下**として扱う（AI エージェントの直感に合わせるため）。`documentRoot`の外を指すパス（`../`等）は`resolvePathInput`（`@burger-editor/file-io`）が`invalid`エラーで拒否する。
 
 ```sh
-npx @burger-editor/cli@alpha page-get about.html
-npx @burger-editor/cli@alpha page-get /about.html        # 同じ（documentRoot 起点）
-npx @burger-editor/cli@alpha page-get foo/bar.html       # 仮想ツリー有効時は論理パスとして lookup
-npx @burger-editor/cli@alpha page-get /                  # → documentRoot/<indexFileName>
+npx @burger-editor/cli page-get about.html
+npx @burger-editor/cli page-get /about.html        # 同じ（documentRoot 起点）
+npx @burger-editor/cli page-get foo/bar.html       # 仮想ツリー有効時は論理パスとして lookup
+npx @burger-editor/cli page-get /                  # → documentRoot/<indexFileName>
 ```
 
 ## コマンド一覧
@@ -178,7 +178,7 @@ npx @burger-editor/cli@alpha page-get /                  # → documentRoot/<ind
 書き込み系ブロックコマンドは`--dry-run`を受け付けます。ファイルを更新せず、書き込まれるはずの編集可能領域 HTML を`previewContent`に入れて返します。CI/レビュー差分プレビュー用途を想定。
 
 ```bash
-npx @burger-editor/cli@alpha block-insert about.html 0 --dry-run --spec '{...}'
+npx @burger-editor/cli block-insert about.html 0 --dry-run --spec '{...}'
 # → { "path": "about.html", "atIndex": 0, "dryRun": true, "previewContent": "<...>" }
 ```
 
@@ -240,7 +240,7 @@ interface BlockSpec {
 `item-schema <name>`の戻り値には、アイテムの **template HTML 内の`data-bge=*`属性** から導出された camelCase キー一覧が 2 系統含まれます。`fields`は各バインディングを個別にパースした集合、`dataKeys`は template 全体を frozen-patty（`itemExport`）に通して得たキー集合です。
 
 ```bash
-npx @burger-editor/cli@alpha item-schema image
+npx @burger-editor/cli item-schema image
 # → { name: "image", template: "...", fields: [...],
 #      dataKeys: ["alt","aspectRatio","caption","command","height","href",
 #                 "loading","media","node","path","scale","scaleType",

@@ -1,6 +1,6 @@
 {
 	"name": "@burger-editor/storybook",
-	"version": "4.0.0-alpha.79",
+	"version": "4.0.0-alpha.80",
 	"description": "BurgerEditor admin UI component catalog (Storybook)",
 	"author": "D-ZERO",
 	"license": "(MIT OR Apache-2.0)",
@@ -16,24 +16,24 @@
 		"dev": "storybook dev -p 6006 --no-open"
 	},
 	"dependencies": {
-		"@burger-editor/blocks": "4.0.0-alpha.79",
-		"@burger-editor/client": "4.0.0-alpha.79",
-		"@burger-editor/core": "4.0.0-alpha.79",
-		"@burger-editor/css": "4.0.0-alpha.79",
-		"@burger-editor/custom-element": "4.0.0-alpha.79",
-		"@burger-editor/local": "4.0.0-alpha.79",
-		"@burger-editor/runtime": "4.0.0-alpha.79",
-		"@storybook/react-vite": "10.6.8",
+		"@burger-editor/blocks": "4.0.0-alpha.80",
+		"@burger-editor/client": "4.0.0-alpha.80",
+		"@burger-editor/core": "4.0.0-alpha.80",
+		"@burger-editor/css": "4.0.0-alpha.80",
+		"@burger-editor/custom-element": "4.0.0-alpha.80",
+		"@burger-editor/local": "4.0.0-alpha.80",
+		"@burger-editor/runtime": "4.0.0-alpha.80",
+		"@storybook/react-vite": "10.6.9",
 		"@tabler/icons-react": "3.52.0",
 		"react": "19.3.1",
 		"react-dom": "19.3.1",
-		"storybook": "10.6.8",
+		"storybook": "10.6.9",
 		"vite": "8.3.8"
 	},
 	"devDependencies": {
 		"@testing-library/dom": "10.4.2",
 		"@testing-library/react": "16.3.3",
-		"@types/react": "19.3.1",
+		"@types/react": "19.3.2",
 		"@types/react-dom": "19.3.0"
 	}
 }

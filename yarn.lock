@@ -980,23 +980,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@burger-editor/blocks@npm:4.0.0-alpha.79, @burger-editor/blocks@workspace:packages/@burger-editor/blocks":
+"@burger-editor/blocks@npm:4.0.0-alpha.80, @burger-editor/blocks@workspace:packages/@burger-editor/blocks":
   version: 0.0.0-use.local
   resolution: "@burger-editor/blocks@workspace:packages/@burger-editor/blocks"
   dependencies:
     "@babel/core": "npm:7.29.13"
     "@babel/preset-typescript": "npm:7.29.7"
-    "@burger-editor/client": "npm:4.0.0-alpha.79"
-    "@burger-editor/core": "npm:4.0.0-alpha.79"
-    "@burger-editor/custom-element": "npm:4.0.0-alpha.79"
-    "@burger-editor/utils": "npm:4.0.0-alpha.79"
+    "@burger-editor/client": "npm:4.0.0-alpha.80"
+    "@burger-editor/core": "npm:4.0.0-alpha.80"
+    "@burger-editor/custom-element": "npm:4.0.0-alpha.80"
+    "@burger-editor/utils": "npm:4.0.0-alpha.80"
     "@d-zero/shared": "npm:^0.23.2"
     "@rollup/plugin-babel": "npm:7.1.0"
     "@testing-library/dom": "npm:10.4.2"
     "@testing-library/react": "npm:16.3.3"
     "@types/babel__core": "npm:7.20.5"
     "@types/google.maps": "npm:3.67.0"
-    "@types/react": "npm:19.3.1"
+    "@types/react": "npm:19.3.2"
     babel-plugin-react-compiler: "npm:1.0.0"
     react: "npm:19.3.1"
     react-dom: "npm:19.3.1"
@@ -1014,39 +1014,39 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/cli@npm:4.0.0-alpha.79, @burger-editor/cli@workspace:packages/@burger-editor/cli":
+"@burger-editor/cli@npm:4.0.0-alpha.80, @burger-editor/cli@workspace:packages/@burger-editor/cli":
   version: 0.0.0-use.local
   resolution: "@burger-editor/cli@workspace:packages/@burger-editor/cli"
   dependencies:
-    "@burger-editor/blocks": "npm:4.0.0-alpha.79"
-    "@burger-editor/core": "npm:4.0.0-alpha.79"
-    "@burger-editor/file-io": "npm:4.0.0-alpha.79"
-    "@burger-editor/frozen-patty": "npm:4.0.0-alpha.79"
+    "@burger-editor/blocks": "npm:4.0.0-alpha.80"
+    "@burger-editor/core": "npm:4.0.0-alpha.80"
+    "@burger-editor/file-io": "npm:4.0.0-alpha.80"
+    "@burger-editor/frozen-patty": "npm:4.0.0-alpha.80"
     "@d-zero/roar": "npm:^2.3.1"
     "@d-zero/shared": "npm:0.23.2"
-    "@types/node": "npm:26.6.7"
+    "@types/node": "npm:26.6.10"
     zod: "npm:^4.6.7"
   bin:
     cli: ./dist/bin.js
   languageName: unknown
   linkType: soft
 
-"@burger-editor/client@npm:4.0.0-alpha.79, @burger-editor/client@workspace:packages/@burger-editor/client":
+"@burger-editor/client@npm:4.0.0-alpha.80, @burger-editor/client@workspace:packages/@burger-editor/client":
   version: 0.0.0-use.local
   resolution: "@burger-editor/client@workspace:packages/@burger-editor/client"
   dependencies:
     "@babel/core": "npm:7.29.13"
     "@babel/preset-typescript": "npm:7.29.7"
-    "@burger-editor/core": "npm:4.0.0-alpha.79"
-    "@burger-editor/custom-element": "npm:4.0.0-alpha.79"
-    "@burger-editor/migrator": "npm:4.0.0-alpha.79"
-    "@burger-editor/utils": "npm:4.0.0-alpha.79"
+    "@burger-editor/core": "npm:4.0.0-alpha.80"
+    "@burger-editor/custom-element": "npm:4.0.0-alpha.80"
+    "@burger-editor/migrator": "npm:4.0.0-alpha.80"
+    "@burger-editor/utils": "npm:4.0.0-alpha.80"
     "@rolldown/plugin-babel": "npm:0.3.1"
     "@tabler/icons-react": "npm:^3.52.0"
     "@testing-library/dom": "npm:10.4.2"
     "@testing-library/react": "npm:16.3.3"
     "@types/babel__core": "npm:7.20.5"
-    "@types/react": "npm:19.3.1"
+    "@types/react": "npm:19.3.2"
     "@types/react-dom": "npm:19.3.0"
     "@types/use-sync-external-store": "npm:1.7.0"
     "@vitejs/plugin-react": "npm:6.3.0"
@@ -1074,35 +1074,33 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/core@npm:4.0.0-alpha.79, @burger-editor/core@workspace:packages/@burger-editor/core":
+"@burger-editor/core@npm:4.0.0-alpha.80, @burger-editor/core@workspace:packages/@burger-editor/core":
   version: 0.0.0-use.local
   resolution: "@burger-editor/core@workspace:packages/@burger-editor/core"
   dependencies:
-    "@burger-editor/frozen-patty": "npm:4.0.0-alpha.79"
-    "@burger-editor/utils": "npm:4.0.0-alpha.79"
-    "@types/semver": "npm:7.8.0"
+    "@burger-editor/frozen-patty": "npm:4.0.0-alpha.80"
+    "@burger-editor/utils": "npm:4.0.0-alpha.80"
     gray-matter: "npm:^4.0.3"
     jaco: "npm:^5.0.0"
-    semver: "npm:^7.8.6"
   languageName: unknown
   linkType: soft
 
-"@burger-editor/css@npm:4.0.0-alpha.79, @burger-editor/css@workspace:packages/@burger-editor/css":
+"@burger-editor/css@npm:4.0.0-alpha.80, @burger-editor/css@workspace:packages/@burger-editor/css":
   version: 0.0.0-use.local
   resolution: "@burger-editor/css@workspace:packages/@burger-editor/css"
   dependencies:
-    "@burger-editor/blocks": "npm:4.0.0-alpha.79"
+    "@burger-editor/blocks": "npm:4.0.0-alpha.80"
     glob: "npm:14.0.6"
     postcss: "npm:8.5.33"
     vitest: "npm:5.1.1"
   languageName: unknown
   linkType: soft
 
-"@burger-editor/custom-element@npm:4.0.0-alpha.79, @burger-editor/custom-element@workspace:packages/@burger-editor/custom-element":
+"@burger-editor/custom-element@npm:4.0.0-alpha.80, @burger-editor/custom-element@workspace:packages/@burger-editor/custom-element":
   version: 0.0.0-use.local
   resolution: "@burger-editor/custom-element@workspace:packages/@burger-editor/custom-element"
   dependencies:
-    "@burger-editor/utils": "npm:4.0.0-alpha.79"
+    "@burger-editor/utils": "npm:4.0.0-alpha.80"
     "@tabler/icons": "npm:^3.52.0"
     "@tiptap/core": "npm:^3.35.0"
     "@tiptap/extension-image": "npm:^3.35.0"
@@ -1119,15 +1117,15 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/file-io@npm:4.0.0-alpha.79, @burger-editor/file-io@workspace:packages/@burger-editor/file-io":
+"@burger-editor/file-io@npm:4.0.0-alpha.80, @burger-editor/file-io@workspace:packages/@burger-editor/file-io":
   version: 0.0.0-use.local
   resolution: "@burger-editor/file-io@workspace:packages/@burger-editor/file-io"
   dependencies:
-    "@burger-editor/blocks": "npm:4.0.0-alpha.79"
-    "@burger-editor/core": "npm:4.0.0-alpha.79"
+    "@burger-editor/blocks": "npm:4.0.0-alpha.80"
+    "@burger-editor/core": "npm:4.0.0-alpha.80"
     "@d-zero/shared": "npm:0.23.2"
     "@types/jsdom": "npm:28.0.3"
-    "@types/node": "npm:26.6.7"
+    "@types/node": "npm:26.6.10"
     cosmiconfig: "npm:^10.0.1"
     jsdom: "npm:^28.1.0"
     prettier: "npm:^3.10.1"
@@ -1135,24 +1133,24 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/frozen-patty@npm:4.0.0-alpha.79, @burger-editor/frozen-patty@workspace:packages/@burger-editor/frozen-patty":
+"@burger-editor/frozen-patty@npm:4.0.0-alpha.80, @burger-editor/frozen-patty@workspace:packages/@burger-editor/frozen-patty":
   version: 0.0.0-use.local
   resolution: "@burger-editor/frozen-patty@workspace:packages/@burger-editor/frozen-patty"
   dependencies:
-    "@burger-editor/utils": "npm:4.0.0-alpha.79"
+    "@burger-editor/utils": "npm:4.0.0-alpha.80"
   languageName: unknown
   linkType: soft
 
-"@burger-editor/inspector@npm:4.0.0-alpha.79, @burger-editor/inspector@workspace:packages/@burger-editor/inspector":
+"@burger-editor/inspector@npm:4.0.0-alpha.80, @burger-editor/inspector@workspace:packages/@burger-editor/inspector":
   version: 0.0.0-use.local
   resolution: "@burger-editor/inspector@workspace:packages/@burger-editor/inspector"
   dependencies:
-    "@burger-editor/core": "npm:4.0.0-alpha.79"
+    "@burger-editor/core": "npm:4.0.0-alpha.80"
     jsdom: "npm:^28.1.0"
   languageName: unknown
   linkType: soft
 
-"@burger-editor/legacy@npm:4.0.0-alpha.79, @burger-editor/legacy@workspace:packages/@burger-editor/legacy":
+"@burger-editor/legacy@npm:4.0.0-alpha.80, @burger-editor/legacy@workspace:packages/@burger-editor/legacy":
   version: 0.0.0-use.local
   resolution: "@burger-editor/legacy@workspace:packages/@burger-editor/legacy"
   dependencies:
@@ -1163,22 +1161,22 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/local@npm:4.0.0-alpha.79, @burger-editor/local@workspace:packages/@burger-editor/local":
+"@burger-editor/local@npm:4.0.0-alpha.80, @burger-editor/local@workspace:packages/@burger-editor/local":
   version: 0.0.0-use.local
   resolution: "@burger-editor/local@workspace:packages/@burger-editor/local"
   dependencies:
-    "@burger-editor/blocks": "npm:4.0.0-alpha.79"
-    "@burger-editor/cli": "npm:4.0.0-alpha.79"
-    "@burger-editor/client": "npm:4.0.0-alpha.79"
-    "@burger-editor/core": "npm:4.0.0-alpha.79"
-    "@burger-editor/file-io": "npm:4.0.0-alpha.79"
-    "@burger-editor/inspector": "npm:4.0.0-alpha.79"
+    "@burger-editor/blocks": "npm:4.0.0-alpha.80"
+    "@burger-editor/cli": "npm:4.0.0-alpha.80"
+    "@burger-editor/client": "npm:4.0.0-alpha.80"
+    "@burger-editor/core": "npm:4.0.0-alpha.80"
+    "@burger-editor/file-io": "npm:4.0.0-alpha.80"
+    "@burger-editor/inspector": "npm:4.0.0-alpha.80"
     "@d-zero/shared": "npm:0.23.2"
     "@hono/node-server": "npm:^2.1.11"
     "@hono/zod-validator": "npm:^0.9.1"
     "@types/debug": "npm:4.1.13"
-    "@types/node": "npm:26.6.7"
-    "@types/react": "npm:19.3.1"
+    "@types/node": "npm:26.6.10"
+    "@types/react": "npm:19.3.2"
     "@types/react-dom": "npm:19.3.0"
     "@types/ws": "npm:8.18.2"
     ansi-colors: "npm:^4.1.3"
@@ -1203,13 +1201,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@burger-editor/mcp-server@workspace:packages/@burger-editor/mcp-server"
   dependencies:
-    "@burger-editor/blocks": "npm:4.0.0-alpha.79"
-    "@burger-editor/cli": "npm:4.0.0-alpha.79"
-    "@burger-editor/core": "npm:4.0.0-alpha.79"
-    "@burger-editor/file-io": "npm:4.0.0-alpha.79"
-    "@burger-editor/legacy": "npm:4.0.0-alpha.79"
-    "@burger-editor/migrator": "npm:4.0.0-alpha.79"
-    "@burger-editor/utils": "npm:4.0.0-alpha.79"
+    "@burger-editor/blocks": "npm:4.0.0-alpha.80"
+    "@burger-editor/cli": "npm:4.0.0-alpha.80"
+    "@burger-editor/core": "npm:4.0.0-alpha.80"
+    "@burger-editor/file-io": "npm:4.0.0-alpha.80"
+    "@burger-editor/legacy": "npm:4.0.0-alpha.80"
+    "@burger-editor/migrator": "npm:4.0.0-alpha.80"
+    "@burger-editor/utils": "npm:4.0.0-alpha.80"
     "@d-zero/shared": "npm:0.23.2"
     "@modelcontextprotocol/sdk": "npm:^1.32.2"
     vitest: "npm:5.1.1"
@@ -1219,24 +1217,23 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@burger-editor/migrator@npm:4.0.0-alpha.79, @burger-editor/migrator@workspace:packages/@burger-editor/migrator":
+"@burger-editor/migrator@npm:4.0.0-alpha.80, @burger-editor/migrator@workspace:packages/@burger-editor/migrator":
   version: 0.0.0-use.local
   resolution: "@burger-editor/migrator@workspace:packages/@burger-editor/migrator"
   dependencies:
-    "@burger-editor/core": "npm:4.0.0-alpha.79"
-    "@burger-editor/legacy": "npm:4.0.0-alpha.79"
-    "@burger-editor/utils": "npm:4.0.0-alpha.79"
-    semver: "npm:^7.8.6"
+    "@burger-editor/core": "npm:4.0.0-alpha.80"
+    "@burger-editor/legacy": "npm:4.0.0-alpha.80"
+    "@burger-editor/utils": "npm:4.0.0-alpha.80"
   languageName: unknown
   linkType: soft
 
-"@burger-editor/runtime@npm:4.0.0-alpha.79, @burger-editor/runtime@workspace:packages/@burger-editor/runtime":
+"@burger-editor/runtime@npm:4.0.0-alpha.80, @burger-editor/runtime@workspace:packages/@burger-editor/runtime":
   version: 0.0.0-use.local
   resolution: "@burger-editor/runtime@workspace:packages/@burger-editor/runtime"
   dependencies:
-    "@burger-editor/blocks": "npm:4.0.0-alpha.79"
-    "@burger-editor/core": "npm:4.0.0-alpha.79"
-    "@burger-editor/css": "npm:4.0.0-alpha.79"
+    "@burger-editor/blocks": "npm:4.0.0-alpha.80"
+    "@burger-editor/core": "npm:4.0.0-alpha.80"
+    "@burger-editor/css": "npm:4.0.0-alpha.80"
     typescript: "npm:5.9.3"
     vite: "npm:8.3.8"
     vite-plugin-dts: "npm:5.1.2"
@@ -1247,27 +1244,27 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@burger-editor/storybook@workspace:packages/@burger-editor/storybook"
   dependencies:
-    "@burger-editor/blocks": "npm:4.0.0-alpha.79"
-    "@burger-editor/client": "npm:4.0.0-alpha.79"
-    "@burger-editor/core": "npm:4.0.0-alpha.79"
-    "@burger-editor/css": "npm:4.0.0-alpha.79"
-    "@burger-editor/custom-element": "npm:4.0.0-alpha.79"
-    "@burger-editor/local": "npm:4.0.0-alpha.79"
-    "@burger-editor/runtime": "npm:4.0.0-alpha.79"
-    "@storybook/react-vite": "npm:10.6.8"
+    "@burger-editor/blocks": "npm:4.0.0-alpha.80"
+    "@burger-editor/client": "npm:4.0.0-alpha.80"
+    "@burger-editor/core": "npm:4.0.0-alpha.80"
+    "@burger-editor/css": "npm:4.0.0-alpha.80"
+    "@burger-editor/custom-element": "npm:4.0.0-alpha.80"
+    "@burger-editor/local": "npm:4.0.0-alpha.80"
+    "@burger-editor/runtime": "npm:4.0.0-alpha.80"
+    "@storybook/react-vite": "npm:10.6.9"
     "@tabler/icons-react": "npm:3.52.0"
     "@testing-library/dom": "npm:10.4.2"
     "@testing-library/react": "npm:16.3.3"
-    "@types/react": "npm:19.3.1"
+    "@types/react": "npm:19.3.2"
     "@types/react-dom": "npm:19.3.0"
     react: "npm:19.3.1"
     react-dom: "npm:19.3.1"
-    storybook: "npm:10.6.8"
+    storybook: "npm:10.6.9"
     vite: "npm:8.3.8"
   languageName: unknown
   linkType: soft
 
-"@burger-editor/utils@npm:4.0.0-alpha.79, @burger-editor/utils@workspace:packages/@burger-editor/utils":
+"@burger-editor/utils@npm:4.0.0-alpha.80, @burger-editor/utils@workspace:packages/@burger-editor/utils":
   version: 0.0.0-use.local
   resolution: "@burger-editor/utils@workspace:packages/@burger-editor/utils"
   dependencies:
@@ -1516,9 +1513,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@containerbase/base@npm:14.69.2":
-  version: 14.69.2
-  resolution: "@containerbase/base@npm:14.69.2"
+"@containerbase/base@npm:14.69.3":
+  version: 14.69.3
+  resolution: "@containerbase/base@npm:14.69.3"
   dependencies:
     semver: "npm:^7.8.5"
   peerDependencies:
@@ -1526,7 +1523,7 @@ __metadata:
   peerDependenciesMeta:
     zod:
       optional: true
-  checksum: 10c0/0c2bf52e75ed076589a89f2664c59d8730f4c806d0a7c0fc2a72c2995ba990b560dcd4722b486e859526d5ba33c3e49d9a27e6e494d1e4ccae79eba77f25cc0b
+  checksum: 10c0/fe6aa00de4653cbf1b031296c673b873a76543d75fa19962c41a31a9aeb50dc23e1c085254887d1494272dfa8a8a376503cb5bc17e7f22db278ae02dda8b84cf
   languageName: node
   linkType: hard
 
@@ -2339,14 +2336,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@d-zero/release-automation@npm:0.0.5":
-  version: 0.0.5
-  resolution: "@d-zero/release-automation@npm:0.0.5"
+"@d-zero/release-automation@npm:0.1.0":
+  version: 0.1.0
+  resolution: "@d-zero/release-automation@npm:0.1.0"
   dependencies:
     yaml: "npm:2.9.1"
   bin:
     release-automation: dist/cli.js
-  checksum: 10c0/23dd6602523f4203f3c8568d0ed184ee759593f9392924c3cba12e535262a9d90cded6db9a2c5b0d5dbd6e3df1240f66ed03cf3572d85ad48971c0a13a9fc04e
+  checksum: 10c0/9f71de836ba424a941b9d746f6ede6278a303f5334b80e285593055db67d612dd9398f3a9a4ffb010d255b2c3d01b79ff00e3067ea6037dd694818f6e7739feb
   languageName: node
   linkType: hard
 
@@ -5136,17 +5133,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@renovatebot/base-image@npm:13.176.5":
-  version: 13.176.5
-  resolution: "@renovatebot/base-image@npm:13.176.5"
+"@renovatebot/base-image@npm:13.177.0":
+  version: 13.177.0
+  resolution: "@renovatebot/base-image@npm:13.177.0"
   dependencies:
-    "@containerbase/base": "npm:14.69.2"
+    "@containerbase/base": "npm:14.69.3"
   peerDependencies:
     zod: ^4.0.0
   peerDependenciesMeta:
     zod:
       optional: true
-  checksum: 10c0/ce4f2a182c68ebe760f6cea727a38e7dd430e5af20c0e73647f0ddcd8cf263c00f19770824554dbbd524c8cfe8a36012b63e281722e2819f33ab78322f12458a
+  checksum: 10c0/6f5a5dd0eb0413fc59bd8f3fc2ce7968f2597007324cb12f826cbad09e94d797f59e5b6b75f957636887e3254b077961ccddc7844c1362f72229c09a588e433a
   languageName: node
   linkType: hard
 
@@ -5777,15 +5774,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/builder-vite@npm:10.6.8":
-  version: 10.6.8
-  resolution: "@storybook/builder-vite@npm:10.6.8"
+"@storybook/builder-vite@npm:10.6.9":
+  version: 10.6.9
+  resolution: "@storybook/builder-vite@npm:10.6.9"
   dependencies:
     ts-dedent: "npm:^2.0.0"
   peerDependencies:
-    storybook: ^10.6.8
+    storybook: ^10.6.9
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
-  checksum: 10c0/4e94d0af8de6832da209861e1d627be9798f7a33f93058dd2d153913d2eef841f8588f41898c30e6e7c120c327e2362b0cbb773e4a4b2b086d9a956014ee5a3d
+  checksum: 10c0/50139838c18aade06e985340d130b2b1ee84d688e4130b053b35666cb33c80a22020dcc48f79d83f2db1f9156b2b885e925f941e8a27d8275aabeb3b6a3480a5
   languageName: node
   linkType: hard
 
@@ -5805,32 +5802,32 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/react-dom-shim@npm:10.6.8":
-  version: 10.6.8
-  resolution: "@storybook/react-dom-shim@npm:10.6.8"
+"@storybook/react-dom-shim@npm:10.6.9":
+  version: 10.6.9
+  resolution: "@storybook/react-dom-shim@npm:10.6.9"
   peerDependencies:
     "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     "@types/react-dom": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-    storybook: ^10.6.8
+    storybook: ^10.6.9
   peerDependenciesMeta:
     "@types/react":
       optional: true
     "@types/react-dom":
       optional: true
-  checksum: 10c0/dc406c4a6930c0a75fa8b52653d18dab89e13f66ad94f603ee204bd7dd84d593f7a986c90d95ca910daf6f0317122f6b2197597e4fa83153b65fb37efccc2180
+  checksum: 10c0/dcce4918a5286e6b9721ee8627bab74696f13f8bc32d99a745fa69547d4bd91afa4f4e9703d1a70908c51831532d718c679314700e5af174a8324526d26d8380
   languageName: node
   linkType: hard
 
-"@storybook/react-vite@npm:10.6.8":
-  version: 10.6.8
-  resolution: "@storybook/react-vite@npm:10.6.8"
+"@storybook/react-vite@npm:10.6.9":
+  version: 10.6.9
+  resolution: "@storybook/react-vite@npm:10.6.9"
   dependencies:
     "@joshwooding/vite-plugin-react-docgen-typescript": "npm:^0.7.0"
     "@rollup/pluginutils": "npm:^5.0.2"
-    "@storybook/builder-vite": "npm:10.6.8"
-    "@storybook/react": "npm:10.6.8"
+    "@storybook/builder-vite": "npm:10.6.9"
+    "@storybook/react": "npm:10.6.9"
     empathic: "npm:^2.0.0"
     magic-string: "npm:^1.1.0"
     react-docgen: "npm:^8.0.2"
@@ -5839,22 +5836,22 @@ __metadata:
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-    storybook: ^10.6.8
+    storybook: ^10.6.9
     typescript: ">= 4.9.x"
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10c0/9fbfd8df96d7c53ad9f59acd614a1cd93aaab40f8703838218a9823bf1ec043ab9a47ba40b8d0762937abefdbb964cb63e53d0a860bb65b92ca03d7a2ec31b62
+  checksum: 10c0/5946d5ba29e6ba86e4dc83d9416bfa8eb2870ef49fc0f47d0ea3dbbeed32fbf54f92b3983c8548610568b8903a65780e414d70a316afc5912e15aa6e65ce3b03
   languageName: node
   linkType: hard
 
-"@storybook/react@npm:10.6.8":
-  version: 10.6.8
-  resolution: "@storybook/react@npm:10.6.8"
+"@storybook/react@npm:10.6.9":
+  version: 10.6.9
+  resolution: "@storybook/react@npm:10.6.9"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
-    "@storybook/react-dom-shim": "npm:10.6.8"
+    "@storybook/react-dom-shim": "npm:10.6.9"
     react-docgen: "npm:^8.0.2"
     react-docgen-typescript: "npm:^2.2.2"
   peerDependencies:
@@ -5862,7 +5859,7 @@ __metadata:
     "@types/react-dom": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-    storybook: ^10.6.8
+    storybook: ^10.6.9
     typescript: ">= 4.9.x"
   peerDependenciesMeta:
     "@types/react":
@@ -5871,7 +5868,7 @@ __metadata:
       optional: true
     typescript:
       optional: true
-  checksum: 10c0/635475bb9357d950b8fbd5e6428bc96c8f5631da8b416bf887dee17999d4ff36dee0873bd15854c24876b77b3d8dc7dd96ae0b52ed0593ead77df4a1862f45c9
+  checksum: 10c0/fcc507a4fadfcff2f16abe4ec410d54139a176587385934d0b0f2cc79128bcc1710370d90e70307d1a4f77b5f54ac1c2ac010cc53c304177bb2124d354ed4c1a
   languageName: node
   linkType: hard
 
@@ -6847,12 +6844,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:26.6.7":
-  version: 26.6.7
-  resolution: "@types/node@npm:26.6.7"
+"@types/node@npm:26.6.10":
+  version: 26.6.10
+  resolution: "@types/node@npm:26.6.10"
   dependencies:
     undici-types: "npm:~8.9.0"
-  checksum: 10c0/54ffee68394be0df0f92405b6df75a2f75041bbbd5386fb88292c5e9947800c109baafbc73cbc75957d8238a9487245e4ed57fd91c3e19bda675f3039a403b4b
+  checksum: 10c0/d249c40c72ee1e61aeb9633263e5ebf428359206926a2ca12435cf7112e09a49aa5ef7a787e413fdf66b9ad8f41fb474eeb4e18e31e9b49a64033393e888ce56
   languageName: node
   linkType: hard
 
@@ -6888,12 +6885,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:19.3.1":
-  version: 19.3.1
-  resolution: "@types/react@npm:19.3.1"
+"@types/react@npm:19.3.2":
+  version: 19.3.2
+  resolution: "@types/react@npm:19.3.2"
   dependencies:
     csstype: "npm:^3.2.2"
-  checksum: 10c0/c008307c9e11bdf69d81073fb1814169ee8373193fc09e7582663ee8c66afb1d3572de2cd5b7a23a7077f66ad0a7114a116579d908f62b3d11aed579c2a5ceaa
+  checksum: 10c0/a48b88520146e39681fedd80f0a56002fa58ca588e44a8332136ac02e9c68511c1bb96fadfb24ada1f3c7a1c0f0a99578c603179b1ae771883aa85852a133d22
   languageName: node
   linkType: hard
 
@@ -6913,7 +6910,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/semver@npm:7.8.0, @types/semver@npm:^7.1.0":
+"@types/semver@npm:^7.1.0":
   version: 7.8.0
   resolution: "@types/semver@npm:7.8.0"
   checksum: 10c0/46a1f38e36013448b279798e8b134e7e8de3b3630b1f40683903b9d57d36dd1d70838515570ed9a149fa09e9c381b9e39319b58d7b9f3b929b42ae2becff7aa3
@@ -17155,9 +17152,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"renovate@npm:44.261.2":
-  version: 44.261.2
-  resolution: "renovate@npm:44.261.2"
+"renovate@npm:44.262.1":
+  version: 44.262.1
+  resolution: "renovate@npm:44.262.1"
   dependencies:
     "@aws-sdk/client-codecommit": "npm:3.1139.0"
     "@aws-sdk/client-ec2": "npm:3.1139.0"
@@ -17190,7 +17187,7 @@ __metadata:
     "@pnpm/parse-overrides": "npm:1001.0.4"
     "@qnighy/marshal": "npm:0.1.3"
     "@redis/client": "npm:6.3.1"
-    "@renovatebot/base-image": "npm:13.176.5"
+    "@renovatebot/base-image": "npm:13.177.0"
     "@renovatebot/detect-tools": "npm:5.0.0"
     "@renovatebot/good-enough-parser": "npm:4.0.3"
     "@renovatebot/osv-offline": "npm:4.5.10"
@@ -17269,7 +17266,7 @@ __metadata:
     semver: "npm:7.8.6"
     semver-stable: "npm:3.0.0"
     semver-utils: "npm:1.1.4"
-    shlex: "npm:3.0.0"
+    shlex: "npm:3.0.1"
     simple-git: "npm:4.1.0"
     slugify: "npm:1.6.9"
     source-map-support: "npm:0.5.21"
@@ -17291,7 +17288,7 @@ __metadata:
   bin:
     renovate: dist/renovate.js
     renovate-config-validator: dist/config-validator.js
-  checksum: 10c0/e4dd9efd09092e894314624c6489b479216f585a1a004094f0b0943ba02b3ef20a9757242508dbf82f2a50d27d94c9e6475597bbbdfa53563cf3a5bab2b81e4d
+  checksum: 10c0/cc9b58cdc3803bf6d7f944e99251a83e99b45c8033c10135532d058ba4013198779d711124661f76b7729f419c1443838d8c825997aa5b4d15c5818fffae69ce
   languageName: node
   linkType: hard
 
@@ -17724,7 +17721,7 @@ __metadata:
     "@d-zero/lint-staged-config": "npm:5.1.1"
     "@d-zero/markuplint-config": "npm:5.1.3"
     "@d-zero/prettier-config": "npm:5.1.1"
-    "@d-zero/release-automation": "npm:0.0.5"
+    "@d-zero/release-automation": "npm:0.1.0"
     "@d-zero/stylelint-config": "npm:5.1.1"
     "@d-zero/textlint-config": "npm:5.1.2"
     "@d-zero/tsconfig": "npm:2.0.0"
@@ -17741,7 +17738,7 @@ __metadata:
     pixelmatch: "npm:8.0.0"
     playwright: "npm:1.65.1"
     pngjs: "npm:7.0.0"
-    renovate: "npm:44.261.2"
+    renovate: "npm:44.262.1"
     typescript: "npm:5.9.3"
     vitest: "npm:5.1.1"
   languageName: unknown
@@ -17928,7 +17925,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"semver@npm:7.8.6, semver@npm:^7.0.0, semver@npm:^7.3.2, semver@npm:^7.7.4, semver@npm:^7.8.6":
+"semver@npm:7.8.6, semver@npm:^7.0.0, semver@npm:^7.3.2, semver@npm:^7.7.4":
   version: 7.8.6
   resolution: "semver@npm:7.8.6"
   bin:
@@ -18061,10 +18058,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"shlex@npm:3.0.0":
-  version: 3.0.0
-  resolution: "shlex@npm:3.0.0"
-  checksum: 10c0/7f3b450c4d31a2cd91ec0523abe8dc5b34f8aa1e79189f3ccd73c4517935f45dcac23a6ba475c8ad75cbd490039098fa074b34d3ddcb0182c10273c6e5b44988
+"shlex@npm:3.0.1":
+  version: 3.0.1
+  resolution: "shlex@npm:3.0.1"
+  checksum: 10c0/373f24f99cb07e424c05071504a210a94d402034593b3008b5ae62bf633b5c5752b9847398a3d1a79cc53d93a4838588fce33ae56a760a2dc19ef9dc0d3cce61
   languageName: node
   linkType: hard
 
@@ -18403,9 +18400,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"storybook@npm:10.6.8":
-  version: 10.6.8
-  resolution: "storybook@npm:10.6.8"
+"storybook@npm:10.6.9":
+  version: 10.6.9
+  resolution: "storybook@npm:10.6.9"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.2"
@@ -18437,7 +18434,7 @@ __metadata:
       optional: true
   bin:
     storybook: ./dist/bin/dispatcher.js
-  checksum: 10c0/0f329e5191d2fdf635facbc131eecbce49746a351afca33246a02a3d9073278577d847ed6b05e3fff7a8631a603e9573cff2604c74e1bbe2610ee6c239e5af03
+  checksum: 10c0/95a5db1cd2132e2dbb28855d8b83aa4395295bac42580ab781bcb34fcdb9d63dfe459cb25159e2a31f146a41373bb035574e8190bbddb92fbff507a2c0278efc
   languageName: node
   linkType: hard
 
