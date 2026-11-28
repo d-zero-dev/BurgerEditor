@@ -1262,7 +1262,7 @@ __metadata:
     "@types/react-dom": "npm:19.3.0"
     react: "npm:19.3.1"
     react-dom: "npm:19.3.1"
-    storybook: "npm:10.6.8"
+    storybook: "npm:10.6.9"
     vite: "npm:8.3.8"
   languageName: unknown
   linkType: soft
@@ -18403,9 +18403,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"storybook@npm:10.6.8":
-  version: 10.6.8
-  resolution: "storybook@npm:10.6.8"
+"storybook@npm:10.6.9":
+  version: 10.6.9
+  resolution: "storybook@npm:10.6.9"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.2"
@@ -18437,7 +18437,7 @@ __metadata:
       optional: true
   bin:
     storybook: ./dist/bin/dispatcher.js
-  checksum: 10c0/0f329e5191d2fdf635facbc131eecbce49746a351afca33246a02a3d9073278577d847ed6b05e3fff7a8631a603e9573cff2604c74e1bbe2610ee6c239e5af03
+  checksum: 10c0/95a5db1cd2132e2dbb28855d8b83aa4395295bac42580ab781bcb34fcdb9d63dfe459cb25159e2a31f146a41373bb035574e8190bbddb92fbff507a2c0278efc
   languageName: node
   linkType: hard
 
