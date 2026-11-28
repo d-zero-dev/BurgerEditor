@@ -182,10 +182,6 @@
 			"matchPackageNames": ["use-sync-external-store", "@types/use-sync-external-store"]
 		},
 		{
-			"groupName": "semver",
-			"matchPackageNames": ["semver", "@types/semver"]
-		},
-		{
 			"groupName": "turndown",
 			"matchPackageNames": ["turndown", "@types/turndown"]
 		},

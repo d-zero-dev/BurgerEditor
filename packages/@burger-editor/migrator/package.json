@@ -34,7 +34,6 @@
 	"dependencies": {
 		"@burger-editor/core": "4.0.0-alpha.79",
 		"@burger-editor/legacy": "4.0.0-alpha.79",
-		"@burger-editor/utils": "4.0.0-alpha.79",
-		"semver": "^7.8.6"
+		"@burger-editor/utils": "4.0.0-alpha.79"
 	}
 }
